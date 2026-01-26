@@ -77,7 +77,7 @@ export default function Auth() {
             {settings?.logo_url ? (
               <img
                 src={settings.logo_url}
-                alt="Logo"
+                alt="Logotipo"
                 className="w-24 h-24 object-contain rounded-xl"
               />
             ) : (
