@@ -1,11 +1,10 @@
 import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
-import { CeremonyStage } from '@/types/ceremony';
 
 interface ControlBarProps {
   volume: number;
   onVolumeChange: (value: number) => void;
-  activeStage: CeremonyStage | null;
+  activeStage: { symbolicName: string } | null;
   isPlaying: boolean;
 }
 
