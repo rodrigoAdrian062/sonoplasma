@@ -7,26 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, Sparkles, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
-import { z } from 'zod';
-
-const authSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-});
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, signIn, signUp } = useAuth();
+  const { user, isLoading: authLoading, signIn } = useAuth();
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [nome, setNome] = useState('');
+  const [senha, setSenha] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -35,40 +27,30 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent, isSignUp: boolean) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate input
-    const result = authSchema.safeParse({ email, password });
-    if (!result.success) {
-      const errors = result.error.errors.map(e => e.message).join(', ');
-      toast.error(errors);
+    if (!nome.trim() || !senha.trim()) {
+      toast.error('Preencha nome e senha');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const { error } = isSignUp 
-        ? await signUp(email, password)
-        : await signIn(email, password);
+      // Convert nome to email format for Supabase auth
+      const email = `${nome.trim().toLowerCase()}@sistema.local`;
+      
+      const { error } = await signIn(email, senha);
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          toast.error('Email ou senha incorretos');
-        } else if (error.message.includes('User already registered')) {
-          toast.error('Este email já está cadastrado');
-        } else if (error.message.includes('Email not confirmed')) {
-          toast.error('Confirme seu email para continuar');
+          toast.error('Nome ou senha incorretos');
         } else {
-          toast.error(error.message);
+          toast.error('Erro ao fazer login');
         }
       } else {
-        if (isSignUp) {
-          toast.success('Conta criada com sucesso!');
-        } else {
-          toast.success('Login realizado com sucesso!');
-        }
+        toast.success('Bem-vindo!');
         navigate('/', { replace: true });
       }
     } catch (err) {
@@ -88,7 +70,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-border/50 shadow-xl">
+      <Card className="w-full max-w-sm border-border/50 shadow-xl">
         <CardHeader className="text-center space-y-4">
           {/* Dynamic Logo */}
           <div className="flex justify-center">
@@ -96,11 +78,11 @@ export default function Auth() {
               <img
                 src={settings.logo_url}
                 alt="Logo"
-                className="w-20 h-20 object-contain rounded-xl"
+                className="w-24 h-24 object-contain rounded-xl"
               />
             ) : (
-              <div className="p-4 bg-gold/10 rounded-xl">
-                <Sparkles className="text-gold" size={48} />
+              <div className="p-5 bg-gold/10 rounded-xl">
+                <Sparkles className="text-gold" size={56} />
               </div>
             )}
           </div>
@@ -118,107 +100,53 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" className="gap-2">
-                <LogIn size={16} />
-                Entrar
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="gap-2">
-                <UserPlus size={16} />
-                Cadastrar
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login">
-              <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gold hover:bg-gold-glow text-background"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Entrando...
-                    </>
-                  ) : (
-                    'Entrar'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Mínimo 6 caracteres"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoComplete="new-password"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gold hover:bg-gold-glow text-background"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    'Criar Conta'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                type="text"
+                placeholder="Digite seu nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+                autoComplete="username"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="senha">Senha</Label>
+              <Input
+                id="senha"
+                type="password"
+                placeholder="••••••••"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gold hover:bg-gold-glow text-background"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Entrando...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Entrar
+                </>
+              )}
+            </Button>
+          </form>
 
           <p className="text-center text-xs text-muted-foreground mt-6">
-            Acesso restrito a usuários autorizados
+            Credenciais fornecidas pelo administrador
           </p>
         </CardContent>
       </Card>
