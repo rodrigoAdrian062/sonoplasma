@@ -21,10 +21,15 @@ import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useStages } from '@/hooks/useStages';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useSettings } from '@/hooks/useSettings';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
+  const { settings } = useSettings();
+  useThemeColor(settings?.cor_tema);
+  
   const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
   const {
     currentStageId,
