@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      sonoplastia_configuracoes: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          nome_app: string
+          subtitulo_app: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome_app?: string
+          subtitulo_app?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          nome_app?: string
+          subtitulo_app?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sonoplastia_etapas: {
         Row: {
           ativo: boolean
