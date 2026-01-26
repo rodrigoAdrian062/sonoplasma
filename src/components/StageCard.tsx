@@ -128,7 +128,7 @@ export function StageCard({
               isActive ? 'bg-gold/20 text-gold' : 'bg-secondary text-muted-foreground'
             )}
           >
-            <CeremonyIcon name={stage.icone} size={24} />
+            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={24} />
           </div>
           
           <div className="flex-1 min-w-0">
