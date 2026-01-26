@@ -44,6 +44,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sonoplastia_etapa_audios: {
+        Row: {
+          audio_url: string
+          created_at: string
+          etapa_id: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          etapa_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          etapa_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonoplastia_etapa_audios_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "sonoplastia_etapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sonoplastia_etapas: {
         Row: {
           ativo: boolean
