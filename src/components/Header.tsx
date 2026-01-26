@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Plus, Settings, LogOut } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { useSettings } from '@/hooks/useSettings';
@@ -12,9 +12,11 @@ import {
 
 interface HeaderProps {
   onAddStage: () => void;
+  onPresentationMode?: () => void;
+  hasStages?: boolean;
 }
 
-export function Header({ onAddStage }: HeaderProps) {
+export function Header({ onAddStage, onPresentationMode, hasStages }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
@@ -74,6 +76,22 @@ export function Header({ onAddStage }: HeaderProps) {
               >
                 <Settings size={20} />
               </Button>
+              {hasStages && onPresentationMode && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={onPresentationMode}
+                      className="gap-2 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Presentation size={18} />
+                      <span className="hidden sm:inline">Apresentar</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Modo Apresentação (Tela Cheia)</TooltipContent>
+                </Tooltip>
+              )}
               <Button
                 onClick={onAddStage}
                 className="gap-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50"

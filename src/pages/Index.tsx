@@ -19,6 +19,7 @@ import { ControlBar } from '@/components/ControlBar';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { PresentationMode } from '@/components/PresentationMode';
 import { useStages } from '@/hooks/useStages';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -47,6 +48,7 @@ const Index = () => {
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -129,9 +131,34 @@ const Index = () => {
     );
   }
 
+  // Presentation mode handler
+  const handlePresentationPlay = (stageId: string, audioUrl: string) => {
+    play(stageId, audioUrl);
+  };
+
+  if (isPresentationMode) {
+    return (
+      <PresentationMode
+        stages={stages}
+        audiosByStageId={audiosByStageId}
+        currentStageId={currentStageId}
+        status={status}
+        onPlay={handlePresentationPlay}
+        onPause={pause}
+        onStop={stop}
+        onClose={() => setIsPresentationMode(false)}
+        settings={settings}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <Header onAddStage={() => setIsNewStageModal(true)} />
+      <Header 
+        onAddStage={() => setIsNewStageModal(true)} 
+        onPresentationMode={() => setIsPresentationMode(true)}
+        hasStages={stages.length > 0}
+      />
       <ControlBar
         volume={volume}
         onVolumeChange={setVolume}
