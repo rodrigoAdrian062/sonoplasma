@@ -3,12 +3,14 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { StageCard } from './StageCard';
 import { CeremonyStage } from '@/types/ceremony';
+import { StageAudio } from '@/types/stageAudio';
 
 interface SortableStageCardProps {
   stage: CeremonyStage;
+  audios: StageAudio[];
   isPlaying: boolean;
   isPaused: boolean;
-  onPlay: () => void;
+  onPlay: (audioUrl: string) => void;
   onPause: () => void;
   onStop: () => void;
   onEdit: () => void;
@@ -17,6 +19,7 @@ interface SortableStageCardProps {
 
 export function SortableStageCard({
   stage,
+  audios,
   isPlaying,
   isPaused,
   onPlay,
@@ -53,6 +56,7 @@ export function SortableStageCard({
       </div>
       <StageCard
         stage={stage}
+        audios={audios}
         isPlaying={isPlaying}
         isPaused={isPaused}
         onPlay={onPlay}

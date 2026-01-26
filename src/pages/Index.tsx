@@ -20,6 +20,7 @@ import { SortableStageCard } from '@/components/SortableStageCard';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useStages } from '@/hooks/useStages';
+import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -31,6 +32,8 @@ const Index = () => {
   useThemeColor(settings?.cor_tema);
   
   const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
+  const { saveAudios } = useStageAudios();
+  const { audiosByStageId } = useAllStageAudios();
   const {
     currentStageId,
     status,
@@ -60,26 +63,37 @@ const Index = () => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
 
-  const handlePlay = (stage: CeremonyStage) => {
-    if (stage.audio_url) {
-      play(stage.id, stage.audio_url);
+  const handlePlay = (stage: CeremonyStage, audioUrl?: string) => {
+    if (audioUrl) {
+      play(stage.id, audioUrl);
     }
   };
 
-  const handleSaveStage = (data: CeremonyStageInsert | CeremonyStageUpdate) => {
+  const handleSaveStage = async (
+    data: CeremonyStageInsert | CeremonyStageUpdate, 
+    audios?: Array<{ nome: string; audio_url: string }>
+  ) => {
     if (editingStage) {
       updateStage.mutate({ id: editingStage.id, ...data });
+      if (audios) {
+        saveAudios.mutate({ etapa_id: editingStage.id, audios });
+      }
     } else {
       const insertData: CeremonyStageInsert = {
         nome_simbolico: data.nome_simbolico || 'Nova Etapa',
         descricao: data.descricao,
-        audio_url: data.audio_url,
         tempo_padrao: data.tempo_padrao,
         icone: data.icone,
         ordem: stages.length + 1,
         ativo: true,
       };
-      createStage.mutate(insertData);
+      createStage.mutate(insertData, {
+        onSuccess: (newStage) => {
+          if (audios && audios.length > 0) {
+            saveAudios.mutate({ etapa_id: newStage.id, audios });
+          }
+        }
+      });
     }
   };
 
@@ -157,9 +171,10 @@ const Index = () => {
                   >
                     <SortableStageCard
                       stage={stage}
+                      audios={audiosByStageId[stage.id] || []}
                       isPlaying={currentStageId === stage.id && status === 'playing'}
                       isPaused={currentStageId === stage.id && status === 'paused'}
-                      onPlay={() => handlePlay(stage)}
+                      onPlay={(audioUrl) => handlePlay(stage, audioUrl)}
                       onPause={pause}
                       onStop={stop}
                       onEdit={() => setEditingStage(stage)}

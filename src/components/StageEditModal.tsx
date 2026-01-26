@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Save, Link, Music, Play, Square, Clock, Type, FileText, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Clock, Type, FileText, Sparkles, Music } from 'lucide-react';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, ICON_OPTIONS } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
+import { AudioListEditor } from './AudioListEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,12 +16,18 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useStageAudios } from '@/hooks/useStageAudios';
+
+interface AudioItem {
+  nome: string;
+  audio_url: string;
+}
 
 interface StageEditModalProps {
   stage: CeremonyStage | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CeremonyStageInsert | CeremonyStageUpdate) => void;
+  onSave: (data: CeremonyStageInsert | CeremonyStageUpdate, audios?: AudioItem[]) => void;
   isNew?: boolean;
 }
 
@@ -33,22 +40,22 @@ const TIME_PRESETS = [
 ];
 
 export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }: StageEditModalProps) {
+  const { audios: existingAudios } = useStageAudios(stage?.id);
+  
   const [formData, setFormData] = useState({
     nome_simbolico: '',
     descricao: '',
-    audio_url: '',
     tempo_padrao: 0,
     icone: 'flame',
   });
-  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [audioItems, setAudioItems] = useState<AudioItem[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const steps = [
     { title: 'Nome e Descrição', icon: Type },
     { title: 'Ícone', icon: Sparkles },
     { title: 'Tempo', icon: Clock },
-    { title: 'Áudio', icon: Music },
+    { title: 'Áudios', icon: Music },
   ];
 
   useEffect(() => {
@@ -56,7 +63,6 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       setFormData({
         nome_simbolico: stage.nome_simbolico,
         descricao: stage.descricao || '',
-        audio_url: stage.audio_url || '',
         tempo_padrao: stage.tempo_padrao || 0,
         icone: stage.icone || 'flame',
       });
@@ -65,60 +71,20 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       setFormData({
         nome_simbolico: '',
         descricao: '',
-        audio_url: '',
         tempo_padrao: 180,
         icone: 'flame',
       });
+      setAudioItems([]);
       setCurrentStep(0);
     }
   }, [stage, isNew, isOpen]);
 
-  // Cleanup audio on close
+  // Load existing audios when editing
   useEffect(() => {
-    if (!isOpen) {
-      stopPreview();
+    if (stage && existingAudios.length > 0) {
+      setAudioItems(existingAudios.map(a => ({ nome: a.nome, audio_url: a.audio_url })));
     }
-  }, [isOpen]);
-
-  const stopPreview = () => {
-    if (previewAudioRef.current) {
-      previewAudioRef.current.pause();
-      previewAudioRef.current.currentTime = 0;
-      previewAudioRef.current = null;
-    }
-    setIsPreviewPlaying(false);
-  };
-
-  const handlePreviewAudio = () => {
-    if (!formData.audio_url.trim()) {
-      toast.error('Insira uma URL de áudio para testar');
-      return;
-    }
-
-    if (isPreviewPlaying) {
-      stopPreview();
-      return;
-    }
-
-    const audio = new Audio(formData.audio_url);
-    previewAudioRef.current = audio;
-
-    audio.oncanplaythrough = () => {
-      audio.play();
-      setIsPreviewPlaying(true);
-    };
-
-    audio.onerror = () => {
-      toast.error('Erro ao carregar áudio. Verifique a URL.');
-      stopPreview();
-    };
-
-    audio.onended = () => {
-      setIsPreviewPlaying(false);
-    };
-
-    audio.load();
-  };
+  }, [stage, existingAudios]);
 
   const handleNext = () => {
     if (currentStep === 0 && !formData.nome_simbolico.trim()) {
@@ -142,14 +108,16 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       setCurrentStep(0);
       return;
     }
+
+    // Filter out audios without url
+    const validAudios = audioItems.filter(a => a.audio_url.trim());
     
     onSave({
       nome_simbolico: formData.nome_simbolico,
       descricao: formData.descricao || null,
-      audio_url: formData.audio_url || null,
       tempo_padrao: formData.tempo_padrao,
       icone: formData.icone,
-    });
+    }, validAudios);
     onClose();
   };
 
@@ -163,7 +131,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-hidden">
+      <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-xl text-foreground flex items-center gap-2">
             {isNew ? (
@@ -328,51 +296,14 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
             </div>
           )}
 
-          {/* Step 4: Áudio */}
+          {/* Step 4: Áudios */}
           {(currentStep === 3 || !isNew) && (
-            <div className="space-y-4 animate-fade-in">
-              <Label className="flex items-center gap-2">
-                <Music size={14} className="text-gold" />
-                Áudio de Fundo (opcional)
-              </Label>
-              
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                  <Input
-                    value={formData.audio_url}
-                    onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
-                    placeholder="https://exemplo.com/audio.mp3"
-                    className="bg-secondary border-border text-foreground pl-10"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handlePreviewAudio}
-                  className={cn(
-                    'shrink-0 transition-all',
-                    isPreviewPlaying 
-                      ? 'border-gold text-gold bg-gold/10' 
-                      : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold'
-                  )}
-                  title={isPreviewPlaying ? 'Parar' : 'Testar áudio'}
-                >
-                  {isPreviewPlaying ? <Square size={16} /> : <Play size={16} />}
-                </Button>
-              </div>
-              
-              <div className="bg-secondary/50 rounded-lg p-3 space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  💡 <strong>Dica:</strong> Use links diretos de MP3 como:
-                </p>
-                <ul className="text-xs text-muted-foreground space-y-1 pl-5">
-                  <li>• Google Drive (use "Obter link" e converta para link direto)</li>
-                  <li>• Dropbox (altere dl=0 para dl=1 no final)</li>
-                  <li>• CDNs ou servidores de áudio</li>
-                </ul>
-              </div>
+            <div className="animate-fade-in">
+              <AudioListEditor
+                audios={audioItems}
+                onChange={setAudioItems}
+                maxAudios={5}
+              />
             </div>
           )}
 
@@ -390,7 +321,14 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
                     <p className="text-xs text-muted-foreground truncate">{formData.descricao}</p>
                   )}
                 </div>
-                <span className="text-sm text-gold">{formatTime(formData.tempo_padrao)}</span>
+                <div className="text-right">
+                  <span className="text-sm text-gold">{formatTime(formData.tempo_padrao)}</span>
+                  {audioItems.filter(a => a.audio_url).length > 0 && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {audioItems.filter(a => a.audio_url).length} áudio(s)
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           )}
