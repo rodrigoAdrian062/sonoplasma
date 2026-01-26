@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { ColorPicker } from '@/components/ColorPicker';
-import { Loader2, ImagePlus, X, Upload } from 'lucide-react';
+import { resizeImage, formatFileSize } from '@/lib/imageUtils';
+import { Loader2, ImagePlus, X, Upload, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingsModalProps {
@@ -27,7 +28,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [corTema, setCorTema] = useState('#D4AF37');
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [originalSize, setOriginalSize] = useState<number | null>(null);
+  const [resizedSize, setResizedSize] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,29 +44,51 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [settings]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error('Arquivo muito grande. Máximo 2MB.');
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem.');
+      return;
+    }
+
+    setOriginalSize(file.size);
+    setIsResizing(true);
+
+    try {
+      // Resize image if needed
+      const resizedFile = await resizeImage(file);
+      setResizedSize(resizedFile.size);
+
+      // Check final size (max 2MB)
+      if (resizedFile.size > 2 * 1024 * 1024) {
+        toast.error('Imagem ainda muito grande após redimensionamento.');
+        setIsResizing(false);
         return;
       }
 
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Por favor, selecione uma imagem.');
-        return;
+      setSelectedFile(resizedFile);
+
+      // Show resize info if file was resized
+      if (resizedFile.size < file.size) {
+        toast.success(
+          `Imagem redimensionada: ${formatFileSize(file.size)} → ${formatFileSize(resizedFile.size)}`
+        );
       }
 
-      setSelectedFile(file);
-      
       // Create local preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewLogo(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(resizedFile);
+    } catch (error) {
+      console.error('Resize error:', error);
+      toast.error('Erro ao processar imagem');
+    } finally {
+      setIsResizing(false);
     }
   };
 
@@ -82,6 +108,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setPreviewLogo(null);
     setLogoUrl('');
     setSelectedFile(null);
+    setOriginalSize(null);
+    setResizedSize(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -151,6 +179,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       });
 
       setSelectedFile(null);
+      setOriginalSize(null);
+      setResizedSize(null);
       onClose();
     } catch (error) {
       console.error('Save error:', error);
@@ -163,6 +193,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleClose = () => {
     // Reset selected file on close
     setSelectedFile(null);
+    setOriginalSize(null);
+    setResizedSize(null);
     if (settings?.logo_url) {
       setPreviewLogo(settings.logo_url);
     }
@@ -207,10 +239,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 </div>
               ) : (
                 <div
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => !isResizing && fileInputRef.current?.click()}
                   className="w-16 h-16 rounded-lg border-2 border-dashed border-border hover:border-gold/50 flex items-center justify-center cursor-pointer transition-colors"
                 >
-                  <ImagePlus className="text-muted-foreground" size={24} />
+                  {isResizing ? (
+                    <Loader2 className="text-muted-foreground animate-spin" size={24} />
+                  ) : (
+                    <ImagePlus className="text-muted-foreground" size={24} />
+                  )}
                 </div>
               )}
               <input
@@ -226,12 +262,21 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isResizing}
                 >
-                  Escolher imagem
+                  {isResizing ? 'Processando...' : 'Escolher imagem'}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  PNG, JPG ou SVG (máx. 2MB)
+                  PNG, JPG ou SVG (redimensiona automaticamente)
                 </p>
+                {selectedFile && originalSize && resizedSize && resizedSize < originalSize && (
+                  <div className="flex items-center gap-1 text-xs text-green-500">
+                    <CheckCircle2 size={12} />
+                    <span>
+                      Reduzido de {formatFileSize(originalSize)} para {formatFileSize(resizedSize)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -273,7 +318,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={updateSettings.isPending || isUploading}
+            disabled={updateSettings.isPending || isUploading || isResizing}
             className="bg-gold hover:bg-gold-glow text-background"
           >
             {(updateSettings.isPending || isUploading) ? (
