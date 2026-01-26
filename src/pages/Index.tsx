@@ -1,7 +1,22 @@
 import { useState, useMemo } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { Header } from '@/components/Header';
 import { ControlBar } from '@/components/ControlBar';
-import { StageCard } from '@/components/StageCard';
+import { SortableStageCard } from '@/components/SortableStageCard';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useStages } from '@/hooks/useStages';
@@ -10,7 +25,7 @@ import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { stages, isLoading, createStage, updateStage, deleteStage } = useStages();
+  const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
   const {
     currentStageId,
     status,
@@ -24,6 +39,17 @@ const Index = () => {
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const activeStage = useMemo(() => {
     return stages.find(s => s.id === currentStageId) || null;
@@ -58,6 +84,18 @@ const Index = () => {
         stop();
       }
       deleteStage.mutate(deleteStageData.id);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = stages.findIndex((s) => s.id === active.id);
+      const newIndex = stages.findIndex((s) => s.id === over.id);
+      const reordered = arrayMove(stages, oldIndex, newIndex);
+      const orderedIds = reordered.map((s) => s.id);
+      reorderStages.mutate(orderedIds);
     }
   };
 
@@ -96,26 +134,37 @@ const Index = () => {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {stages.map((stage, index) => (
-              <div
-                key={stage.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <StageCard
-                  stage={stage}
-                  isPlaying={currentStageId === stage.id && status === 'playing'}
-                  isPaused={currentStageId === stage.id && status === 'paused'}
-                  onPlay={() => handlePlay(stage)}
-                  onPause={pause}
-                  onStop={stop}
-                  onEdit={() => setEditingStage(stage)}
-                  onDelete={() => setDeleteStageData(stage)}
-                />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={stages.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid gap-4 pl-8">
+                {stages.map((stage, index) => (
+                  <div
+                    key={stage.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <SortableStageCard
+                      stage={stage}
+                      isPlaying={currentStageId === stage.id && status === 'playing'}
+                      isPaused={currentStageId === stage.id && status === 'paused'}
+                      onPlay={() => handlePlay(stage)}
+                      onPause={pause}
+                      onStop={stop}
+                      onEdit={() => setEditingStage(stage)}
+                      onDelete={() => setDeleteStageData(stage)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         <footer className="mt-12 py-6 border-t border-border">
