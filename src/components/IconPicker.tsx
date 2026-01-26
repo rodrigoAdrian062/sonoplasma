@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Crop } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { CeremonyIcon } from './icons/CeremonyIcon';
+import { ImageCropModal } from './ImageCropModal';
 import { ICON_OPTIONS } from '@/types/ceremony';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -22,6 +23,8 @@ export function IconPicker({
   onIconUrlChange,
 }: IconPickerProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,17 +37,30 @@ export function IconPicker({
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Imagem muito grande. Máximo 2MB');
+    // Validate file size (max 5MB for cropping, will be reduced after)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 5MB');
       return;
     }
 
+    // Create object URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setTempImageSrc(imageUrl);
+    setShowCropModal(true);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropModal(false);
     setIsUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `icon-${Date.now()}.${fileExt}`;
+      const fileName = `icon-${Date.now()}.jpg`;
+      const file = new File([croppedBlob], fileName, { type: 'image/jpeg' });
 
       const { error: uploadError } = await supabase.storage
         .from('stage-icons')
@@ -63,6 +79,18 @@ export function IconPicker({
       toast.error('Erro ao enviar imagem');
     } finally {
       setIsUploading(false);
+      if (tempImageSrc) {
+        URL.revokeObjectURL(tempImageSrc);
+        setTempImageSrc(null);
+      }
+    }
+  };
+
+  const handleCropModalClose = () => {
+    setShowCropModal(false);
+    if (tempImageSrc) {
+      URL.revokeObjectURL(tempImageSrc);
+      setTempImageSrc(null);
     }
   };
 
@@ -119,14 +147,14 @@ export function IconPicker({
               {isUploading ? (
                 <Loader2 size={20} className="text-gold animate-spin" />
               ) : (
-                <ImageIcon size={20} className="text-muted-foreground" />
+                <Crop size={20} className="text-muted-foreground" />
               )}
             </div>
             <div className="flex-1 text-left">
               <p className="text-sm font-medium text-foreground">
-                {isUploading ? 'Enviando...' : 'Enviar imagem'}
+                {isUploading ? 'Enviando...' : 'Enviar e recortar imagem'}
               </p>
-              <p className="text-xs text-muted-foreground">PNG, JPG até 2MB</p>
+              <p className="text-xs text-muted-foreground">PNG, JPG até 5MB • Recorte quadrado</p>
             </div>
             <Upload size={16} className="text-muted-foreground" />
           </button>
@@ -171,6 +199,16 @@ export function IconPicker({
           </button>
         ))}
       </div>
+
+      {/* Crop Modal */}
+      {tempImageSrc && (
+        <ImageCropModal
+          isOpen={showCropModal}
+          imageSrc={tempImageSrc}
+          onClose={handleCropModalClose}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }
