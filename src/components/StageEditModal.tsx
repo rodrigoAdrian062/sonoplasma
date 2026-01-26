@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Link, Music, Play, Square } from 'lucide-react';
+import { Save, Link, Music, Play, Square, Clock, Type, FileText, Sparkles } from 'lucide-react';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, ICON_OPTIONS } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface StageEditModalProps {
   stage: CeremonyStage | null;
@@ -20,6 +23,14 @@ interface StageEditModalProps {
   onSave: (data: CeremonyStageInsert | CeremonyStageUpdate) => void;
   isNew?: boolean;
 }
+
+const TIME_PRESETS = [
+  { label: '1 min', value: 60 },
+  { label: '2 min', value: 120 },
+  { label: '3 min', value: 180 },
+  { label: '5 min', value: 300 },
+  { label: '10 min', value: 600 },
+];
 
 export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }: StageEditModalProps) {
   const [formData, setFormData] = useState({
@@ -30,7 +41,15 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     icone: 'flame',
   });
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const steps = [
+    { title: 'Nome e Descrição', icon: Type },
+    { title: 'Ícone', icon: Sparkles },
+    { title: 'Tempo', icon: Clock },
+    { title: 'Áudio', icon: Music },
+  ];
 
   useEffect(() => {
     if (stage) {
@@ -41,6 +60,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         tempo_padrao: stage.tempo_padrao || 0,
         icone: stage.icone || 'flame',
       });
+      setCurrentStep(0);
     } else if (isNew) {
       setFormData({
         nome_simbolico: '',
@@ -49,8 +69,9 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         tempo_padrao: 180,
         icone: 'flame',
       });
+      setCurrentStep(0);
     }
-  }, [stage, isNew]);
+  }, [stage, isNew, isOpen]);
 
   // Cleanup audio on close
   useEffect(() => {
@@ -70,11 +91,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
 
   const handlePreviewAudio = () => {
     if (!formData.audio_url.trim()) {
-      toast({
-        title: "URL não informada",
-        description: "Insira uma URL de áudio para testar.",
-        variant: "destructive",
-      });
+      toast.error('Insira uma URL de áudio para testar');
       return;
     }
 
@@ -92,11 +109,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     };
 
     audio.onerror = () => {
-      toast({
-        title: "Erro ao carregar áudio",
-        description: "Verifique se a URL é válida e acessível.",
-        variant: "destructive",
-      });
+      toast.error('Erro ao carregar áudio. Verifique a URL.');
       stopPreview();
     };
 
@@ -107,8 +120,29 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     audio.load();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = () => {
+    if (currentStep === 0 && !formData.nome_simbolico.trim()) {
+      toast.error('Digite o nome da etapa');
+      return;
+    }
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!formData.nome_simbolico.trim()) {
+      toast.error('Digite o nome da etapa');
+      setCurrentStep(0);
+      return;
+    }
+    
     onSave({
       nome_simbolico: formData.nome_simbolico,
       descricao: formData.descricao || null,
@@ -119,131 +153,290 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     onClose();
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins === 0 && secs === 0) return 'Sem limite';
+    if (secs === 0) return `${mins} min`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md">
+      <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl text-foreground">
-            {isNew ? 'Nova Etapa' : 'Editar Etapa'}
+          <DialogTitle className="font-display text-xl text-foreground flex items-center gap-2">
+            {isNew ? (
+              <>
+                <Sparkles className="text-gold" size={20} />
+                Nova Etapa
+              </>
+            ) : (
+              'Editar Etapa'
+            )}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {/* Nome Simbólico */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Nome Simbólico</label>
-            <Input
-              value={formData.nome_simbolico}
-              onChange={(e) => setFormData({ ...formData, nome_simbolico: e.target.value })}
-              placeholder="Ex: Acendimento das Luzes"
-              required
-              className="bg-secondary border-border text-foreground"
-            />
+        {/* Step Indicator */}
+        {isNew && (
+          <div className="flex items-center justify-center gap-1 py-2">
+            {steps.map((step, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => {
+                  if (index === 0 || formData.nome_simbolico.trim()) {
+                    setCurrentStep(index);
+                  }
+                }}
+                className={cn(
+                  'flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all',
+                  currentStep === index
+                    ? 'bg-gold text-background font-medium'
+                    : index < currentStep
+                    ? 'bg-gold/20 text-gold'
+                    : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                <step.icon size={12} />
+                <span className="hidden sm:inline">{step.title}</span>
+              </button>
+            ))}
           </div>
+        )}
 
-          {/* Descrição */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Descrição</label>
-            <Textarea
-              value={formData.descricao}
-              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              placeholder="Breve descrição da etapa..."
-              rows={2}
-              className="bg-secondary border-border text-foreground resize-none"
-            />
-          </div>
-
-          {/* URL do Áudio */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground flex items-center gap-2">
-              <Music size={14} />
-              URL do Áudio (MP3)
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+        <div className="space-y-4 mt-2">
+          {/* Step 1: Nome e Descrição */}
+          {(currentStep === 0 || !isNew) && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Type size={14} className="text-gold" />
+                  Nome da Etapa
+                </Label>
                 <Input
-                  value={formData.audio_url}
-                  onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
-                  placeholder="https://exemplo.com/audio.mp3"
-                  className="bg-secondary border-border text-foreground pl-10"
+                  value={formData.nome_simbolico}
+                  onChange={(e) => setFormData({ ...formData, nome_simbolico: e.target.value })}
+                  placeholder="Ex: Acendimento das Luzes"
+                  required
+                  autoFocus={isNew}
+                  className="bg-secondary border-border text-foreground text-lg"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <FileText size={14} className="text-muted-foreground" />
+                  Descrição (opcional)
+                </Label>
+                <Textarea
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  placeholder="Breve descrição da etapa..."
+                  rows={2}
+                  className="bg-secondary border-border text-foreground resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Ícone */}
+          {(currentStep === 1 || !isNew) && (
+            <div className="space-y-3 animate-fade-in">
+              <Label>Escolha um ícone</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {ICON_OPTIONS.map((icon) => (
+                  <button
+                    key={icon.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, icone: icon.value })}
+                    className={cn(
+                      'aspect-square flex flex-col items-center justify-center gap-1 rounded-xl border transition-all duration-200 hover:scale-105',
+                      formData.icone === icon.value
+                        ? 'bg-gold/20 border-gold text-gold shadow-lg shadow-gold/20'
+                        : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
+                    )}
+                    title={icon.label}
+                  >
+                    <CeremonyIcon name={icon.value} size={24} />
+                    <span className="text-[10px] truncate w-full px-1">{icon.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Tempo */}
+          {(currentStep === 2 || !isNew) && (
+            <div className="space-y-4 animate-fade-in">
+              <Label className="flex items-center gap-2">
+                <Clock size={14} className="text-gold" />
+                Duração da Etapa
+              </Label>
+              
+              {/* Time Presets */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, tempo_padrao: 0 })}
+                  className={cn(
+                    'px-3 py-2 rounded-lg border text-sm transition-all',
+                    formData.tempo_padrao === 0
+                      ? 'bg-gold/20 border-gold text-gold'
+                      : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
+                  )}
+                >
+                  Livre
+                </button>
+                {TIME_PRESETS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, tempo_padrao: preset.value })}
+                    className={cn(
+                      'px-3 py-2 rounded-lg border text-sm transition-all',
+                      formData.tempo_padrao === preset.value
+                        ? 'bg-gold/20 border-gold text-gold'
+                        : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Slider for custom time */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Tempo personalizado</span>
+                  <span className="text-lg font-semibold text-gold">
+                    {formatTime(formData.tempo_padrao)}
+                  </span>
+                </div>
+                <Slider
+                  value={[formData.tempo_padrao]}
+                  onValueChange={([value]) => setFormData({ ...formData, tempo_padrao: value })}
+                  max={1800}
+                  step={30}
+                  className="py-2"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>30 min</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Áudio */}
+          {(currentStep === 3 || !isNew) && (
+            <div className="space-y-4 animate-fade-in">
+              <Label className="flex items-center gap-2">
+                <Music size={14} className="text-gold" />
+                Áudio de Fundo (opcional)
+              </Label>
+              
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                  <Input
+                    value={formData.audio_url}
+                    onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
+                    placeholder="https://exemplo.com/audio.mp3"
+                    className="bg-secondary border-border text-foreground pl-10"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePreviewAudio}
+                  className={cn(
+                    'shrink-0 transition-all',
+                    isPreviewPlaying 
+                      ? 'border-gold text-gold bg-gold/10' 
+                      : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold'
+                  )}
+                  title={isPreviewPlaying ? 'Parar' : 'Testar áudio'}
+                >
+                  {isPreviewPlaying ? <Square size={16} /> : <Play size={16} />}
+                </Button>
+              </div>
+              
+              <div className="bg-secondary/50 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  💡 <strong>Dica:</strong> Use links diretos de MP3 como:
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1 pl-5">
+                  <li>• Google Drive (use "Obter link" e converta para link direto)</li>
+                  <li>• Dropbox (altere dl=0 para dl=1 no final)</li>
+                  <li>• CDNs ou servidores de áudio</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Preview Card (only for new) */}
+          {isNew && formData.nome_simbolico && (
+            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50 animate-fade-in">
+              <p className="text-xs text-muted-foreground mb-2">Prévia:</p>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gold/10 rounded-lg">
+                  <CeremonyIcon name={formData.icone} size={20} className="text-gold" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{formData.nome_simbolico}</p>
+                  {formData.descricao && (
+                    <p className="text-xs text-muted-foreground truncate">{formData.descricao}</p>
+                  )}
+                </div>
+                <span className="text-sm text-gold">{formatTime(formData.tempo_padrao)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            {isNew && currentStep > 0 ? (
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
-                onClick={handlePreviewAudio}
-                className={`shrink-0 ${isPreviewPlaying ? 'border-gold text-gold' : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold'}`}
-                title={isPreviewPlaying ? 'Parar' : 'Testar áudio'}
+                onClick={handleBack}
+                className="flex-1 border-border text-muted-foreground hover:bg-secondary"
               >
-                {isPreviewPlaying ? <Square size={16} /> : <Play size={16} />}
+                Voltar
               </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Cole a URL direta do MP3 (Google Drive, S3, CDN, etc.)
-            </p>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 border-border text-muted-foreground hover:bg-secondary"
+              >
+                Cancelar
+              </Button>
+            )}
+            
+            {isNew && currentStep < steps.length - 1 ? (
+              <Button
+                type="button"
+                onClick={handleNext}
+                className="flex-1 bg-gold hover:bg-gold-glow text-background"
+              >
+                Próximo
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                className="flex-1 bg-gold hover:bg-gold-glow text-background gap-2"
+              >
+                <Save size={18} />
+                {isNew ? 'Criar Etapa' : 'Salvar'}
+              </Button>
+            )}
           </div>
-
-          {/* Tempo Padrão */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Tempo Padrão (minutos)</label>
-            <Input
-              type="number"
-              min="0"
-              max="120"
-              value={Math.floor(formData.tempo_padrao / 60)}
-              onChange={(e) => setFormData({ ...formData, tempo_padrao: parseInt(e.target.value || '0') * 60 })}
-              className="bg-secondary border-border text-foreground w-24"
-            />
-            <p className="text-xs text-muted-foreground">
-              0 = tempo livre (sem cronômetro)
-            </p>
-          </div>
-
-          {/* Ícone */}
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">Ícone</label>
-            <div className="flex flex-wrap gap-2">
-              {ICON_OPTIONS.map((icon) => (
-                <button
-                  key={icon.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, icone: icon.value })}
-                  className={`
-                    p-3 rounded-lg border transition-all duration-200
-                    ${formData.icone === icon.value
-                      ? 'bg-gold/20 border-gold text-gold'
-                      : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
-                    }
-                  `}
-                  title={icon.label}
-                >
-                  <CeremonyIcon name={icon.value} size={20} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 border-border text-muted-foreground hover:bg-secondary"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-gold hover:bg-gold-glow text-primary-foreground gap-2"
-            >
-              <Save size={18} />
-              Salvar
-            </Button>
-          </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
