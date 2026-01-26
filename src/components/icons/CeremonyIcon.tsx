@@ -11,9 +11,11 @@ import {
   Heart,
   LucideIcon 
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface CeremonyIconProps {
   name: string | null;
+  imageUrl?: string | null;
   className?: string;
   size?: number;
 }
@@ -31,7 +33,20 @@ const iconMap: Record<string, LucideIcon> = {
   heart: Heart,
 };
 
-export function CeremonyIcon({ name, className, size = 24 }: CeremonyIconProps) {
+export function CeremonyIcon({ name, imageUrl, className, size = 24 }: CeremonyIconProps) {
+  // If there's an image URL, show the image
+  if (imageUrl) {
+    return (
+      <img 
+        src={imageUrl} 
+        alt="Ícone da etapa"
+        className={cn('object-cover rounded', className)}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  // Otherwise, show the icon
   const Icon = iconMap[name || 'flame'] || Flame;
   return <Icon className={className} size={size} />;
 }

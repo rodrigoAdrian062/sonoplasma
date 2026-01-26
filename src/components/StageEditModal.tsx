@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Save, Clock, Type, FileText, Sparkles, Music } from 'lucide-react';
-import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, ICON_OPTIONS } from '@/types/ceremony';
+import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
+import { IconPicker } from './IconPicker';
 import { AudioListEditor } from './AudioListEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     descricao: '',
     tempo_padrao: 0,
     icone: 'flame',
+    icone_url: null as string | null,
   });
   const [audioItems, setAudioItems] = useState<AudioItem[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -65,6 +67,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         descricao: stage.descricao || '',
         tempo_padrao: stage.tempo_padrao || 0,
         icone: stage.icone || 'flame',
+        icone_url: (stage as any).icone_url || null,
       });
       setCurrentStep(0);
     } else if (isNew) {
@@ -73,6 +76,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         descricao: '',
         tempo_padrao: 180,
         icone: 'flame',
+        icone_url: null,
       });
       setAudioItems([]);
       setCurrentStep(0);
@@ -117,7 +121,8 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       descricao: formData.descricao || null,
       tempo_padrao: formData.tempo_padrao,
       icone: formData.icone,
-    }, validAudios);
+      icone_url: formData.icone_url,
+    } as any, validAudios);
     onClose();
   };
 
@@ -210,27 +215,13 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
 
           {/* Step 2: Ícone */}
           {(currentStep === 1 || !isNew) && (
-            <div className="space-y-3 animate-fade-in">
-              <Label>Escolha um ícone</Label>
-              <div className="grid grid-cols-5 gap-2">
-                {ICON_OPTIONS.map((icon) => (
-                  <button
-                    key={icon.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, icone: icon.value })}
-                    className={cn(
-                      'aspect-square flex flex-col items-center justify-center gap-1 rounded-xl border transition-all duration-200 hover:scale-105',
-                      formData.icone === icon.value
-                        ? 'bg-gold/20 border-gold text-gold shadow-lg shadow-gold/20'
-                        : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
-                    )}
-                    title={icon.label}
-                  >
-                    <CeremonyIcon name={icon.value} size={24} />
-                    <span className="text-[10px] truncate w-full px-1">{icon.label}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="animate-fade-in">
+              <IconPicker
+                selectedIcon={formData.icone}
+                iconUrl={formData.icone_url}
+                onIconChange={(icon) => setFormData({ ...formData, icone: icon })}
+                onIconUrlChange={(url) => setFormData({ ...formData, icone_url: url })}
+              />
             </div>
           )}
 
@@ -313,7 +304,12 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
               <p className="text-xs text-muted-foreground mb-2">Prévia:</p>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gold/10 rounded-lg">
-                  <CeremonyIcon name={formData.icone} size={20} className="text-gold" />
+                  <CeremonyIcon 
+                    name={formData.icone} 
+                    imageUrl={formData.icone_url}
+                    size={20} 
+                    className="text-gold" 
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground truncate">{formData.nome_simbolico}</p>
