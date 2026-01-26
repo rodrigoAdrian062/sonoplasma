@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Save, Link, Music } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Save, Link, Music, Play, Square } from 'lucide-react';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, ICON_OPTIONS } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 
 interface StageEditModalProps {
   stage: CeremonyStage | null;
@@ -28,6 +29,8 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     tempo_padrao: 0,
     icone: 'flame',
   });
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (stage) {
@@ -48,6 +51,61 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       });
     }
   }, [stage, isNew]);
+
+  // Cleanup audio on close
+  useEffect(() => {
+    if (!isOpen) {
+      stopPreview();
+    }
+  }, [isOpen]);
+
+  const stopPreview = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current.currentTime = 0;
+      previewAudioRef.current = null;
+    }
+    setIsPreviewPlaying(false);
+  };
+
+  const handlePreviewAudio = () => {
+    if (!formData.audio_url.trim()) {
+      toast({
+        title: "URL não informada",
+        description: "Insira uma URL de áudio para testar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isPreviewPlaying) {
+      stopPreview();
+      return;
+    }
+
+    const audio = new Audio(formData.audio_url);
+    previewAudioRef.current = audio;
+
+    audio.oncanplaythrough = () => {
+      audio.play();
+      setIsPreviewPlaying(true);
+    };
+
+    audio.onerror = () => {
+      toast({
+        title: "Erro ao carregar áudio",
+        description: "Verifique se a URL é válida e acessível.",
+        variant: "destructive",
+      });
+      stopPreview();
+    };
+
+    audio.onended = () => {
+      setIsPreviewPlaying(false);
+    };
+
+    audio.load();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,14 +159,26 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
               <Music size={14} />
               URL do Áudio (MP3)
             </label>
-            <div className="relative">
-              <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input
-                value={formData.audio_url}
-                onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
-                placeholder="https://exemplo.com/audio.mp3"
-                className="bg-secondary border-border text-foreground pl-10"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Link className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  value={formData.audio_url}
+                  onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
+                  placeholder="https://exemplo.com/audio.mp3"
+                  className="bg-secondary border-border text-foreground pl-10"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handlePreviewAudio}
+                className={`shrink-0 ${isPreviewPlaying ? 'border-gold text-gold' : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold'}`}
+                title={isPreviewPlaying ? 'Parar' : 'Testar áudio'}
+              >
+                {isPreviewPlaying ? <Square size={16} /> : <Play size={16} />}
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               Cole a URL direta do MP3 (Google Drive, S3, CDN, etc.)
