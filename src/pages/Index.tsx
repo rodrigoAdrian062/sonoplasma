@@ -215,8 +215,8 @@ const Index = () => {
         )}
 
         <footer className="mt-12 py-6 border-t border-border">
-          <p className="text-center text-xs text-muted-foreground">
-            Sistema de Sonoplastia Cerimonial
+          <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+            Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
           </p>
         </footer>
       </main>
