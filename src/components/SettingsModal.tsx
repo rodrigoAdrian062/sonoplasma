@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
+import { ColorPicker } from '@/components/ColorPicker';
 import { Loader2, ImagePlus, X, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +24,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [corTema, setCorTema] = useState('#D4AF37');
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -33,6 +35,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setNomeApp(settings.nome_app || '');
       setSubtituloApp(settings.subtitulo_app || '');
       setLogoUrl(settings.logo_url || '');
+      setCorTema(settings.cor_tema || '#D4AF37');
       setPreviewLogo(settings.logo_url || null);
     }
   }, [settings]);
@@ -144,6 +147,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         nome_app: nomeApp.trim() || 'Sonoplastia Cerimonial',
         subtitulo_app: subtituloApp.trim() || null,
         logo_url: finalLogoUrl || null,
+        cor_tema: corTema,
       });
 
       setSelectedFile(null);
@@ -162,12 +166,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (settings?.logo_url) {
       setPreviewLogo(settings.logo_url);
     }
+    if (settings?.cor_tema) {
+      setCorTema(settings.cor_tema);
+    }
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-display">
             Configurações do App
@@ -251,6 +258,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="Ex: Sistema de Ambientação Musical"
               maxLength={100}
             />
+          </div>
+
+          {/* Cor Tema */}
+          <div className="space-y-2">
+            <Label>Cor do Tema</Label>
+            <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
         </div>
 
