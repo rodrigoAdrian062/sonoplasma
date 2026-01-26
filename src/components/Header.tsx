@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { Sparkles, Plus, Settings } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface HeaderProps {
   onAddStage: () => void;
@@ -11,6 +17,11 @@ interface HeaderProps {
 export function Header({ onAddStage }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -42,6 +53,19 @@ export function Header({ onAddStage }: HeaderProps) {
             </div>
             
             <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <LogOut size={20} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sair</TooltipContent>
+              </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
                 variant="ghost"
