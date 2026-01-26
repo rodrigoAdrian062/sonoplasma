@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      sonoplastia_etapas: {
+        Row: {
+          ativo: boolean
+          audio_url: string | null
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome_simbolico: string
+          ordem: number
+          tempo_padrao: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          audio_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome_simbolico: string
+          ordem?: number
+          tempo_padrao?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          audio_url?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome_simbolico?: string
+          ordem?: number
+          tempo_padrao?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sonoplastia_execucoes: {
+        Row: {
+          created_at: string
+          etapa_id: string | null
+          fim: string | null
+          id: string
+          inicio: string | null
+          status: string | null
+          tempo_executado: number | null
+        }
+        Insert: {
+          created_at?: string
+          etapa_id?: string | null
+          fim?: string | null
+          id?: string
+          inicio?: string | null
+          status?: string | null
+          tempo_executado?: number | null
+        }
+        Update: {
+          created_at?: string
+          etapa_id?: string | null
+          fim?: string | null
+          id?: string
+          inicio?: string | null
+          status?: string | null
+          tempo_executado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonoplastia_execucoes_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "sonoplastia_etapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

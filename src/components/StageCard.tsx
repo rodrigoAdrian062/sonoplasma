@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw } from 'lucide-react';
-import { CeremonyStage, PlaybackStatus } from '@/types/ceremony';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music } from 'lucide-react';
+import { CeremonyStage } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { TimerDisplay } from './TimerDisplay';
 import { useTimer } from '@/hooks/useTimer';
@@ -13,6 +13,8 @@ interface StageCardProps {
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 export function StageCard({
@@ -22,19 +24,27 @@ export function StageCard({
   onPlay,
   onPause,
   onStop,
+  onEdit,
+  onDelete,
 }: StageCardProps) {
-  const [customTime, setCustomTime] = useState(stage.defaultTime);
-  const [useTimer, setUseTimer] = useState(stage.defaultTime > 0);
+  const defaultTime = stage.tempo_padrao || 0;
+  const [customTime, setCustomTime] = useState(defaultTime);
+  const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
   
-  const timer = useTimerHook(() => {
-    // Quando o timer terminar, para o áudio
+  const timer = useTimer(() => {
     onStop();
   });
 
   const isActive = isPlaying || isPaused;
+  const hasAudio = stage.audio_url && stage.audio_url.trim() !== '';
+
+  useEffect(() => {
+    setCustomTime(defaultTime);
+    setUseTimerEnabled(defaultTime > 0);
+  }, [defaultTime]);
 
   const handlePlayWithTimer = () => {
-    if (useTimer && customTime > 0) {
+    if (useTimerEnabled && customTime > 0) {
       timer.start(customTime);
     }
     onPlay();
@@ -59,7 +69,6 @@ export function StageCard({
     onPlay();
   };
 
-  // Sincroniza o timer quando o áudio para externamente
   useEffect(() => {
     if (!isPlaying && !isPaused && timer.isRunning) {
       timer.reset();
@@ -81,7 +90,6 @@ export function StageCard({
         }
       `}
     >
-      {/* Indicador de ativo */}
       {isActive && (
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
@@ -95,34 +103,58 @@ export function StageCard({
               ${isActive ? 'bg-gold/20 text-gold' : 'bg-secondary text-muted-foreground'}
             `}
           >
-            <CeremonyIcon name={stage.icon} size={24} />
+            <CeremonyIcon name={stage.icone} size={24} />
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-lg sm:text-xl font-medium text-foreground mb-1 truncate">
-              {stage.symbolicName}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-display text-lg sm:text-xl font-medium text-foreground mb-1">
+                {stage.nome_simbolico}
+              </h3>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={onEdit}
+                  className="p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
+                  aria-label="Editar etapa"
+                >
+                  <Pencil size={16} />
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-secondary"
+                  aria-label="Remover etapa"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {stage.description}
+              {stage.descricao}
             </p>
+            {!hasAudio && (
+              <p className="text-xs text-gold/60 mt-1 flex items-center gap-1">
+                <Music size={12} />
+                Sem áudio configurado
+              </p>
+            )}
           </div>
         </div>
 
         {/* Timer Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
-          {stage.defaultTime > 0 && (
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-muted-foreground" />
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={useTimer}
-                  onChange={(e) => setUseTimer(e.target.checked)}
-                  className="rounded border-border bg-secondary text-gold focus:ring-gold"
-                />
-                Cronômetro
-              </label>
-              {useTimer && (
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-muted-foreground" />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={useTimerEnabled}
+                onChange={(e) => setUseTimerEnabled(e.target.checked)}
+                className="rounded border-border bg-secondary text-gold focus:ring-gold"
+              />
+              Cronômetro
+            </label>
+            {useTimerEnabled && (
+              <>
                 <input
                   type="number"
                   min="1"
@@ -131,12 +163,11 @@ export function StageCard({
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
                   className="w-16 px-2 py-1 text-sm bg-secondary border border-border rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
                 />
-              )}
-              {useTimer && <span className="text-sm text-muted-foreground">min</span>}
-            </div>
-          )}
+                <span className="text-sm text-muted-foreground">min</span>
+              </>
+            )}
+          </div>
 
-          {/* Timer Display */}
           {(timer.isRunning || timer.isPaused) && (
             <div className="flex items-center gap-2">
               <TimerDisplay 
@@ -160,7 +191,12 @@ export function StageCard({
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
-              className="flex-1 sm:flex-none gap-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50"
+              disabled={!hasAudio}
+              className={`flex-1 sm:flex-none gap-2 border ${
+                hasAudio 
+                  ? 'bg-gold/10 hover:bg-gold/20 text-gold border-gold/30 hover:border-gold/50' 
+                  : 'bg-secondary text-muted-foreground border-border cursor-not-allowed'
+              }`}
               variant="outline"
             >
               <Play size={18} />
@@ -201,9 +237,4 @@ export function StageCard({
       </div>
     </div>
   );
-}
-
-// Renomeando para evitar conflito
-function useTimerHook(onComplete?: () => void) {
-  return useTimer(onComplete);
 }

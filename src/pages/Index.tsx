@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { ControlBar } from '@/components/ControlBar';
 import { StageCard } from '@/components/StageCard';
-import { ceremonyStages } from '@/data/stages';
+import { StageEditModal } from '@/components/StageEditModal';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { useStages } from '@/hooks/useStages';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
+  const { stages, isLoading, createStage, updateStage, deleteStage } = useStages();
   const {
     currentStageId,
     status,
@@ -16,59 +21,129 @@ const Index = () => {
     setVolume,
   } = useAudioPlayer();
 
+  const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
+  const [isNewStageModal, setIsNewStageModal] = useState(false);
+  const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
+
   const activeStage = useMemo(() => {
-    return ceremonyStages.find(s => s.id === currentStageId) || null;
-  }, [currentStageId]);
+    return stages.find(s => s.id === currentStageId) || null;
+  }, [stages, currentStageId]);
 
-  const handlePlay = (stageId: string, audioUrl: string) => {
-    play(stageId, audioUrl);
+  const handlePlay = (stage: CeremonyStage) => {
+    if (stage.audio_url) {
+      play(stage.id, stage.audio_url);
+    }
   };
 
-  const handlePause = () => {
-    pause();
+  const handleSaveStage = (data: CeremonyStageInsert | CeremonyStageUpdate) => {
+    if (editingStage) {
+      updateStage.mutate({ id: editingStage.id, ...data });
+    } else {
+      const insertData: CeremonyStageInsert = {
+        nome_simbolico: data.nome_simbolico || 'Nova Etapa',
+        descricao: data.descricao,
+        audio_url: data.audio_url,
+        tempo_padrao: data.tempo_padrao,
+        icone: data.icone,
+        ordem: stages.length + 1,
+        ativo: true,
+      };
+      createStage.mutate(insertData);
+    }
   };
 
-  const handleStop = () => {
-    stop();
+  const handleDeleteStage = () => {
+    if (deleteStageData) {
+      if (currentStageId === deleteStageData.id) {
+        stop();
+      }
+      deleteStage.mutate(deleteStageData.id);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-gold animate-spin" />
+          <p className="text-muted-foreground">Carregando etapas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header onAddStage={() => setIsNewStageModal(true)} />
       <ControlBar
         volume={volume}
         onVolumeChange={setVolume}
-        activeStage={activeStage}
+        activeStage={activeStage ? {
+          symbolicName: activeStage.nome_simbolico,
+        } : null}
         isPlaying={status === 'playing'}
       />
       
       <main className="container py-6">
-        <div className="grid gap-4">
-          {ceremonyStages.map((stage, index) => (
-            <div
-              key={stage.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.05}s` }}
+        {stages.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">Nenhuma etapa cadastrada</p>
+            <button
+              onClick={() => setIsNewStageModal(true)}
+              className="text-gold hover:text-gold-glow transition-colors"
             >
-              <StageCard
-                stage={stage}
-                isPlaying={currentStageId === stage.id && status === 'playing'}
-                isPaused={currentStageId === stage.id && status === 'paused'}
-                onPlay={() => handlePlay(stage.id, stage.audioUrl)}
-                onPause={handlePause}
-                onStop={handleStop}
-              />
-            </div>
-          ))}
-        </div>
+              Adicionar primeira etapa
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {stages.map((stage, index) => (
+              <div
+                key={stage.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <StageCard
+                  stage={stage}
+                  isPlaying={currentStageId === stage.id && status === 'playing'}
+                  isPaused={currentStageId === stage.id && status === 'paused'}
+                  onPlay={() => handlePlay(stage)}
+                  onPause={pause}
+                  onStop={stop}
+                  onEdit={() => setEditingStage(stage)}
+                  onDelete={() => setDeleteStageData(stage)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Footer discreto */}
         <footer className="mt-12 py-6 border-t border-border">
           <p className="text-center text-xs text-muted-foreground">
             Sistema de Sonoplastia Cerimonial
           </p>
         </footer>
       </main>
+
+      {/* Edit Modal */}
+      <StageEditModal
+        stage={editingStage}
+        isOpen={!!editingStage || isNewStageModal}
+        onClose={() => {
+          setEditingStage(null);
+          setIsNewStageModal(false);
+        }}
+        onSave={handleSaveStage}
+        isNew={isNewStageModal}
+      />
+
+      {/* Delete Confirm Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteStageData}
+        onClose={() => setDeleteStageData(null)}
+        onConfirm={handleDeleteStage}
+        stageName={deleteStageData?.nome_simbolico || ''}
+      />
     </div>
   );
 };
