@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Sparkles, LogIn } from 'lucide-react';
+import { Loader2, Sparkles, LogIn, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ export default function Auth() {
   const [nome, setNome] = useState('');
   const [senha, setSenha] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -27,10 +30,25 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
+  // Clear error when user types
+  useEffect(() => {
+    if (errorMessage) {
+      setErrorMessage(null);
+    }
+  }, [nome, senha]);
+
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     
     if (!nome.trim() || !senha.trim()) {
+      setErrorMessage('Preencha nome e senha');
+      triggerShake();
       toast.error('Preencha nome e senha');
       return;
     }
@@ -44,16 +62,19 @@ export default function Auth() {
       const { error } = await signIn(email, senha);
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast.error('Nome ou senha incorretos');
-        } else {
-          toast.error('Erro ao fazer login');
-        }
+        const msg = error.message.includes('Invalid login credentials')
+          ? 'Nome ou senha incorretos'
+          : 'Erro ao fazer login';
+        setErrorMessage(msg);
+        triggerShake();
+        toast.error(msg);
       } else {
         toast.success('Bem-vindo!');
         navigate('/', { replace: true });
       }
     } catch (err) {
+      setErrorMessage('Erro ao processar solicitação');
+      triggerShake();
       toast.error('Erro ao processar solicitação');
     } finally {
       setIsSubmitting(false);
@@ -70,7 +91,13 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-sm border-border/50 shadow-xl">
+      <Card 
+        className={cn(
+          "w-full max-w-sm border-border/50 shadow-xl transition-all",
+          shake && "animate-[shake_0.5s_ease-in-out]",
+          errorMessage && "border-destructive/50"
+        )}
+      >
         <CardHeader className="text-center space-y-4">
           {/* Dynamic Logo */}
           <div className="flex justify-center">
@@ -101,6 +128,14 @@ export default function Auth() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Error Message Banner */}
+            {errorMessage && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm animate-fade-in">
+                <AlertCircle size={18} className="shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
               <Input
@@ -112,6 +147,7 @@ export default function Auth() {
                 required
                 autoComplete="username"
                 autoFocus
+                className={cn(errorMessage && "border-destructive/50 focus:border-destructive")}
               />
             </div>
             <div className="space-y-2">
@@ -124,6 +160,7 @@ export default function Auth() {
                 onChange={(e) => setSenha(e.target.value)}
                 required
                 autoComplete="current-password"
+                className={cn(errorMessage && "border-destructive/50 focus:border-destructive")}
               />
             </div>
             <Button
