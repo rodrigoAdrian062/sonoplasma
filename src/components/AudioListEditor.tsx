@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { Plus, Trash2, Play, Square, GripVertical, Music, Link } from 'lucide-react';
+import { Plus, Trash2, Play, Square, GripVertical, Music, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AudioItem {
   nome: string;
@@ -19,7 +20,9 @@ interface AudioListEditorProps {
 
 export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEditorProps) {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
   const addAudio = () => {
     if (audios.length >= maxAudios) {
@@ -53,7 +56,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
 
   const togglePreview = (index: number, url: string) => {
     if (!url.trim()) {
-      toast.error('Insira uma URL de áudio');
+      toast.error('Nenhum áudio carregado');
       return;
     }
 
@@ -73,7 +76,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
     };
 
     audio.onerror = () => {
-      toast.error('Erro ao carregar áudio. Verifique a URL.');
+      toast.error('Erro ao carregar áudio');
       stopPreview();
     };
 
@@ -82,6 +85,59 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
     };
 
     audio.load();
+  };
+
+  const handleFileUpload = async (index: number, file: File) => {
+    if (!file.type.startsWith('audio/')) {
+      toast.error('Selecione um arquivo de áudio válido');
+      return;
+    }
+
+    // Max 20MB
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 20MB');
+      return;
+    }
+
+    setUploadingIndex(index);
+
+    try {
+      const timestamp = Date.now();
+      const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `${timestamp}-${cleanName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('stage-audios')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('stage-audios')
+        .getPublicUrl(filePath);
+
+      // Auto-fill name if empty
+      const audioName = audios[index].nome || file.name.replace(/\.[^/.]+$/, '');
+      
+      const newAudios = audios.map((audio, i) => 
+        i === index ? { nome: audioName, audio_url: urlData.publicUrl } : audio
+      );
+      onChange(newAudios);
+
+      toast.success('Áudio carregado com sucesso!');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error('Erro ao fazer upload: ' + error.message);
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
+
+  const triggerFileInput = (index: number) => {
+    const input = fileInputRefs.current.get(index);
+    if (input) {
+      input.click();
+    }
   };
 
   return (
@@ -146,32 +202,80 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
                 className="bg-secondary border-border text-foreground text-sm h-9"
               />
 
+              {/* Hidden file input */}
+              <input
+                type="file"
+                accept="audio/*"
+                ref={(el) => {
+                  if (el) fileInputRefs.current.set(index, el);
+                }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(index, file);
+                  e.target.value = '';
+                }}
+                className="hidden"
+              />
+
               <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={12} />
-                  <Input
-                    value={audio.audio_url}
-                    onChange={(e) => updateAudio(index, 'audio_url', e.target.value)}
-                    placeholder="https://exemplo.com/audio.mp3"
-                    className="bg-secondary border-border text-foreground text-sm h-9 pl-8"
-                  />
-                </div>
+                {/* Upload button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => triggerFileInput(index)}
+                  disabled={uploadingIndex === index}
+                  className={cn(
+                    'flex-1 gap-2 h-9 transition-all',
+                    audio.audio_url
+                      ? 'border-gold/50 text-gold bg-gold/5'
+                      : 'border-border text-muted-foreground hover:border-gold/30 hover:text-gold'
+                  )}
+                >
+                  {uploadingIndex === index ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Enviando...
+                    </>
+                  ) : audio.audio_url ? (
+                    <>
+                      <Music size={14} />
+                      <span className="truncate max-w-[120px]">
+                        {audio.nome || 'Áudio carregado'}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      Selecionar MP3
+                    </>
+                  )}
+                </Button>
+
+                {/* Play/Stop button */}
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   onClick={() => togglePreview(index, audio.audio_url)}
+                  disabled={!audio.audio_url || uploadingIndex === index}
                   className={cn(
                     'shrink-0 h-9 w-9 transition-all',
                     playingIndex === index
                       ? 'border-gold text-gold bg-gold/10'
-                      : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold'
+                      : 'border-border text-muted-foreground hover:border-gold/50 hover:text-gold',
+                    !audio.audio_url && 'opacity-50'
                   )}
                   title={playingIndex === index ? 'Parar' : 'Testar áudio'}
                 >
                   {playingIndex === index ? <Square size={14} /> : <Play size={14} />}
                 </Button>
               </div>
+
+              {audio.audio_url && (
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {audio.audio_url}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -191,11 +295,11 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
 
       <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
         <p className="text-xs text-muted-foreground">
-          💡 <strong>Dica:</strong> Use links diretos de MP3
+          💡 <strong>Dica:</strong> Faça upload de arquivos MP3 diretamente
         </p>
         <ul className="text-xs text-muted-foreground space-y-0.5 pl-5">
-          <li>• Google Drive: converta para link direto</li>
-          <li>• Dropbox: altere dl=0 para dl=1</li>
+          <li>• Formatos aceitos: MP3, WAV, OGG, M4A</li>
+          <li>• Tamanho máximo: 20MB por arquivo</li>
         </ul>
       </div>
     </div>
