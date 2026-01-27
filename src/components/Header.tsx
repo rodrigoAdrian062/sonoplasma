@@ -96,7 +96,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               {onAddSection && (
                 <Button
                   onClick={onAddSection}
-                  className="gap-2 bg-secondary hover:bg-secondary/80 text-muted-foreground border border-border hover:border-gold/30"
+                  className="gap-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50"
                   variant="outline"
                   size="sm"
                 >
@@ -104,15 +104,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   <span className="hidden sm:inline">Nova Seção</span>
                 </Button>
               )}
-              <Button
-                onClick={onAddStage}
-                className="gap-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50"
-                variant="outline"
-                size="sm"
-              >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Nova Etapa</span>
-              </Button>
             </div>
           </div>
         </div>
