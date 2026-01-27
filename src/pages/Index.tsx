@@ -22,7 +22,7 @@ import { PresentationMode } from '@/components/PresentationMode';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
@@ -44,9 +44,10 @@ const Index = () => {
     volume,
     play,
     pause,
+    resume,
     stop,
     setVolume,
-  } = useAudioPlayer();
+  } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
@@ -193,6 +194,7 @@ const Index = () => {
         onVolumeChange={setVolume}
         onPlay={handlePresentationPlay}
         onPause={pause}
+        onResume={resume}
         onStop={stop}
         onClose={() => setIsPresentationMode(false)}
         settings={settings}
@@ -258,6 +260,7 @@ const Index = () => {
                     status={status}
                     onPlay={handlePlay}
                     onPause={pause}
+                    onResume={resume}
                     onStop={stop}
                     onEditSection={() => setEditingSection(section)}
                     onDeleteSection={() => setDeleteSectionData(section)}

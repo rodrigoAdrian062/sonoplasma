@@ -15,6 +15,7 @@ interface StageCardProps {
   isPaused: boolean;
   onPlay: (audioUrl: string) => void;
   onPause: () => void;
+  onResume: () => void;
   onStop: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -27,6 +28,7 @@ export function StageCard({
   isPaused,
   onPlay,
   onPause,
+  onResume,
   onStop,
   onEdit,
   onDelete,
@@ -82,9 +84,7 @@ export function StageCard({
     if (timer.isPaused) {
       timer.resume();
     }
-    if (currentAudio) {
-      onPlay(currentAudio.audio_url);
-    }
+    onResume();
   };
 
   useEffect(() => {

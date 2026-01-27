@@ -20,6 +20,7 @@ interface SectionCardProps {
   status: 'idle' | 'playing' | 'paused';
   onPlay: (stage: CeremonyStage, audioUrl?: string) => void;
   onPause: () => void;
+  onResume: () => void;
   onStop: () => void;
   onEditSection: () => void;
   onDeleteSection: () => void;
@@ -36,6 +37,7 @@ export function SectionCard({
   status,
   onPlay,
   onPause,
+  onResume,
   onStop,
   onEditSection,
   onDeleteSection,
@@ -144,6 +146,7 @@ export function SectionCard({
                       isPaused={currentStageId === stage.id && status === 'paused'}
                       onPlay={(audioUrl) => onPlay(stage, audioUrl)}
                       onPause={onPause}
+                      onResume={onResume}
                       onStop={onStop}
                       onEdit={() => onEditStage(stage)}
                       onDelete={() => onDeleteStage(stage)}

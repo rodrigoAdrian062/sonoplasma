@@ -18,6 +18,7 @@ interface PresentationModeProps {
   onVolumeChange: (value: number) => void;
   onPlay: (stageId: string, audioUrl: string) => void;
   onPause: () => void;
+  onResume: () => void;
   onStop: () => void;
   onClose: () => void;
   settings?: {
@@ -35,6 +36,7 @@ export function PresentationMode({
   onVolumeChange,
   onPlay,
   onPause,
+  onResume,
   onStop,
   onClose,
   settings,
@@ -196,9 +198,7 @@ export function PresentationMode({
     if (timer.isPaused) {
       timer.resume();
     }
-    if (currentAudio && currentStage) {
-      onPlay(currentStage.id, currentAudio.audio_url);
-    }
+    onResume();
   };
 
   const handleStop = () => {
