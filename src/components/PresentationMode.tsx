@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { TimerDisplay } from './TimerDisplay';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 interface PresentationModeProps {
@@ -13,6 +14,8 @@ interface PresentationModeProps {
   audiosByStageId: Record<string, StageAudio[]>;
   currentStageId: string | null;
   status: 'idle' | 'playing' | 'paused';
+  volume: number;
+  onVolumeChange: (value: number) => void;
   onPlay: (stageId: string, audioUrl: string) => void;
   onPause: () => void;
   onStop: () => void;
@@ -28,6 +31,8 @@ export function PresentationMode({
   audiosByStageId,
   currentStageId,
   status,
+  volume,
+  onVolumeChange,
   onPlay,
   onPause,
   onStop,
@@ -39,6 +44,7 @@ export function PresentationMode({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
+  const [showKeyboardHints, setShowKeyboardHints] = useState(true);
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
@@ -46,6 +52,7 @@ export function PresentationMode({
   const isActive = currentStageId === currentStage?.id && (status === 'playing' || status === 'paused');
   const isPlaying = currentStageId === currentStage?.id && status === 'playing';
   const isPaused = currentStageId === currentStage?.id && status === 'paused';
+  const isMuted = volume === 0;
 
   const timer = useTimer(() => {
     onStop();
@@ -67,6 +74,14 @@ export function PresentationMode({
       timer.reset();
     }
   }, [isActive]);
+
+  // Hide keyboard hints after 5 seconds
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowKeyboardHints(false);
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const toggleFullscreen = useCallback(async () => {
     try {
@@ -91,9 +106,24 @@ export function PresentationMode({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  const handleToggleMute = () => {
+    onVolumeChange(isMuted ? 0.7 : 0);
+  };
+
+  const handleVolumeUp = () => {
+    onVolumeChange(Math.min(1, volume + 0.1));
+  };
+
+  const handleVolumeDown = () => {
+    onVolumeChange(Math.max(0, volume - 0.1));
+  };
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Show hints briefly when using keyboard
+      setShowKeyboardHints(true);
+      
       switch (e.key) {
         case 'ArrowLeft':
           if (selectedStageIndex > 0) {
@@ -105,6 +135,14 @@ export function PresentationMode({
             setSelectedStageIndex(prev => prev + 1);
           }
           break;
+        case 'ArrowUp':
+          e.preventDefault();
+          handleVolumeUp();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          handleVolumeDown();
+          break;
         case ' ':
           e.preventDefault();
           if (isPlaying) {
@@ -115,17 +153,28 @@ export function PresentationMode({
             handlePlayWithTimer();
           }
           break;
+        case 'm':
+        case 'M':
+          handleToggleMute();
+          break;
         case 'Escape':
           if (!document.fullscreenElement) {
             onClose();
           }
           break;
+        case 'f':
+        case 'F':
+          toggleFullscreen();
+          break;
       }
+
+      // Hide hints after 3 seconds
+      setTimeout(() => setShowKeyboardHints(false), 3000);
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio]);
+  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume]);
 
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
@@ -205,6 +254,27 @@ export function PresentationMode({
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Volume Control in Header */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg">
+            <button
+              onClick={handleToggleMute}
+              className="text-muted-foreground hover:text-gold transition-colors"
+              title={isMuted ? 'Ativar som (M)' : 'Silenciar (M)'}
+            >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+            <Slider
+              value={[volume * 100]}
+              onValueChange={(values) => onVolumeChange(values[0] / 100)}
+              max={100}
+              step={5}
+              className="w-20"
+            />
+            <span className="text-xs text-muted-foreground w-8 text-right">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+
           <span className="text-sm text-muted-foreground">
             {selectedStageIndex + 1} / {stages.length}
           </span>
@@ -213,6 +283,7 @@ export function PresentationMode({
             size="icon"
             onClick={toggleFullscreen}
             className="text-muted-foreground hover:text-gold"
+            title="Tela cheia (F)"
           >
             {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
           </Button>
@@ -221,6 +292,7 @@ export function PresentationMode({
             size="icon"
             onClick={onClose}
             className="text-muted-foreground hover:text-destructive"
+            title="Fechar (ESC)"
           >
             <X size={20} />
           </Button>
@@ -442,11 +514,33 @@ export function PresentationMode({
         </Button>
       </footer>
 
-      {/* Keyboard Hints */}
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-4 text-xs text-muted-foreground/50">
-        <span>← → navegar</span>
-        <span>espaço play/pause</span>
-        <span>esc sair</span>
+      {/* Keyboard Hints Overlay */}
+      <div 
+        className={cn(
+          'absolute bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300',
+          showKeyboardHints ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        )}
+      >
+        <div className="flex items-center gap-1 px-4 py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
+          <Keyboard size={14} className="text-gold mr-2" />
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">Espaço</kbd>
+          <span className="text-xs text-muted-foreground mr-3">play/pause</span>
+          
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">← →</kbd>
+          <span className="text-xs text-muted-foreground mr-3">etapas</span>
+          
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">↑ ↓</kbd>
+          <span className="text-xs text-muted-foreground mr-3">volume</span>
+          
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">M</kbd>
+          <span className="text-xs text-muted-foreground mr-3">mudo</span>
+          
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">F</kbd>
+          <span className="text-xs text-muted-foreground mr-3">tela cheia</span>
+          
+          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">ESC</kbd>
+          <span className="text-xs text-muted-foreground">sair</span>
+        </div>
       </div>
     </div>
   );
