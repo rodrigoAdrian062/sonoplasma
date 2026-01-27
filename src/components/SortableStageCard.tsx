@@ -12,6 +12,7 @@ interface SortableStageCardProps {
   isPaused: boolean;
   onPlay: (audioUrl: string) => void;
   onPause: () => void;
+  onResume: () => void;
   onStop: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -24,6 +25,7 @@ export function SortableStageCard({
   isPaused,
   onPlay,
   onPause,
+  onResume,
   onStop,
   onEdit,
   onDelete,
@@ -61,6 +63,7 @@ export function SortableStageCard({
         isPaused={isPaused}
         onPlay={onPlay}
         onPause={onPause}
+        onResume={onResume}
         onStop={onStop}
         onEdit={onEdit}
         onDelete={onDelete}
