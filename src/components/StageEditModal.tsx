@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Clock, Type, FileText, Sparkles, Music } from 'lucide-react';
+import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen } from 'lucide-react';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
+import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { IconPicker } from './IconPicker';
 import { AudioListEditor } from './AudioListEditor';
@@ -15,6 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useStageAudios } from '@/hooks/useStageAudios';
@@ -30,6 +38,8 @@ interface StageEditModalProps {
   onClose: () => void;
   onSave: (data: CeremonyStageInsert | CeremonyStageUpdate, audios?: AudioItem[]) => void;
   isNew?: boolean;
+  sections?: CeremonySection[];
+  defaultSectionId?: string | null;
 }
 
 const TIME_PRESETS = [
@@ -40,7 +50,7 @@ const TIME_PRESETS = [
   { label: '10 min', value: 600 },
 ];
 
-export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }: StageEditModalProps) {
+export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, sections = [], defaultSectionId }: StageEditModalProps) {
   const { audios: existingAudios } = useStageAudios(stage?.id);
   
   const [formData, setFormData] = useState({
@@ -49,6 +59,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
     tempo_padrao: 0,
     icone: 'flame',
     icone_url: null as string | null,
+    secao_id: null as string | null,
   });
   const [audioItems, setAudioItems] = useState<AudioItem[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -68,6 +79,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         tempo_padrao: stage.tempo_padrao || 0,
         icone: stage.icone || 'flame',
         icone_url: (stage as any).icone_url || null,
+        secao_id: stage.secao_id || null,
       });
       setCurrentStep(0);
     } else if (isNew) {
@@ -77,11 +89,12 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
         tempo_padrao: 180,
         icone: 'flame',
         icone_url: null,
+        secao_id: defaultSectionId || null,
       });
       setAudioItems([]);
       setCurrentStep(0);
     }
-  }, [stage, isNew, isOpen]);
+  }, [stage, isNew, isOpen, defaultSectionId]);
 
   // Load existing audios when editing
   useEffect(() => {
@@ -122,6 +135,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
       tempo_padrao: formData.tempo_padrao,
       icone: formData.icone,
       icone_url: formData.icone_url,
+      secao_id: formData.secao_id,
     } as any, validAudios);
     onClose();
   };
@@ -210,6 +224,32 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false }
                   className="bg-secondary border-border text-foreground resize-none"
                 />
               </div>
+
+              {/* Section Selection */}
+              {sections.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <FolderOpen size={14} className="text-muted-foreground" />
+                    Seção
+                  </Label>
+                  <Select
+                    value={formData.secao_id || '__none__'}
+                    onValueChange={(value) => setFormData({ ...formData, secao_id: value === '__none__' ? null : value })}
+                  >
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue placeholder="Selecione uma seção" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="__none__">Sem seção</SelectItem>
+                      {sections.map((section) => (
+                        <SelectItem key={section.id} value={section.id}>
+                          {section.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
 

@@ -1,33 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
+import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { toast } from '@/hooks/use-toast';
 
-export function useStages() {
+export function useSections() {
   const queryClient = useQueryClient();
 
-  const { data: stages = [], isLoading, error } = useQuery({
-    queryKey: ['stages'],
+  const { data: sections = [], isLoading, error } = useQuery({
+    queryKey: ['sections'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sonoplastia_etapas')
+        .from('sonoplastia_secoes')
         .select('*')
         .eq('ativo', true)
         .order('ordem', { ascending: true });
 
       if (error) throw error;
-      return data as CeremonyStage[];
+      return data as CeremonySection[];
     },
   });
 
-  const createStage = useMutation({
-    mutationFn: async (stage: CeremonyStageInsert) => {
+  const createSection = useMutation({
+    mutationFn: async (section: CeremonySectionInsert) => {
       const { data, error } = await supabase
-        .from('sonoplastia_etapas')
-        .insert({
-          ...stage,
-          secao_id: stage.secao_id || null,
-        })
+        .from('sonoplastia_secoes')
+        .insert(section)
         .select()
         .single();
 
@@ -35,18 +32,18 @@ export function useStages() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Etapa criada com sucesso' });
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
+      toast({ title: 'Seção criada com sucesso' });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao criar etapa', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao criar seção', description: error.message, variant: 'destructive' });
     },
   });
 
-  const updateStage = useMutation({
-    mutationFn: async ({ id, ...updates }: CeremonyStageUpdate & { id: string }) => {
+  const updateSection = useMutation({
+    mutationFn: async ({ id, ...updates }: CeremonySectionUpdate & { id: string }) => {
       const { data, error } = await supabase
-        .from('sonoplastia_etapas')
+        .from('sonoplastia_secoes')
         .update(updates)
         .eq('id', id)
         .select()
@@ -56,33 +53,34 @@ export function useStages() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Etapa atualizada com sucesso' });
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
+      toast({ title: 'Seção atualizada com sucesso' });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao atualizar etapa', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao atualizar seção', description: error.message, variant: 'destructive' });
     },
   });
 
-  const deleteStage = useMutation({
+  const deleteSection = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('sonoplastia_etapas')
+        .from('sonoplastia_secoes')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Etapa removida com sucesso' });
+      toast({ title: 'Seção removida com sucesso' });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao remover etapa', description: error.message, variant: 'destructive' });
+      toast({ title: 'Erro ao remover seção', description: error.message, variant: 'destructive' });
     },
   });
 
-  const reorderStages = useMutation({
+  const reorderSections = useMutation({
     mutationFn: async (orderedIds: string[]) => {
       const updates = orderedIds.map((id, index) => ({
         id,
@@ -91,7 +89,7 @@ export function useStages() {
 
       for (const update of updates) {
         const { error } = await supabase
-          .from('sonoplastia_etapas')
+          .from('sonoplastia_secoes')
           .update({ ordem: update.ordem })
           .eq('id', update.id);
 
@@ -99,17 +97,17 @@ export function useStages() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stages'] });
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
     },
   });
 
   return {
-    stages,
+    sections,
     isLoading,
     error,
-    createStage,
-    updateStage,
-    deleteStage,
-    reorderStages,
+    createSection,
+    updateSection,
+    deleteSection,
+    reorderSections,
   };
 }

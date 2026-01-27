@@ -10,29 +10,32 @@ import {
 } from '@dnd-kit/core';
 import {
   arrayMove,
-  SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Header } from '@/components/Header';
 import { ControlBar } from '@/components/ControlBar';
-import { SortableStageCard } from '@/components/SortableStageCard';
+import { SectionCard } from '@/components/SectionCard';
+import { SectionEditModal } from '@/components/SectionEditModal';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { PresentationMode } from '@/components/PresentationMode';
 import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
-import { Loader2 } from 'lucide-react';
+import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
+import { Loader2, FolderPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
   
-  const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
+  const { stages, isLoading: stagesLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
+  const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection } = useSections();
   const { saveAudios } = useStageAudios();
   const { audiosByStageId } = useAllStageAudios();
   const {
@@ -47,7 +50,13 @@ const Index = () => {
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
+  const [newStageForSectionId, setNewStageForSectionId] = useState<string | null>(null);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
+  
+  const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
+  const [isNewSectionModal, setIsNewSectionModal] = useState(false);
+  const [deleteSectionData, setDeleteSectionData] = useState<CeremonySection | null>(null);
+  
   const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   const sensors = useSensors(
@@ -65,6 +74,17 @@ const Index = () => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
 
+  // Group stages by section
+  const stagesBySection = useMemo(() => {
+    const grouped: Record<string, CeremonyStage[]> = {};
+    sections.forEach(section => {
+      grouped[section.id] = stages.filter(s => s.secao_id === section.id);
+    });
+    // Stages without section
+    grouped['__unassigned__'] = stages.filter(s => !s.secao_id);
+    return grouped;
+  }, [stages, sections]);
+
   const handlePlay = (stage: CeremonyStage, audioUrl?: string) => {
     if (audioUrl) {
       play(stage.id, audioUrl);
@@ -81,13 +101,18 @@ const Index = () => {
         saveAudios.mutate({ etapa_id: editingStage.id, audios });
       }
     } else {
+      const sectionStages = newStageForSectionId 
+        ? stages.filter(s => s.secao_id === newStageForSectionId)
+        : stages.filter(s => !s.secao_id);
+      
       const insertData: CeremonyStageInsert = {
         nome_simbolico: data.nome_simbolico || 'Nova Etapa',
         descricao: data.descricao,
         tempo_padrao: data.tempo_padrao,
         icone: data.icone,
-        ordem: stages.length + 1,
+        ordem: sectionStages.length + 1,
         ativo: true,
+        secao_id: newStageForSectionId,
       };
       createStage.mutate(insertData, {
         onSuccess: (newStage) => {
@@ -99,12 +124,26 @@ const Index = () => {
     }
   };
 
+  const handleSaveSection = (data: CeremonySectionInsert | CeremonySectionUpdate) => {
+    if (editingSection) {
+      updateSection.mutate({ id: editingSection.id, ...data });
+    } else {
+      createSection.mutate(data as CeremonySectionInsert);
+    }
+  };
+
   const handleDeleteStage = () => {
     if (deleteStageData) {
       if (currentStageId === deleteStageData.id) {
         stop();
       }
       deleteStage.mutate(deleteStageData.id);
+    }
+  };
+
+  const handleDeleteSection = () => {
+    if (deleteSectionData) {
+      deleteSection.mutate(deleteSectionData.id);
     }
   };
 
@@ -120,12 +159,19 @@ const Index = () => {
     }
   };
 
+  const handleAddStageToSection = (sectionId: string) => {
+    setNewStageForSectionId(sectionId);
+    setIsNewStageModal(true);
+  };
+
+  const isLoading = stagesLoading || sectionsLoading;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-gold animate-spin" />
-          <p className="text-muted-foreground">Carregando etapas...</p>
+          <p className="text-muted-foreground">Carregando...</p>
         </div>
       </div>
     );
@@ -152,10 +198,16 @@ const Index = () => {
     );
   }
 
+  const hasContent = sections.length > 0 || stages.length > 0;
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        onAddStage={() => setIsNewStageModal(true)} 
+        onAddStage={() => {
+          setNewStageForSectionId(null);
+          setIsNewStageModal(true);
+        }}
+        onAddSection={() => setIsNewSectionModal(true)}
         onPresentationMode={() => setIsPresentationMode(true)}
         hasStages={stages.length > 0}
       />
@@ -169,15 +221,18 @@ const Index = () => {
       />
       
       <main className="container py-6">
-        {stages.length === 0 ? (
+        {!hasContent ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">Nenhuma etapa cadastrada</p>
-            <button
-              onClick={() => setIsNewStageModal(true)}
-              className="text-gold hover:text-gold-glow transition-colors"
-            >
-              Adicionar primeira etapa
-            </button>
+            <p className="text-muted-foreground mb-6">Nenhuma seção ou etapa cadastrada</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => setIsNewSectionModal(true)}
+                className="bg-gold hover:bg-gold-glow text-background gap-2"
+              >
+                <FolderPlus size={18} />
+                Criar primeira seção
+              </Button>
+            </div>
           </div>
         ) : (
           <DndContext
@@ -185,32 +240,51 @@ const Index = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext
-              items={stages.map((s) => s.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="grid gap-4 pl-8">
-                {stages.map((stage, index) => (
-                  <div
-                    key={stage.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <SortableStageCard
-                      stage={stage}
-                      audios={audiosByStageId[stage.id] || []}
-                      isPlaying={currentStageId === stage.id && status === 'playing'}
-                      isPaused={currentStageId === stage.id && status === 'paused'}
-                      onPlay={(audioUrl) => handlePlay(stage, audioUrl)}
-                      onPause={pause}
-                      onStop={stop}
-                      onEdit={() => setEditingStage(stage)}
-                      onDelete={() => setDeleteStageData(stage)}
-                    />
+            <div className="grid gap-6">
+              {/* Sections with their stages */}
+              {sections.map((section, index) => (
+                <div
+                  key={section.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <SectionCard
+                    section={section}
+                    stages={stagesBySection[section.id] || []}
+                    audiosByStageId={audiosByStageId}
+                    currentStageId={currentStageId}
+                    status={status}
+                    onPlay={handlePlay}
+                    onPause={pause}
+                    onStop={stop}
+                    onEditSection={() => setEditingSection(section)}
+                    onDeleteSection={() => setDeleteSectionData(section)}
+                    onEditStage={(stage) => setEditingStage(stage)}
+                    onDeleteStage={(stage) => setDeleteStageData(stage)}
+                    onAddStage={() => handleAddStageToSection(section.id)}
+                  />
+                </div>
+              ))}
+
+              {/* Unassigned stages (if any) */}
+              {stagesBySection['__unassigned__']?.length > 0 && (
+                <div className="bg-card/30 rounded-xl border border-border/30 p-4">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                    Etapas sem seção
+                  </h3>
+                  <div className="grid gap-3 pl-4">
+                    {stagesBySection['__unassigned__'].map((stage) => (
+                      <div key={stage.id} className="text-sm text-foreground">
+                        {stage.nome_simbolico}
+                        <span className="text-muted-foreground ml-2">
+                          (edite para atribuir a uma seção)
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </SortableContext>
+                </div>
+              )}
+            </div>
           </DndContext>
         )}
 
@@ -221,24 +295,50 @@ const Index = () => {
         </footer>
       </main>
 
-      {/* Edit Modal */}
+      {/* Section Edit Modal */}
+      <SectionEditModal
+        section={editingSection}
+        isOpen={!!editingSection || isNewSectionModal}
+        onClose={() => {
+          setEditingSection(null);
+          setIsNewSectionModal(false);
+        }}
+        onSave={handleSaveSection}
+        isNew={isNewSectionModal}
+        existingSectionsCount={sections.length}
+      />
+
+      {/* Stage Edit Modal */}
       <StageEditModal
         stage={editingStage}
         isOpen={!!editingStage || isNewStageModal}
         onClose={() => {
           setEditingStage(null);
           setIsNewStageModal(false);
+          setNewStageForSectionId(null);
         }}
         onSave={handleSaveStage}
         isNew={isNewStageModal}
+        sections={sections}
+        defaultSectionId={newStageForSectionId}
       />
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Stage Confirm Modal */}
       <DeleteConfirmModal
         isOpen={!!deleteStageData}
         onClose={() => setDeleteStageData(null)}
         onConfirm={handleDeleteStage}
         stageName={deleteStageData?.nome_simbolico || ''}
+      />
+
+      {/* Delete Section Confirm Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteSectionData}
+        onClose={() => setDeleteSectionData(null)}
+        onConfirm={handleDeleteSection}
+        stageName={deleteSectionData?.nome || ''}
+        title="Excluir Seção"
+        description="Tem certeza que deseja excluir esta seção? As etapas dentro dela ficarão sem seção."
       />
     </div>
   );
