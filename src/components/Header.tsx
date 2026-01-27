@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Plus, Settings, LogOut, Presentation } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { useSettings } from '@/hooks/useSettings';
@@ -12,11 +12,12 @@ import {
 
 interface HeaderProps {
   onAddStage: () => void;
+  onAddSection?: () => void;
   onPresentationMode?: () => void;
   hasStages?: boolean;
 }
 
-export function Header({ onAddStage, onPresentationMode, hasStages }: HeaderProps) {
+export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
@@ -91,6 +92,17 @@ export function Header({ onAddStage, onPresentationMode, hasStages }: HeaderProp
                   </TooltipTrigger>
                   <TooltipContent>Modo Apresentação (Tela Cheia)</TooltipContent>
                 </Tooltip>
+              )}
+              {onAddSection && (
+                <Button
+                  onClick={onAddSection}
+                  className="gap-2 bg-secondary hover:bg-secondary/80 text-muted-foreground border border-border hover:border-gold/30"
+                  variant="outline"
+                  size="sm"
+                >
+                  <FolderPlus size={18} />
+                  <span className="hidden sm:inline">Nova Seção</span>
+                </Button>
               )}
               <Button
                 onClick={onAddStage}

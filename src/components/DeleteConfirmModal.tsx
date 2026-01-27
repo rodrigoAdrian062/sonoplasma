@@ -13,9 +13,20 @@ interface DeleteConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   stageName: string;
+  title?: string;
+  description?: string;
 }
 
-export function DeleteConfirmModal({ isOpen, onClose, onConfirm, stageName }: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  stageName,
+  title = 'Remover Etapa',
+  description,
+}: DeleteConfirmModalProps) {
+  const defaultDescription = `Tem certeza que deseja remover a etapa "${stageName}"? Esta ação não pode ser desfeita.`;
+  const displayDescription = description || defaultDescription;
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-card border-border max-w-sm">
@@ -25,11 +36,11 @@ export function DeleteConfirmModal({ isOpen, onClose, onConfirm, stageName }: De
               <AlertTriangle className="text-destructive" size={24} />
             </div>
             <DialogTitle className="font-display text-xl text-foreground">
-              Remover Etapa
+              {title}
             </DialogTitle>
           </div>
           <DialogDescription className="text-muted-foreground pt-2">
-            Tem certeza que deseja remover a etapa "{stageName}"? Esta ação não pode ser desfeita.
+            {displayDescription}
           </DialogDescription>
         </DialogHeader>
 

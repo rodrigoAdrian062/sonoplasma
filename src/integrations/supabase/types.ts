@@ -93,6 +93,7 @@ export type Database = {
           id: string
           nome_simbolico: string
           ordem: number
+          secao_id: string | null
           tempo_padrao: number | null
           updated_at: string
         }
@@ -106,6 +107,7 @@ export type Database = {
           id?: string
           nome_simbolico: string
           ordem?: number
+          secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
         }
@@ -119,10 +121,19 @@ export type Database = {
           id?: string
           nome_simbolico?: string
           ordem?: number
+          secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sonoplastia_etapas_secao_id_fkey"
+            columns: ["secao_id"]
+            isOneToOne: false
+            referencedRelation: "sonoplastia_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sonoplastia_execucoes: {
         Row: {
@@ -161,6 +172,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sonoplastia_secoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
