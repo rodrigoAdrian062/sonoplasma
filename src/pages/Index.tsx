@@ -189,6 +189,8 @@ const Index = () => {
         audiosByStageId={audiosByStageId}
         currentStageId={currentStageId}
         status={status}
+        volume={volume}
+        onVolumeChange={setVolume}
         onPlay={handlePresentationPlay}
         onPause={pause}
         onStop={stop}
