@@ -240,61 +240,6 @@ export default function Auth() {
         </svg>
       </div>
       
-      {/* Square and Compass - Top Left */}
-      <div className="absolute top-8 left-8 w-48 h-48 opacity-[0.025] animate-[pulse_10s_ease-in-out_infinite]">
-        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="currentColor">
-          {/* Compass (two legs forming a V) */}
-          <path
-            d="M50 15 L30 85"
-            className="stroke-gold"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path
-            d="M50 15 L70 85"
-            className="stroke-gold"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          {/* Compass hinge */}
-          <circle cx="50" cy="15" r="4" className="stroke-gold" strokeWidth="1.5" />
-          
-          {/* Square (L shape rotated) */}
-          <path
-            d="M25 55 L50 55 L50 80"
-            className="stroke-gold"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          
-          {/* Letter G in center */}
-          <text
-            x="50"
-            y="52"
-            textAnchor="middle"
-            className="fill-gold"
-            fontSize="14"
-            fontFamily="serif"
-            fontWeight="bold"
-          >
-            G
-          </text>
-        </svg>
-      </div>
-
-      {/* Square and Compass - Bottom Right (mirrored) */}
-      <div className="absolute bottom-8 right-8 w-48 h-48 opacity-[0.025] rotate-180 animate-[pulse_10s_ease-in-out_infinite_2s]">
-        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="currentColor">
-          {/* Compass */}
-          <path d="M50 15 L30 85" className="stroke-gold" strokeWidth="2" strokeLinecap="round" />
-          <path d="M50 15 L70 85" className="stroke-gold" strokeWidth="2" strokeLinecap="round" />
-          <circle cx="50" cy="15" r="4" className="stroke-gold" strokeWidth="1.5" />
-          {/* Square */}
-          <path d="M25 55 L50 55 L50 80" className="stroke-gold" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-
       {/* Decorative pillars - Left side */}
       <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-64 opacity-[0.02]">
         <svg viewBox="0 0 30 200" className="w-full h-full" fill="none" stroke="currentColor">
