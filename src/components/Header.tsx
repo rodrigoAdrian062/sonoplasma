@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
+import { AudioLibraryModal } from '@/components/AudioLibraryModal';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -19,6 +20,7 @@ interface HeaderProps {
 
 export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
 
@@ -69,6 +71,19 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Sair</TooltipContent>
               </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setIsLibraryOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-gold"
+                  >
+                    <Library size={20} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Biblioteca de Áudios</TooltipContent>
+              </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
                 variant="ghost"
@@ -112,6 +127,11 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      <AudioLibraryModal
+        isOpen={isLibraryOpen}
+        onClose={() => setIsLibraryOpen(false)}
       />
     </>
   );
