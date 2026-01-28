@@ -21,35 +21,77 @@ export function Walls() {
         <meshStandardMaterial color="#8B0000" roughness={0.8} />
       </mesh>
 
-      {/* Delta/Triangle with All-Seeing Eye on East Wall */}
-      <group position={[0, wallHeight - 1.5, -roomLength / 2 + 0.3]}>
-        {/* Triangle background */}
+      {/* Delta/Triangle with All-Seeing Eye on East Wall - CENTER */}
+      <group position={[0, wallHeight / 2 + 1.5, -roomLength / 2 + 0.3]}>
+        {/* Triangle background - larger and more prominent */}
         <mesh rotation={[0, 0, 0]}>
-          <coneGeometry args={[1.2, 1.8, 3]} />
+          <coneGeometry args={[1.5, 2.2, 3]} />
           <meshStandardMaterial 
             color="#d4af37" 
             roughness={0.3} 
             metalness={0.7}
           />
         </mesh>
-        {/* Eye in center */}
-        <mesh position={[0, -0.2, 0.1]}>
-          <sphereGeometry args={[0.25, 32, 32]} />
+        {/* Rays of light emanating from triangle */}
+        {Array.from({ length: 12 }, (_, i) => {
+          const angle = (i / 12) * Math.PI * 2;
+          return (
+            <mesh 
+              key={i} 
+              position={[Math.cos(angle) * 1.8, Math.sin(angle) * 1.8 - 0.3, -0.1]}
+              rotation={[0, 0, angle]}
+            >
+              <boxGeometry args={[0.5, 0.08, 0.02]} />
+              <meshStandardMaterial 
+                color="#ffd700" 
+                emissive="#ff9900"
+                emissiveIntensity={0.3}
+              />
+            </mesh>
+          );
+        })}
+        {/* Eye - white part */}
+        <mesh position={[0, -0.3, 0.15]}>
+          <sphereGeometry args={[0.35, 32, 32]} />
           <meshStandardMaterial 
             color="#ffffff" 
             emissive="#ffd700"
-            emissiveIntensity={0.3}
+            emissiveIntensity={0.4}
           />
         </mesh>
-        <mesh position={[0, -0.2, 0.25]}>
-          <sphereGeometry args={[0.1, 32, 32]} />
+        {/* Eye - iris */}
+        <mesh position={[0, -0.3, 0.45]}>
+          <sphereGeometry args={[0.15, 32, 32]} />
           <meshStandardMaterial color="#1a1a1a" />
         </mesh>
+        {/* Light from the eye */}
+        <pointLight position={[0, -0.3, 0.5]} intensity={0.8} color="#ffd700" distance={5} />
+        
+        {/* Text label */}
+        <Text
+          position={[0, -1.5, 0.2]}
+          fontSize={0.15}
+          color="#d4af37"
+          anchorX="center"
+          anchorY="middle"
+        >
+          Delta Luminoso
+        </Text>
       </group>
 
-      {/* Lodge Emblem/Coat of Arms on East Wall */}
-      <mesh position={[0, wallHeight / 2 + 1, -roomLength / 2 + 0.25]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[3, 3]} />
+      {/* Lodge Emblem on NORTH Wall (lateral) */}
+      <mesh position={[-roomWidth / 2 + 0.25, wallHeight / 2, -5]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[2.5, 2.5]} />
+        <meshStandardMaterial 
+          map={emblemTexture} 
+          transparent 
+          roughness={0.5}
+        />
+      </mesh>
+
+      {/* Lodge Emblem on SOUTH Wall (lateral) */}
+      <mesh position={[roomWidth / 2 - 0.25, wallHeight / 2, -5]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[2.5, 2.5]} />
         <meshStandardMaterial 
           map={emblemTexture} 
           transparent 
