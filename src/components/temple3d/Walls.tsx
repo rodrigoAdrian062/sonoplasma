@@ -1,6 +1,8 @@
-import { Text } from '@react-three/drei';
+import { Text, useTexture } from '@react-three/drei';
 
 export function Walls() {
+  // Load the lodge emblem texture
+  const emblemTexture = useTexture('/images/brasao-loja.png');
   const wallHeight = 8;
   const roomWidth = 16;
   const roomLength = 28;
@@ -45,7 +47,16 @@ export function Walls() {
         </mesh>
       </group>
 
-      {/* West Wall */}
+      {/* Lodge Emblem/Coat of Arms on East Wall */}
+      <mesh position={[0, wallHeight / 2 + 1, -roomLength / 2 + 0.25]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[3, 3]} />
+        <meshStandardMaterial 
+          map={emblemTexture} 
+          transparent 
+          roughness={0.5}
+        />
+      </mesh>
+
       <mesh position={[0, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
         <boxGeometry args={[roomWidth, wallHeight, 0.3]} />
         <meshStandardMaterial color="#87CEEB" roughness={0.6} />
