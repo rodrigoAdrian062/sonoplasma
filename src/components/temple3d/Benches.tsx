@@ -97,8 +97,8 @@ export function Benches({ onClick }: BenchesProps) {
       {/* ===== MESTRES (podem sentar em ambas colunas - próximo ao Oriente) ===== */}
       {/* Masters' seats - closer to the East, distinguished seating */}
       
-      {/* North side Masters - Row 1 (closest to Oriente) */}
-      <group position={[-4.5, 0, -11]} rotation={[0, Math.PI / 2, 0]}>
+      {/* North side Masters - Row 1 (closest to Oriente - front row) */}
+      <group position={[-3.5, 0, -13]} rotation={[0, Math.PI / 2, 0]}>
         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
           <group key={`master-n1-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
@@ -130,7 +130,7 @@ export function Benches({ onClick }: BenchesProps) {
       </group>
 
       {/* North side Masters - Row 2 */}
-      <group position={[-4.5, 0, -9.5]} rotation={[0, Math.PI / 2, 0]}>
+      <group position={[-3.5, 0, -11.5]} rotation={[0, Math.PI / 2, 0]}>
         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
           <group key={`master-n2-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
@@ -151,8 +151,8 @@ export function Benches({ onClick }: BenchesProps) {
         ))}
       </group>
 
-      {/* South side Masters - Row 1 (closest to Oriente) */}
-      <group position={[4.5, 0, -11]} rotation={[0, -Math.PI / 2, 0]}>
+      {/* South side Masters - Row 1 (closest to Oriente - front row) */}
+      <group position={[3.5, 0, -13]} rotation={[0, -Math.PI / 2, 0]}>
         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
           <group key={`master-s1-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
@@ -184,7 +184,7 @@ export function Benches({ onClick }: BenchesProps) {
       </group>
 
       {/* South side Masters - Row 2 */}
-      <group position={[4.5, 0, -9.5]} rotation={[0, -Math.PI / 2, 0]}>
+      <group position={[3.5, 0, -11.5]} rotation={[0, -Math.PI / 2, 0]}>
         {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
           <group key={`master-s2-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
