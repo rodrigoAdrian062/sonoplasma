@@ -1,5 +1,4 @@
 import { Text } from '@react-three/drei';
-import * as THREE from 'three';
 
 interface AltarProps {
   onClick?: () => void;
@@ -7,79 +6,136 @@ interface AltarProps {
 
 export function Altar({ onClick }: AltarProps) {
   return (
-    <group position={[0, 0, 2]} onClick={onClick}>
-      {/* Altar base */}
+    <group position={[0, 0, -11]} onClick={onClick}>
+      {/* Altar-Mor (Main Altar) - VM's desk */}
+      {/* Rectangular desk, closed front and sides */}
       <mesh position={[0, 0.4, 0]} castShadow>
-        <boxGeometry args={[1.5, 0.8, 1]} />
-        <meshStandardMaterial color="#8B4513" roughness={0.6} />
+        <boxGeometry args={[2.2, 0.8, 0.8]} />
+        <meshStandardMaterial color="#3a2515" roughness={0.7} />
       </mesh>
 
-      {/* Altar top (marble) */}
+      {/* Altar top (darker wood) */}
       <mesh position={[0, 0.85, 0]} castShadow>
-        <boxGeometry args={[1.6, 0.1, 1.1]} />
-        <meshStandardMaterial color="#f5f5f5" roughness={0.2} metalness={0.1} />
+        <boxGeometry args={[2.3, 0.1, 0.9]} />
+        <meshStandardMaterial color="#2a1810" roughness={0.6} />
       </mesh>
 
-      {/* Bible/Volume of Sacred Law */}
-      <mesh position={[0, 1, 0]} rotation={[0, 0.3, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.08, 0.4]} />
-        <meshStandardMaterial color="#2c1810" roughness={0.8} />
-      </mesh>
-
-      {/* Square (Esquadro) */}
-      <group position={[-0.3, 1.05, 0.15]} rotation={[0, 0.5, 0]}>
+      {/* Esquadro symbol on front (Square - VM's jewel) */}
+      <group position={[0, 0.4, 0.42]}>
+        {/* Vertical arm */}
         <mesh castShadow>
-          <boxGeometry args={[0.3, 0.02, 0.02]} />
+          <boxGeometry args={[0.15, 0.02, 0.02]} />
           <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.8} />
         </mesh>
-        <mesh position={[0.14, 0, 0.14]} rotation={[0, Math.PI / 2, 0]} castShadow>
-          <boxGeometry args={[0.3, 0.02, 0.02]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.8} />
-        </mesh>
-      </group>
-
-      {/* Compass (Compasso) */}
-      <group position={[0.2, 1.05, -0.1]} rotation={[0, -0.3, 0]}>
-        <mesh rotation={[0, 0, 0.3]} position={[-0.1, 0, 0]} castShadow>
-          <boxGeometry args={[0.25, 0.015, 0.015]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.8} />
-        </mesh>
-        <mesh rotation={[0, 0, -0.3]} position={[0.1, 0, 0]} castShadow>
-          <boxGeometry args={[0.25, 0.015, 0.015]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.8} />
-        </mesh>
-        {/* Compass hinge */}
-        <mesh position={[0, 0.02, 0]} castShadow>
-          <sphereGeometry args={[0.025, 16, 16]} />
+        {/* Horizontal arm */}
+        <mesh position={[0.065, -0.065, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <boxGeometry args={[0.15, 0.02, 0.02]} />
           <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.8} />
         </mesh>
       </group>
 
-      {/* Three small candles around the altar */}
-      {[
-        { pos: [-0.5, 0.9, 0.6], name: 'Sabedoria' },
-        { pos: [0.5, 0.9, 0.6], name: 'Força' },
-        { pos: [0, 0.9, -0.6], name: 'Beleza' },
-      ].map((candle, i) => (
-        <group key={i} position={candle.pos as [number, number, number]}>
-          {/* Candle holder */}
-          <mesh castShadow>
-            <cylinderGeometry args={[0.06, 0.08, 0.15, 16]} />
-            <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
-          </mesh>
-          {/* Candle */}
-          <mesh position={[0, 0.15, 0]} castShadow>
-            <cylinderGeometry args={[0.03, 0.03, 0.2, 16]} />
-            <meshStandardMaterial color="#fffaf0" roughness={0.9} />
-          </mesh>
-          {/* Flame */}
-          <pointLight position={[0, 0.35, 0]} intensity={0.3} color="#ff6600" distance={2} />
-          <mesh position={[0, 0.3, 0]}>
-            <sphereGeometry args={[0.02, 8, 8]} />
-            <meshBasicMaterial color="#ff9900" />
-          </mesh>
-        </group>
-      ))}
+      {/* Three-branch candelabrum (Luzes Litúrgicas) */}
+      <group position={[0.8, 0.9, 0.2]}>
+        {/* Base */}
+        <mesh castShadow>
+          <cylinderGeometry args={[0.08, 0.1, 0.1, 16]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+        </mesh>
+        {/* Main stem */}
+        <mesh position={[0, 0.15, 0]} castShadow>
+          <cylinderGeometry args={[0.025, 0.025, 0.2, 8]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+        </mesh>
+        {/* Three candle holders */}
+        {[-0.08, 0, 0.08].map((x, i) => (
+          <group key={i} position={[x, 0.28, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.02, 0.025, 0.08, 8]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+            </mesh>
+            {/* Candle */}
+            <mesh position={[0, 0.12, 0]} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.15, 8]} />
+              <meshStandardMaterial color="#fffaf0" roughness={0.9} />
+            </mesh>
+            {/* Flame */}
+            <pointLight position={[0, 0.22, 0]} intensity={0.2} color="#ff6600" distance={2} />
+            <mesh position={[0, 0.22, 0]}>
+              <sphereGeometry args={[0.015, 8, 8]} />
+              <meshBasicMaterial color="#ff9900" />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* Malhete (Gavel) */}
+      <group position={[-0.6, 0.95, 0.15]} rotation={[0, 0.3, 0]}>
+        {/* Head */}
+        <mesh castShadow>
+          <boxGeometry args={[0.12, 0.05, 0.05]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.8} />
+        </mesh>
+        {/* Handle */}
+        <mesh position={[0, -0.08, 0]} rotation={[0, 0, 0]} castShadow>
+          <cylinderGeometry args={[0.012, 0.015, 0.15, 8]} />
+          <meshStandardMaterial color="#4a3728" roughness={0.7} />
+        </mesh>
+      </group>
+
+      {/* Sword case (Espada Flamejante) */}
+      <mesh position={[-0.3, 0.92, -0.2]} rotation={[0, 0.2, 0]} castShadow>
+        <boxGeometry args={[0.6, 0.04, 0.08]} />
+        <meshStandardMaterial color="#2a1810" roughness={0.8} />
+      </mesh>
+
+      {/* Prancheta with Parallel Crosses (right side, south) */}
+      <group position={[1.2, 1.05, 0]} rotation={[0.2, 0, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.3, 0.35, 0.02]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.7} />
+        </mesh>
+        {/* X symbol */}
+        <mesh position={[0, 0, 0.012]} rotation={[0, 0, Math.PI / 4]}>
+          <boxGeometry args={[0.2, 0.02, 0.005]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+        </mesh>
+        <mesh position={[0, 0, 0.012]} rotation={[0, 0, -Math.PI / 4]}>
+          <boxGeometry args={[0.2, 0.02, 0.005]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
+        </mesh>
+      </group>
+
+      {/* Carta Constitutiva frame (left side, north) */}
+      <group position={[-1.2, 1.05, 0]} rotation={[0.2, 0, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.3, 0.35, 0.02]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.7} />
+        </mesh>
+        <mesh position={[0, 0, 0.012]}>
+          <boxGeometry args={[0.25, 0.3, 0.005]} />
+          <meshStandardMaterial color="#fffef5" roughness={0.9} />
+        </mesh>
+        <Text
+          position={[0, 0, 0.02]}
+          fontSize={0.03}
+          color="#2a1810"
+          anchorX="center"
+          anchorY="middle"
+        >
+          CARTA{'\n'}CONSTITUTIVA
+        </Text>
+      </group>
+
+      {/* Label */}
+      <Text
+        position={[0, 1.5, 0]}
+        fontSize={0.1}
+        color="#d4af37"
+        anchorX="center"
+        anchorY="middle"
+      >
+        Altar do Venerável Mestre
+      </Text>
     </group>
   );
 }
