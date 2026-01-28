@@ -113,8 +113,37 @@ export default function Auth() {
     );
   }
 
+  // Generate random particles
+  const particles = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    size: Math.random() * 4 + 2,
+    left: Math.random() * 100,
+    delay: Math.random() * 8,
+    duration: Math.random() * 10 + 15,
+    opacity: Math.random() * 0.4 + 0.1,
+  }));
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Floating Golden Particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {particles.map((particle) => (
+          <div
+            key={particle.id}
+            className="absolute rounded-full bg-gold"
+            style={{
+              width: particle.size,
+              height: particle.size,
+              left: `${particle.left}%`,
+              bottom: '-20px',
+              opacity: particle.opacity,
+              animation: `floatUp ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
+              boxShadow: `0 0 ${particle.size * 2}px hsl(var(--gold) / 0.5)`,
+            }}
+          />
+        ))}
+      </div>
+
       {/* Eye of Providence Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <svg
