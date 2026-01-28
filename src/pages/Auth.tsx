@@ -262,67 +262,19 @@ export default function Auth() {
         )}
       >
         <CardHeader className="text-center space-y-4">
-          {/* Dynamic Logo with Masonic Animation */}
+          {/* Dynamic Logo */}
           <div className="flex justify-center">
-            <div className="relative">
-              {/* Outer rotating rays */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 animate-[spin_20s_linear_infinite]">
-                  {[...Array(12)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute top-1/2 left-1/2 w-0.5 h-16 bg-gradient-to-t from-gold/0 via-gold/30 to-gold/0 origin-bottom"
-                      style={{
-                        transform: `translateX(-50%) rotate(${i * 30}deg)`,
-                      }}
-                    />
-                  ))}
-                </div>
+            {settings?.logo_url ? (
+              <img
+                src={settings.logo_url}
+                alt="Logotipo"
+                className="w-24 h-24 object-contain rounded-xl"
+              />
+            ) : (
+              <div className="p-5 bg-gold/10 rounded-xl border border-gold/20">
+                <Sparkles className="text-gold" size={56} />
               </div>
-              
-              {/* Inner pulsing glow */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-28 h-28 rounded-full bg-gold/10 animate-[pulse_3s_ease-in-out_infinite] blur-xl" />
-              </div>
-              
-              {/* Triangle frame (Masonic symbol) */}
-              <div className="absolute inset-0 flex items-center justify-center animate-[pulse_4s_ease-in-out_infinite]">
-                <svg
-                  viewBox="0 0 100 100"
-                  className="w-36 h-36 -mt-2"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                >
-                  <path
-                    d="M50 15 L85 80 L15 80 Z"
-                    className="stroke-gold/30"
-                    strokeDasharray="4 2"
-                  />
-                </svg>
-              </div>
-              
-              {/* Logo container with glow effect */}
-              <div className="relative z-10">
-                {settings?.logo_url ? (
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gold/20 rounded-xl blur-md animate-[pulse_2s_ease-in-out_infinite]" />
-                    <img
-                      src={settings.logo_url}
-                      alt="Logotipo"
-                      className="relative w-24 h-24 object-contain rounded-xl animate-[float_6s_ease-in-out_infinite]"
-                    />
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gold/30 rounded-xl blur-lg animate-[pulse_2s_ease-in-out_infinite]" />
-                    <div className="relative p-5 bg-gold/10 rounded-xl backdrop-blur-sm border border-gold/20 animate-[float_6s_ease-in-out_infinite]">
-                      <Sparkles className="text-gold drop-shadow-[0_0_10px_rgba(var(--gold),0.5)]" size={56} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
           
           <div>
