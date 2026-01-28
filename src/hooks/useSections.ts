@@ -63,6 +63,15 @@ export function useSections() {
 
   const deleteSection = useMutation({
     mutationFn: async (id: string) => {
+      // First delete all stages belonging to this section
+      const { error: stagesError } = await supabase
+        .from('sonoplastia_etapas')
+        .delete()
+        .eq('secao_id', id);
+
+      if (stagesError) throw stagesError;
+
+      // Then delete the section
       const { error } = await supabase
         .from('sonoplastia_secoes')
         .delete()
@@ -73,7 +82,8 @@ export function useSections() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Seção removida com sucesso' });
+      queryClient.invalidateQueries({ queryKey: ['allStageAudios'] });
+      toast({ title: 'Seção e etapas removidas com sucesso' });
     },
     onError: (error) => {
       toast({ title: 'Erro ao remover seção', description: error.message, variant: 'destructive' });

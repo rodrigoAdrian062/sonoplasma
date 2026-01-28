@@ -371,7 +371,7 @@ const Index = () => {
         onConfirm={handleDeleteSection}
         stageName={deleteSectionData?.nome || ''}
         title="Excluir Seção"
-        description="Tem certeza que deseja excluir esta seção? As etapas dentro dela ficarão sem seção."
+        description="Tem certeza que deseja excluir esta seção? Todas as etapas dentro dela também serão excluídas permanentemente."
       />
     </div>
   );
