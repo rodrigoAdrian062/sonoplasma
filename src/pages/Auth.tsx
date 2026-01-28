@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
@@ -23,6 +23,29 @@ export default function Auth() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+
+  // Track mouse movement for eye following effect
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Calculate offset from center (normalized to -1 to 1)
+    const deltaX = (e.clientX - centerX) / centerX;
+    const deltaY = (e.clientY - centerY) / centerY;
+    
+    // Limit the movement to a subtle range (max 8px)
+    const maxOffset = 8;
+    setEyeOffset({
+      x: deltaX * maxOffset,
+      y: deltaY * maxOffset * 0.6, // Less vertical movement
+    });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [handleMouseMove]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -142,30 +165,32 @@ export default function Auth() {
             fill="none"
           />
           
-          {/* Eye inner circle (iris) */}
-          <circle
-            cx="200"
-            cy="200"
-            r="18"
-            className="stroke-gold fill-gold/10"
-            strokeWidth="1.5"
-          />
-          
-          {/* Pupil */}
-          <circle
-            cx="200"
-            cy="200"
-            r="8"
-            className="fill-gold/30"
-          />
-          
-          {/* Eye highlight */}
-          <circle
-            cx="196"
-            cy="196"
-            r="3"
-            className="fill-gold/50"
-          />
+          {/* Eye inner circle (iris) - follows mouse */}
+          <g style={{ transform: `translate(${eyeOffset.x}px, ${eyeOffset.y}px)`, transition: 'transform 0.15s ease-out' }}>
+            <circle
+              cx="200"
+              cy="200"
+              r="18"
+              className="stroke-gold fill-gold/10"
+              strokeWidth="1.5"
+            />
+            
+            {/* Pupil */}
+            <circle
+              cx="200"
+              cy="200"
+              r="8"
+              className="fill-gold/30"
+            />
+            
+            {/* Eye highlight */}
+            <circle
+              cx="196"
+              cy="196"
+              r="3"
+              className="fill-gold/50"
+            />
+          </g>
           
           {/* Eyebrow arc */}
           <path
