@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      sonoplastia_audios_biblioteca: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          nome: string
+          tamanho_bytes: number | null
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          nome: string
+          tamanho_bytes?: number | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          tamanho_bytes?: number | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sonoplastia_configuracoes: {
         Row: {
           cor_tema: string | null
