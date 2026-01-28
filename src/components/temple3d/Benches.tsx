@@ -96,24 +96,22 @@ export function Benches({ onClick }: BenchesProps) {
       
       {/* ===== MESTRES (podem sentar em ambas colunas - próximo ao Oriente) ===== */}
       {/* Masters' seats - closer to the East, distinguished seating */}
+      
+      {/* North side Masters - Row 1 (closest to Oriente) */}
       <group position={[-4.5, 0, -11]} rotation={[0, Math.PI / 2, 0]}>
-        {/* Individual Master chairs on North */}
-        {[-0.8, 0.8].map((x, i) => (
-          <group key={`master-n-${i}`} position={[x, 0, 0]}>
-            {/* Chair seat */}
+        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+          <group key={`master-n1-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
-              <boxGeometry args={[0.7, 0.06, 0.5]} />
+              <boxGeometry args={[0.6, 0.06, 0.5]} />
               <meshStandardMaterial color="#1a365d" roughness={0.5} />
             </mesh>
-            {/* Chair back */}
             <mesh position={[0, 0.65, -0.22]} castShadow>
-              <boxGeometry args={[0.7, 0.55, 0.06]} />
+              <boxGeometry args={[0.6, 0.55, 0.06]} />
               <meshStandardMaterial color="#1a365d" roughness={0.5} />
             </mesh>
-            {/* Chair legs */}
-            {[-0.3, 0.3].map((lx, j) => (
+            {[-0.25, 0.25].map((lx, j) => (
               <mesh key={j} position={[lx, 0.17, 0]} castShadow>
-                <boxGeometry args={[0.05, 0.34, 0.05]} />
+                <boxGeometry args={[0.04, 0.34, 0.04]} />
                 <meshStandardMaterial color="#2a1810" roughness={0.8} />
               </mesh>
             ))}
@@ -131,24 +129,43 @@ export function Benches({ onClick }: BenchesProps) {
         </Text>
       </group>
 
-      <group position={[4.5, 0, -11]} rotation={[0, -Math.PI / 2, 0]}>
-        {/* Individual Master chairs on South */}
-        {[-0.8, 0.8].map((x, i) => (
-          <group key={`master-s-${i}`} position={[x, 0, 0]}>
-            {/* Chair seat */}
+      {/* North side Masters - Row 2 */}
+      <group position={[-4.5, 0, -9.5]} rotation={[0, Math.PI / 2, 0]}>
+        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+          <group key={`master-n2-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
-              <boxGeometry args={[0.7, 0.06, 0.5]} />
+              <boxGeometry args={[0.6, 0.06, 0.5]} />
               <meshStandardMaterial color="#1a365d" roughness={0.5} />
             </mesh>
-            {/* Chair back */}
             <mesh position={[0, 0.65, -0.22]} castShadow>
-              <boxGeometry args={[0.7, 0.55, 0.06]} />
+              <boxGeometry args={[0.6, 0.55, 0.06]} />
               <meshStandardMaterial color="#1a365d" roughness={0.5} />
             </mesh>
-            {/* Chair legs */}
-            {[-0.3, 0.3].map((lx, j) => (
+            {[-0.25, 0.25].map((lx, j) => (
               <mesh key={j} position={[lx, 0.17, 0]} castShadow>
-                <boxGeometry args={[0.05, 0.34, 0.05]} />
+                <boxGeometry args={[0.04, 0.34, 0.04]} />
+                <meshStandardMaterial color="#2a1810" roughness={0.8} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </group>
+
+      {/* South side Masters - Row 1 (closest to Oriente) */}
+      <group position={[4.5, 0, -11]} rotation={[0, -Math.PI / 2, 0]}>
+        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+          <group key={`master-s1-${i}`} position={[x, 0, 0]}>
+            <mesh position={[0, 0.35, 0]} castShadow>
+              <boxGeometry args={[0.6, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            <mesh position={[0, 0.65, -0.22]} castShadow>
+              <boxGeometry args={[0.6, 0.55, 0.06]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {[-0.25, 0.25].map((lx, j) => (
+              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
+                <boxGeometry args={[0.04, 0.34, 0.04]} />
                 <meshStandardMaterial color="#2a1810" roughness={0.8} />
               </mesh>
             ))}
@@ -164,6 +181,28 @@ export function Benches({ onClick }: BenchesProps) {
         >
           Mestres
         </Text>
+      </group>
+
+      {/* South side Masters - Row 2 */}
+      <group position={[4.5, 0, -9.5]} rotation={[0, -Math.PI / 2, 0]}>
+        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
+          <group key={`master-s2-${i}`} position={[x, 0, 0]}>
+            <mesh position={[0, 0.35, 0]} castShadow>
+              <boxGeometry args={[0.6, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            <mesh position={[0, 0.65, -0.22]} castShadow>
+              <boxGeometry args={[0.6, 0.55, 0.06]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {[-0.25, 0.25].map((lx, j) => (
+              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
+                <boxGeometry args={[0.04, 0.34, 0.04]} />
+                <meshStandardMaterial color="#2a1810" roughness={0.8} />
+              </mesh>
+            ))}
+          </group>
+        ))}
       </group>
 
       {/* Column labels */}
