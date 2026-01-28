@@ -1,97 +1,71 @@
 import { Text } from '@react-three/drei';
-import * as THREE from 'three';
 
 interface PillarsProps {
   onClick?: (name: string) => void;
 }
 
 export function Pillars({ onClick }: PillarsProps) {
-  const pillarHeight = 6;
-  const pillarRadius = 0.4;
-
-  const Pillar = ({ 
-    position, 
-    letter, 
-    name,
-    color = '#f5f5dc'
-  }: { 
-    position: [number, number, number]; 
-    letter: string; 
-    name: string;
-    color?: string;
-  }) => (
-    <group position={position} onClick={() => onClick?.(name)}>
+  // White classical column component
+  const Column = ({ position, showLabel, label }: { position: [number, number, number]; showLabel?: boolean; label?: string }) => (
+    <group position={position}>
       {/* Base */}
-      <mesh position={[0, 0.25, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.5, 1.2]} />
-        <meshStandardMaterial color="#8B4513" roughness={0.7} />
+      <mesh position={[0, 0.15, 0]} castShadow>
+        <cylinderGeometry args={[0.4, 0.45, 0.3, 32]} />
+        <meshStandardMaterial color="#f5f5f5" roughness={0.4} />
+      </mesh>
+      
+      {/* Column shaft with fluting effect */}
+      <mesh position={[0, 3.5, 0]} castShadow>
+        <cylinderGeometry args={[0.3, 0.35, 6.5, 24]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.3} />
+      </mesh>
+      
+      {/* Capital */}
+      <mesh position={[0, 6.9, 0]} castShadow>
+        <cylinderGeometry args={[0.45, 0.3, 0.3, 32]} />
+        <meshStandardMaterial color="#f5f5f5" roughness={0.4} />
+      </mesh>
+      
+      {/* Top decoration */}
+      <mesh position={[0, 7.15, 0]} castShadow>
+        <boxGeometry args={[0.7, 0.2, 0.7]} />
+        <meshStandardMaterial color="#f5f5f5" roughness={0.4} />
       </mesh>
 
-      {/* Column shaft */}
-      <mesh position={[0, pillarHeight / 2 + 0.5, 0]} castShadow>
-        <cylinderGeometry args={[pillarRadius, pillarRadius * 1.1, pillarHeight, 32]} />
-        <meshStandardMaterial color={color} roughness={0.4} metalness={0.1} />
-      </mesh>
-
-      {/* Column fluting (decorative lines) */}
-      {[...Array(12)].map((_, i) => (
-        <mesh
-          key={i}
-          position={[
-            Math.cos((i * Math.PI * 2) / 12) * (pillarRadius + 0.02),
-            pillarHeight / 2 + 0.5,
-            Math.sin((i * Math.PI * 2) / 12) * (pillarRadius + 0.02),
-          ]}
-          castShadow
+      {/* Label if needed */}
+      {showLabel && label && (
+        <Text
+          position={[0, 4, 0.4]}
+          fontSize={0.4}
+          color="#d4af37"
+          anchorX="center"
+          anchorY="middle"
         >
-          <cylinderGeometry args={[0.03, 0.03, pillarHeight - 0.5, 8]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.6} />
-        </mesh>
-      ))}
-
-      {/* Capital (top) */}
-      <mesh position={[0, pillarHeight + 0.5, 0]} castShadow>
-        <cylinderGeometry args={[pillarRadius * 1.5, pillarRadius, 0.5, 32]} />
-        <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
-      </mesh>
-
-      {/* Abacus (top plate) */}
-      <mesh position={[0, pillarHeight + 0.9, 0]} castShadow>
-        <boxGeometry args={[1.2, 0.3, 1.2]} />
-        <meshStandardMaterial color="#8B4513" roughness={0.7} />
-      </mesh>
-
-      {/* Letter */}
-      <Text
-        position={[0, pillarHeight / 2 + 0.5, pillarRadius + 0.1]}
-        fontSize={0.5}
-        color="#d4af37"
-        anchorX="center"
-        anchorY="middle"
-        font="/fonts/Cinzel-Bold.ttf"
-      >
-        {letter}
-      </Text>
-
-      {/* Globe on top */}
-      <mesh position={[0, pillarHeight + 1.3, 0]} castShadow>
-        <sphereGeometry args={[0.3, 32, 32]} />
-        <meshStandardMaterial 
-          color={letter === 'J' ? '#4169E1' : '#228B22'} 
-          roughness={0.2} 
-          metalness={0.3} 
-        />
-      </mesh>
+          {label}
+        </Text>
+      )}
     </group>
   );
 
   return (
     <group>
-      {/* Pillar J (Jachin) - South/Right when facing East */}
-      <Pillar position={[4, 0, 8]} letter="J" name="pillar-j" />
-      
-      {/* Pillar B (Boaz) - North/Left when facing East */}
-      <Pillar position={[-4, 0, 8]} letter="B" name="pillar-b" />
+      {/* Main entrance pillars J and B */}
+      <group onClick={() => onClick?.('pillar-j')}>
+        <Column position={[-2.5, 0, 10]} showLabel label="J" />
+      </group>
+      <group onClick={() => onClick?.('pillar-b')}>
+        <Column position={[2.5, 0, 10]} showLabel label="B" />
+      </group>
+
+      {/* Side columns along North wall */}
+      {[-10, -6, -2, 2, 6].map((z, i) => (
+        <Column key={`north-${i}`} position={[-6.5, 0, z]} />
+      ))}
+
+      {/* Side columns along South wall */}
+      {[-10, -6, -2, 2, 6].map((z, i) => (
+        <Column key={`south-${i}`} position={[6.5, 0, z]} />
+      ))}
     </group>
   );
 }

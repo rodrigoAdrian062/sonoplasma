@@ -5,60 +5,63 @@ import * as THREE from 'three';
 export function CelestialVault() {
   const starsRef = useRef<THREE.Points>(null);
 
-  // Slowly rotate the celestial vault
+  // Slowly rotate the stars
   useFrame((state, delta) => {
     if (starsRef.current) {
-      starsRef.current.rotation.y += delta * 0.01;
+      starsRef.current.rotation.y += delta * 0.005;
     }
   });
 
-  // Generate star positions
-  const starCount = 500;
+  // Generate star positions for the curved ceiling
+  const starCount = 200;
   const starPositions = new Float32Array(starCount * 3);
   const starColors = new Float32Array(starCount * 3);
 
   for (let i = 0; i < starCount; i++) {
-    // Distribute stars on a dome
+    // Distribute stars on a dome (curved ceiling)
     const theta = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI * 0.4; // Only top hemisphere
-    const radius = 25;
+    const phi = Math.random() * Math.PI * 0.25; // Only top part
+    const radius = 12;
 
-    starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-    starPositions[i * 3 + 1] = radius * Math.cos(phi) + 5; // Offset up
-    starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta) * 0.8;
+    starPositions[i * 3 + 1] = radius * Math.cos(phi) + 3;
+    starPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta) * 1.2;
 
-    // Random star colors (white, blue, yellow)
-    const colorType = Math.random();
-    if (colorType < 0.6) {
-      // White
-      starColors[i * 3] = 1;
-      starColors[i * 3 + 1] = 1;
-      starColors[i * 3 + 2] = 1;
-    } else if (colorType < 0.8) {
-      // Blue
-      starColors[i * 3] = 0.7;
-      starColors[i * 3 + 1] = 0.8;
-      starColors[i * 3 + 2] = 1;
-    } else {
-      // Yellow/Gold
-      starColors[i * 3] = 1;
-      starColors[i * 3 + 1] = 0.9;
-      starColors[i * 3 + 2] = 0.6;
-    }
+    // White/golden stars
+    const brightness = 0.8 + Math.random() * 0.2;
+    starColors[i * 3] = brightness;
+    starColors[i * 3 + 1] = brightness;
+    starColors[i * 3 + 2] = brightness * 0.9;
   }
 
   return (
     <group>
-      {/* Dome background */}
-      <mesh position={[0, 5, 0]}>
-        <sphereGeometry args={[26, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshBasicMaterial 
-          color="#0a0a20" 
+      {/* Curved white ceiling (dome) */}
+      <mesh position={[0, 4, 0]} rotation={[0, 0, 0]}>
+        <sphereGeometry args={[14, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2.5]} />
+        <meshStandardMaterial 
+          color="#f0f5ff"
+          roughness={0.8}
           side={THREE.BackSide}
         />
       </mesh>
 
-      {/* Stars */}
+      {/* Decorative white ribs on ceiling */}
+      {[...Array(8)].map((_, i) => {
+        const angle = (i * Math.PI * 2) / 8;
+        return (
+          <mesh 
+            key={i} 
+            position={[0, 8, 0]}
+            rotation={[0, angle, 0]}
+          >
+            <torusGeometry args={[10, 0.15, 8, 32, Math.PI / 3]} />
+            <meshStandardMaterial color="#ffffff" roughness={0.5} />
+          </mesh>
+        );
+      })}
+
+      {/* Stars on ceiling */}
       <points ref={starsRef}>
         <bufferGeometry>
           <bufferAttribute
@@ -75,7 +78,7 @@ export function CelestialVault() {
           />
         </bufferGeometry>
         <pointsMaterial
-          size={0.15}
+          size={0.12}
           vertexColors
           transparent
           opacity={0.9}
@@ -83,28 +86,12 @@ export function CelestialVault() {
         />
       </points>
 
-      {/* Moon */}
-      <mesh position={[-8, 18, -8]}>
-        <sphereGeometry args={[1.5, 32, 32]} />
-        <meshStandardMaterial 
-          color="#f5f5dc" 
-          emissive="#f5f5dc"
-          emissiveIntensity={0.3}
-          roughness={0.8}
-        />
+      {/* Central ceiling light */}
+      <mesh position={[0, 10, 0]}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshBasicMaterial color="#fffacd" />
       </mesh>
-
-      {/* Sun */}
-      <mesh position={[8, 18, -8]}>
-        <sphereGeometry args={[2, 32, 32]} />
-        <meshStandardMaterial 
-          color="#ffd700" 
-          emissive="#ff8c00"
-          emissiveIntensity={0.5}
-          roughness={0.5}
-        />
-      </mesh>
-      <pointLight position={[8, 18, -8]} intensity={2} color="#ffd700" distance={30} />
+      <pointLight position={[0, 10, 0]} intensity={2} color="#fffacd" distance={20} />
     </group>
   );
 }
