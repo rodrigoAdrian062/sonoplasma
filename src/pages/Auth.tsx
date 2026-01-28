@@ -323,6 +323,61 @@ export default function Auth() {
         </svg>
       </div>
 
+      {/* Acacia branch - Top Right */}
+      <div className="absolute top-16 right-16 w-32 h-40 opacity-[0.03] animate-[float_8s_ease-in-out_infinite]">
+        <svg viewBox="0 0 80 100" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Main stem */}
+          <path
+            d="M40 95 Q42 70 40 50 Q38 30 42 10"
+            className="stroke-gold"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          {/* Left leaves */}
+          <ellipse cx="28" cy="20" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-30 28 20)" />
+          <ellipse cx="25" cy="35" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-40 25 35)" />
+          <ellipse cx="26" cy="50" rx="9" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-35 26 50)" />
+          <ellipse cx="28" cy="65" rx="8" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-30 28 65)" />
+          <ellipse cx="30" cy="78" rx="7" ry="3" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-25 30 78)" />
+          {/* Right leaves */}
+          <ellipse cx="52" cy="20" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(30 52 20)" />
+          <ellipse cx="55" cy="35" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(40 55 35)" />
+          <ellipse cx="54" cy="50" rx="9" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(35 54 50)" />
+          <ellipse cx="52" cy="65" rx="8" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(30 52 65)" />
+          <ellipse cx="50" cy="78" rx="7" ry="3" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(25 50 78)" />
+          {/* Small leaf details */}
+          <path d="M28 20 L40 25" className="stroke-gold/50" strokeWidth="0.5" />
+          <path d="M25 35 L40 38" className="stroke-gold/50" strokeWidth="0.5" />
+          <path d="M26 50 L40 52" className="stroke-gold/50" strokeWidth="0.5" />
+          <path d="M52 20 L40 25" className="stroke-gold/50" strokeWidth="0.5" />
+          <path d="M55 35 L40 38" className="stroke-gold/50" strokeWidth="0.5" />
+          <path d="M54 50 L40 52" className="stroke-gold/50" strokeWidth="0.5" />
+        </svg>
+      </div>
+
+      {/* Acacia branch - Bottom Left (mirrored) */}
+      <div className="absolute bottom-20 left-16 w-32 h-40 opacity-[0.03] -scale-x-100 animate-[float_8s_ease-in-out_infinite_1s]">
+        <svg viewBox="0 0 80 100" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Main stem */}
+          <path
+            d="M40 95 Q42 70 40 50 Q38 30 42 10"
+            className="stroke-gold"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          {/* Left leaves */}
+          <ellipse cx="28" cy="20" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-30 28 20)" />
+          <ellipse cx="25" cy="35" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-40 25 35)" />
+          <ellipse cx="26" cy="50" rx="9" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-35 26 50)" />
+          <ellipse cx="28" cy="65" rx="8" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(-30 28 65)" />
+          {/* Right leaves */}
+          <ellipse cx="52" cy="20" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(30 52 20)" />
+          <ellipse cx="55" cy="35" rx="10" ry="5" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(40 55 35)" />
+          <ellipse cx="54" cy="50" rx="9" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(35 54 50)" />
+          <ellipse cx="52" cy="65" rx="8" ry="4" className="stroke-gold fill-gold/5" strokeWidth="0.8" transform="rotate(30 52 65)" />
+        </svg>
+      </div>
+
       {/* Mosaic floor pattern hint at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-16 opacity-[0.015] overflow-hidden">
         <div className="flex flex-wrap">
