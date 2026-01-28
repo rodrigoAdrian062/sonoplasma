@@ -91,8 +91,116 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card 
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Eye of Providence Background */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <svg
+          viewBox="0 0 400 400"
+          className="w-[600px] h-[600px] opacity-[0.03] animate-[pulse_8s_ease-in-out_infinite]"
+          fill="none"
+          stroke="currentColor"
+        >
+          {/* Outer radiating lines */}
+          <g className="stroke-gold" strokeWidth="0.5">
+            {[...Array(24)].map((_, i) => (
+              <line
+                key={i}
+                x1="200"
+                y1="200"
+                x2={200 + 180 * Math.cos((i * 15 * Math.PI) / 180)}
+                y2={200 + 180 * Math.sin((i * 15 * Math.PI) / 180)}
+                opacity="0.5"
+              />
+            ))}
+          </g>
+          
+          {/* Triangle */}
+          <path
+            d="M200 80 L320 280 L80 280 Z"
+            className="stroke-gold"
+            strokeWidth="2"
+            fill="none"
+          />
+          
+          {/* Inner triangle */}
+          <path
+            d="M200 120 L280 250 L120 250 Z"
+            className="stroke-gold"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.5"
+          />
+          
+          {/* Eye outer */}
+          <ellipse
+            cx="200"
+            cy="200"
+            rx="50"
+            ry="30"
+            className="stroke-gold"
+            strokeWidth="2"
+            fill="none"
+          />
+          
+          {/* Eye inner circle (iris) */}
+          <circle
+            cx="200"
+            cy="200"
+            r="18"
+            className="stroke-gold fill-gold/10"
+            strokeWidth="1.5"
+          />
+          
+          {/* Pupil */}
+          <circle
+            cx="200"
+            cy="200"
+            r="8"
+            className="fill-gold/30"
+          />
+          
+          {/* Eye highlight */}
+          <circle
+            cx="196"
+            cy="196"
+            r="3"
+            className="fill-gold/50"
+          />
+          
+          {/* Eyebrow arc */}
+          <path
+            d="M145 175 Q200 140 255 175"
+            className="stroke-gold"
+            strokeWidth="2"
+            fill="none"
+          />
+          
+          {/* Lower eye curve */}
+          <path
+            d="M150 200 Q200 240 250 200"
+            className="stroke-gold"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.5"
+          />
+        </svg>
+      </div>
+      
+      {/* Subtle corner decorations */}
+      <div className="absolute top-0 left-0 w-32 h-32 opacity-[0.02]">
+        <svg viewBox="0 0 100 100" className="w-full h-full stroke-gold" strokeWidth="0.5" fill="none">
+          <path d="M0 50 L50 0 L50 50 Z" />
+          <path d="M10 50 L50 10 L50 50 Z" />
+        </svg>
+      </div>
+      <div className="absolute bottom-0 right-0 w-32 h-32 opacity-[0.02] rotate-180">
+        <svg viewBox="0 0 100 100" className="w-full h-full stroke-gold" strokeWidth="0.5" fill="none">
+          <path d="M0 50 L50 0 L50 50 Z" />
+          <path d="M10 50 L50 10 L50 50 Z" />
+        </svg>
+      </div>
+
+      <Card
         className={cn(
           "w-full max-w-sm border-border/50 shadow-xl transition-all",
           shake && "animate-[shake_0.5s_ease-in-out]",
