@@ -16,94 +16,79 @@ export function Thrones({ onClick }: ThronesProps) {
     name: string;
     isMain?: boolean;
   }) => {
-    const scale = isMain ? 1.3 : 1;
-    const platformHeight = isMain ? 0.6 : 0.3;
+    const scale = isMain ? 1.2 : 1;
+    const platformHeight = isMain ? 0.8 : 0.4;
 
     return (
       <group position={position} onClick={() => onClick?.(name)}>
-        {/* Platform/Dais */}
-        <mesh position={[0, platformHeight / 2, 0]} castShadow>
-          <boxGeometry args={[3 * scale, platformHeight, 2 * scale]} />
-          <meshStandardMaterial color="#4a3728" roughness={0.7} />
-        </mesh>
-
-        {/* Platform step */}
+        {/* Platform/Dais - White marble look */}
         {isMain && (
-          <mesh position={[0, 0.15, 1.2]} castShadow>
-            <boxGeometry args={[3.5, 0.3, 0.8]} />
-            <meshStandardMaterial color="#5a4738" roughness={0.7} />
-          </mesh>
+          <>
+            {/* Multiple steps for main throne */}
+            <mesh position={[0, 0.15, 1.5]} castShadow>
+              <boxGeometry args={[5, 0.3, 4]} />
+              <meshStandardMaterial color="#e8e8e8" roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0.45, 0.8]} castShadow>
+              <boxGeometry args={[4.5, 0.3, 2.5]} />
+              <meshStandardMaterial color="#f0f0f0" roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 0.75, 0]} castShadow>
+              <boxGeometry args={[4, 0.3, 1.5]} />
+              <meshStandardMaterial color="#f5f5f5" roughness={0.3} />
+            </mesh>
+          </>
         )}
 
-        {/* Chair back */}
-        <mesh position={[0, platformHeight + 1, -0.6 * scale]} castShadow>
-          <boxGeometry args={[1.2 * scale, 2 * scale, 0.15]} />
+        {/* Chair back - Red upholstery */}
+        <mesh position={[0, platformHeight + 0.9, -0.4 * scale]} castShadow>
+          <boxGeometry args={[1 * scale, 1.6 * scale, 0.12]} />
           <meshStandardMaterial color="#8B0000" roughness={0.6} />
-        </mesh>
-
-        {/* Chair back gold trim */}
-        <mesh position={[0, platformHeight + 1.8, -0.55 * scale]} castShadow>
-          <boxGeometry args={[1.3 * scale, 0.3, 0.05]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
         </mesh>
 
         {/* Chair seat */}
-        <mesh position={[0, platformHeight + 0.4, -0.2 * scale]} castShadow>
-          <boxGeometry args={[1 * scale, 0.1, 0.8 * scale]} />
+        <mesh position={[0, platformHeight + 0.35, 0]} castShadow>
+          <boxGeometry args={[0.9 * scale, 0.08, 0.7 * scale]} />
           <meshStandardMaterial color="#8B0000" roughness={0.6} />
         </mesh>
 
+        {/* Chair frame - Dark wood */}
+        <mesh position={[0, platformHeight + 0.15, 0]} castShadow>
+          <boxGeometry args={[1.1 * scale, 0.3, 0.8 * scale]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.7} />
+        </mesh>
+
         {/* Armrests */}
-        {[-0.5, 0.5].map((x, i) => (
-          <mesh key={i} position={[x * scale, platformHeight + 0.55, -0.2 * scale]} castShadow>
-            <boxGeometry args={[0.1, 0.3, 0.8 * scale]} />
-            <meshStandardMaterial color="#4a3728" roughness={0.7} />
+        {[-0.45, 0.45].map((x, i) => (
+          <mesh key={i} position={[x * scale, platformHeight + 0.5, -0.1]} castShadow>
+            <boxGeometry args={[0.08, 0.25, 0.5 * scale]} />
+            <meshStandardMaterial color="#2a1810" roughness={0.7} />
           </mesh>
         ))}
 
-        {/* Symbol on chair back */}
-        {isMain && (
-          <mesh position={[0, platformHeight + 1.3, -0.45 * scale]}>
-            <circleGeometry args={[0.25, 32]} />
-            <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.7} />
-          </mesh>
-        )}
+        {/* Desk in front */}
+        <mesh position={[0, platformHeight + 0.45, 0.9 * scale]} castShadow>
+          <boxGeometry args={[1.8 * scale, 0.7, 0.4]} />
+          <meshStandardMaterial color="#3a2515" roughness={0.7} />
+        </mesh>
 
         {/* Title text */}
         <Text
-          position={[0, platformHeight + 2.5, -0.6 * scale]}
-          fontSize={0.15}
+          position={[0, platformHeight + 2, -0.5 * scale]}
+          fontSize={0.12}
           color="#d4af37"
           anchorX="center"
           anchorY="middle"
         >
           {title}
         </Text>
-
-        {/* Desk in front */}
-        <mesh position={[0, platformHeight + 0.5, 0.8 * scale]} castShadow>
-          <boxGeometry args={[1.8 * scale, 0.8, 0.4]} />
-          <meshStandardMaterial color="#4a3728" roughness={0.7} />
-        </mesh>
-
-        {/* Gavel on desk */}
-        <group position={[0.4, platformHeight + 1, 0.8 * scale]} rotation={[0, 0.5, 0]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.03, 0.03, 0.25, 8]} />
-            <meshStandardMaterial color="#5a4738" roughness={0.8} />
-          </mesh>
-          <mesh position={[0, 0.15, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-            <cylinderGeometry args={[0.04, 0.04, 0.12, 8]} />
-            <meshStandardMaterial color="#4a3728" roughness={0.8} />
-          </mesh>
-        </group>
       </group>
     );
   };
 
   return (
     <group>
-      {/* Venerável Mestre (Worshipful Master) - East */}
+      {/* Venerável Mestre (Worshipful Master) - East, elevated */}
       <Throne
         position={[0, 0, -12]}
         title="Venerável Mestre"
@@ -120,7 +105,7 @@ export function Thrones({ onClick }: ThronesProps) {
 
       {/* 2º Vigilante (Junior Warden) - South */}
       <Throne
-        position={[8, 0, 0]}
+        position={[6, 0, 0]}
         title="2º Vigilante"
         name="throne-2v"
       />
