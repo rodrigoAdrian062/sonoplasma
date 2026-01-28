@@ -125,6 +125,107 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Celestial Vault / Abóbada Celeste */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Gradient sky dome */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse 150% 100% at 50% 0%, 
+              hsl(220 60% 15% / 0.9) 0%,
+              hsl(230 50% 12% / 0.8) 20%,
+              hsl(250 40% 10% / 0.6) 40%,
+              hsl(270 30% 8% / 0.4) 60%,
+              transparent 80%
+            )`,
+          }}
+        />
+        
+        {/* Stars layer */}
+        <div className="absolute inset-0">
+          {/* Large bright stars */}
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={`star-lg-${i}`}
+              className="absolute rounded-full"
+              style={{
+                width: Math.random() * 3 + 2,
+                height: Math.random() * 3 + 2,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 50}%`,
+                background: `radial-gradient(circle, 
+                  hsl(${200 + Math.random() * 60} 80% 90%) 0%, 
+                  hsl(${200 + Math.random() * 60} 60% 70%) 50%, 
+                  transparent 100%
+                )`,
+                boxShadow: `0 0 ${Math.random() * 8 + 4}px hsl(${200 + Math.random() * 60} 70% 80% / 0.8)`,
+                animation: `pulse ${Math.random() * 3 + 2}s ease-in-out ${Math.random() * 2}s infinite`,
+              }}
+            />
+          ))}
+          
+          {/* Medium stars */}
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={`star-md-${i}`}
+              className="absolute rounded-full bg-white/80"
+              style={{
+                width: Math.random() * 2 + 1,
+                height: Math.random() * 2 + 1,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 60}%`,
+                opacity: Math.random() * 0.6 + 0.3,
+                animation: `pulse ${Math.random() * 4 + 3}s ease-in-out ${Math.random() * 3}s infinite`,
+              }}
+            />
+          ))}
+          
+          {/* Small distant stars */}
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={`star-sm-${i}`}
+              className="absolute rounded-full bg-white/50"
+              style={{
+                width: 1,
+                height: 1,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 70}%`,
+                opacity: Math.random() * 0.4 + 0.2,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Subtle nebula colors */}
+        <div 
+          className="absolute top-0 left-1/4 w-96 h-64 opacity-20 blur-3xl"
+          style={{
+            background: 'radial-gradient(ellipse, hsl(280 60% 50%) 0%, transparent 70%)',
+          }}
+        />
+        <div 
+          className="absolute top-10 right-1/4 w-80 h-48 opacity-15 blur-3xl"
+          style={{
+            background: 'radial-gradient(ellipse, hsl(200 70% 50%) 0%, transparent 70%)',
+          }}
+        />
+        <div 
+          className="absolute top-20 left-1/2 w-64 h-40 opacity-10 blur-3xl -translate-x-1/2"
+          style={{
+            background: 'radial-gradient(ellipse, hsl(340 50% 50%) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Moon */}
+        <div 
+          className="absolute top-12 right-20 w-16 h-16 rounded-full opacity-30"
+          style={{
+            background: 'radial-gradient(circle at 30% 30%, hsl(50 30% 90%) 0%, hsl(50 20% 70%) 50%, hsl(50 10% 50%) 100%)',
+            boxShadow: '0 0 30px hsl(50 30% 80% / 0.5), 0 0 60px hsl(50 20% 70% / 0.3)',
+          }}
+        />
+      </div>
+
       {/* Floating Golden Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {particles.map((particle) => (
