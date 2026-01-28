@@ -11,7 +11,10 @@ import {
 import {
   arrayMove,
   sortableKeyboardCoordinates,
+  SortableContext,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { SortableStageCard } from '@/components/SortableStageCard';
 import { Header } from '@/components/Header';
 import { ControlBar } from '@/components/ControlBar';
 import { SectionCard } from '@/components/SectionCard';
@@ -274,19 +277,44 @@ const Index = () => {
               {/* Unassigned stages (if any) */}
               {stagesBySection['__unassigned__']?.length > 0 && (
                 <div className="bg-card/30 rounded-xl border border-border/30 p-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                    Etapas sem seção
-                  </h3>
-                  <div className="grid gap-3 pl-4">
-                    {stagesBySection['__unassigned__'].map((stage) => (
-                      <div key={stage.id} className="text-sm text-foreground">
-                        {stage.nome_simbolico}
-                        <span className="text-muted-foreground ml-2">
-                          (edite para atribuir a uma seção)
-                        </span>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-muted/50 rounded-lg">
+                      <FolderPlus size={20} className="text-muted-foreground" />
+                    </div>
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Etapas sem seção
+                    </h3>
+                    <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                      {stagesBySection['__unassigned__'].length} {stagesBySection['__unassigned__'].length === 1 ? 'etapa' : 'etapas'}
+                    </span>
                   </div>
+                  <SortableContext
+                    items={stagesBySection['__unassigned__'].map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="grid gap-3 pl-8">
+                      {stagesBySection['__unassigned__'].map((stage, index) => (
+                        <div
+                          key={stage.id}
+                          className="animate-fade-in"
+                          style={{ animationDelay: `${index * 0.03}s` }}
+                        >
+                          <SortableStageCard
+                            stage={stage}
+                            audios={audiosByStageId[stage.id] || []}
+                            isPlaying={currentStageId === stage.id && status === 'playing'}
+                            isPaused={currentStageId === stage.id && status === 'paused'}
+                            onPlay={(audioUrl) => handlePlay(stage, audioUrl)}
+                            onPause={pause}
+                            onResume={resume}
+                            onStop={stop}
+                            onEdit={() => setEditingStage(stage)}
+                            onDelete={() => setDeleteStageData(stage)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </SortableContext>
                 </div>
               )}
             </div>
