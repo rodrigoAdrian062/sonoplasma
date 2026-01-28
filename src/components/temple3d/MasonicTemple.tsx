@@ -29,15 +29,21 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
         gl={{ antialias: true }}
       >
         <Suspense fallback={null}>
+          {/* Background (slightly lifted so the scene isn't "black on black") */}
+          <color attach="background" args={['#070a12']} />
+
           {/* Lighting */}
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={0.55} />
+          <hemisphereLight intensity={0.45} groundColor="#080808" color="#ffffff" />
           <directionalLight
             position={[10, 20, 10]}
-            intensity={0.5}
+            intensity={1.1}
             castShadow
             shadow-mapSize={[2048, 2048]}
           />
-          <pointLight position={[0, 10, 0]} intensity={0.8} color="#ffd700" />
+          <pointLight position={[0, 10, 0]} intensity={1.2} color="#ffd700" />
+          {/* Fill light from the West */}
+          <directionalLight position={[-10, 12, 8]} intensity={0.55} />
 
           {/* Temple Elements */}
           <Floor onClick={() => handleElementClick('floor')} />
@@ -60,7 +66,7 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           />
 
           {/* Environment for reflections */}
-          <Environment preset="night" />
+          <Environment preset="warehouse" />
         </Suspense>
       </Canvas>
 
