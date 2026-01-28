@@ -240,18 +240,99 @@ export default function Auth() {
         </svg>
       </div>
       
-      {/* Subtle corner decorations */}
-      <div className="absolute top-0 left-0 w-32 h-32 opacity-[0.02]">
-        <svg viewBox="0 0 100 100" className="w-full h-full stroke-gold" strokeWidth="0.5" fill="none">
-          <path d="M0 50 L50 0 L50 50 Z" />
-          <path d="M10 50 L50 10 L50 50 Z" />
+      {/* Square and Compass - Top Left */}
+      <div className="absolute top-8 left-8 w-48 h-48 opacity-[0.025] animate-[pulse_10s_ease-in-out_infinite]">
+        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Compass (two legs forming a V) */}
+          <path
+            d="M50 15 L30 85"
+            className="stroke-gold"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <path
+            d="M50 15 L70 85"
+            className="stroke-gold"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          {/* Compass hinge */}
+          <circle cx="50" cy="15" r="4" className="stroke-gold" strokeWidth="1.5" />
+          
+          {/* Square (L shape rotated) */}
+          <path
+            d="M25 55 L50 55 L50 80"
+            className="stroke-gold"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          
+          {/* Letter G in center */}
+          <text
+            x="50"
+            y="52"
+            textAnchor="middle"
+            className="fill-gold"
+            fontSize="14"
+            fontFamily="serif"
+            fontWeight="bold"
+          >
+            G
+          </text>
         </svg>
       </div>
-      <div className="absolute bottom-0 right-0 w-32 h-32 opacity-[0.02] rotate-180">
-        <svg viewBox="0 0 100 100" className="w-full h-full stroke-gold" strokeWidth="0.5" fill="none">
-          <path d="M0 50 L50 0 L50 50 Z" />
-          <path d="M10 50 L50 10 L50 50 Z" />
+
+      {/* Square and Compass - Bottom Right (mirrored) */}
+      <div className="absolute bottom-8 right-8 w-48 h-48 opacity-[0.025] rotate-180 animate-[pulse_10s_ease-in-out_infinite_2s]">
+        <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Compass */}
+          <path d="M50 15 L30 85" className="stroke-gold" strokeWidth="2" strokeLinecap="round" />
+          <path d="M50 15 L70 85" className="stroke-gold" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="50" cy="15" r="4" className="stroke-gold" strokeWidth="1.5" />
+          {/* Square */}
+          <path d="M25 55 L50 55 L50 80" className="stroke-gold" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
+      </div>
+
+      {/* Decorative pillars - Left side */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-64 opacity-[0.02]">
+        <svg viewBox="0 0 30 200" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Pillar column */}
+          <rect x="5" y="20" width="20" height="160" className="stroke-gold" strokeWidth="1" />
+          {/* Pillar capital */}
+          <path d="M2 20 L28 20 L25 30 L5 30 Z" className="stroke-gold fill-gold/10" strokeWidth="1" />
+          {/* Pillar base */}
+          <path d="M2 180 L28 180 L25 170 L5 170 Z" className="stroke-gold fill-gold/10" strokeWidth="1" />
+          {/* Letter J */}
+          <text x="15" y="110" textAnchor="middle" className="fill-gold" fontSize="12" fontFamily="serif">J</text>
+        </svg>
+      </div>
+
+      {/* Decorative pillars - Right side */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-64 opacity-[0.02]">
+        <svg viewBox="0 0 30 200" className="w-full h-full" fill="none" stroke="currentColor">
+          {/* Pillar column */}
+          <rect x="5" y="20" width="20" height="160" className="stroke-gold" strokeWidth="1" />
+          {/* Pillar capital */}
+          <path d="M2 20 L28 20 L25 30 L5 30 Z" className="stroke-gold fill-gold/10" strokeWidth="1" />
+          {/* Pillar base */}
+          <path d="M2 180 L28 180 L25 170 L5 170 Z" className="stroke-gold fill-gold/10" strokeWidth="1" />
+          {/* Letter B */}
+          <text x="15" y="110" textAnchor="middle" className="fill-gold" fontSize="12" fontFamily="serif">B</text>
+        </svg>
+      </div>
+
+      {/* Mosaic floor pattern hint at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 opacity-[0.015] overflow-hidden">
+        <div className="flex flex-wrap">
+          {[...Array(40)].map((_, i) => (
+            <div
+              key={i}
+              className={`w-8 h-8 ${i % 2 === (Math.floor(i / 10) % 2) ? 'bg-gold' : 'bg-transparent'}`}
+            />
+          ))}
+        </div>
       </div>
 
       <Card
