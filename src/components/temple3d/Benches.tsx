@@ -1,10 +1,22 @@
+import { Text } from '@react-three/drei';
+
 interface BenchesProps {
   onClick?: (name: string) => void;
 }
 
 export function Benches({ onClick }: BenchesProps) {
   // Single bench with desk
-  const BenchRow = ({ position, side }: { position: [number, number, number]; side: 'north' | 'south' }) => {
+  const BenchRow = ({ 
+    position, 
+    side,
+    label,
+    color = "#8B0000"
+  }: { 
+    position: [number, number, number]; 
+    side: 'north' | 'south';
+    label?: string;
+    color?: string;
+  }) => {
     const rotation = side === 'north' ? Math.PI / 2 : -Math.PI / 2;
     
     return (
@@ -27,13 +39,13 @@ export function Benches({ onClick }: BenchesProps) {
         {/* Chair/Bench seat */}
         <mesh position={[0, 0.35, -0.5]} castShadow>
           <boxGeometry args={[2.5, 0.06, 0.4]} />
-          <meshStandardMaterial color="#8B0000" roughness={0.6} />
+          <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
         
         {/* Chair back */}
         <mesh position={[0, 0.65, -0.68]} castShadow>
           <boxGeometry args={[2.5, 0.55, 0.06]} />
-          <meshStandardMaterial color="#8B0000" roughness={0.6} />
+          <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
         
         {/* Chair frame */}
@@ -45,21 +57,136 @@ export function Benches({ onClick }: BenchesProps) {
           <boxGeometry args={[0.06, 0.7, 0.4]} />
           <meshStandardMaterial color="#2a1810" roughness={0.8} />
         </mesh>
+
+        {/* Label on desk */}
+        {label && (
+          <Text
+            position={[0, 0.52, 0.1]}
+            fontSize={0.12}
+            color="#d4af37"
+            anchorX="center"
+            anchorY="middle"
+            rotation={[0, -rotation, 0]}
+          >
+            {label}
+          </Text>
+        )}
       </group>
     );
   };
 
   return (
     <group onClick={() => onClick?.('benches')}>
-      {/* North side benches (left when entering) */}
-      {[-8, -5, -2, 1, 4, 7].map((z, i) => (
-        <BenchRow key={`north-${i}`} position={[-4.5, 0, z]} side="north" />
-      ))}
+      {/* ===== COLUNA DO NORTE (Aprendizes) ===== */}
+      {/* North side benches - APRENDIZES (blue accent) */}
+      <BenchRow position={[-4.5, 0, -8]} side="north" label="Aprendizes" color="#4a5568" />
+      <BenchRow position={[-4.5, 0, -5]} side="north" color="#4a5568" />
+      <BenchRow position={[-4.5, 0, -2]} side="north" color="#4a5568" />
+      <BenchRow position={[-4.5, 0, 1]} side="north" color="#4a5568" />
+      <BenchRow position={[-4.5, 0, 4]} side="north" color="#4a5568" />
+      <BenchRow position={[-4.5, 0, 7]} side="north" color="#4a5568" />
+
+      {/* ===== COLUNA DO SUL (Companheiros) ===== */}
+      {/* South side benches - COMPANHEIROS (red accent) */}
+      <BenchRow position={[4.5, 0, -8]} side="south" label="Companheiros" color="#8B0000" />
+      <BenchRow position={[4.5, 0, -5]} side="south" color="#8B0000" />
+      <BenchRow position={[4.5, 0, -2]} side="south" color="#8B0000" />
+      <BenchRow position={[4.5, 0, 1]} side="south" color="#8B0000" />
+      <BenchRow position={[4.5, 0, 4]} side="south" color="#8B0000" />
       
-      {/* South side benches (right when entering) */}
-      {[-8, -5, -2, 1, 4, 7].map((z, i) => (
-        <BenchRow key={`south-${i}`} position={[4.5, 0, z]} side="south" />
-      ))}
+      {/* ===== MESTRES (podem sentar em ambas colunas - próximo ao Oriente) ===== */}
+      {/* Masters' seats - closer to the East, distinguished seating */}
+      <group position={[-4.5, 0, -11]} rotation={[0, Math.PI / 2, 0]}>
+        {/* Individual Master chairs on North */}
+        {[-0.8, 0.8].map((x, i) => (
+          <group key={`master-n-${i}`} position={[x, 0, 0]}>
+            {/* Chair seat */}
+            <mesh position={[0, 0.35, 0]} castShadow>
+              <boxGeometry args={[0.7, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {/* Chair back */}
+            <mesh position={[0, 0.65, -0.22]} castShadow>
+              <boxGeometry args={[0.7, 0.55, 0.06]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {/* Chair legs */}
+            {[-0.3, 0.3].map((lx, j) => (
+              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
+                <boxGeometry args={[0.05, 0.34, 0.05]} />
+                <meshStandardMaterial color="#2a1810" roughness={0.8} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        <Text
+          position={[0, 1.1, 0]}
+          fontSize={0.1}
+          color="#d4af37"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[0, -Math.PI / 2, 0]}
+        >
+          Mestres
+        </Text>
+      </group>
+
+      <group position={[4.5, 0, -11]} rotation={[0, -Math.PI / 2, 0]}>
+        {/* Individual Master chairs on South */}
+        {[-0.8, 0.8].map((x, i) => (
+          <group key={`master-s-${i}`} position={[x, 0, 0]}>
+            {/* Chair seat */}
+            <mesh position={[0, 0.35, 0]} castShadow>
+              <boxGeometry args={[0.7, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {/* Chair back */}
+            <mesh position={[0, 0.65, -0.22]} castShadow>
+              <boxGeometry args={[0.7, 0.55, 0.06]} />
+              <meshStandardMaterial color="#1a365d" roughness={0.5} />
+            </mesh>
+            {/* Chair legs */}
+            {[-0.3, 0.3].map((lx, j) => (
+              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
+                <boxGeometry args={[0.05, 0.34, 0.05]} />
+                <meshStandardMaterial color="#2a1810" roughness={0.8} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        <Text
+          position={[0, 1.1, 0]}
+          fontSize={0.1}
+          color="#d4af37"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[0, Math.PI / 2, 0]}
+        >
+          Mestres
+        </Text>
+      </group>
+
+      {/* Column labels */}
+      <Text
+        position={[-4.5, 2.5, 0]}
+        fontSize={0.15}
+        color="#d4af37"
+        anchorX="center"
+        anchorY="middle"
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        Coluna do Norte
+      </Text>
+      <Text
+        position={[4.5, 2.5, 0]}
+        fontSize={0.15}
+        color="#d4af37"
+        anchorX="center"
+        anchorY="middle"
+        rotation={[0, -Math.PI / 2, 0]}
+      >
+        Coluna do Sul
+      </Text>
     </group>
   );
 }
