@@ -216,13 +216,51 @@ export default function Auth() {
           }}
         />
 
+        {/* Sun */}
+        <div 
+          className="absolute top-10 left-16 w-20 h-20 rounded-full animate-[pulse_4s_ease-in-out_infinite]"
+          style={{
+            background: 'radial-gradient(circle at 40% 40%, hsl(45 100% 70%) 0%, hsl(35 100% 55%) 40%, hsl(25 90% 45%) 70%, hsl(15 80% 35%) 100%)',
+            boxShadow: `
+              0 0 40px hsl(45 100% 60% / 0.6),
+              0 0 80px hsl(40 100% 50% / 0.4),
+              0 0 120px hsl(35 90% 45% / 0.3),
+              0 0 160px hsl(30 80% 40% / 0.2)
+            `,
+          }}
+        />
+        {/* Sun rays */}
+        <div className="absolute top-10 left-16 w-20 h-20 animate-[spin_60s_linear_infinite]">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={`ray-${i}`}
+              className="absolute top-1/2 left-1/2 origin-left"
+              style={{
+                width: '60px',
+                height: '2px',
+                background: 'linear-gradient(90deg, hsl(45 100% 60% / 0.6) 0%, transparent 100%)',
+                transform: `translateY(-50%) rotate(${i * 30}deg)`,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Moon */}
         <div 
-          className="absolute top-12 right-20 w-16 h-16 rounded-full opacity-30"
+          className="absolute top-12 right-20 w-16 h-16 rounded-full opacity-40"
           style={{
-            background: 'radial-gradient(circle at 30% 30%, hsl(50 30% 90%) 0%, hsl(50 20% 70%) 50%, hsl(50 10% 50%) 100%)',
+            background: 'radial-gradient(circle at 30% 30%, hsl(50 30% 95%) 0%, hsl(50 25% 80%) 50%, hsl(220 20% 60%) 100%)',
             boxShadow: '0 0 30px hsl(50 30% 80% / 0.5), 0 0 60px hsl(50 20% 70% / 0.3)',
           }}
+        />
+        {/* Moon craters */}
+        <div 
+          className="absolute top-14 right-24 w-3 h-3 rounded-full opacity-20"
+          style={{ background: 'hsl(220 20% 50%)' }}
+        />
+        <div 
+          className="absolute top-20 right-22 w-2 h-2 rounded-full opacity-15"
+          style={{ background: 'hsl(220 20% 50%)' }}
         />
       </div>
 
