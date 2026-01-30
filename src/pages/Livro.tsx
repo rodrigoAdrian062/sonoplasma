@@ -236,6 +236,10 @@ export default function Livro() {
     // Add background to first page
     addParchmentBackground();
 
+    // Track current chapter for headers
+    let currentChapterTitle = '';
+    let currentPartTitle = '';
+
     const addPageNumber = () => {
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
@@ -243,14 +247,34 @@ export default function Livro() {
       pdf.text(String(currentPage), pageWidth / 2, pageHeight - 14, { align: 'center' });
     };
 
-    const addPage = (skipPageNumber = false) => {
+    // Add page header with book/chapter title
+    const addPageHeader = (leftText: string, rightText: string) => {
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(...grayColor);
+      const normalizedLeft = normalizeText(leftText);
+      const normalizedRight = normalizeText(rightText);
+      pdf.text(normalizedLeft, margin, 24);
+      pdf.text(normalizedRight, pageWidth - margin, 24, { align: 'right' });
+      // Subtle line under header
+      pdf.setDrawColor(...borderColor);
+      pdf.setLineWidth(0.1);
+      pdf.line(margin, 26, pageWidth - margin, 26);
+    };
+
+    const addPage = (skipPageNumber = false, skipHeader = false) => {
       if (!skipPageNumber && currentPage > 2) {
         addPageNumber();
       }
       pdf.addPage();
       currentPage++;
       addParchmentBackground();
-      y = margin + 5;
+      if (!skipHeader && currentPage > 5 && currentChapterTitle) {
+        addPageHeader(bookContent.title, currentChapterTitle);
+        y = margin + 15;
+      } else {
+        y = margin + 5;
+      }
     };
 
     const checkPageBreak = (neededSpace: number) => {
@@ -259,22 +283,127 @@ export default function Livro() {
         pdf.addPage();
         currentPage++;
         addParchmentBackground();
-        y = margin + 5;
+        if (currentChapterTitle) {
+          addPageHeader(bookContent.title, currentChapterTitle);
+          y = margin + 15;
+        } else {
+          y = margin + 5;
+        }
       }
     };
 
-    const addText = (text: string, fontSize: number = 9, color: [number, number, number] = darkColor) => {
+    // Add decorative drop cap (capitular)
+    const addDropCap = (letter: string) => {
+      pdf.setFontSize(36);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      const normalizedLetter = normalizeText(letter.toUpperCase());
+      pdf.text(normalizedLetter, margin, y + 8);
+      
+      // Decorative box around drop cap
+      pdf.setDrawColor(...goldColor);
+      pdf.setLineWidth(0.3);
+      const capWidth = 12;
+      pdf.rect(margin - 1, y - 4, capWidth + 2, 15, 'S');
+      
+      return capWidth + 4; // Return indent for first paragraph
+    };
+
+    // Add highlighted quote box for Bible verses
+    const addQuoteBox = (quote: string, reference: string) => {
+      checkPageBreak(35);
+      y += 4;
+      
+      const quoteBoxMargin = 8;
+      const quoteWidth = contentWidth - quoteBoxMargin * 2;
+      
+      // Quote box background
+      pdf.setFillColor(235, 225, 205);
+      pdf.setDrawColor(...goldColor);
+      pdf.setLineWidth(0.5);
+      
+      // Calculate quote height
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'italic');
+      const normalizedQuote = normalizeText(quote);
+      const quoteLines = pdf.splitTextToSize(normalizedQuote, quoteWidth - 10);
+      const quoteHeight = quoteLines.length * 5 + 18;
+      
+      // Draw box
+      pdf.roundedRect(margin + quoteBoxMargin, y, quoteWidth, quoteHeight, 2, 2, 'FD');
+      
+      // Opening quote mark
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      pdf.text('"', margin + quoteBoxMargin + 4, y + 10);
+      
+      // Quote text
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(...darkColor);
+      let quoteY = y + 8;
+      quoteLines.forEach((line: string) => {
+        pdf.text(line, margin + quoteBoxMargin + 12, quoteY);
+        quoteY += 5;
+      });
+      
+      // Reference
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      const normalizedRef = normalizeText(reference);
+      pdf.text('- ' + normalizedRef, margin + quoteBoxMargin + quoteWidth - 10, quoteY + 2, { align: 'right' });
+      
+      y += quoteHeight + 8;
+    };
+
+    const addText = (text: string, fontSize: number = 9, color: [number, number, number] = darkColor, withDropCap = false) => {
       pdf.setFontSize(fontSize);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...color);
       const normalizedText = normalizeText(text);
-      const lines = pdf.splitTextToSize(normalizedText, contentWidth);
-      lines.forEach((line: string) => {
-        checkPageBreak(lineHeight);
-        pdf.text(line, margin, y);
-        y += lineHeight;
+      
+      // Check for Bible verses to highlight (lines starting with quotes and containing "—" or chapter:verse pattern)
+      const paragraphs = normalizedText.split('\n\n');
+      let isFirstParagraph = true;
+      
+      paragraphs.forEach(para => {
+        if (para.trim().startsWith('"') && (para.includes('-') || /\d+:\d+/.test(para))) {
+          // This looks like a Bible verse - extract quote and reference
+          const match = para.match(/^"(.+?)"\s*[-—]\s*(.+)$/s);
+          if (match) {
+            addQuoteBox(match[1], match[2]);
+            isFirstParagraph = false;
+            return;
+          }
+        }
+        
+        // Regular paragraph with optional drop cap
+        let indent = 0;
+        if (withDropCap && isFirstParagraph && para.trim().length > 0) {
+          const firstLetter = para.trim()[0];
+          indent = addDropCap(firstLetter);
+          para = para.trim().substring(1);
+          isFirstParagraph = false;
+        }
+        
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...color);
+        
+        const lines = pdf.splitTextToSize(para, contentWidth - indent);
+        lines.forEach((line: string, lineIdx: number) => {
+          checkPageBreak(lineHeight);
+          if (lineIdx === 0 && indent > 0) {
+            pdf.text(line, margin + indent, y);
+            indent = 0; // Only indent first line
+          } else {
+            pdf.text(line, margin, y);
+          }
+          y += lineHeight;
+        });
+        y += 2;
       });
-      y += 2;
     };
 
     const addSectionTitle = (text: string) => {
@@ -293,19 +422,26 @@ export default function Livro() {
       y += 8;
     };
 
-    const addChapterTitle = (text: string) => {
+    const addChapterTitle = (text: string, withDropCap = false) => {
       checkPageBreak(16);
       y += 4;
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...darkColor);
       const normalizedText = normalizeText(text);
+      currentChapterTitle = normalizedText;
       const lines = pdf.splitTextToSize(normalizedText, contentWidth);
       lines.forEach((line: string) => {
         pdf.text(line, margin, y);
         y += 5;
       });
-      y += 4;
+      
+      // Decorative line under chapter title
+      y += 2;
+      pdf.setDrawColor(...goldColor);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, margin + 40, y);
+      y += 6;
     };
 
     const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -483,8 +619,57 @@ export default function Livro() {
     pdf.circle(pageWidth / 2, pageHeight - 30, 1.5, 'F');
     pdf.line(pageWidth / 2 + 15, pageHeight - 30, pageWidth / 2 + 50, pageHeight - 30);
 
-    // ========== ABOUT AUTHOR PAGE (right after cover) ==========
-    addPage(true);
+    // ========== EPIGRAPH PAGE ==========
+    addPage(true, true);
+    
+    // Center the epigraph vertically
+    y = pageHeight / 2 - 30;
+    
+    // Decorative top element
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 25, y - 15, pageWidth / 2 + 25, y - 15);
+    pdf.circle(pageWidth / 2, y - 15, 2, 'S');
+    
+    // Opening quote mark
+    pdf.setFontSize(48);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text('"', pageWidth / 2, y, { align: 'center' });
+    y += 10;
+    
+    // Quote text
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor(...darkColor);
+    const epigraphLines = pdf.splitTextToSize(normalizeText(bookContent.epigraph.quote), contentWidth - 40);
+    epigraphLines.forEach((line: string) => {
+      pdf.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 6;
+    });
+    
+    // Closing quote mark
+    y += 5;
+    pdf.setFontSize(48);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text('"', pageWidth / 2, y, { align: 'center' });
+    y += 10;
+    
+    // Reference
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text('- ' + normalizeText(bookContent.epigraph.reference), pageWidth / 2, y, { align: 'center' });
+    
+    // Decorative bottom element
+    y += 15;
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 + 25, y);
+    pdf.circle(pageWidth / 2, y, 2, 'S');
+
+    // ========== ABOUT AUTHOR PAGE ==========
+    addPage(true, true);
     y = 30;
     
     // Title
@@ -700,19 +885,164 @@ export default function Livro() {
     // ========== PARTS AND CHAPTERS ==========
     for (let partIndex = 0; partIndex < bookContent.parts.length; partIndex++) {
       const part = bookContent.parts[partIndex];
+      currentPartTitle = normalizeText(part.title);
       await addPartPage(part.title, partIndex);
       
       for (const chapter of part.chapters) {
-        addPage();
+        addPage(false, true);
         y = 35;
-        addChapterTitle(chapter.title);
-        addText(chapter.content, 9);
+        addChapterTitle(chapter.title, true);
+        addText(chapter.content, 9, darkColor, true);
         addPageNumber();
       }
     }
 
-    // Final page number
+    // ========== RECOMMENDED READINGS ==========
+    addPage(false, true);
+    y = 35;
+    currentChapterTitle = 'Leituras Recomendadas';
+    addSectionTitle('LEITURAS RECOMENDADAS');
+    y += 5;
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...darkColor);
+    pdf.text(normalizeText('Para aprofundar seus conhecimentos sobre prosperidade biblica, recomendamos as seguintes leituras:'), margin, y);
+    y += 12;
+    
+    bookContent.recommendedReadings.forEach((reading, idx) => {
+      checkPageBreak(20);
+      
+      // Book number
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      pdf.text(String(idx + 1) + '.', margin, y);
+      
+      // Title
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...darkColor);
+      pdf.text(normalizeText(reading.title), margin + 8, y);
+      y += 5;
+      
+      // Author
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(...grayColor);
+      pdf.text(normalizeText('por ' + reading.author), margin + 8, y);
+      y += 5;
+      
+      // Description
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...darkColor);
+      pdf.text(normalizeText(reading.description), margin + 8, y);
+      y += 10;
+    });
+    
     addPageNumber();
+
+    // ========== BACK COVER (Professional) ==========
+    addPage(true, true);
+    
+    // Dark background for back cover
+    pdf.setFillColor(15, 25, 45);
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    // Decorative border
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(1);
+    pdf.rect(10, 10, pageWidth - 20, pageHeight - 20, 'S');
+    pdf.setLineWidth(0.3);
+    pdf.rect(14, 14, pageWidth - 28, pageHeight - 28, 'S');
+    
+    y = 30;
+    
+    // Book title
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text(normalizeText(bookContent.title.toUpperCase()), pageWidth / 2, y, { align: 'center' });
+    y += 10;
+    
+    // Decorative line
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 30, y, pageWidth / 2 + 30, y);
+    y += 15;
+    
+    // Synopsis
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(200, 200, 210);
+    const synopsisLines = pdf.splitTextToSize(normalizeText(bookContent.backCover.synopsis), contentWidth - 20);
+    synopsisLines.forEach((line: string) => {
+      pdf.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+    });
+    
+    y += 10;
+    
+    // Endorsement box
+    pdf.setFillColor(25, 35, 55);
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.3);
+    const endorseLines = pdf.splitTextToSize(normalizeText(bookContent.backCover.endorsement), contentWidth - 40);
+    const endorseHeight = endorseLines.length * 5 + 10;
+    pdf.roundedRect(margin + 10, y, contentWidth - 20, endorseHeight, 2, 2, 'FD');
+    
+    y += 8;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor(220, 200, 150);
+    endorseLines.forEach((line: string) => {
+      pdf.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 5;
+    });
+    
+    y += endorseHeight - endorseLines.length * 5 + 10;
+    
+    // Author photo and bio (small)
+    try {
+      const authorImg = await loadImage(authorPhoto);
+      const imgSize = 30;
+      pdf.setFillColor(...goldColor);
+      pdf.circle(pageWidth / 2, y + imgSize / 2, imgSize / 2 + 2, 'F');
+      pdf.addImage(authorImg, 'JPEG', pageWidth / 2 - imgSize / 2, y, imgSize, imgSize);
+      y += imgSize + 8;
+    } catch (e) {
+      y += 10;
+    }
+    
+    // Author name
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text(normalizeText(bookContent.author), pageWidth / 2, y, { align: 'center' });
+    y += 6;
+    
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(180, 180, 190);
+    pdf.text('Escritor, Conferencista e Mentor', pageWidth / 2, y, { align: 'center' });
+    
+    // ISBN and barcode area at bottom
+    y = pageHeight - 40;
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(pageWidth / 2 - 35, y, 70, 25, 'F');
+    
+    // Simulated barcode lines
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.5);
+    for (let i = 0; i < 30; i++) {
+      const barX = pageWidth / 2 - 30 + i * 2;
+      const barHeight = Math.random() > 0.3 ? 15 : 12;
+      pdf.line(barX, y + 3, barX, y + 3 + barHeight);
+    }
+    
+    // ISBN text
+    pdf.setFontSize(7);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(normalizeText('ISBN: ' + bookContent.isbn), pageWidth / 2, y + 22, { align: 'center' });
 
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
     setIsGenerating(false);

@@ -3,26 +3,58 @@ export const bookContent = {
   subtitle: "O Caminho Bíblico Para Uma Vida Próspera, Equilibrada e Abençoada",
   author: "Rodrigo Adriani",
   year: "2025",
+  isbn: "978-65-00-00000-0",
+  
+  epigraph: {
+    quote: "Bem-aventurado o homem que nao anda no conselho dos impios, nem se detem no caminho dos pecadores, nem se assenta na roda dos escarnecedores. Antes, o seu prazer esta na lei do Senhor, e na sua lei medita de dia e de noite. Ele e como arvore plantada junto a corrente de aguas, que, no devido tempo, da o seu fruto, e cuja folhagem nao murcha; e tudo quanto ele faz sera bem sucedido.",
+    reference: "Salmos 1:1-3"
+  },
+  
+  backCover: {
+    synopsis: `Voce ja se perguntou por que alguns cristaos parecem prosperar enquanto outros vivem em constante escassez?
+
+Este livro revela os principios biblicos que transformarao sua relacao com dinheiro, trabalho e prosperidade. Longe dos extremos da teologia da prosperidade superficial ou da teologia da pobreza piedosa, Rodrigo Adriani apresenta um caminho equilibrado baseado nas Escrituras.
+
+Atraves de 40 capitulos praticos, voce descobrira:
+* O verdadeiro significado de prosperidade biblica
+* Como renovar sua mente para a abundancia
+* Principios de mordomia financeira que funcionam
+* Estrategias para cada fase da vida
+* Como deixar um legado duradouro
+
+Com exercicios praticos, oracoes e planos de acao, este livro e seu guia completo para uma vida prospera, equilibrada e abencoada segundo a Palavra de Deus.`,
+    endorsement: `"Um livro transformador que equilibra fe e pratica. Leitura obrigatoria para quem busca prosperidade genuina."
+- Pastor Eduardo Santos`,
+  },
+  
+  recommendedReadings: [
+    { title: "A Biblia Sagrada", author: "Palavra de Deus", description: "A fonte primaria de toda sabedoria sobre prosperidade" },
+    { title: "Os Segredos da Mente Milionaria", author: "T. Harv Eker", description: "Transformando sua relacao com o dinheiro" },
+    { title: "Pai Rico, Pai Pobre", author: "Robert Kiyosaki", description: "Educacao financeira para o seculo XXI" },
+    { title: "O Homem Mais Rico da Babilonia", author: "George S. Clason", description: "Principios atemporais de prosperidade" },
+    { title: "Propositos", author: "Rick Warren", description: "Descobrindo o proposito de Deus para sua vida" },
+    { title: "O Poder do Habito", author: "Charles Duhigg", description: "Como construir habitos que transformam" },
+  ],
   
   aboutAuthor: {
     title: "Sobre o Autor",
-    biography: `RODRIGO ADRIANI é escritor, conferencista e mentor de desenvolvimento pessoal com foco em princípios bíblicos para uma vida próspera e equilibrada.
+    biography: `RODRIGO ADRIANI e escritor, conferencista e mentor de desenvolvimento pessoal com foco em principios biblicos para uma vida prospera e equilibrada.
 
-Nascido no Brasil, Rodrigo desenvolveu desde cedo uma paixão pelo estudo das Escrituras e sua aplicação prática na vida cotidiana. Após anos de pesquisa, experiência pessoal e mentoria de centenas de pessoas, ele se tornou uma voz respeitada no ensino sobre prosperidade integral segundo a Palavra de Deus.
+Nascido no Brasil, Rodrigo desenvolveu desde cedo uma paixao pelo estudo das Escrituras e sua aplicacao pratica na vida cotidiana. Apos anos de pesquisa, experiencia pessoal e mentoria de centenas de pessoas, ele se tornou uma voz respeitada no ensino sobre prosperidade integral segundo a Palavra de Deus.
 
-Sua jornada não foi fácil. Rodrigo enfrentou momentos de escassez financeira, crises emocionais e desafios espirituais que o levaram a buscar nas Escrituras os fundamentos para uma vida verdadeiramente próspera. Essas experiências moldaram sua abordagem única, que combina profundidade teológica com praticidade aplicável.
+Sua jornada nao foi facil. Rodrigo enfrentou momentos de escassez financeira, crises emocionais e desafios espirituais que o levaram a buscar nas Escrituras os fundamentos para uma vida verdadeiramente prospera. Essas experiencias moldaram sua abordagem unica, que combina profundidade teologica com praticidade aplicavel.
 
-Ao longo de sua carreira, tem impactado milhares de pessoas através de:
-• Palestras e conferências em igrejas e eventos
-• Programas de mentoria individual e em grupo
-• Conteúdo educacional em diversas plataformas
-• Livros e materiais de estudo bíblico
+Ao longo de sua carreira, tem impactado milhares de pessoas atraves de:
+* Palestras e conferencias em igrejas e eventos
+* Programas de mentoria individual e em grupo
+* Conteudo educacional em diversas plataformas
+* Livros e materiais de estudo biblico
 
-Rodrigo é casado, pai de família e dedica sua vida a ajudar outros a descobrirem o caminho bíblico para uma vida próspera, equilibrada e abençoada.
+Rodrigo e casado, pai de familia e dedica sua vida a ajudar outros a descobrirem o caminho biblico para uma vida prospera, equilibrada e abencoada.
 
-"Minha missão é equipar pessoas com os princípios eternos da Palavra de Deus para que prosperem de forma integral – espiritualmente, emocionalmente, relacionalmente e financeiramente."
+"Minha missao e equipar pessoas com os principios eternos da Palavra de Deus para que prosperem de forma integral - espiritualmente, emocionalmente, relacionalmente e financeiramente."
 
-Para mais informações e recursos:
+Para mais informacoes e recursos:
 contato@rodrigoadriani.com.br`,
   },
   
