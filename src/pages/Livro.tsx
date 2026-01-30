@@ -5,10 +5,17 @@ import { Button } from '@/components/ui/button';
 import { bookContent } from '@/data/bookContent';
 import jsPDF from 'jspdf';
 import bookCover from '@/assets/book-cover.jpg';
+import bookPart1 from '@/assets/book-part1.jpg';
+import bookPart2 from '@/assets/book-part2.jpg';
+import bookPart3 from '@/assets/book-part3.jpg';
+import bookPart4 from '@/assets/book-part4.jpg';
+import bookPart5 from '@/assets/book-part5.jpg';
 
 export default function Livro() {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const partImages = [bookPart1, bookPart2, bookPart3, bookPart4, bookPart5];
 
   const generatePDF = async () => {
     setIsGenerating(true);
@@ -20,20 +27,38 @@ export default function Livro() {
     const contentWidth = pageWidth - 2 * margin;
     const lineHeight = 5;
     let y = margin;
+    let currentPage = 1;
 
     // Colors
     const goldColor: [number, number, number] = [184, 134, 11];
     const darkColor: [number, number, number] = [40, 40, 40];
     const grayColor: [number, number, number] = [100, 100, 100];
 
-    const addPage = () => {
+    // Track page numbers for TOC
+    const tocEntries: { title: string; page: number; isChapter?: boolean }[] = [];
+
+    const addPageNumber = () => {
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...grayColor);
+      pdf.text(String(currentPage), pageWidth / 2, pageHeight - 12, { align: 'center' });
+    };
+
+    const addPage = (skipPageNumber = false) => {
+      if (!skipPageNumber && currentPage > 2) {
+        addPageNumber();
+      }
       pdf.addPage();
+      currentPage++;
       y = margin;
     };
 
     const checkPageBreak = (neededSpace: number) => {
-      if (y + neededSpace > pageHeight - margin) {
-        addPage();
+      if (y + neededSpace > pageHeight - margin - 15) {
+        addPageNumber();
+        pdf.addPage();
+        currentPage++;
+        y = margin;
       }
     };
 
@@ -50,18 +75,6 @@ export default function Livro() {
       y += 2;
     };
 
-    const addCenteredText = (text: string, fontSize: number = 10, isBold: boolean = false, color: [number, number, number] = darkColor) => {
-      pdf.setFontSize(fontSize);
-      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-      pdf.setTextColor(...color);
-      const lines = pdf.splitTextToSize(text, contentWidth - 10);
-      lines.forEach((line: string) => {
-        checkPageBreak(lineHeight + 2);
-        pdf.text(line, pageWidth / 2, y, { align: 'center' });
-        y += lineHeight + 1;
-      });
-    };
-
     const addSectionTitle = (text: string) => {
       checkPageBreak(18);
       y += 6;
@@ -70,7 +83,6 @@ export default function Livro() {
       pdf.setTextColor(...goldColor);
       pdf.text(text, pageWidth / 2, y, { align: 'center' });
       y += 3;
-      // Decorative line
       pdf.setDrawColor(...goldColor);
       pdf.setLineWidth(0.4);
       const lineWidth = Math.min(pdf.getTextWidth(text) + 16, contentWidth - 20);
@@ -84,8 +96,6 @@ export default function Livro() {
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...darkColor);
-      
-      // Split long titles
       const lines = pdf.splitTextToSize(text, contentWidth);
       lines.forEach((line: string) => {
         pdf.text(line, margin, y);
@@ -94,16 +104,37 @@ export default function Livro() {
       y += 4;
     };
 
-    const addPartPage = (title: string) => {
-      addPage();
-      y = pageHeight / 2 - 15;
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    };
+
+    const addPartPage = async (title: string, partIndex: number) => {
+      addPage(true);
+      
+      // Add part image
+      try {
+        const img = await loadImage(partImages[partIndex]);
+        const imgSize = 60;
+        const imgX = (pageWidth - imgSize) / 2;
+        pdf.addImage(img, 'JPEG', imgX, 40, imgSize, imgSize);
+      } catch (e) {
+        console.log('Could not load part image');
+      }
+      
+      y = 115;
       
       // Decorative line above
       pdf.setDrawColor(...goldColor);
       pdf.setLineWidth(0.8);
-      pdf.line(pageWidth / 2 - 35, y - 12, pageWidth / 2 + 35, y - 12);
+      pdf.line(pageWidth / 2 - 35, y - 8, pageWidth / 2 + 35, y - 8);
       
-      pdf.setFontSize(16);
+      pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...goldColor);
       
@@ -111,77 +142,64 @@ export default function Livro() {
       const lines = pdf.splitTextToSize(title, contentWidth - 20);
       lines.forEach((line: string) => {
         pdf.text(line, pageWidth / 2, y, { align: 'center' });
-        y += 8;
+        y += 7;
       });
       
       // Decorative line below
       pdf.line(pageWidth / 2 - 35, y + 4, pageWidth / 2 + 35, y + 4);
+      
+      addPageNumber();
     };
 
     // ========== COVER PAGE WITH IMAGE ==========
-    // Add cover image
     try {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = bookCover;
-      
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => {
-          // Calculate image dimensions to fit the page
-          const imgWidth = pageWidth - 40;
-          const imgHeight = (img.height / img.width) * imgWidth;
-          const imgX = (pageWidth - imgWidth) / 2;
-          const imgY = 20;
-          
-          pdf.addImage(img, 'JPEG', imgX, imgY, imgWidth, Math.min(imgHeight, 120));
-          resolve();
-        };
-        img.onerror = () => reject();
-      });
+      const img = await loadImage(bookCover);
+      const imgWidth = pageWidth - 40;
+      const imgHeight = (img.height / img.width) * imgWidth;
+      const imgX = (pageWidth - imgWidth) / 2;
+      pdf.addImage(img, 'JPEG', imgX, 15, imgWidth, Math.min(imgHeight, 110));
     } catch (e) {
       console.log('Could not load cover image');
     }
     
-    // Title below image
-    y = 150;
-    pdf.setFontSize(22);
+    y = 135;
+    pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...goldColor);
     pdf.text('PROSPERAR', pageWidth / 2, y, { align: 'center' });
-    y += 10;
+    y += 9;
     pdf.text('SEGUNDO A PALAVRA', pageWidth / 2, y, { align: 'center' });
     
-    y += 14;
-    pdf.setFontSize(10);
+    y += 12;
+    pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...grayColor);
     const subtitleLines = pdf.splitTextToSize(bookContent.subtitle, contentWidth - 20);
     subtitleLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 5;
+      y += 4;
     });
 
-    y += 15;
-    // Ornamental divider
+    y += 12;
     pdf.setDrawColor(...goldColor);
     pdf.setLineWidth(0.4);
-    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 - 8, y);
-    pdf.circle(pageWidth / 2, y, 1.5, 'S');
-    pdf.line(pageWidth / 2 + 8, y, pageWidth / 2 + 25, y);
+    pdf.line(pageWidth / 2 - 20, y, pageWidth / 2 - 6, y);
+    pdf.circle(pageWidth / 2, y, 1.2, 'S');
+    pdf.line(pageWidth / 2 + 6, y, pageWidth / 2 + 20, y);
     
-    y += 12;
-    pdf.setFontSize(12);
+    y += 10;
+    pdf.setFontSize(11);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...darkColor);
     pdf.text(bookContent.author, pageWidth / 2, y, { align: 'center' });
     
-    y += 8;
+    y += 6;
     pdf.setFontSize(9);
     pdf.setTextColor(...grayColor);
     pdf.text(bookContent.year, pageWidth / 2, y, { align: 'center' });
 
     // ========== COPYRIGHT PAGE ==========
-    addPage();
+    addPage(true);
     y = pageHeight / 2 - 25;
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
@@ -191,6 +209,121 @@ export default function Livro() {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
       y += 4;
     });
+
+    // ========== TABLE OF CONTENTS ==========
+    addPage(true);
+    y = 30;
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text('SUMÁRIO', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 + 25, y);
+    y += 15;
+
+    // Calculate page numbers for TOC
+    let pageCounter = 4; // Start after cover, copyright, and TOC
+    
+    // Front matter entries
+    const frontMatterItems = [
+      { title: 'Dedicatória', page: pageCounter++ },
+      { title: 'Agradecimentos', page: pageCounter++ },
+      { title: 'Prefácio', page: pageCounter++ },
+      { title: 'Introdução', page: pageCounter++ },
+    ];
+
+    // Parts and chapters
+    const partsWithPages: { title: string; page: number; chapters: { title: string; page: number }[] }[] = [];
+    
+    for (let i = 0; i < bookContent.parts.length; i++) {
+      const part = bookContent.parts[i];
+      const partPage = pageCounter++;
+      const chapters: { title: string; page: number }[] = [];
+      
+      for (const chapter of part.chapters) {
+        chapters.push({ title: chapter.title, page: pageCounter++ });
+      }
+      
+      partsWithPages.push({ title: part.title, page: partPage, chapters });
+    }
+
+    // Draw TOC entries
+    pdf.setFontSize(10);
+    
+    // Front matter
+    frontMatterItems.forEach(item => {
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...darkColor);
+      pdf.text(item.title, margin, y);
+      pdf.text(String(item.page), pageWidth - margin, y, { align: 'right' });
+      // Dotted line
+      pdf.setDrawColor(...grayColor);
+      pdf.setLineDashPattern([1, 1], 0);
+      const textWidth = pdf.getTextWidth(item.title);
+      const pageNumWidth = pdf.getTextWidth(String(item.page));
+      pdf.line(margin + textWidth + 3, y - 1, pageWidth - margin - pageNumWidth - 3, y - 1);
+      pdf.setLineDashPattern([], 0);
+      y += 6;
+    });
+
+    y += 4;
+
+    // Parts and chapters
+    partsWithPages.forEach(part => {
+      if (y > pageHeight - 40) {
+        addPage(true);
+        y = 30;
+      }
+      
+      // Part title
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      pdf.setFontSize(10);
+      const partLines = pdf.splitTextToSize(part.title, contentWidth - 30);
+      partLines.forEach((line: string, idx: number) => {
+        pdf.text(line, margin, y);
+        if (idx === partLines.length - 1) {
+          pdf.text(String(part.page), pageWidth - margin, y, { align: 'right' });
+        }
+        y += 5;
+      });
+      y += 2;
+      
+      // Chapters
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...darkColor);
+      pdf.setFontSize(9);
+      
+      part.chapters.forEach(chapter => {
+        if (y > pageHeight - 25) {
+          addPage(true);
+          y = 30;
+        }
+        
+        const chapterLines = pdf.splitTextToSize(chapter.title, contentWidth - 45);
+        chapterLines.forEach((line: string, idx: number) => {
+          pdf.text(`   ${line}`, margin, y);
+          if (idx === chapterLines.length - 1) {
+            pdf.text(String(chapter.page), pageWidth - margin, y, { align: 'right' });
+          }
+          y += 4.5;
+        });
+      });
+      
+      y += 4;
+    });
+
+    // About author
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...darkColor);
+    pdf.setFontSize(10);
+    const aboutPage = pageCounter;
+    pdf.text('Sobre o Autor', margin, y);
+    pdf.text(String(aboutPage), pageWidth - margin, y, { align: 'right' });
+
+    addPageNumber();
 
     // ========== DEDICATION ==========
     addPage();
@@ -205,34 +338,40 @@ export default function Livro() {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
       y += 5;
     });
+    addPageNumber();
 
     // ========== ACKNOWLEDGMENTS ==========
     addPage();
     y = 35;
     addSectionTitle('AGRADECIMENTOS');
     addText(bookContent.frontMatter.acknowledgments, 9);
+    addPageNumber();
 
     // ========== PREFACE ==========
     addPage();
     y = 35;
     addSectionTitle('PREFÁCIO');
     addText(bookContent.frontMatter.preface, 9);
+    addPageNumber();
 
     // ========== INTRODUCTION ==========
     addPage();
     y = 35;
     addSectionTitle('INTRODUÇÃO');
     addText(bookContent.frontMatter.introduction, 9);
+    addPageNumber();
 
     // ========== PARTS AND CHAPTERS ==========
-    for (const part of bookContent.parts) {
-      addPartPage(part.title);
+    for (let partIndex = 0; partIndex < bookContent.parts.length; partIndex++) {
+      const part = bookContent.parts[partIndex];
+      await addPartPage(part.title, partIndex);
       
       for (const chapter of part.chapters) {
         addPage();
         y = 35;
         addChapterTitle(chapter.title);
         addText(chapter.content, 9);
+        addPageNumber();
       }
     }
 
@@ -242,13 +381,14 @@ export default function Livro() {
     addSectionTitle('SOBRE O AUTOR');
     addText(bookContent.aboutAuthor.content, 9);
     
-    // Final decorative element
     y += 15;
     pdf.setDrawColor(...goldColor);
     pdf.setLineWidth(0.4);
-    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 - 8, y);
-    pdf.circle(pageWidth / 2, y, 1.5, 'S');
-    pdf.line(pageWidth / 2 + 8, y, pageWidth / 2 + 25, y);
+    pdf.line(pageWidth / 2 - 20, y, pageWidth / 2 - 6, y);
+    pdf.circle(pageWidth / 2, y, 1.2, 'S');
+    pdf.line(pageWidth / 2 + 6, y, pageWidth / 2 + 20, y);
+    
+    addPageNumber();
 
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
     setIsGenerating(false);
