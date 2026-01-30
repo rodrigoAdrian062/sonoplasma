@@ -1024,25 +1024,6 @@ export default function Livro() {
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(180, 180, 190);
     pdf.text('Escritor, Conferencista e Mentor', pageWidth / 2, y, { align: 'center' });
-    
-    // ISBN and barcode area at bottom
-    y = pageHeight - 40;
-    pdf.setFillColor(255, 255, 255);
-    pdf.rect(pageWidth / 2 - 35, y, 70, 25, 'F');
-    
-    // Simulated barcode lines
-    pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.5);
-    for (let i = 0; i < 30; i++) {
-      const barX = pageWidth / 2 - 30 + i * 2;
-      const barHeight = Math.random() > 0.3 ? 15 : 12;
-      pdf.line(barX, y + 3, barX, y + 3 + barHeight);
-    }
-    
-    // ISBN text
-    pdf.setFontSize(7);
-    pdf.setTextColor(0, 0, 0);
-    pdf.text(normalizeText('ISBN: ' + bookContent.isbn), pageWidth / 2, y + 22, { align: 'center' });
 
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
     setIsGenerating(false);
