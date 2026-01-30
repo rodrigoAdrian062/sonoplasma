@@ -10,13 +10,18 @@ import bookPart2 from '@/assets/book-part2.jpg';
 import bookPart3 from '@/assets/book-part3.jpg';
 import bookPart4 from '@/assets/book-part4.jpg';
 import bookPart5 from '@/assets/book-part5.jpg';
+import bookPart6 from '@/assets/book-part6.jpg';
+import bookPart7 from '@/assets/book-part7.jpg';
+import bookPart8 from '@/assets/book-part8.jpg';
+import bookPart9 from '@/assets/book-part9.jpg';
+import bookPart10 from '@/assets/book-part10.jpg';
 import authorPhoto from '@/assets/author-photo.jpg';
 
 export default function Livro() {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const partImages = [bookPart1, bookPart2, bookPart3, bookPart4, bookPart5];
+  const partImages = [bookPart1, bookPart2, bookPart3, bookPart4, bookPart5, bookPart6, bookPart7, bookPart8, bookPart9, bookPart10];
 
   const generatePDF = async () => {
     setIsGenerating(true);
@@ -29,6 +34,29 @@ export default function Livro() {
     const lineHeight = 5;
     let y = margin;
     let currentPage = 1;
+
+    // Function to normalize text for PDF (remove problematic characters)
+    const normalizeText = (text: string): string => {
+      // Map of special characters to their ASCII equivalents
+      const charMap: Record<string, string> = {
+        '\u00e1': 'a', '\u00e0': 'a', '\u00e3': 'a', '\u00e2': 'a', '\u00e4': 'a',
+        '\u00e9': 'e', '\u00e8': 'e', '\u00ea': 'e', '\u00eb': 'e',
+        '\u00ed': 'i', '\u00ec': 'i', '\u00ee': 'i', '\u00ef': 'i',
+        '\u00f3': 'o', '\u00f2': 'o', '\u00f5': 'o', '\u00f4': 'o', '\u00f6': 'o',
+        '\u00fa': 'u', '\u00f9': 'u', '\u00fb': 'u', '\u00fc': 'u',
+        '\u00e7': 'c', '\u00f1': 'n',
+        '\u00c1': 'A', '\u00c0': 'A', '\u00c3': 'A', '\u00c2': 'A', '\u00c4': 'A',
+        '\u00c9': 'E', '\u00c8': 'E', '\u00ca': 'E', '\u00cb': 'E',
+        '\u00cd': 'I', '\u00cc': 'I', '\u00ce': 'I', '\u00cf': 'I',
+        '\u00d3': 'O', '\u00d2': 'O', '\u00d5': 'O', '\u00d4': 'O', '\u00d6': 'O',
+        '\u00da': 'U', '\u00d9': 'U', '\u00db': 'U', '\u00dc': 'U',
+        '\u00c7': 'C', '\u00d1': 'N',
+        '\u201c': '"', '\u201d': '"', '\u2018': "'", '\u2019': "'",
+        '\u2013': '-', '\u2014': '-', '\u2026': '...',
+      };
+      
+      return text.split('').map(char => charMap[char] || char).join('');
+    };
 
     // Colors
     const goldColor: [number, number, number] = [184, 134, 11];
@@ -217,7 +245,8 @@ export default function Livro() {
       pdf.setFontSize(fontSize);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...color);
-      const lines = pdf.splitTextToSize(text, contentWidth);
+      const normalizedText = normalizeText(text);
+      const lines = pdf.splitTextToSize(normalizedText, contentWidth);
       lines.forEach((line: string) => {
         checkPageBreak(lineHeight);
         pdf.text(line, margin, y);
@@ -232,11 +261,12 @@ export default function Livro() {
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...goldColor);
-      pdf.text(text, pageWidth / 2, y, { align: 'center' });
+      const normalizedText = normalizeText(text);
+      pdf.text(normalizedText, pageWidth / 2, y, { align: 'center' });
       y += 3;
       pdf.setDrawColor(...goldColor);
       pdf.setLineWidth(0.4);
-      const lineWidth = Math.min(pdf.getTextWidth(text) + 16, contentWidth - 20);
+      const lineWidth = Math.min(pdf.getTextWidth(normalizedText) + 16, contentWidth - 20);
       pdf.line((pageWidth - lineWidth) / 2, y, (pageWidth + lineWidth) / 2, y);
       y += 8;
     };
@@ -247,7 +277,8 @@ export default function Livro() {
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...darkColor);
-      const lines = pdf.splitTextToSize(text, contentWidth);
+      const normalizedText = normalizeText(text);
+      const lines = pdf.splitTextToSize(normalizedText, contentWidth);
       lines.forEach((line: string) => {
         pdf.text(line, margin, y);
         y += 5;
@@ -290,7 +321,8 @@ export default function Livro() {
       pdf.setTextColor(...goldColor);
       
       // Split long part titles
-      const lines = pdf.splitTextToSize(title, contentWidth - 20);
+      const normalizedTitle = normalizeText(title);
+      const lines = pdf.splitTextToSize(normalizedTitle, contentWidth - 20);
       lines.forEach((line: string) => {
         pdf.text(line, pageWidth / 2, y, { align: 'center' });
         y += 7;
@@ -382,7 +414,7 @@ export default function Livro() {
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(200, 200, 210);
-    const subtitleLines = pdf.splitTextToSize(bookContent.subtitle, contentWidth - 30);
+    const subtitleLines = pdf.splitTextToSize(normalizeText(bookContent.subtitle), contentWidth - 30);
     subtitleLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
       y += 5;
@@ -464,7 +496,7 @@ export default function Livro() {
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...darkColor);
-    const bioLines = pdf.splitTextToSize(bookContent.aboutAuthor.biography, contentWidth);
+    const bioLines = pdf.splitTextToSize(normalizeText(bookContent.aboutAuthor.biography), contentWidth);
     bioLines.forEach((line: string) => {
       checkPageBreak(lineHeight);
       pdf.text(line, margin, y);
@@ -485,7 +517,7 @@ export default function Livro() {
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...grayColor);
-    const copyrightLines = pdf.splitTextToSize(bookContent.frontMatter.copyright, contentWidth - 20);
+    const copyrightLines = pdf.splitTextToSize(normalizeText(bookContent.frontMatter.copyright), contentWidth - 20);
     copyrightLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
       y += 4;
@@ -537,12 +569,13 @@ export default function Livro() {
     frontMatterItems.forEach(item => {
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...darkColor);
-      pdf.text(item.title, margin, y);
+      const normalizedTitle = normalizeText(item.title);
+      pdf.text(normalizedTitle, margin, y);
       pdf.text(String(item.page), pageWidth - margin, y, { align: 'right' });
       // Dotted line
       pdf.setDrawColor(...grayColor);
       pdf.setLineDashPattern([1, 1], 0);
-      const textWidth = pdf.getTextWidth(item.title);
+      const textWidth = pdf.getTextWidth(normalizedTitle);
       const pageNumWidth = pdf.getTextWidth(String(item.page));
       pdf.line(margin + textWidth + 3, y - 1, pageWidth - margin - pageNumWidth - 3, y - 1);
       pdf.setLineDashPattern([], 0);
@@ -562,7 +595,7 @@ export default function Livro() {
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...goldColor);
       pdf.setFontSize(10);
-      const partLines = pdf.splitTextToSize(part.title, contentWidth - 30);
+      const partLines = pdf.splitTextToSize(normalizeText(part.title), contentWidth - 30);
       partLines.forEach((line: string, idx: number) => {
         pdf.text(line, margin, y);
         if (idx === partLines.length - 1) {
@@ -583,7 +616,7 @@ export default function Livro() {
           y = 30;
         }
         
-        const chapterLines = pdf.splitTextToSize(chapter.title, contentWidth - 45);
+        const chapterLines = pdf.splitTextToSize(normalizeText(chapter.title), contentWidth - 45);
         chapterLines.forEach((line: string, idx: number) => {
           pdf.text(`   ${line}`, margin, y);
           if (idx === chapterLines.length - 1) {
@@ -614,7 +647,7 @@ export default function Livro() {
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'italic');
     pdf.setTextColor(...darkColor);
-    const dedicationLines = pdf.splitTextToSize(bookContent.frontMatter.dedication, contentWidth - 30);
+    const dedicationLines = pdf.splitTextToSize(normalizeText(bookContent.frontMatter.dedication), contentWidth - 30);
     dedicationLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
       y += 5;
