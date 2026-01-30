@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Book, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { bookContent } from '@/data/bookContent';
 import jsPDF from 'jspdf';
+import bookCover from '@/assets/book-cover.jpg';
 
 export default function Livro() {
   const navigate = useNavigate();
@@ -247,21 +248,42 @@ export default function Livro() {
         </div>
       </header>
 
-      <main className="container py-12 max-w-4xl">
-        <div className="text-center mb-16">
-          <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-gold/30 to-gold/10 rounded-full flex items-center justify-center shadow-lg border border-gold/20">
-            <Book className="text-gold drop-shadow-md" size={56} />
+      <main className="container py-12 max-w-5xl">
+        <div className="flex flex-col lg:flex-row gap-12 items-center mb-16">
+          {/* Book Cover Image */}
+          <div className="flex-shrink-0">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-gold/20 to-transparent rounded-lg blur-xl"></div>
+              <img 
+                src={bookCover} 
+                alt="Capa do Livro Prosperar Segundo a Palavra" 
+                className="relative w-64 md:w-80 rounded-lg shadow-2xl border-2 border-gold/30"
+              />
+            </div>
           </div>
-          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent mb-6 leading-tight tracking-tight">
-            Prosperar Segundo a Palavra
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
-            {bookContent.subtitle}
-          </p>
-          <div className="flex items-center justify-center gap-2 text-gold font-semibold text-lg">
-            <span className="w-8 h-px bg-gold/50"></span>
-            <span>Por {bookContent.author}</span>
-            <span className="w-8 h-px bg-gold/50"></span>
+          
+          {/* Book Info */}
+          <div className="text-center lg:text-left flex-1">
+            <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent mb-6 leading-tight tracking-tight">
+              Prosperar Segundo a Palavra
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-2xl leading-relaxed">
+              {bookContent.subtitle}
+            </p>
+            <div className="flex items-center justify-center lg:justify-start gap-2 text-gold font-semibold text-lg mb-8">
+              <span className="w-8 h-px bg-gold/50"></span>
+              <span>Por {bookContent.author}</span>
+              <span className="w-8 h-px bg-gold/50"></span>
+            </div>
+            <Button 
+              onClick={generatePDF} 
+              disabled={isGenerating} 
+              size="lg"
+              className="gap-2 bg-gold hover:bg-gold/90 text-primary-foreground font-semibold shadow-lg"
+            >
+              {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Download size={20} />}
+              {isGenerating ? 'Gerando PDF...' : 'Baixar Livro Completo (PDF)'}
+            </Button>
           </div>
         </div>
 
