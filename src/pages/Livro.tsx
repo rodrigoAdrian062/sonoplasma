@@ -126,16 +126,22 @@ export default function Livro() {
         </div>
       </header>
 
-      <main className="container py-8 max-w-4xl">
-        <div className="text-center mb-12">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gold/20 rounded-full flex items-center justify-center">
-            <Book className="text-gold" size={48} />
+      <main className="container py-12 max-w-4xl">
+        <div className="text-center mb-16">
+          <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-gold/30 to-gold/10 rounded-full flex items-center justify-center shadow-lg border border-gold/20">
+            <Book className="text-gold drop-shadow-md" size={56} />
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-            {bookContent.title}
+          <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent mb-6 leading-tight tracking-tight">
+            Prosperar Segundo a Palavra
           </h1>
-          <p className="text-xl text-muted-foreground mb-2">{bookContent.subtitle}</p>
-          <p className="text-gold font-medium">Por {bookContent.author}</p>
+          <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
+            {bookContent.subtitle}
+          </p>
+          <div className="flex items-center justify-center gap-2 text-gold font-semibold text-lg">
+            <span className="w-8 h-px bg-gold/50"></span>
+            <span>Por {bookContent.author}</span>
+            <span className="w-8 h-px bg-gold/50"></span>
+          </div>
         </div>
 
         <div className="bg-card rounded-lg p-6 md:p-8 border border-border mb-8">
