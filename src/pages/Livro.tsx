@@ -10,6 +10,7 @@ import bookPart2 from '@/assets/book-part2.jpg';
 import bookPart3 from '@/assets/book-part3.jpg';
 import bookPart4 from '@/assets/book-part4.jpg';
 import bookPart5 from '@/assets/book-part5.jpg';
+import authorPhoto from '@/assets/author-photo.jpg';
 
 export default function Livro() {
   const navigate = useNavigate();
@@ -428,6 +429,56 @@ export default function Livro() {
     pdf.circle(pageWidth / 2, pageHeight - 30, 1.5, 'F');
     pdf.line(pageWidth / 2 + 15, pageHeight - 30, pageWidth / 2 + 50, pageHeight - 30);
 
+    // ========== ABOUT AUTHOR PAGE (right after cover) ==========
+    addPage(true);
+    y = 30;
+    
+    // Title
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...goldColor);
+    pdf.text('SOBRE O AUTOR', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 30, y, pageWidth / 2 + 30, y);
+    y += 12;
+    
+    // Author photo
+    try {
+      const authorImg = await loadImage(authorPhoto);
+      const imgSize = 50;
+      const imgX = (pageWidth - imgSize) / 2;
+      
+      // Gold frame around photo
+      pdf.setFillColor(...goldColor);
+      pdf.roundedRect(imgX - 2, y - 2, imgSize + 4, imgSize + 4, 3, 3, 'F');
+      pdf.addImage(authorImg, 'JPEG', imgX, y, imgSize, imgSize);
+      y += imgSize + 10;
+    } catch (e) {
+      console.log('Could not load author photo');
+      y += 10;
+    }
+    
+    // Author biography
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...darkColor);
+    const bioLines = pdf.splitTextToSize(bookContent.aboutAuthor.biography, contentWidth);
+    bioLines.forEach((line: string) => {
+      checkPageBreak(lineHeight);
+      pdf.text(line, margin, y);
+      y += lineHeight;
+    });
+    
+    // Decorative end element
+    y += 8;
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.4);
+    pdf.line(pageWidth / 2 - 20, y, pageWidth / 2 - 6, y);
+    pdf.circle(pageWidth / 2, y, 1.2, 'S');
+    pdf.line(pageWidth / 2 + 6, y, pageWidth / 2 + 20, y);
+
     // ========== COPYRIGHT PAGE ==========
     addPage(true);
     y = pageHeight / 2 - 25;
@@ -605,19 +656,7 @@ export default function Livro() {
       }
     }
 
-    // ========== ABOUT AUTHOR ==========
-    addPage();
-    y = 35;
-    addSectionTitle('SOBRE O AUTOR');
-    addText(bookContent.aboutAuthor.content, 9);
-    
-    y += 15;
-    pdf.setDrawColor(...goldColor);
-    pdf.setLineWidth(0.4);
-    pdf.line(pageWidth / 2 - 20, y, pageWidth / 2 - 6, y);
-    pdf.circle(pageWidth / 2, y, 1.2, 'S');
-    pdf.line(pageWidth / 2 + 6, y, pageWidth / 2 + 20, y);
-    
+    // Final page number
     addPageNumber();
 
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
