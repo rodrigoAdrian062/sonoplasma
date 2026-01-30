@@ -37,25 +37,47 @@ export default function Livro() {
 
     // Function to normalize text for PDF (remove problematic characters)
     const normalizeText = (text: string): string => {
-      // Map of special characters to their ASCII equivalents
-      const charMap: Record<string, string> = {
-        '\u00e1': 'a', '\u00e0': 'a', '\u00e3': 'a', '\u00e2': 'a', '\u00e4': 'a',
-        '\u00e9': 'e', '\u00e8': 'e', '\u00ea': 'e', '\u00eb': 'e',
-        '\u00ed': 'i', '\u00ec': 'i', '\u00ee': 'i', '\u00ef': 'i',
-        '\u00f3': 'o', '\u00f2': 'o', '\u00f5': 'o', '\u00f4': 'o', '\u00f6': 'o',
-        '\u00fa': 'u', '\u00f9': 'u', '\u00fb': 'u', '\u00fc': 'u',
-        '\u00e7': 'c', '\u00f1': 'n',
-        '\u00c1': 'A', '\u00c0': 'A', '\u00c3': 'A', '\u00c2': 'A', '\u00c4': 'A',
-        '\u00c9': 'E', '\u00c8': 'E', '\u00ca': 'E', '\u00cb': 'E',
-        '\u00cd': 'I', '\u00cc': 'I', '\u00ce': 'I', '\u00cf': 'I',
-        '\u00d3': 'O', '\u00d2': 'O', '\u00d5': 'O', '\u00d4': 'O', '\u00d6': 'O',
-        '\u00da': 'U', '\u00d9': 'U', '\u00db': 'U', '\u00dc': 'U',
-        '\u00c7': 'C', '\u00d1': 'N',
-        '\u201c': '"', '\u201d': '"', '\u2018': "'", '\u2019': "'",
-        '\u2013': '-', '\u2014': '-', '\u2026': '...',
-      };
+      // First, normalize using built-in function to decompose accented characters
+      let normalized = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       
-      return text.split('').map(char => charMap[char] || char).join('');
+      // Additional replacements for special characters
+      const replacements: [RegExp, string][] = [
+        [/[\u2018\u2019\u201A\u201B]/g, "'"],  // Various single quotes
+        [/[\u201C\u201D\u201E\u201F]/g, '"'],  // Various double quotes
+        [/[\u2013\u2014\u2015]/g, '-'],        // Various dashes
+        [/\u2026/g, '...'],                     // Ellipsis
+        [/\u2022/g, '*'],                       // Bullet point
+        [/\u00B7/g, '*'],                       // Middle dot
+        [/\u2023/g, '>'],                       // Triangular bullet
+        [/\u2043/g, '-'],                       // Hyphen bullet
+        [/\u00A0/g, ' '],                       // Non-breaking space
+        [/\u00BA/g, 'o'],                       // Masculine ordinal
+        [/\u00AA/g, 'a'],                       // Feminine ordinal
+        [/\u00AB/g, '"'],                       // Left guillemet
+        [/\u00BB/g, '"'],                       // Right guillemet
+        [/\u00AD/g, ''],                        // Soft hyphen
+        [/\u200B/g, ''],                        // Zero width space
+        [/\u200C/g, ''],                        // Zero width non-joiner
+        [/\u200D/g, ''],                        // Zero width joiner
+        [/\uFEFF/g, ''],                        // BOM
+      ];
+      
+      for (const [pattern, replacement] of replacements) {
+        normalized = normalized.replace(pattern, replacement);
+      }
+      
+      // Filter out any remaining non-ASCII characters that might cause issues
+      // Keep only printable ASCII and common extended ASCII
+      normalized = normalized.split('').map(char => {
+        const code = char.charCodeAt(0);
+        // Keep standard ASCII (32-126), tab, newline, carriage return
+        if ((code >= 32 && code <= 126) || code === 9 || code === 10 || code === 13) {
+          return char;
+        }
+        return '';
+      }).join('');
+      
+      return normalized;
     };
 
     // Colors
