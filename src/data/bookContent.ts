@@ -4,6 +4,28 @@ export const bookContent = {
   author: "Rodrigo Adriani",
   year: "2025",
   
+  aboutAuthor: {
+    title: "Sobre o Autor",
+    biography: `RODRIGO ADRIANI é escritor, conferencista e mentor de desenvolvimento pessoal com foco em princípios bíblicos para uma vida próspera e equilibrada.
+
+Nascido no Brasil, Rodrigo desenvolveu desde cedo uma paixão pelo estudo das Escrituras e sua aplicação prática na vida cotidiana. Após anos de pesquisa, experiência pessoal e mentoria de centenas de pessoas, ele se tornou uma voz respeitada no ensino sobre prosperidade integral segundo a Palavra de Deus.
+
+Sua jornada não foi fácil. Rodrigo enfrentou momentos de escassez financeira, crises emocionais e desafios espirituais que o levaram a buscar nas Escrituras os fundamentos para uma vida verdadeiramente próspera. Essas experiências moldaram sua abordagem única, que combina profundidade teológica com praticidade aplicável.
+
+Ao longo de sua carreira, tem impactado milhares de pessoas através de:
+• Palestras e conferências em igrejas e eventos
+• Programas de mentoria individual e em grupo
+• Conteúdo educacional em diversas plataformas
+• Livros e materiais de estudo bíblico
+
+Rodrigo é casado, pai de família e dedica sua vida a ajudar outros a descobrirem o caminho bíblico para uma vida próspera, equilibrada e abençoada.
+
+"Minha missão é equipar pessoas com os princípios eternos da Palavra de Deus para que prosperem de forma integral – espiritualmente, emocionalmente, relacionalmente e financeiramente."
+
+Para mais informações e recursos:
+contato@rodrigoadriani.com.br`,
+  },
+  
   frontMatter: {
     copyright: `© 2025 Rodrigo Adriani
 Todos os direitos reservados.
@@ -3431,37 +3453,5 @@ ORAÇÃO FINAL
         }
       ]
     }
-  ],
-
-  aboutAuthor: {
-    title: "Sobre o Autor",
-    content: `RODRIGO ADRIANI
-
-Rodrigo Adriani nasceu em uma família simples no interior do Brasil. Filho de um caminhoneiro e uma costureira, aprendeu desde cedo que dinheiro era escasso e a vida era dura.
-
-Durante sua juventude, enfrentou dificuldades financeiras que marcaram profundamente sua forma de ver o mundo. Seu pai trabalhava longe de casa por semanas, enquanto sua mãe costurava até altas horas da noite para complementar a renda. A família vivia em constante aperto, sempre preocupada com contas a pagar e despesas inesperadas.
-
-Aos 18 anos, Rodrigo saiu de casa determinado a mudar sua história. Trabalhou em diversos empregos, estudou à noite, e lentamente construiu sua carreira. No entanto, apesar do esforço, parecia que o dinheiro sempre escapava por entre os dedos. Quanto mais ganhava, mais gastava. Quanto mais trabalhava, mais estressado ficava.
-
-O ponto de virada veio aos 32 anos, quando uma crise financeira pessoal o levou ao fundo do poço. Endividado, casamento por um fio, saúde em colapso. Foi nesse momento de desespero que Rodrigo redescobriu a Bíblia – não como livro de regras religiosas, mas como manual de vida.
-
-"Eu tinha fé, ia à igreja, mas nunca tinha realmente aplicado os princípios bíblicos às minhas finanças", relembra Rodrigo. "Quando comecei a estudar sistematicamente o que a Bíblia ensina sobre dinheiro, trabalho e prosperidade, minha vida começou a mudar."
-
-A transformação não foi instantânea. Foram anos de aprendizado, ajustes e crescimento. Rodrigo quitou dívidas, restaurou seu casamento, recuperou a saúde, e construiu uma vida de prosperidade equilibrada – não apenas financeira, mas em todas as áreas.
-
-"Prosperidade bíblica não é sobre ficar rico rápido ou viver luxuosamente", ensina Rodrigo. "É sobre viver em paz, com propósito, administrando fielmente o que Deus confia em nossas mãos, sendo generosos, e deixando um legado para as próximas gerações."
-
-Hoje, Rodrigo é empresário, mentor, palestrante e autor. Dedica sua vida a ajudar outras pessoas a descobrirem o caminho bíblico para a prosperidade. Através de livros, cursos, mentorias e palestras, já impactou milhares de pessoas com a mensagem de que é possível prosperar segundo a Palavra.
-
-Casado há mais de 20 anos, pai de três filhos, Rodrigo vive o que ensina. Sua casa é um lugar de paz e amor. Seu negócio opera com integridade e excelência. Sua generosidade alcança projetos sociais, missionários e pessoas em necessidade. Seu legado está sendo construído dia após dia.
-
-"Minha oração é que este livro seja uma semente de transformação na sua vida, assim como a Bíblia foi na minha. Prosperidade segundo a Palavra está ao seu alcance. A jornada começa hoje."
-
-Com fé e esperança,
-
-Rodrigo Adriani
-
-Para mais recursos e informações:
-contato@rodrigoadriani.com.br`
-  }
+  ]
 };
