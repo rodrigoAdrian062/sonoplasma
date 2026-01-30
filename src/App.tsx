@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Temple3D from "./pages/Temple3D";
+import Livro from "./pages/Livro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,9 +35,10 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Temple3D />
-                </ProtectedRoute>
-              } 
-            />
+              </ProtectedRoute>
+            } 
+          />
+            <Route path="/livro" element={<Livro />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
