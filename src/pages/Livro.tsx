@@ -1024,7 +1024,47 @@ export default function Livro() {
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(180, 180, 190);
     pdf.text('Escritor, Conferencista e Mentor', pageWidth / 2, y, { align: 'center' });
-
+    
+    // Decorative footer element
+    const footerY = pageHeight - 35;
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.4);
+    
+    // Central ornament - cross with rays
+    const cx = pageWidth / 2;
+    
+    // Horizontal flourishes
+    pdf.line(cx - 60, footerY, cx - 15, footerY);
+    pdf.line(cx + 15, footerY, cx + 60, footerY);
+    
+    // Left flourish ends
+    pdf.line(cx - 60, footerY, cx - 65, footerY - 4);
+    pdf.line(cx - 60, footerY, cx - 65, footerY + 4);
+    
+    // Right flourish ends
+    pdf.line(cx + 60, footerY, cx + 65, footerY - 4);
+    pdf.line(cx + 60, footerY, cx + 65, footerY + 4);
+    
+    // Center diamond
+    pdf.setFillColor(...goldColor);
+    pdf.setLineWidth(0.5);
+    const diamondSize = 5;
+    pdf.line(cx - diamondSize, footerY, cx, footerY - diamondSize);
+    pdf.line(cx, footerY - diamondSize, cx + diamondSize, footerY);
+    pdf.line(cx + diamondSize, footerY, cx, footerY + diamondSize);
+    pdf.line(cx, footerY + diamondSize, cx - diamondSize, footerY);
+    
+    // Small circles on flourishes
+    pdf.circle(cx - 45, footerY, 1.5, 'S');
+    pdf.circle(cx + 45, footerY, 1.5, 'S');
+    pdf.circle(cx - 30, footerY, 1, 'S');
+    pdf.circle(cx + 30, footerY, 1, 'S');
+    
+    // Year at bottom
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...goldColor);
+    pdf.text(bookContent.year, pageWidth / 2, footerY + 15, { align: 'center' });
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
     setIsGenerating(false);
   };
