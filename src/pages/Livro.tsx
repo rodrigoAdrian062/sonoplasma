@@ -69,7 +69,90 @@ export default function Livro() {
         pdf.rect(pageWidth - (i + 1) * 1, 0, 1, pageHeight, 'F');
       }
       
-      // Decorative corner ornaments
+      // ========== SUBTLE WATERMARK PATTERNS ==========
+      const watermarkColor: [number, number, number] = [235, 225, 205];
+      pdf.setDrawColor(...watermarkColor);
+      pdf.setLineWidth(0.15);
+      
+      // Draw subtle olive branch pattern in corners
+      const drawOliveBranch = (x: number, y: number, scale: number, flip: boolean) => {
+        const s = scale;
+        const fx = flip ? -1 : 1;
+        
+        // Main stem
+        pdf.line(x, y, x + 15 * s * fx, y - 8 * s);
+        
+        // Leaves on stem
+        for (let i = 0; i < 4; i++) {
+          const lx = x + (3 + i * 3) * s * fx;
+          const ly = y - (2 + i * 1.5) * s;
+          // Left leaf
+          pdf.ellipse(lx - 1.5 * s * fx, ly - 1 * s, 2 * s, 0.8 * s, 'S');
+          // Right leaf
+          pdf.ellipse(lx + 1.5 * s * fx, ly + 1 * s, 2 * s, 0.8 * s, 'S');
+        }
+      };
+      
+      // Draw subtle cross pattern
+      const drawCross = (x: number, y: number, size: number) => {
+        pdf.line(x - size, y, x + size, y);
+        pdf.line(x, y - size * 1.3, x, y + size * 0.7);
+      };
+      
+      // Draw subtle wheat stalk
+      const drawWheat = (x: number, y: number, scale: number) => {
+        // Stem
+        pdf.line(x, y, x, y - 20 * scale);
+        // Grains
+        for (let i = 0; i < 5; i++) {
+          const gy = y - (8 + i * 2.5) * scale;
+          pdf.ellipse(x - 2 * scale, gy, 1.5 * scale, 0.6 * scale, 'S');
+          pdf.ellipse(x + 2 * scale, gy, 1.5 * scale, 0.6 * scale, 'S');
+        }
+      };
+      
+      // Draw subtle star/light rays
+      const drawLightRays = (x: number, y: number, size: number) => {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i * Math.PI) / 4;
+          const x2 = x + Math.cos(angle) * size;
+          const y2 = y + Math.sin(angle) * size;
+          pdf.line(x, y, x2, y2);
+        }
+        pdf.circle(x, y, size * 0.3, 'S');
+      };
+      
+      // Place watermarks strategically
+      // Top left olive branch
+      drawOliveBranch(25, 45, 0.8, false);
+      
+      // Top right olive branch (mirrored)
+      drawOliveBranch(pageWidth - 25, 45, 0.8, true);
+      
+      // Center subtle cross
+      pdf.setDrawColor(230, 218, 195);
+      drawCross(pageWidth / 2, pageHeight / 2, 25);
+      
+      // Light rays behind cross
+      pdf.setDrawColor(238, 228, 210);
+      drawLightRays(pageWidth / 2, pageHeight / 2, 35);
+      
+      // Bottom corners - wheat
+      pdf.setDrawColor(...watermarkColor);
+      drawWheat(35, pageHeight - 30, 0.7);
+      drawWheat(pageWidth - 35, pageHeight - 30, 0.7);
+      
+      // Subtle decorative circles pattern
+      pdf.setDrawColor(240, 232, 218);
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 4; col++) {
+          const cx = 50 + col * 40;
+          const cy = 80 + row * 45;
+          pdf.circle(cx, cy, 0.5, 'S');
+        }
+      }
+      
+      // ========== CORNER ORNAMENTS ==========
       pdf.setDrawColor(...borderColor);
       pdf.setLineWidth(0.3);
       
