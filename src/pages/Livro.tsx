@@ -301,52 +301,132 @@ export default function Livro() {
       addPageNumber();
     };
 
-    // ========== COVER PAGE WITH IMAGE ==========
+    // ========== PROFESSIONAL COVER PAGE ==========
+    // Dark elegant background for cover
+    pdf.setFillColor(15, 25, 45); // Deep navy blue
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    // Decorative gold border frame
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(1.5);
+    pdf.rect(8, 8, pageWidth - 16, pageHeight - 16, 'S');
+    pdf.setLineWidth(0.5);
+    pdf.rect(12, 12, pageWidth - 24, pageHeight - 24, 'S');
+    
+    // Corner ornaments for cover
+    const drawCoverCorner = (cx: number, cy: number, flipX: boolean, flipY: boolean) => {
+      const fx = flipX ? -1 : 1;
+      const fy = flipY ? -1 : 1;
+      pdf.setLineWidth(0.4);
+      // Diamond shape
+      pdf.line(cx, cy + 8 * fy, cx + 8 * fx, cy);
+      pdf.line(cx + 8 * fx, cy, cx, cy - 8 * fy);
+      pdf.line(cx, cy - 8 * fy, cx - 8 * fx, cy);
+      pdf.line(cx - 8 * fx, cy, cx, cy + 8 * fy);
+      // Extended lines
+      pdf.line(cx + 12 * fx, cy, cx + 25 * fx, cy);
+      pdf.line(cx, cy + 12 * fy, cx, cy + 25 * fy);
+    };
+    
+    drawCoverCorner(20, 20, false, false);
+    drawCoverCorner(pageWidth - 20, 20, true, false);
+    drawCoverCorner(20, pageHeight - 20, false, true);
+    drawCoverCorner(pageWidth - 20, pageHeight - 20, true, true);
+    
+    // Top decorative element
+    pdf.setLineWidth(0.3);
+    pdf.line(pageWidth / 2 - 50, 30, pageWidth / 2 - 15, 30);
+    pdf.circle(pageWidth / 2, 30, 3, 'S');
+    pdf.circle(pageWidth / 2, 30, 1.5, 'F');
+    pdf.line(pageWidth / 2 + 15, 30, pageWidth / 2 + 50, 30);
+    
+    // Cover image with gold frame
     try {
       const img = await loadImage(bookCover);
-      const imgWidth = pageWidth - 40;
+      const imgWidth = 100;
       const imgHeight = (img.height / img.width) * imgWidth;
       const imgX = (pageWidth - imgWidth) / 2;
-      pdf.addImage(img, 'JPEG', imgX, 15, imgWidth, Math.min(imgHeight, 110));
+      const imgY = 42;
+      
+      // Gold frame around image
+      pdf.setFillColor(...goldColor);
+      pdf.rect(imgX - 3, imgY - 3, imgWidth + 6, Math.min(imgHeight, 95) + 6, 'F');
+      pdf.addImage(img, 'JPEG', imgX, imgY, imgWidth, Math.min(imgHeight, 95));
     } catch (e) {
       console.log('Could not load cover image');
     }
     
-    y = 135;
-    pdf.setFontSize(20);
+    // Title section
+    y = 155;
+    
+    // Decorative line above title
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.5);
+    pdf.line(pageWidth / 2 - 60, y - 8, pageWidth / 2 + 60, y - 8);
+    
+    pdf.setFontSize(28);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...goldColor);
     pdf.text('PROSPERAR', pageWidth / 2, y, { align: 'center' });
-    y += 9;
+    y += 12;
+    pdf.setFontSize(22);
     pdf.text('SEGUNDO A PALAVRA', pageWidth / 2, y, { align: 'center' });
     
-    y += 12;
-    pdf.setFontSize(9);
+    // Decorative line below title
+    y += 8;
+    pdf.line(pageWidth / 2 - 60, y, pageWidth / 2 + 60, y);
+    
+    // Subtitle
+    y += 15;
+    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...grayColor);
-    const subtitleLines = pdf.splitTextToSize(bookContent.subtitle, contentWidth - 20);
+    pdf.setTextColor(200, 200, 210);
+    const subtitleLines = pdf.splitTextToSize(bookContent.subtitle, contentWidth - 30);
     subtitleLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 4;
+      y += 5;
     });
 
+    // Ornamental divider
     y += 12;
     pdf.setDrawColor(...goldColor);
     pdf.setLineWidth(0.4);
-    pdf.line(pageWidth / 2 - 20, y, pageWidth / 2 - 6, y);
-    pdf.circle(pageWidth / 2, y, 1.2, 'S');
-    pdf.line(pageWidth / 2 + 6, y, pageWidth / 2 + 20, y);
+    // Left flourish
+    pdf.line(pageWidth / 2 - 40, y, pageWidth / 2 - 12, y);
+    pdf.line(pageWidth / 2 - 40, y, pageWidth / 2 - 45, y - 3);
+    pdf.line(pageWidth / 2 - 40, y, pageWidth / 2 - 45, y + 3);
+    // Center diamond
+    pdf.setFillColor(...goldColor);
+    const dx = pageWidth / 2;
+    pdf.line(dx - 5, y, dx, y - 3);
+    pdf.line(dx, y - 3, dx + 5, y);
+    pdf.line(dx + 5, y, dx, y + 3);
+    pdf.line(dx, y + 3, dx - 5, y);
+    // Right flourish
+    pdf.line(pageWidth / 2 + 12, y, pageWidth / 2 + 40, y);
+    pdf.line(pageWidth / 2 + 40, y, pageWidth / 2 + 45, y - 3);
+    pdf.line(pageWidth / 2 + 40, y, pageWidth / 2 + 45, y + 3);
     
-    y += 10;
-    pdf.setFontSize(11);
+    // Author name
+    y += 18;
+    pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...darkColor);
+    pdf.setTextColor(...goldColor);
     pdf.text(bookContent.author, pageWidth / 2, y, { align: 'center' });
     
-    y += 6;
-    pdf.setFontSize(9);
-    pdf.setTextColor(...grayColor);
+    // Year
+    y += 8;
+    pdf.setFontSize(10);
+    pdf.setTextColor(180, 180, 190);
     pdf.text(bookContent.year, pageWidth / 2, y, { align: 'center' });
+    
+    // Bottom decorative element
+    pdf.setDrawColor(...goldColor);
+    pdf.setLineWidth(0.3);
+    pdf.line(pageWidth / 2 - 50, pageHeight - 30, pageWidth / 2 - 15, pageHeight - 30);
+    pdf.circle(pageWidth / 2, pageHeight - 30, 3, 'S');
+    pdf.circle(pageWidth / 2, pageHeight - 30, 1.5, 'F');
+    pdf.line(pageWidth / 2 + 15, pageHeight - 30, pageWidth / 2 + 50, pageHeight - 30);
 
     // ========== COPYRIGHT PAGE ==========
     addPage(true);
