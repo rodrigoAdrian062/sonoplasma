@@ -8,16 +8,7 @@ export const bookContent = {
     copyright: `© 2025 Rodrigo Adriani
 Todos os direitos reservados.
 
-Nenhuma parte desta publicação pode ser reproduzida, distribuída ou transmitida por qualquer forma ou meio, incluindo fotocópia, gravação ou outros métodos eletrônicos ou mecânicos, sem a prévia autorização por escrito do autor, exceto no caso de breves citações incorporadas em resenhas críticas e certos outros usos não comerciais permitidos pela lei de direitos autorais.
-
-As citações bíblicas foram extraídas da versão Almeida Revista e Atualizada (ARA), salvo indicação em contrário.
-
-Para informações sobre permissões de uso, entre em contato através do e-mail: contato@rodrigoadriani.com.br
-
-ISBN: 978-65-00-00000-0
-
-Primeira Edição
-Impresso no Brasil`,
+Nenhuma parte desta publicação pode ser reproduzida, distribuída ou transmitida por qualquer forma ou meio, incluindo fotocópia, gravação ou outros métodos eletrônicos ou mecânicos, sem a prévia autorização por escrito do autor, exceto no caso de breves citações incorporadas em resenhas críticas e certos outros usos não comerciais permitidos pela lei de direitos autorais.`,
 
     dedication: `Dedico este livro a todos aqueles que buscam prosperar de forma íntegra e equilibrada.
 
