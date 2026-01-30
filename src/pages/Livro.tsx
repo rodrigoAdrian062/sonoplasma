@@ -16,14 +16,14 @@ export default function Livro() {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 25;
+    const margin = 20;
     const contentWidth = pageWidth - 2 * margin;
-    const lineHeight = 6;
+    const lineHeight = 5;
     let y = margin;
 
     // Colors
     const goldColor: [number, number, number] = [184, 134, 11];
-    const darkColor: [number, number, number] = [30, 30, 30];
+    const darkColor: [number, number, number] = [40, 40, 40];
     const grayColor: [number, number, number] = [100, 100, 100];
 
     const addPage = () => {
@@ -37,7 +37,7 @@ export default function Livro() {
       }
     };
 
-    const addText = (text: string, fontSize: number = 11, color: [number, number, number] = darkColor) => {
+    const addText = (text: string, fontSize: number = 9, color: [number, number, number] = darkColor) => {
       pdf.setFontSize(fontSize);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...color);
@@ -50,158 +50,179 @@ export default function Livro() {
       y += 2;
     };
 
-    const addCenteredText = (text: string, fontSize: number = 12, isBold: boolean = false, color: [number, number, number] = darkColor) => {
+    const addCenteredText = (text: string, fontSize: number = 10, isBold: boolean = false, color: [number, number, number] = darkColor) => {
       pdf.setFontSize(fontSize);
       pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
       pdf.setTextColor(...color);
-      checkPageBreak(lineHeight + 4);
-      pdf.text(text, pageWidth / 2, y, { align: 'center' });
-      y += lineHeight + 2;
+      const lines = pdf.splitTextToSize(text, contentWidth - 10);
+      lines.forEach((line: string) => {
+        checkPageBreak(lineHeight + 2);
+        pdf.text(line, pageWidth / 2, y, { align: 'center' });
+        y += lineHeight + 1;
+      });
     };
 
     const addSectionTitle = (text: string) => {
-      checkPageBreak(20);
-      y += 8;
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...goldColor);
-      pdf.text(text, pageWidth / 2, y, { align: 'center' });
-      y += 4;
-      // Decorative line
-      pdf.setDrawColor(...goldColor);
-      pdf.setLineWidth(0.5);
-      const lineWidth = Math.min(pdf.getTextWidth(text) + 20, contentWidth);
-      pdf.line((pageWidth - lineWidth) / 2, y, (pageWidth + lineWidth) / 2, y);
-      y += 12;
-    };
-
-    const addChapterTitle = (text: string) => {
-      checkPageBreak(20);
+      checkPageBreak(18);
       y += 6;
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...goldColor);
+      pdf.text(text, pageWidth / 2, y, { align: 'center' });
+      y += 3;
+      // Decorative line
+      pdf.setDrawColor(...goldColor);
+      pdf.setLineWidth(0.4);
+      const lineWidth = Math.min(pdf.getTextWidth(text) + 16, contentWidth - 20);
+      pdf.line((pageWidth - lineWidth) / 2, y, (pageWidth + lineWidth) / 2, y);
+      y += 8;
+    };
+
+    const addChapterTitle = (text: string) => {
+      checkPageBreak(16);
+      y += 4;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...darkColor);
-      pdf.text(text, margin, y);
-      y += 10;
+      
+      // Split long titles
+      const lines = pdf.splitTextToSize(text, contentWidth);
+      lines.forEach((line: string) => {
+        pdf.text(line, margin, y);
+        y += 5;
+      });
+      y += 4;
     };
 
     const addPartPage = (title: string) => {
       addPage();
-      y = pageHeight / 2 - 20;
+      y = pageHeight / 2 - 15;
       
       // Decorative line above
       pdf.setDrawColor(...goldColor);
-      pdf.setLineWidth(1);
-      pdf.line(pageWidth / 2 - 40, y - 15, pageWidth / 2 + 40, y - 15);
+      pdf.setLineWidth(0.8);
+      pdf.line(pageWidth / 2 - 35, y - 12, pageWidth / 2 + 35, y - 12);
       
-      pdf.setFontSize(24);
+      pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(...goldColor);
-      pdf.text(title, pageWidth / 2, y, { align: 'center' });
+      
+      // Split long part titles
+      const lines = pdf.splitTextToSize(title, contentWidth - 20);
+      lines.forEach((line: string) => {
+        pdf.text(line, pageWidth / 2, y, { align: 'center' });
+        y += 8;
+      });
       
       // Decorative line below
-      pdf.line(pageWidth / 2 - 40, y + 10, pageWidth / 2 + 40, y + 10);
+      pdf.line(pageWidth / 2 - 35, y + 4, pageWidth / 2 + 35, y + 4);
     };
 
-    // ========== COVER PAGE ==========
-    // Background rectangle
-    pdf.setFillColor(250, 248, 245);
-    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+    // ========== COVER PAGE WITH IMAGE ==========
+    // Add cover image
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = bookCover;
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          // Calculate image dimensions to fit the page
+          const imgWidth = pageWidth - 40;
+          const imgHeight = (img.height / img.width) * imgWidth;
+          const imgX = (pageWidth - imgWidth) / 2;
+          const imgY = 20;
+          
+          pdf.addImage(img, 'JPEG', imgX, imgY, imgWidth, Math.min(imgHeight, 120));
+          resolve();
+        };
+        img.onerror = () => reject();
+      });
+    } catch (e) {
+      console.log('Could not load cover image');
+    }
     
-    // Top decorative border
-    pdf.setDrawColor(...goldColor);
-    pdf.setLineWidth(2);
-    pdf.line(margin, 20, pageWidth - margin, 20);
-    pdf.setLineWidth(0.5);
-    pdf.line(margin, 24, pageWidth - margin, 24);
-    
-    y = 70;
-    pdf.setFontSize(32);
+    // Title below image
+    y = 150;
+    pdf.setFontSize(22);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...goldColor);
     pdf.text('PROSPERAR', pageWidth / 2, y, { align: 'center' });
-    y += 14;
+    y += 10;
     pdf.text('SEGUNDO A PALAVRA', pageWidth / 2, y, { align: 'center' });
     
-    y += 20;
-    pdf.setFontSize(13);
+    y += 14;
+    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...grayColor);
     const subtitleLines = pdf.splitTextToSize(bookContent.subtitle, contentWidth - 20);
     subtitleLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 7;
+      y += 5;
     });
 
-    y += 30;
+    y += 15;
     // Ornamental divider
     pdf.setDrawColor(...goldColor);
-    pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 2 - 30, y, pageWidth / 2 - 10, y);
-    pdf.circle(pageWidth / 2, y, 2, 'S');
-    pdf.line(pageWidth / 2 + 10, y, pageWidth / 2 + 30, y);
+    pdf.setLineWidth(0.4);
+    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 - 8, y);
+    pdf.circle(pageWidth / 2, y, 1.5, 'S');
+    pdf.line(pageWidth / 2 + 8, y, pageWidth / 2 + 25, y);
     
-    y += 25;
-    pdf.setFontSize(16);
+    y += 12;
+    pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...darkColor);
     pdf.text(bookContent.author, pageWidth / 2, y, { align: 'center' });
     
-    y += 10;
-    pdf.setFontSize(11);
+    y += 8;
+    pdf.setFontSize(9);
     pdf.setTextColor(...grayColor);
     pdf.text(bookContent.year, pageWidth / 2, y, { align: 'center' });
-    
-    // Bottom decorative border
-    pdf.setDrawColor(...goldColor);
-    pdf.setLineWidth(0.5);
-    pdf.line(margin, pageHeight - 24, pageWidth - margin, pageHeight - 24);
-    pdf.setLineWidth(2);
-    pdf.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
 
     // ========== COPYRIGHT PAGE ==========
     addPage();
-    y = pageHeight / 2 - 30;
-    pdf.setFontSize(10);
+    y = pageHeight / 2 - 25;
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(...grayColor);
-    const copyrightLines = pdf.splitTextToSize(bookContent.frontMatter.copyright, contentWidth);
+    const copyrightLines = pdf.splitTextToSize(bookContent.frontMatter.copyright, contentWidth - 20);
     copyrightLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 5;
+      y += 4;
     });
 
     // ========== DEDICATION ==========
     addPage();
-    y = 50;
+    y = 45;
     addSectionTitle('DEDICATÓRIA');
-    y += 10;
-    pdf.setFontSize(12);
+    y += 8;
+    pdf.setFontSize(10);
     pdf.setFont('helvetica', 'italic');
     pdf.setTextColor(...darkColor);
-    const dedicationLines = pdf.splitTextToSize(bookContent.frontMatter.dedication, contentWidth - 40);
+    const dedicationLines = pdf.splitTextToSize(bookContent.frontMatter.dedication, contentWidth - 30);
     dedicationLines.forEach((line: string) => {
       pdf.text(line, pageWidth / 2, y, { align: 'center' });
-      y += 7;
+      y += 5;
     });
 
     // ========== ACKNOWLEDGMENTS ==========
     addPage();
-    y = 40;
+    y = 35;
     addSectionTitle('AGRADECIMENTOS');
-    addText(bookContent.frontMatter.acknowledgments);
+    addText(bookContent.frontMatter.acknowledgments, 9);
 
     // ========== PREFACE ==========
     addPage();
-    y = 40;
+    y = 35;
     addSectionTitle('PREFÁCIO');
-    addText(bookContent.frontMatter.preface);
+    addText(bookContent.frontMatter.preface, 9);
 
     // ========== INTRODUCTION ==========
     addPage();
-    y = 40;
+    y = 35;
     addSectionTitle('INTRODUÇÃO');
-    addText(bookContent.frontMatter.introduction);
+    addText(bookContent.frontMatter.introduction, 9);
 
     // ========== PARTS AND CHAPTERS ==========
     for (const part of bookContent.parts) {
@@ -209,25 +230,25 @@ export default function Livro() {
       
       for (const chapter of part.chapters) {
         addPage();
-        y = 40;
+        y = 35;
         addChapterTitle(chapter.title);
-        addText(chapter.content);
+        addText(chapter.content, 9);
       }
     }
 
     // ========== ABOUT AUTHOR ==========
     addPage();
-    y = 40;
+    y = 35;
     addSectionTitle('SOBRE O AUTOR');
-    addText(bookContent.aboutAuthor.content);
+    addText(bookContent.aboutAuthor.content, 9);
     
     // Final decorative element
-    y += 20;
+    y += 15;
     pdf.setDrawColor(...goldColor);
-    pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 2 - 30, y, pageWidth / 2 - 10, y);
-    pdf.circle(pageWidth / 2, y, 2, 'S');
-    pdf.line(pageWidth / 2 + 10, y, pageWidth / 2 + 30, y);
+    pdf.setLineWidth(0.4);
+    pdf.line(pageWidth / 2 - 25, y, pageWidth / 2 - 8, y);
+    pdf.circle(pageWidth / 2, y, 1.5, 'S');
+    pdf.line(pageWidth / 2 + 8, y, pageWidth / 2 + 25, y);
 
     pdf.save('Prosperar-Segundo-a-Palavra-Rodrigo-Adriani.pdf');
     setIsGenerating(false);
