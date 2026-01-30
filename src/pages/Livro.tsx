@@ -31,17 +31,82 @@ export default function Livro() {
 
     // Colors
     const goldColor: [number, number, number] = [184, 134, 11];
-    const darkColor: [number, number, number] = [40, 40, 40];
-    const grayColor: [number, number, number] = [100, 100, 100];
+    const darkColor: [number, number, number] = [55, 45, 35];
+    const grayColor: [number, number, number] = [120, 100, 80];
+    const beigeColor: [number, number, number] = [245, 235, 220];
+    const beigeDark: [number, number, number] = [225, 210, 185];
+    const borderColor: [number, number, number] = [200, 180, 150];
 
     // Track page numbers for TOC
     const tocEntries: { title: string; page: number; isChapter?: boolean }[] = [];
+
+    // Add parchment background with decorative elements
+    const addParchmentBackground = () => {
+      // Main beige background
+      pdf.setFillColor(...beigeColor);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      // Subtle gradient effect - darker edges
+      pdf.setFillColor(...beigeDark);
+      // Top edge gradient
+      for (let i = 0; i < 8; i++) {
+        pdf.setFillColor(245 - i * 2, 235 - i * 2, 220 - i * 3);
+        pdf.rect(0, i * 1.5, pageWidth, 1.5, 'F');
+      }
+      // Bottom edge gradient
+      for (let i = 0; i < 8; i++) {
+        pdf.setFillColor(245 - i * 2, 235 - i * 2, 220 - i * 3);
+        pdf.rect(0, pageHeight - (i + 1) * 1.5, pageWidth, 1.5, 'F');
+      }
+      // Left edge gradient
+      for (let i = 0; i < 6; i++) {
+        pdf.setFillColor(245 - i * 2, 235 - i * 2, 220 - i * 3);
+        pdf.rect(i * 1, 0, 1, pageHeight, 'F');
+      }
+      // Right edge gradient
+      for (let i = 0; i < 6; i++) {
+        pdf.setFillColor(245 - i * 2, 235 - i * 2, 220 - i * 3);
+        pdf.rect(pageWidth - (i + 1) * 1, 0, 1, pageHeight, 'F');
+      }
+      
+      // Decorative corner ornaments
+      pdf.setDrawColor(...borderColor);
+      pdf.setLineWidth(0.3);
+      
+      // Top-left corner
+      pdf.line(8, 12, 22, 12);
+      pdf.line(12, 8, 12, 22);
+      pdf.circle(12, 12, 2, 'S');
+      
+      // Top-right corner
+      pdf.line(pageWidth - 22, 12, pageWidth - 8, 12);
+      pdf.line(pageWidth - 12, 8, pageWidth - 12, 22);
+      pdf.circle(pageWidth - 12, 12, 2, 'S');
+      
+      // Bottom-left corner
+      pdf.line(8, pageHeight - 12, 22, pageHeight - 12);
+      pdf.line(12, pageHeight - 22, 12, pageHeight - 8);
+      pdf.circle(12, pageHeight - 12, 2, 'S');
+      
+      // Bottom-right corner
+      pdf.line(pageWidth - 22, pageHeight - 12, pageWidth - 8, pageHeight - 12);
+      pdf.line(pageWidth - 12, pageHeight - 22, pageWidth - 12, pageHeight - 8);
+      pdf.circle(pageWidth - 12, pageHeight - 12, 2, 'S');
+      
+      // Inner decorative border
+      pdf.setDrawColor(...goldColor);
+      pdf.setLineWidth(0.2);
+      pdf.rect(15, 18, pageWidth - 30, pageHeight - 36, 'S');
+    };
+
+    // Add background to first page
+    addParchmentBackground();
 
     const addPageNumber = () => {
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...grayColor);
-      pdf.text(String(currentPage), pageWidth / 2, pageHeight - 12, { align: 'center' });
+      pdf.text(String(currentPage), pageWidth / 2, pageHeight - 14, { align: 'center' });
     };
 
     const addPage = (skipPageNumber = false) => {
@@ -50,15 +115,17 @@ export default function Livro() {
       }
       pdf.addPage();
       currentPage++;
-      y = margin;
+      addParchmentBackground();
+      y = margin + 5;
     };
 
     const checkPageBreak = (neededSpace: number) => {
-      if (y + neededSpace > pageHeight - margin - 15) {
+      if (y + neededSpace > pageHeight - margin - 20) {
         addPageNumber();
         pdf.addPage();
         currentPage++;
-        y = margin;
+        addParchmentBackground();
+        y = margin + 5;
       }
     };
 
