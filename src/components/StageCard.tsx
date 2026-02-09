@@ -262,20 +262,20 @@ export function StageCard({
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
               disabled={!hasAudios}
+              size="lg"
               className={cn(
-                'flex-1 sm:flex-none gap-2 border',
+                'flex-1 gap-3 text-base font-semibold h-12 rounded-xl shadow-md transition-all duration-200',
                 hasAudios 
-                  ? 'bg-gold/10 hover:bg-gold/20 text-gold border-gold/30 hover:border-gold/50' 
-                  : 'bg-secondary text-muted-foreground border-border cursor-not-allowed'
+                  ? 'bg-gold hover:bg-gold/90 text-background border-none shadow-gold/30 hover:shadow-gold/50 hover:shadow-lg' 
+                  : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
-              variant="outline"
             >
-              <Play size={18} />
+              <Play size={22} fill="currentColor" />
               <span>Iniciar</span>
             </Button>
           ) : (
@@ -283,29 +283,30 @@ export function StageCard({
               {isPlaying ? (
                 <Button
                   onClick={handlePause}
-                  className="flex-1 sm:flex-none gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
-                  variant="outline"
+                  size="lg"
+                  className="flex-1 gap-3 text-base font-semibold h-12 rounded-xl bg-gold hover:bg-gold/90 text-background border-none shadow-md shadow-gold/30"
                 >
-                  <Pause size={18} />
+                  <Pause size={22} fill="currentColor" />
                   <span>Pausar</span>
                 </Button>
               ) : (
                 <Button
                   onClick={handleResume}
-                  className="flex-1 sm:flex-none gap-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30"
-                  variant="outline"
+                  size="lg"
+                  className="flex-1 gap-3 text-base font-semibold h-12 rounded-xl bg-gold hover:bg-gold/90 text-background border-none shadow-md shadow-gold/30"
                 >
-                  <Play size={18} />
+                  <Play size={22} fill="currentColor" />
                   <span>Continuar</span>
                 </Button>
               )}
               <Button
                 onClick={handleStop}
-                className="gap-2 bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
+                size="lg"
+                className="gap-2 h-12 rounded-xl bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 hover:border-destructive/50 font-semibold"
                 variant="outline"
               >
-                <Square size={18} />
-                <span className="hidden sm:inline">Parar</span>
+                <Square size={20} fill="currentColor" />
+                <span>Parar</span>
               </Button>
             </>
           )}
