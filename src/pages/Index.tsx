@@ -13,6 +13,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
@@ -127,7 +128,7 @@ const Index = () => {
                 >
                   <div
                     className="group bg-card/50 hover:bg-card border border-border/50 hover:border-gold/20 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gold/5"
-                    onClick={() => navigate(`/secao/${section.id}`)}
+                    onClick={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
                   >
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2.5 sm:p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl transition-colors duration-300">

@@ -55,8 +55,12 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
 
-  const section = useMemo(() => sections.find(s => s.id === sectionId), [sections, sectionId]);
-  const sectionStages = useMemo(() => stages.filter(s => s.secao_id === sectionId), [stages, sectionId]);
+  const section = useMemo(() => {
+    // sectionId can be "slug-shortid" format, extract the short ID (last 8 chars after last dash)
+    const idPart = sectionId?.split('-').pop() || sectionId;
+    return sections.find(s => s.id.startsWith(idPart || '')) || sections.find(s => s.id === sectionId);
+  }, [sections, sectionId]);
+  const sectionStages = useMemo(() => stages.filter(s => s.secao_id === section?.id), [stages, section]);
 
   const activeStage = useMemo(() => {
     return stages.find(s => s.id === currentStageId) || null;
@@ -96,7 +100,7 @@ const SectionDetail = () => {
         icone: data.icone,
         ordem: sectionStages.length + 1,
         ativo: true,
-        secao_id: sectionId || null,
+        secao_id: section?.id || null,
       };
       createStage.mutate(insertData, {
         onSuccess: (newStage) => {
@@ -253,7 +257,7 @@ const SectionDetail = () => {
         onSave={handleSaveStage}
         isNew={isNewStageModal}
         sections={sections}
-        defaultSectionId={sectionId}
+        defaultSectionId={section?.id}
       />
 
       <DeleteConfirmModal
