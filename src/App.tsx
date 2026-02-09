@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import SectionDetail from "./pages/SectionDetail";
 import Auth from "./pages/Auth";
 import Temple3D from "./pages/Temple3D";
 import NotFound from "./pages/NotFound";
@@ -30,13 +31,21 @@ const App = () => (
               } 
             />
             <Route 
+              path="/secao/:sectionId" 
+              element={
+                <ProtectedRoute>
+                  <SectionDetail />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/templo-3d" 
               element={
                 <ProtectedRoute>
                   <Temple3D />
-              </ProtectedRoute>
-            } 
-          />
+                </ProtectedRoute>
+              } 
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
