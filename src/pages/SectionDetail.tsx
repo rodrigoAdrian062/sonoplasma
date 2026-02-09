@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -61,6 +61,16 @@ const SectionDetail = () => {
   const activeStage = useMemo(() => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
+
+  // Update page title with section name
+  useEffect(() => {
+    if (section) {
+      document.title = section.nome;
+    }
+    return () => {
+      document.title = settings?.nome_app || 'Sonoplastia Cerimonial';
+    };
+  }, [section, settings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
