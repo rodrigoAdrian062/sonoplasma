@@ -267,15 +267,14 @@ export function StageCard({
             <Button
               onClick={handlePlayWithTimer}
               disabled={!hasAudios}
-              size="lg"
               className={cn(
-                'flex-1 gap-3 text-base font-semibold h-12 rounded-xl shadow-md transition-all duration-200',
+                'flex-1 gap-2 text-sm font-semibold h-10 rounded-lg shadow-sm transition-all duration-200',
                 hasAudios 
                   ? 'bg-gold hover:bg-gold/90 text-background border-none shadow-gold/30 hover:shadow-gold/50 hover:shadow-lg' 
                   : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
             >
-              <Play size={22} fill="currentColor" />
+              <Play size={18} fill="currentColor" />
               <span>Iniciar</span>
             </Button>
           ) : (
@@ -283,29 +282,26 @@ export function StageCard({
               {isPlaying ? (
                 <Button
                   onClick={handlePause}
-                  size="lg"
-                  className="flex-1 gap-3 text-base font-semibold h-12 rounded-xl bg-gold hover:bg-gold/90 text-background border-none shadow-md shadow-gold/30"
+                  className="flex-1 gap-2 text-sm font-semibold h-10 rounded-lg bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/30"
                 >
-                  <Pause size={22} fill="currentColor" />
+                  <Pause size={18} fill="currentColor" />
                   <span>Pausar</span>
                 </Button>
               ) : (
                 <Button
                   onClick={handleResume}
-                  size="lg"
-                  className="flex-1 gap-3 text-base font-semibold h-12 rounded-xl bg-gold hover:bg-gold/90 text-background border-none shadow-md shadow-gold/30"
+                  className="flex-1 gap-2 text-sm font-semibold h-10 rounded-lg bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/30"
                 >
-                  <Play size={22} fill="currentColor" />
+                  <Play size={18} fill="currentColor" />
                   <span>Continuar</span>
                 </Button>
               )}
               <Button
                 onClick={handleStop}
-                size="lg"
-                className="gap-2 h-12 rounded-xl bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 hover:border-destructive/50 font-semibold"
+                className="gap-2 h-10 rounded-lg bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 hover:border-destructive/50 font-semibold text-sm"
                 variant="outline"
               >
-                <Square size={20} fill="currentColor" />
+                <Square size={16} fill="currentColor" />
                 <span>Parar</span>
               </Button>
             </>
