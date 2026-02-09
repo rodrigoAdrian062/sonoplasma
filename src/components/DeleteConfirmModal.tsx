@@ -29,7 +29,7 @@ export function DeleteConfirmModal({
   const displayDescription = description || defaultDescription;
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-sm">
+      <DialogContent className="bg-card border-border max-w-sm w-[calc(100%-1rem)] sm:w-full">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 bg-destructive/10 rounded-lg">

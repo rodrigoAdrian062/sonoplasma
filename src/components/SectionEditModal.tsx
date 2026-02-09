@@ -88,9 +88,9 @@ export function SectionEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md">
+      <DialogContent className="bg-card border-border max-w-md w-[calc(100%-1rem)] sm:w-full">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl text-foreground flex items-center gap-2">
+          <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
               <>
                 <FolderPlus className="text-gold" size={20} />

@@ -150,9 +150,9 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border max-w-md w-[calc(100%-1rem)] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl text-foreground flex items-center gap-2">
+          <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
               <>
                 <Sparkles className="text-gold" size={20} />
@@ -177,7 +177,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                   }
                 }}
                 className={cn(
-                  'flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all',
+                  'flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full text-xs transition-all',
                   currentStep === index
                     ? 'bg-gold text-background font-medium'
                     : index < currentStep
