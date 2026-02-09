@@ -95,7 +95,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header 
         onAddStage={() => {}}
         onAddSection={() => setIsNewSectionModal(true)}
@@ -103,7 +103,7 @@ const Index = () => {
         hasStages={stages.length > 0}
       />
       
-      <main className="container px-3 sm:px-4 py-4 sm:py-6">
+      <main className="container px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
         {sections.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-6">Nenhuma seção cadastrada</p>
@@ -179,7 +179,7 @@ const Index = () => {
           </div>
         )}
 
-        <footer className="mt-12 py-6 border-t border-border">
+        <footer className="mt-auto pt-12 py-6 border-t border-border">
           <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
             Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
           </p>
