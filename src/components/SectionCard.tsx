@@ -106,12 +106,7 @@ export function SectionCard({
       </div>
 
       {/* Stages List */}
-      <div
-        className={cn(
-          'overflow-hidden transition-all duration-300',
-          isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-        )}
-      >
+      {isExpanded && (
         <div className="px-2 sm:px-4 pb-3 sm:pb-4">
           {stages.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
@@ -156,7 +151,7 @@ export function SectionCard({
             </SortableContext>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
