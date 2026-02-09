@@ -94,7 +94,7 @@ export default function Auth() {
         toast.error(msg);
       } else {
         toast.success('Bem-vindo!');
-        navigate('/', { replace: true });
+        // Navigation is handled by the useEffect that watches user state
       }
     } catch (err) {
       setErrorMessage('Erro ao processar solicitação');
