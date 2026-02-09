@@ -119,21 +119,21 @@ export function StageCard({
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="p-4 sm:p-5">
+      <div className="p-3 sm:p-5">
         {/* Header */}
-        <div className="flex items-start gap-4 mb-4">
+        <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div
             className={cn(
-              'p-3 rounded-lg transition-colors duration-300',
+              'p-2 sm:p-3 rounded-lg transition-colors duration-300',
               isActive ? 'bg-gold/20 text-gold' : 'bg-secondary text-muted-foreground'
             )}
           >
-            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={24} />
+            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={20} />
           </div>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-display text-lg sm:text-xl font-medium text-foreground mb-1">
+              <h3 className="font-display text-base sm:text-xl font-medium text-foreground mb-1">
                 {stage.nome_simbolico}
               </h3>
               <div className="flex items-center gap-1">
@@ -161,7 +161,7 @@ export function StageCard({
 
         {/* Audio Selector */}
         {hasAudios ? (
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             <button
               onClick={() => setShowAudioList(!showAudioList)}
               className={cn(
@@ -209,14 +209,14 @@ export function StageCard({
             )}
           </div>
         ) : (
-          <p className="text-xs text-gold/60 mb-4 flex items-center gap-1">
+          <p className="text-xs text-gold/60 mb-3 sm:mb-4 flex items-center gap-1">
             <Music size={12} />
             Sem áudio configurado
           </p>
         )}
 
         {/* Timer Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+        <div className="flex flex-col gap-3 mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-muted-foreground" />
             <label className="flex items-center gap-2 text-sm text-muted-foreground">

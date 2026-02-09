@@ -51,8 +51,7 @@ export function SectionCard({
     <div className="bg-card/50 rounded-xl border border-border/50 overflow-hidden">
       {/* Section Header */}
       <div 
-        className="flex items-center gap-3 p-4 cursor-pointer hover:bg-secondary/30 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 cursor-pointer hover:bg-secondary/30 transition-colors"
       >
         <button className="text-muted-foreground hover:text-foreground transition-colors">
           {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
@@ -113,7 +112,7 @@ export function SectionCard({
           isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className="px-4 pb-4">
+        <div className="px-2 sm:px-4 pb-3 sm:pb-4">
           {stages.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               <p className="text-sm mb-2">Nenhuma etapa nesta seção</p>
@@ -132,7 +131,7 @@ export function SectionCard({
               items={stages.map((s) => s.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="grid gap-3 pl-8">
+              <div className="grid gap-3 pl-2 sm:pl-8">
                 {stages.map((stage, index) => (
                   <div
                     key={stage.id}

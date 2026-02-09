@@ -227,7 +227,7 @@ const Index = () => {
         isPlaying={status === 'playing'}
       />
       
-      <main className="container py-6">
+      <main className="container px-3 sm:px-4 py-4 sm:py-6">
         {!hasContent ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-6">Nenhuma seção ou etapa cadastrada</p>
@@ -247,7 +247,7 @@ const Index = () => {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid gap-6">
+            <div className="grid gap-4 sm:gap-6">
               {/* Sections with their stages */}
               {sections.map((section, index) => (
                 <div
@@ -292,7 +292,7 @@ const Index = () => {
                     items={stagesBySection['__unassigned__'].map((s) => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="grid gap-3 pl-8">
+                    <div className="grid gap-3 pl-2 sm:pl-8">
                       {stagesBySection['__unassigned__'].map((stage, index) => (
                         <div
                           key={stage.id}
