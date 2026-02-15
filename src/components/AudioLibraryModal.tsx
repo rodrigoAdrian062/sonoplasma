@@ -370,7 +370,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           )}
 
           {/* Audio List */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 max-h-[50vh]">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="animate-spin text-gold" size={24} />
