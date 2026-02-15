@@ -263,7 +263,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
           {/* Add Audio Section */}
           {!selectionMode && (
             <div className="border border-border rounded-lg p-3">
