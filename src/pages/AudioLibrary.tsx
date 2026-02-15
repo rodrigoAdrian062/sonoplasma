@@ -31,6 +31,7 @@ export default function AudioLibraryPage() {
   const { saveAudios } = useStageAudios();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -68,17 +69,92 @@ export default function AudioLibraryPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const getYouTubeVideoId = (url: string): string | null => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const stopCurrentPlayback = () => {
+    audioElement?.pause();
+    setAudioElement(null);
+    if (ytPlayerRef.current) {
+      try {
+        ytPlayerRef.current.stopVideo();
+        ytPlayerRef.current.destroy();
+      } catch {}
+      ytPlayerRef.current = null;
+    }
+    const container = document.getElementById('yt-library-player-container');
+    if (container) container.remove();
+    setPlayingId(null);
+  };
+
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (isYouTubeUrl(audio.audio_url)) {
-      window.open(audio.audio_url, '_blank');
+    if (playingId === audio.id) {
+      stopCurrentPlayback();
       return;
     }
-    if (playingId === audio.id) {
-      audioElement?.pause();
-      setPlayingId(null);
-      setAudioElement(null);
+
+    stopCurrentPlayback();
+
+    if (isYouTubeUrl(audio.audio_url)) {
+      const videoId = getYouTubeVideoId(audio.audio_url);
+      if (!videoId) { toast({ title: 'URL do YouTube inválida', variant: 'destructive' }); return; }
+
+      // Create hidden YouTube player
+      let container = document.getElementById('yt-library-player-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'yt-library-player-container';
+        container.style.cssText = 'position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;';
+        document.body.appendChild(container);
+      }
+      const playerDiv = document.createElement('div');
+      playerDiv.id = 'yt-library-player';
+      container.innerHTML = '';
+      container.appendChild(playerDiv);
+
+      const initPlayer = () => {
+        if (!(window as any).YT || !(window as any).YT.Player) {
+          setTimeout(initPlayer, 100);
+          return;
+        }
+        ytPlayerRef.current = new (window as any).YT.Player('yt-library-player', {
+          height: '1',
+          width: '1',
+          videoId,
+          playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0 },
+          events: {
+            onReady: (event: any) => {
+              event.target.setVolume(70);
+              event.target.playVideo();
+              setPlayingId(audio.id);
+            },
+            onStateChange: (event: any) => {
+              const YT = (window as any).YT;
+              if (event.data === YT.PlayerState.ENDED) {
+                setPlayingId(null);
+              }
+            },
+            onError: () => {
+              toast({ title: 'Erro ao reproduzir vídeo do YouTube', variant: 'destructive' });
+              setPlayingId(null);
+            },
+          },
+        });
+      };
+
+      // Load YT API if needed
+      if (!(window as any).YT) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.getElementsByTagName('script')[0]?.parentNode?.insertBefore(tag, document.getElementsByTagName('script')[0]);
+        (window as any).onYouTubeIframeAPIReady = initPlayer;
+      } else {
+        initPlayer();
+      }
     } else {
-      audioElement?.pause();
       const newAudio = new Audio(audio.audio_url);
       newAudio.play();
       newAudio.onended = () => { setPlayingId(null); setAudioElement(null); };
