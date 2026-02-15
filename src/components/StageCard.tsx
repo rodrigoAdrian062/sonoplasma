@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -7,6 +7,9 @@ import { TimerDisplay } from './TimerDisplay';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -33,6 +36,7 @@ export function StageCard({
   onEdit,
   onDelete,
 }: StageCardProps) {
+  const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 0;
   const [customTime, setCustomTime] = useState(defaultTime);
   const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
@@ -103,6 +107,24 @@ export function StageCard({
     setShowAudioList(false);
     if (isActive) {
       handleStop();
+    }
+  };
+
+  const handleDeleteAudio = async (audioId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .delete()
+        .eq('id', audioId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['stage-audios', stage.id] });
+      queryClient.invalidateQueries({ queryKey: ['all-stage-audios'] });
+      toast.success('Áudio removido da etapa');
+    } catch {
+      toast.error('Erro ao remover áudio');
     }
   };
 
@@ -188,22 +210,29 @@ export function StageCard({
             </button>
 
             {/* Audio List Dropdown */}
-            {showAudioList && audios.length > 1 && (
+            {showAudioList && (
               <div className="mt-2 rounded-lg border border-border bg-card overflow-hidden animate-fade-in">
                 {audios.map((audio, index) => (
-                  <button
+                  <div
                     key={audio.id}
                     onClick={() => handleSelectAudio(index)}
                     className={cn(
-                      'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors',
+                      'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors cursor-pointer',
                       index === selectedAudioIndex
                         ? 'bg-gold/10 text-gold'
                         : 'hover:bg-secondary text-foreground'
                     )}
                   >
                     <Music size={14} className={index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground'} />
-                    <span className="text-sm truncate">{audio.nome || `Áudio ${index + 1}`}</span>
-                  </button>
+                    <span className="text-sm truncate flex-1">{audio.nome || `Áudio ${index + 1}`}</span>
+                    <button
+                      onClick={(e) => handleDeleteAudio(audio.id, e)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors rounded hover:bg-destructive/10"
+                      title="Remover áudio"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
