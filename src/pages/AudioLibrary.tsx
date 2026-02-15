@@ -6,7 +6,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
-  Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft
+  Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -28,6 +28,7 @@ export default function AudioLibraryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
@@ -61,11 +62,13 @@ export default function AudioLibraryPage() {
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    const audioFiles = Array.from(files).filter((f) => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac|wma)$/i.test(f.name));
+    if (audioFiles.length === 0) { toast({ title: 'Nenhum arquivo de áudio encontrado na seleção', variant: 'destructive' }); return; }
     setIsUploading(true);
     let successCount = 0;
     try {
-      for (const file of Array.from(files)) {
-        const name = files.length === 1 && newAudioName
+      for (const file of audioFiles) {
+        const name = audioFiles.length === 1 && newAudioName
           ? newAudioName
           : file.name.replace(/\.[^/.]+$/, '');
         try {
@@ -73,10 +76,11 @@ export default function AudioLibraryPage() {
           successCount++;
         } catch { /* handled by hook */ }
       }
-      if (successCount > 1) toast({ title: `${successCount} áudios adicionados à biblioteca` });
+      if (successCount > 0) toast({ title: `${successCount} áudio(s) adicionado(s) à biblioteca` });
       setNewAudioName('');
       setShowAddForm(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      if (folderInputRef.current) folderInputRef.current.value = '';
     } finally {
       setIsUploading(false);
     }
@@ -242,8 +246,20 @@ export default function AudioLibraryPage() {
               {addMode === 'upload' ? (
                 <div className="flex gap-2">
                   <input ref={fileInputRef} type="file" accept="audio/*" multiple onChange={handleFileSelect} className="hidden" />
+                  <input
+                    ref={folderInputRef}
+                    type="file"
+                    accept="audio/*"
+                    multiple
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    {...{ webkitdirectory: '', directory: '' } as any}
+                  />
                   <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="flex-1">
-                    {isUploading ? (<><Loader2 className="animate-spin mr-2" size={16} />Enviando...</>) : (<><Upload size={16} className="mr-2" />Selecionar arquivo(s)</>)}
+                    {isUploading ? (<><Loader2 className="animate-spin mr-2" size={16} />Enviando...</>) : (<><Upload size={16} className="mr-2" />Arquivo(s)</>)}
+                  </Button>
+                  <Button variant="outline" onClick={() => folderInputRef.current?.click()} disabled={isUploading} className="flex-1">
+                    <FolderOpen size={16} className="mr-2" />Pasta
                   </Button>
                 </div>
               ) : (
