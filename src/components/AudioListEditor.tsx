@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Play, Square, GripVertical, Music, Upload, Loader2, Link, Youtube, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { AudioLibraryModal } from './AudioLibraryModal';
+
 
 interface AudioItem {
   nome: string;
@@ -22,10 +23,10 @@ interface AudioListEditorProps {
 type InputMode = 'upload' | 'youtube' | 'library';
 
 export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEditorProps) {
+  const navigate = useNavigate();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [inputModes, setInputModes] = useState<Map<number, InputMode>>(new Map());
-  const [libraryOpenForIndex, setLibraryOpenForIndex] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
@@ -174,13 +175,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
     }
   };
 
-  const handleLibrarySelect = (index: number, audio: { nome: string; audio_url: string }) => {
-    const newAudios = audios.map((a, i) => 
-      i === index ? { nome: audio.nome, audio_url: audio.audio_url } : a
-    );
-    onChange(newAudios);
-    setLibraryOpenForIndex(null);
-  };
 
   return (
     <div className="space-y-4">
@@ -278,7 +272,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
                   </button>
                   <button
                     type="button"
-                    onClick={() => setLibraryOpenForIndex(index)}
+                    onClick={() => navigate('/biblioteca')}
                     className={cn(
                       'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
                       mode === 'library'
@@ -432,17 +426,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEd
         </ul>
       </div>
 
-      {/* Library Modal for selection */}
-      <AudioLibraryModal
-        isOpen={libraryOpenForIndex !== null}
-        onClose={() => setLibraryOpenForIndex(null)}
-        onSelectAudio={(audio) => {
-          if (libraryOpenForIndex !== null) {
-            handleLibrarySelect(libraryOpenForIndex, audio);
-          }
-        }}
-        selectionMode
-      />
     </div>
   );
 }
