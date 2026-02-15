@@ -150,7 +150,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md w-[calc(100%-1rem)] sm:w-full max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
