@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X } from 'lucide-react';
+import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -20,6 +21,8 @@ interface AudioLibraryModalProps {
 
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { folders } = useAudioFolders();
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -32,6 +35,12 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentFolder = folders.find(f => f.id === currentFolderId);
+  const filteredAudios = useMemo(() => 
+    audios.filter(a => (a as any).pasta_id === currentFolderId),
+    [audios, currentFolderId]
+  );
 
   const isYouTubeUrl = (url: string) => {
     return url.includes('youtube.com') || url.includes('youtu.be');
@@ -206,6 +215,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     setAudioElement(null);
     setBulkDeleteMode(false);
     setSelectedIds(new Set());
+    setCurrentFolderId(null);
     onClose();
   };
 
@@ -369,26 +379,62 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             </div>
           )}
 
+          {/* Folder Navigation (selection mode) */}
+          {selectionMode && !currentFolderId && folders.length > 0 && (
+            <div className="space-y-1">
+              {folders.map((folder) => (
+                <div
+                  key={folder.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer hover:border-primary/50"
+                  onClick={() => setCurrentFolderId(folder.id)}
+                >
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Folder size={18} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{folder.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {audios.filter(a => (a as any).pasta_id === folder.id).length} áudio(s)
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Back button for folder navigation */}
+          {selectionMode && currentFolderId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentFolderId(null)}
+              className="mb-1"
+            >
+              <ChevronLeft size={14} className="mr-1" />
+              {currentFolder?.nome || 'Voltar'}
+            </Button>
+          )}
+
           {/* Audio List */}
           <ScrollArea className="flex-1 min-h-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="animate-spin text-gold" size={24} />
+                <Loader2 className="animate-spin text-primary" size={24} />
               </div>
-            ) : audios.length === 0 ? (
+            ) : filteredAudios.length === 0 && (selectionMode ? currentFolderId !== null : true) ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Music size={40} className="mx-auto mb-2 opacity-50" />
-                <p>Nenhum áudio na biblioteca</p>
+                <p>{currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}</p>
                 <p className="text-xs mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {audios.map((audio) => (
+                {filteredAudios.map((audio) => (
                   <div
                     key={audio.id}
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
-                      selectionMode && 'cursor-pointer hover:border-gold/50',
+                      selectionMode && 'cursor-pointer hover:border-primary/50',
                       bulkDeleteMode && 'cursor-pointer',
                       bulkDeleteMode && selectedIds.has(audio.id) && 'border-destructive/50 bg-destructive/5'
                     )}
@@ -408,11 +454,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       />
                     )}
 
-                    <div className="p-2 bg-gold/10 rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-lg">
                       {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
-                        <Youtube size={18} className="text-red-500" />
+                        <Youtube size={18} className="text-destructive" />
                       ) : (
-                        <Music size={18} className="text-gold" />
+                        <Music size={18} className="text-primary" />
                       )}
                     </div>
 
@@ -429,7 +475,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gold hover:text-gold-glow"
+                            className="text-primary"
                           >
                             Selecionar
                           </Button>
@@ -445,9 +491,9 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                               className="h-8 w-8"
                             >
                               {playingId === audio.id ? (
-                                <Pause size={16} className="text-gold" />
+                                <Pause size={16} className="text-primary" />
                               ) : (
-                                <Play size={16} className="text-gold" />
+                                <Play size={16} className="text-primary" />
                               )}
                             </Button>
                             <Button
