@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -27,6 +28,9 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [newAudioUrl, setNewAudioUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isYouTubeUrl = (url: string) => {
@@ -161,10 +165,47 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     }
   };
 
+  const toggleSelectId = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === audios.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(audios.map((a) => a.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeletingBulk(true);
+    let count = 0;
+    for (const id of selectedIds) {
+      try {
+        await deleteAudio.mutateAsync(id);
+        count++;
+      } catch {
+        // individual error handled by hook
+      }
+    }
+    toast({ title: `${count} áudio(s) removido(s)` });
+    setSelectedIds(new Set());
+    setBulkDeleteMode(false);
+    setIsDeletingBulk(false);
+  };
+
   const handleClose = () => {
     audioElement?.pause();
     setPlayingId(null);
     setAudioElement(null);
+    setBulkDeleteMode(false);
+    setSelectedIds(new Set());
     onClose();
   };
 
@@ -174,22 +215,50 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Library className="text-gold" size={20} />
-            {selectionMode ? 'Selecionar da Biblioteca' : 'Biblioteca de Áudios'}
+            {selectionMode ? 'Selecionar da Biblioteca' : bulkDeleteMode ? `${selectedIds.size} selecionado(s)` : 'Biblioteca de Áudios'}
             {!selectionMode && audios.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadAll}
-                disabled={isDownloadingAll}
-                className="ml-auto"
-              >
-                {isDownloadingAll ? (
-                  <Loader2 className="animate-spin mr-1" size={14} />
+              <div className="ml-auto flex items-center gap-1">
+                {bulkDeleteMode ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+                      {selectedIds.size === audios.length ? <CheckSquare size={14} className="mr-1" /> : <Square size={14} className="mr-1" />}
+                      {selectedIds.size === audios.length ? 'Desmarcar' : 'Todos'}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleBulkDelete}
+                      disabled={selectedIds.size === 0 || isDeletingBulk}
+                    >
+                      {isDeletingBulk ? <Loader2 className="animate-spin mr-1" size={14} /> : <Trash2 size={14} className="mr-1" />}
+                      Excluir ({selectedIds.size})
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setBulkDeleteMode(false); setSelectedIds(new Set()); }}>
+                      <X size={14} />
+                    </Button>
+                  </>
                 ) : (
-                  <Download size={14} className="mr-1" />
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBulkDeleteMode(true)}
+                    >
+                      <CheckSquare size={14} className="mr-1" />
+                      Selecionar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadAll}
+                      disabled={isDownloadingAll}
+                    >
+                      {isDownloadingAll ? <Loader2 className="animate-spin mr-1" size={14} /> : <Download size={14} className="mr-1" />}
+                      {isDownloadingAll ? 'Baixando...' : 'Baixar'}
+                    </Button>
+                  </>
                 )}
-                {isDownloadingAll ? 'Baixando...' : 'Baixar todos'}
-              </Button>
+              </div>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -319,10 +388,26 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     key={audio.id}
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
-                      selectionMode && 'cursor-pointer hover:border-gold/50'
+                      selectionMode && 'cursor-pointer hover:border-gold/50',
+                      bulkDeleteMode && 'cursor-pointer',
+                      bulkDeleteMode && selectedIds.has(audio.id) && 'border-destructive/50 bg-destructive/5'
                     )}
-                    onClick={selectionMode ? () => handleSelect(audio) : undefined}
+                    onClick={
+                      selectionMode
+                        ? () => handleSelect(audio)
+                        : bulkDeleteMode
+                        ? () => toggleSelectId(audio.id)
+                        : undefined
+                    }
                   >
+                    {bulkDeleteMode && (
+                      <Checkbox
+                        checked={selectedIds.has(audio.id)}
+                        onCheckedChange={() => toggleSelectId(audio.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
+
                     <div className="p-2 bg-gold/10 rounded-lg">
                       {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
                         <Youtube size={18} className="text-red-500" />
@@ -338,46 +423,48 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      {selectionMode ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gold hover:text-gold-glow"
-                        >
-                          Selecionar
-                        </Button>
-                      ) : (
-                        <>
+                    {!bulkDeleteMode && (
+                      <div className="flex items-center gap-1">
+                        {selectionMode ? (
                           <Button
                             variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePlay(audio);
-                            }}
-                            className="h-8 w-8"
+                            size="sm"
+                            className="text-gold hover:text-gold-glow"
                           >
-                            {playingId === audio.id ? (
-                              <Pause size={16} className="text-gold" />
-                            ) : (
-                              <Play size={16} className="text-gold" />
-                            )}
+                            Selecionar
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteAudio.mutate(audio.id);
-                            }}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlay(audio);
+                              }}
+                              className="h-8 w-8"
+                            >
+                              {playingId === audio.id ? (
+                                <Pause size={16} className="text-gold" />
+                              ) : (
+                                <Play size={16} className="text-gold" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteAudio.mutate(audio.id);
+                              }}
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
