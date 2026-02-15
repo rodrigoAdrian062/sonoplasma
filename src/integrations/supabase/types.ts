@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          pasta_id: string | null
           tamanho_bytes: number | null
           tipo: string | null
           updated_at: string
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          pasta_id?: string | null
           tamanho_bytes?: number | null
           tipo?: string | null
           updated_at?: string
@@ -38,8 +40,44 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          pasta_id?: string | null
           tamanho_bytes?: number | null
           tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonoplastia_audios_biblioteca_pasta_id_fkey"
+            columns: ["pasta_id"]
+            isOneToOne: false
+            referencedRelation: "sonoplastia_audios_pastas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sonoplastia_audios_pastas: {
+        Row: {
+          created_at: string
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
           updated_at?: string
         }
         Relationships: []

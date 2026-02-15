@@ -3,19 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
-  Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen
+  Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
+  Folder, FolderPlus, Edit2, ChevronRight, MoveRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toast } from '@/hooks/use-toast';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,6 +35,21 @@ export default function AudioLibraryPage() {
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // Folder state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState('');
+
+  const currentFolder = folders.find(f => f.id === currentFolderId) || null;
+
+  // Filter audios by current folder
+  const filteredAudios = audios.filter(a => {
+    const audioPastaId = (a as any).pasta_id;
+    return currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
+  });
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
@@ -72,7 +93,11 @@ export default function AudioLibraryPage() {
           ? newAudioName
           : file.name.replace(/\.[^/.]+$/, '');
         try {
-          await uploadAndAddAudio(file, name);
+          const result = await uploadAndAddAudio(file, name);
+          // Move to current folder if inside one
+          if (currentFolderId && result?.id) {
+            await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
+          }
           successCount++;
         } catch { /* handled by hook */ }
       }
@@ -89,11 +114,14 @@ export default function AudioLibraryPage() {
   const handleAddUrl = async () => {
     if (!newAudioUrl.trim() || !newAudioName.trim()) return;
     try {
-      await addAudio.mutateAsync({
+      const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
         tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
       });
+      if (currentFolderId && result?.id) {
+        await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
+      }
       setNewAudioName('');
       setNewAudioUrl('');
       setShowAddForm(false);
@@ -101,7 +129,7 @@ export default function AudioLibraryPage() {
   };
 
   const handleDownloadAll = async () => {
-    const downloadableAudios = audios.filter(
+    const downloadableAudios = filteredAudios.filter(
       (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url)
     );
     if (downloadableAudios.length === 0) {
@@ -125,7 +153,7 @@ export default function AudioLibraryPage() {
       }
       if (count === 0) { toast({ title: 'Não foi possível baixar os áudios', variant: 'destructive' }); return; }
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, 'biblioteca-audios.zip');
+      saveAs(content, `biblioteca-audios${currentFolder ? `-${currentFolder.nome}` : ''}.zip`);
       toast({ title: `${count} áudio(s) baixado(s) com sucesso` });
     } catch {
       toast({ title: 'Erro ao gerar arquivo ZIP', variant: 'destructive' });
@@ -143,7 +171,7 @@ export default function AudioLibraryPage() {
   };
 
   const toggleSelectAll = () => {
-    setSelectedIds(selectedIds.size === audios.length ? new Set() : new Set(audios.map((a) => a.id)));
+    setSelectedIds(selectedIds.size === filteredAudios.length ? new Set() : new Set(filteredAudios.map((a) => a.id)));
   };
 
   const handleBulkDelete = async () => {
@@ -159,26 +187,54 @@ export default function AudioLibraryPage() {
     setIsDeletingBulk(false);
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    await addFolder.mutateAsync(newFolderName.trim());
+    setNewFolderName('');
+    setShowNewFolderInput(false);
+  };
+
+  const handleRenameFolder = async (id: string) => {
+    if (!editingFolderName.trim()) return;
+    await renameFolder.mutateAsync({ id, nome: editingFolderName.trim() });
+    setEditingFolderId(null);
+    setEditingFolderName('');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => {
+            if (currentFolderId) { setCurrentFolderId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
+            else navigate('/');
+          }}>
             <ArrowLeft size={20} />
           </Button>
           <Library className="text-gold" size={22} />
-          <h1 className="font-display text-lg sm:text-xl font-semibold text-foreground flex-1">
-            Biblioteca de Áudios
-          </h1>
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <h1
+              className={cn("font-display text-lg sm:text-xl font-semibold text-foreground truncate", currentFolderId && "cursor-pointer hover:text-gold transition-colors")}
+              onClick={currentFolderId ? () => { setCurrentFolderId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); } : undefined}
+            >
+              Biblioteca
+            </h1>
+            {currentFolder && (
+              <>
+                <ChevronRight size={16} className="text-muted-foreground shrink-0" />
+                <span className="font-display text-lg sm:text-xl font-semibold text-gold truncate">{currentFolder.nome}</span>
+              </>
+            )}
+          </div>
 
-          {audios.length > 0 && (
+          {filteredAudios.length > 0 && (
             <div className="flex items-center gap-1 sm:gap-2">
               {bulkDeleteMode ? (
                 <>
                   <Button variant="outline" size="sm" onClick={toggleSelectAll}>
-                    {selectedIds.size === audios.length ? <CheckSquare size={14} className="mr-1" /> : <Square size={14} className="mr-1" />}
-                    <span className="hidden sm:inline">{selectedIds.size === audios.length ? 'Desmarcar' : 'Todos'}</span>
+                    {selectedIds.size === filteredAudios.length ? <CheckSquare size={14} className="mr-1" /> : <Square size={14} className="mr-1" />}
+                    <span className="hidden sm:inline">{selectedIds.size === filteredAudios.length ? 'Desmarcar' : 'Todos'}</span>
                   </Button>
                   <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || isDeletingBulk}>
                     {isDeletingBulk ? <Loader2 className="animate-spin mr-1" size={14} /> : <Trash2 size={14} className="mr-1" />}
@@ -207,6 +263,95 @@ export default function AudioLibraryPage() {
 
       {/* Content */}
       <main className="container py-4 sm:py-6 space-y-4 max-w-3xl mx-auto">
+        {/* Folders Section (only at root level) */}
+        {!currentFolderId && (
+          <div className="space-y-2">
+            {/* Folder list */}
+            {folders.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {folders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer group"
+                    onClick={() => {
+                      if (editingFolderId !== folder.id) {
+                        setCurrentFolderId(folder.id);
+                        setBulkDeleteMode(false);
+                        setSelectedIds(new Set());
+                      }
+                    }}
+                  >
+                    <Folder size={20} className="text-gold shrink-0" />
+                    {editingFolderId === folder.id ? (
+                      <Input
+                        value={editingFolderName}
+                        onChange={(e) => setEditingFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setEditingFolderId(null); }}
+                        onBlur={() => handleRenameFolder(folder.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-7 text-sm flex-1"
+                        autoFocus
+                      />
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium truncate flex-1">{folder.nome}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {audios.filter(a => (a as any).pasta_id === folder.id).length}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Edit2 size={12} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.nome); }}>
+                              <Edit2 size={14} className="mr-2" /> Renomear
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteFolder.mutate(folder.id); }}>
+                              <Trash2 size={14} className="mr-2" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* New folder button/input */}
+            {showNewFolderInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nome da pasta"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setShowNewFolderInput(false); }}
+                  autoFocus
+                  className="flex-1"
+                />
+                <Button onClick={handleCreateFolder} disabled={!newFolderName.trim() || addFolder.isPending} className="bg-gold hover:bg-gold/90 text-background">
+                  {addFolder.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Criar'}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => { setShowNewFolderInput(false); setNewFolderName(''); }}>
+                  <X size={16} />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNewFolderInput(true)}
+                className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
+              >
+                <FolderPlus size={14} className="mr-1" /> Nova pasta
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Add Audio Section */}
         <div className="border border-border rounded-lg p-3">
           {!showAddForm ? (
@@ -216,7 +361,7 @@ export default function AudioLibraryPage() {
               className="w-full border-dashed border-gold/50 text-gold hover:bg-gold/10"
             >
               <Plus size={16} className="mr-2" />
-              Adicionar áudio à biblioteca
+              Adicionar áudio{currentFolder ? ` em "${currentFolder.nome}"` : ' à biblioteca'}
             </Button>
           ) : (
             <div className="space-y-3">
@@ -225,7 +370,7 @@ export default function AudioLibraryPage() {
                   variant={addMode === 'upload' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setAddMode('upload')}
-                  className={addMode === 'upload' ? 'bg-gold hover:bg-gold-glow text-background' : ''}
+                  className={addMode === 'upload' ? 'bg-gold hover:bg-gold/90 text-background' : ''}
                 >
                   <Upload size={14} className="mr-1" /> Upload
                 </Button>
@@ -233,7 +378,7 @@ export default function AudioLibraryPage() {
                   variant={addMode === 'url' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setAddMode('url')}
-                  className={addMode === 'url' ? 'bg-gold hover:bg-gold-glow text-background' : ''}
+                  className={addMode === 'url' ? 'bg-gold hover:bg-gold/90 text-background' : ''}
                 >
                   <ExternalLink size={14} className="mr-1" /> URL / YouTube
                 </Button>
@@ -265,7 +410,7 @@ export default function AudioLibraryPage() {
               ) : (
                 <div className="flex gap-2">
                   <Input placeholder="URL do áudio ou YouTube" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
-                  <Button onClick={handleAddUrl} disabled={!newAudioUrl.trim() || !newAudioName.trim() || addAudio.isPending} className="bg-gold hover:bg-gold-glow text-background">
+                  <Button onClick={handleAddUrl} disabled={!newAudioUrl.trim() || !newAudioName.trim() || addAudio.isPending} className="bg-gold hover:bg-gold/90 text-background">
                     {addAudio.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Adicionar'}
                   </Button>
                 </div>
@@ -282,15 +427,15 @@ export default function AudioLibraryPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="animate-spin text-gold" size={28} />
           </div>
-        ) : audios.length === 0 ? (
+        ) : filteredAudios.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Music size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-lg">Nenhum áudio na biblioteca</p>
+            <p className="text-lg">{currentFolder ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}</p>
             <p className="text-sm mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {audios.map((audio) => (
+            {filteredAudios.map((audio) => (
               <div
                 key={audio.id}
                 className={cn(
@@ -325,6 +470,28 @@ export default function AudioLibraryPage() {
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePlay(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
                       {playingId === audio.id ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
                     </Button>
+                    {/* Move to folder */}
+                    {folders.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold">
+                            <MoveRight size={16} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {currentFolderId && (
+                            <DropdownMenuItem onClick={() => moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId: null })}>
+                              <ArrowLeft size={14} className="mr-2" /> Raiz da biblioteca
+                            </DropdownMenuItem>
+                          )}
+                          {folders.filter(f => f.id !== currentFolderId).map(f => (
+                            <DropdownMenuItem key={f.id} onClick={() => moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId: f.id })}>
+                              <Folder size={14} className="mr-2" /> {f.nome}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteAudio.mutate(audio.id); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
                       <Trash2 size={16} />
                     </Button>
