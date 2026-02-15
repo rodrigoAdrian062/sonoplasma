@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
 import Auth from "./pages/Auth";
 import Temple3D from "./pages/Temple3D";
+import AudioLibrary from "./pages/AudioLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Temple3D />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/biblioteca" 
+              element={
+                <ProtectedRoute>
+                  <AudioLibrary />
                 </ProtectedRoute>
               } 
             />
