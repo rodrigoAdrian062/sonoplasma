@@ -1,14 +1,18 @@
 import { useState, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
+import { useStageAudios } from '@/hooks/useStageAudios';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
-  Folder, FolderPlus, Edit2, ChevronRight, MoveRight
+  Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -22,6 +26,9 @@ export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+  const { stages } = useStages();
+  const { sections } = useSections();
+  const { saveAudios } = useStageAudios();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -200,6 +207,43 @@ export default function AudioLibraryPage() {
     setEditingFolderId(null);
     setEditingFolderName('');
   };
+
+  const handleAddToStage = async (audioNome: string, audioUrl: string, etapaId: string) => {
+    try {
+      // Fetch existing audios for this stage
+      const { data: existingAudios } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .select('*')
+        .eq('etapa_id', etapaId)
+        .order('ordem', { ascending: true });
+
+      const currentAudios = existingAudios || [];
+      if (currentAudios.length >= 5) {
+        toast({ title: 'Esta etapa já possui 5 áudios (máximo)', variant: 'destructive' });
+        return;
+      }
+
+      await saveAudios.mutateAsync({
+        etapa_id: etapaId,
+        audios: [
+          ...currentAudios.map(a => ({ nome: a.nome, audio_url: a.audio_url })),
+          { nome: audioNome, audio_url: audioUrl },
+        ],
+      });
+
+      const stage = stages.find(s => s.id === etapaId);
+      toast({ title: `"${audioNome}" adicionado à etapa "${stage?.nome_simbolico || ''}"` });
+    } catch {
+      toast({ title: 'Erro ao adicionar áudio à etapa', variant: 'destructive' });
+    }
+  };
+
+  // Group stages by section for the dropdown
+  const stagesBySection = sections.map(sec => ({
+    section: sec,
+    stages: stages.filter(s => s.secao_id === sec.id),
+  }));
+  const unassignedStages = stages.filter(s => !s.secao_id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -470,6 +514,41 @@ export default function AudioLibraryPage() {
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePlay(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
                       {playingId === audio.id ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
                     </Button>
+                    {/* Add to stage */}
+                    {stages.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold" title="Adicionar à etapa">
+                            <ListPlus size={16} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
+                          {stagesBySection.map(({ section, stages: sectionStages }) => (
+                            sectionStages.length > 0 && (
+                              <div key={section.id}>
+                                <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{section.nome}</p>
+                                {sectionStages.map(stage => (
+                                  <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
+                                    <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                              </div>
+                            )
+                          ))}
+                          {unassignedStages.length > 0 && (
+                            <>
+                              <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sem seção</p>
+                              {unassignedStages.map(stage => (
+                                <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
+                                  <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
+                                </DropdownMenuItem>
+                              ))}
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     {/* Move to folder */}
                     {folders.length > 0 && (
                       <DropdownMenu>
