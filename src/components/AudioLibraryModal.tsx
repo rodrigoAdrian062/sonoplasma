@@ -64,14 +64,27 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const name = newAudioName || file.name.replace(/\.[^/.]+$/, '');
     setIsUploading(true);
+    let successCount = 0;
 
     try {
-      await uploadAndAddAudio(file, name);
+      for (const file of Array.from(files)) {
+        const name = files.length === 1 && newAudioName
+          ? newAudioName
+          : file.name.replace(/\.[^/.]+$/, '');
+        try {
+          await uploadAndAddAudio(file, name);
+          successCount++;
+        } catch {
+          // individual error handled by hook
+        }
+      }
+      if (successCount > 1) {
+        toast({ title: `${successCount} áudios adicionados à biblioteca` });
+      }
       setNewAudioName('');
       setShowAddForm(false);
       if (fileInputRef.current) {
@@ -217,11 +230,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     </Button>
                   </div>
 
-                  <Input
-                    placeholder="Nome do áudio"
-                    value={newAudioName}
-                    onChange={(e) => setNewAudioName(e.target.value)}
-                  />
+                   <Input
+                     placeholder="Nome do áudio (opcional para múltiplos)"
+                     value={newAudioName}
+                     onChange={(e) => setNewAudioName(e.target.value)}
+                   />
 
                   {addMode === 'upload' ? (
                     <div className="flex gap-2">
@@ -229,6 +242,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         ref={fileInputRef}
                         type="file"
                         accept="audio/*"
+                        multiple
                         onChange={handleFileSelect}
                         className="hidden"
                       />
@@ -246,7 +260,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         ) : (
                           <>
                             <Upload size={16} className="mr-2" />
-                            Selecionar arquivo
+                            Selecionar arquivo(s)
                           </>
                         )}
                       </Button>
