@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
-import { AudioLibraryModal } from '@/components/AudioLibraryModal';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -22,7 +21,6 @@ interface HeaderProps {
 export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
 
@@ -76,7 +74,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => setIsLibraryOpen(true)}
+                    onClick={() => navigate('/biblioteca')}
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-gold h-8 w-8"
@@ -173,7 +171,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => setIsLibraryOpen(true)}
+                    onClick={() => navigate('/biblioteca')}
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-gold"
@@ -241,10 +239,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      <AudioLibraryModal
-        isOpen={isLibraryOpen}
-        onClose={() => setIsLibraryOpen(false)}
-      />
     </>
   );
 }
