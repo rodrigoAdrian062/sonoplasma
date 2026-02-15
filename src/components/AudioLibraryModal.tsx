@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2 } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { toast } from '@/hooks/use-toast';
 
 interface AudioLibraryModalProps {
   isOpen: boolean;
@@ -19,6 +22,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
   const [newAudioUrl, setNewAudioUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -100,6 +104,50 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     onClose();
   };
 
+  const handleDownloadAll = async () => {
+    const downloadableAudios = audios.filter(
+      (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url)
+    );
+
+    if (downloadableAudios.length === 0) {
+      toast({ title: 'Nenhum áudio disponível para download', description: 'Apenas áudios MP3 podem ser baixados (links do YouTube são ignorados).', variant: 'destructive' });
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    try {
+      const zip = new JSZip();
+      let count = 0;
+
+      for (const audio of downloadableAudios) {
+        try {
+          const response = await fetch(audio.audio_url);
+          if (!response.ok) continue;
+          const blob = await response.blob();
+          const ext = audio.audio_url.match(/\.(\w+)$/)?.[1] || 'mp3';
+          const safeName = audio.nome.replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, '').trim();
+          zip.file(`${safeName}.${ext}`, blob);
+          count++;
+        } catch {
+          // skip failed downloads
+        }
+      }
+
+      if (count === 0) {
+        toast({ title: 'Não foi possível baixar os áudios', variant: 'destructive' });
+        return;
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, 'biblioteca-audios.zip');
+      toast({ title: `${count} áudio(s) baixado(s) com sucesso` });
+    } catch {
+      toast({ title: 'Erro ao gerar arquivo ZIP', variant: 'destructive' });
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   const handleClose = () => {
     audioElement?.pause();
     setPlayingId(null);
@@ -114,6 +162,22 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           <DialogTitle className="flex items-center gap-2">
             <Library className="text-gold" size={20} />
             {selectionMode ? 'Selecionar da Biblioteca' : 'Biblioteca de Áudios'}
+            {!selectionMode && audios.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadAll}
+                disabled={isDownloadingAll}
+                className="ml-auto"
+              >
+                {isDownloadingAll ? (
+                  <Loader2 className="animate-spin mr-1" size={14} />
+                ) : (
+                  <Download size={14} className="mr-1" />
+                )}
+                {isDownloadingAll ? 'Baixando...' : 'Baixar todos'}
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
