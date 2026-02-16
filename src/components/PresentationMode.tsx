@@ -284,13 +284,14 @@ export function PresentationMode({
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {settings?.logo_url && (
             <img src={settings.logo_url} alt="Logo" className="w-8 h-8 object-contain rounded" />
           )}
           <span className="text-sm font-medium text-muted-foreground">
             {settings?.nome_app || 'Modo Apresentação'}
           </span>
+          <ElegantClock size="md" />
         </div>
         
         <div className="flex items-center gap-2">
@@ -330,7 +331,6 @@ export function PresentationMode({
           <span className="text-sm text-muted-foreground">
             {selectedStageIndex + 1} / {stages.length}
           </span>
-          <ElegantClock size="md" />
           <Button
             variant="ghost"
             size="icon"
