@@ -626,7 +626,7 @@ export default function AudioLibraryPage() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold" title="Adicionar à etapa">
-                            <ListPlus size={16} />
+                            <Plus size={16} />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
