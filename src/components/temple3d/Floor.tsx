@@ -182,9 +182,9 @@ export function Floor({ onClick }: FloorProps) {
 
   return (
     <group onClick={onClick}>
-      {/* Main checkered floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[floorWidth, floorLength]} />
+      {/* Main checkered floor - only Ocidente (from balustrade z=-6 to West wall z=14) */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 4]} receiveShadow>
+        <planeGeometry args={[floorWidth, 20]} />
         <meshStandardMaterial 
           map={checkerTexture} 
           roughness={0.12}
@@ -192,9 +192,19 @@ export function Floor({ onClick }: FloorProps) {
         />
       </mesh>
 
-      {/* Reflective floor overlay */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 0]}>
-        <planeGeometry args={[floorWidth, floorLength]} />
+      {/* Oriente floor - plain polished dark wood/marble, no mosaic */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -10]} receiveShadow>
+        <planeGeometry args={[floorWidth, 8]} />
+        <meshStandardMaterial 
+          color="#2a1810"
+          roughness={0.25}
+          metalness={0.15}
+        />
+      </mesh>
+
+      {/* Reflective floor overlay - only Ocidente */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 4]}>
+        <planeGeometry args={[floorWidth, 20]} />
         <meshStandardMaterial 
           color="#ffffff"
           transparent
