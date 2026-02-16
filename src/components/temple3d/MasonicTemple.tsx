@@ -21,6 +21,7 @@ import { OfficerDesks } from './OfficerDesks';
 import { WorkingTools } from './WorkingTools';
 import { StainedGlassWindows } from './StainedGlassWindows';
 import { AmbientSoundPanel } from './AmbientSoundPanel';
+import { TempleExterior } from './TempleExterior';
 
 interface MasonicTempleProps {
   onClose?: () => void;
@@ -29,6 +30,7 @@ interface MasonicTempleProps {
 export function MasonicTemple({ onClose }: MasonicTempleProps) {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [showSouthWall, setShowSouthWall] = useState(true);
+  const [showCeiling, setShowCeiling] = useState(true);
 
   const handleElementClick = (elementName: string) => {
     setSelectedElement(elementName === selectedElement ? null : elementName);
@@ -52,7 +54,7 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           <color attach="background" args={['#080c14']} />
           
           {/* Volumetric fog for depth */}
-          <fog attach="fog" args={['#080c14', 18, 50]} />
+          <fog attach="fog" args={['#080c14', 30, 120]} />
 
           {/* === CINEMATIC LIGHTING === */}
           
@@ -147,14 +149,16 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           <GradePanel onClick={() => handleElementClick('grade-panel')} />
           <WorkingTools onClick={handleElementClick} />
           {/* StainedGlassWindows removed - walls are plain blue */}
-
+          
+          {/* Exterior structure and landscaping */}
+          <TempleExterior showCeiling={showCeiling} />
           {/* Controls */}
           <OrbitControls
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
             minDistance={3}
-            maxDistance={40}
+            maxDistance={80}
             maxPolarAngle={Math.PI / 2.05}
             target={[0, 2, 0]}
             enableDamping={true}
@@ -204,13 +208,21 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
       {/* Ambient Sound Panel */}
       <AmbientSoundPanel />
 
-      {/* Toggle South Wall button */}
-      <button
-        onClick={() => setShowSouthWall(prev => !prev)}
-        className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
-      >
-        {showSouthWall ? '👁️ Ver Lateral' : '🧱 Fechar Lateral'}
-      </button>
+      {/* Toggle buttons */}
+      <div className="absolute top-4 left-4 flex flex-col gap-2">
+        <button
+          onClick={() => setShowSouthWall(prev => !prev)}
+          className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
+        >
+          {showSouthWall ? '👁️ Ver Lateral' : '🧱 Fechar Lateral'}
+        </button>
+        <button
+          onClick={() => setShowCeiling(prev => !prev)}
+          className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
+        >
+          {showCeiling ? '☀️ Abrir Teto' : '🏠 Fechar Teto'}
+        </button>
+      </div>
 
       {/* Close button */}
       {onClose && (
