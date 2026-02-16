@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
+import presentationBanner from '@/assets/presentation-banner.png';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -387,9 +388,16 @@ export function PresentationMode({
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Background Banner */}
+        <img 
+          src={presentationBanner} 
+          alt="" 
+          className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/60 to-background pointer-events-none" />
         {/* Active Glow Effect */}
         {isActive && (
-          <div className="absolute inset-0 bg-gradient-radial from-gold/5 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-radial from-gold/8 via-transparent to-transparent pointer-events-none" />
         )}
 
         {/* Stage Icon */}
