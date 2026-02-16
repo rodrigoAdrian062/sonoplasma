@@ -8,7 +8,6 @@ import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
@@ -694,16 +693,9 @@ export default function AudioLibraryPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs text-muted-foreground">
-                      {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
-                    </span>
-                    {audioUsageMap.get(audio.audio_url)?.map((usage, i) => (
-                      <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-gold/40 text-gold bg-gold/5">
-                        {usage.sectionName} › {usage.stageName}
-                      </Badge>
-                    ))}
-                  </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                  </p>
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
