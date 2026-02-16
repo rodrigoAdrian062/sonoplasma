@@ -101,7 +101,7 @@ export function CeremonyIcon({ name, imageUrl, className, size = 24 }: CeremonyI
       <img 
         src={imageUrl} 
         alt="Ícone da etapa"
-        className={cn('object-cover rounded', className)}
+        className={cn('object-cover rounded-lg', className)}
         style={{ width: size, height: size }}
       />
     );
