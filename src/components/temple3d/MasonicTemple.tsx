@@ -145,7 +145,7 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           <SeaOfBronze onClick={() => handleElementClick('sea-bronze')} />
           <GradePanel onClick={() => handleElementClick('grade-panel')} />
           <WorkingTools onClick={handleElementClick} />
-          <StainedGlassWindows />
+          {/* StainedGlassWindows removed - walls are plain blue */}
 
           {/* Controls */}
           <OrbitControls
