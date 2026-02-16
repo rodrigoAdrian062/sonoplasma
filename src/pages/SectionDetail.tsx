@@ -207,6 +207,9 @@ const SectionDetail = () => {
         onVolumeChange={setVolume}
         activeStage={activeStage ? { symbolicName: activeStage.nome_simbolico } : null}
         isPlaying={status === 'playing'}
+        currentTime={currentTime}
+        duration={duration}
+        onSeekTo={seekTo}
       />
 
       <main className="container px-3 sm:px-4 py-4 sm:py-6">
