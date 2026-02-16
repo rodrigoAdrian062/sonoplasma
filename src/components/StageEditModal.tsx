@@ -150,8 +150,8 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[85vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="bg-card border-border max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[95vh] flex flex-col p-0">
+        <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-0">
           <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
               <>
@@ -164,37 +164,35 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           </DialogTitle>
         </DialogHeader>
 
-        {/* Step Indicator */}
-        {isNew && (
-          <div className="flex items-center justify-center gap-1 py-2">
-            {steps.map((step, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => {
-                  if (index === 0 || formData.nome_simbolico.trim()) {
-                    setCurrentStep(index);
-                  }
-                }}
-                className={cn(
-                  'flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full text-xs transition-all',
-                  currentStep === index
-                    ? 'bg-gold text-background font-medium'
-                    : index < currentStep
-                    ? 'bg-gold/20 text-gold'
-                    : 'bg-secondary text-muted-foreground'
-                )}
-              >
-                <step.icon size={12} />
-                <span className="hidden sm:inline">{step.title}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Step Indicator - always shown */}
+        <div className="flex items-center justify-center gap-1 px-4 sm:px-6 py-2">
+          {steps.map((step, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => {
+                if (index === 0 || formData.nome_simbolico.trim()) {
+                  setCurrentStep(index);
+                }
+              }}
+              className={cn(
+                'flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full text-xs transition-all',
+                currentStep === index
+                  ? 'bg-gold text-background font-medium'
+                  : index < currentStep
+                  ? 'bg-gold/20 text-gold'
+                  : 'bg-secondary text-muted-foreground'
+              )}
+            >
+              <step.icon size={12} />
+              <span className="hidden sm:inline">{step.title}</span>
+            </button>
+          ))}
+        </div>
 
-        <div className="space-y-4 mt-2">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 space-y-4">
           {/* Step 1: Nome e Descrição */}
-          {(currentStep === 0 || !isNew) && (
+          {currentStep === 0 && (
             <div className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
@@ -254,7 +252,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           )}
 
           {/* Step 2: Ícone */}
-          {(currentStep === 1 || !isNew) && (
+          {currentStep === 1 && (
             <div className="animate-fade-in">
               <IconPicker
                 selectedIcon={formData.icone}
@@ -266,7 +264,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           )}
 
           {/* Step 3: Tempo */}
-          {(currentStep === 2 || !isNew) && (
+          {currentStep === 2 && (
             <div className="space-y-4 animate-fade-in">
               <Label className="flex items-center gap-2">
                 <Clock size={14} className="text-gold" />
@@ -328,7 +326,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           )}
 
           {/* Step 4: Áudios */}
-          {(currentStep === 3 || !isNew) && (
+          {currentStep === 3 && (
             <div className="animate-fade-in">
               <AudioListEditor
                 audios={audioItems}
@@ -338,8 +336,8 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
             </div>
           )}
 
-          {/* Preview Card (only for new) */}
-          {isNew && formData.nome_simbolico && (
+          {/* Preview Card */}
+          {formData.nome_simbolico && (
             <div className="bg-secondary/30 rounded-xl p-4 border border-border/50 animate-fade-in">
               <p className="text-xs text-muted-foreground mb-2">Prévia:</p>
               <div className="flex items-center gap-3">
@@ -371,7 +369,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
-            {isNew && currentStep > 0 ? (
+            {currentStep > 0 ? (
               <Button
                 type="button"
                 variant="outline"
@@ -391,7 +389,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
               </Button>
             )}
             
-            {isNew && currentStep < steps.length - 1 ? (
+            {currentStep < steps.length - 1 ? (
               <Button
                 type="button"
                 onClick={handleNext}
