@@ -44,6 +44,8 @@ const SectionDetail = () => {
     currentStageId,
     status,
     volume,
+    currentTime,
+    duration,
     play,
     pause,
     resume,
@@ -51,6 +53,7 @@ const SectionDetail = () => {
     setVolume,
     seekForward,
     seekBackward,
+    seekTo,
   } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
@@ -228,6 +231,8 @@ const SectionDetail = () => {
                       audios={audiosByStageId[stage.id] || []}
                       isPlaying={currentStageId === stage.id && status === 'playing'}
                       isPaused={currentStageId === stage.id && status === 'paused'}
+                      currentTime={currentStageId === stage.id ? currentTime : 0}
+                      duration={currentStageId === stage.id ? duration : 0}
                       onPlay={(audioUrl) => handlePlay(stage, audioUrl)}
                       onPause={pause}
                       onResume={resume}
@@ -236,6 +241,7 @@ const SectionDetail = () => {
                       onDelete={() => setDeleteStageData(stage)}
                       onSeekForward={() => seekForward()}
                       onSeekBackward={() => seekBackward()}
+                      onSeekTo={seekTo}
                     />
                   </div>
                 ))}

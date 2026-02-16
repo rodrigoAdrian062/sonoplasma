@@ -10,6 +10,8 @@ interface SortableStageCardProps {
   audios: StageAudio[];
   isPlaying: boolean;
   isPaused: boolean;
+  currentTime?: number;
+  duration?: number;
   onPlay: (audioUrl: string) => void;
   onPause: () => void;
   onResume: () => void;
@@ -18,6 +20,7 @@ interface SortableStageCardProps {
   onDelete: () => void;
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
+  onSeekTo?: (seconds: number) => void;
 }
 
 export function SortableStageCard({
@@ -25,6 +28,8 @@ export function SortableStageCard({
   audios,
   isPlaying,
   isPaused,
+  currentTime,
+  duration,
   onPlay,
   onPause,
   onResume,
@@ -33,6 +38,7 @@ export function SortableStageCard({
   onDelete,
   onSeekForward,
   onSeekBackward,
+  onSeekTo,
 }: SortableStageCardProps) {
   const {
     attributes,
@@ -65,6 +71,8 @@ export function SortableStageCard({
         audios={audios}
         isPlaying={isPlaying}
         isPaused={isPaused}
+        currentTime={currentTime}
+        duration={duration}
         onPlay={onPlay}
         onPause={onPause}
         onResume={onResume}
@@ -73,6 +81,7 @@ export function SortableStageCard({
         onDelete={onDelete}
         onSeekForward={onSeekForward}
         onSeekBackward={onSeekBackward}
+        onSeekTo={onSeekTo}
       />
     </div>
   );

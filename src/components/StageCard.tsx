@@ -16,6 +16,8 @@ interface StageCardProps {
   audios: StageAudio[];
   isPlaying: boolean;
   isPaused: boolean;
+  currentTime?: number;
+  duration?: number;
   onPlay: (audioUrl: string) => void;
   onPause: () => void;
   onResume: () => void;
@@ -24,6 +26,7 @@ interface StageCardProps {
   onDelete: () => void;
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
+  onSeekTo?: (seconds: number) => void;
 }
 
 export function StageCard({
@@ -31,6 +34,8 @@ export function StageCard({
   audios,
   isPlaying,
   isPaused,
+  currentTime: audioCurrentTime = 0,
+  duration: audioDuration = 0,
   onPlay,
   onPause,
   onResume,
@@ -39,6 +44,7 @@ export function StageCard({
   onDelete,
   onSeekForward,
   onSeekBackward,
+  onSeekTo,
 }: StageCardProps) {
   const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 0;
@@ -363,7 +369,41 @@ export function StageCard({
             </>
           )}
         </div>
+
+        {/* Audio Progress Bar */}
+        {isActive && audioDuration > 0 && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+              {formatTime(audioCurrentTime)}
+            </span>
+            <div
+              className="flex-1 h-1.5 bg-secondary rounded-full cursor-pointer relative group"
+              onClick={(e) => {
+                if (!onSeekTo) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const ratio = (e.clientX - rect.left) / rect.width;
+                onSeekTo(ratio * audioDuration);
+              }}
+            >
+              <div
+                className="h-full bg-gold rounded-full transition-all relative"
+                style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
+              >
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-mono w-10">
+              {formatTime(audioDuration)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
