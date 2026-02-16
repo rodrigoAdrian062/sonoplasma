@@ -276,20 +276,14 @@ export function Floor({ onClick }: FloorProps) {
 
       {/* === ÁTRIO (Narthex/Vestibule) === */}
       <group position={[0, 0, floorLength / 2 + entranceDepth / 2]}>
-        {/* Átrio floor - right side */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorWidth / 4, 0, 0]} receiveShadow>
-          <planeGeometry args={[floorWidth / 2 - 0.5, entranceDepth]} />
-          <meshStandardMaterial map={stoneTexture} roughness={0.7} metalness={0.05} />
-        </mesh>
-        
-        {/* Sala dos Passos Perdidos floor - left side */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-floorWidth / 4, 0, 0]} receiveShadow>
-          <planeGeometry args={[floorWidth / 2 - 0.5, entranceDepth]} />
+        {/* Full entrance floor */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+          <planeGeometry args={[floorWidth, entranceDepth]} />
           <meshStandardMaterial map={stoneTexture} roughness={0.7} metalness={0.05} />
         </mesh>
 
-        {/* Dividing wall between Átrio and Sala PP */}
-        <mesh position={[0, 2, 0]} castShadow>
+        {/* Dividing wall between Átrio (right/center) and Sala PP (left) - offset to the left */}
+        <mesh position={[-floorWidth / 4, 2, 0]} castShadow>
           <boxGeometry args={[0.2, 4, entranceDepth]} />
           <meshStandardMaterial color="#4a4035" roughness={0.8} />
         </mesh>
@@ -312,17 +306,12 @@ export function Floor({ onClick }: FloorProps) {
         <meshStandardMaterial color="#4a6080" roughness={0.7} />
       </mesh>
 
-      {/* Entrance door from Átrio into temple */}
-      <group position={[floorWidth / 4, 0, floorLength / 2]}>
-        {/* Door arch */}
-        <mesh position={[0, 2.5, 0]} castShadow>
-          <boxGeometry args={[2.5, 5, 0.15]} />
+      {/* Entrance door from Átrio into temple - centered with main door */}
+      <group position={[0, 0, floorLength / 2]}>
+        {/* Door surround */}
+        <mesh position={[0, 2, 0.08]} castShadow>
+          <boxGeometry args={[5.5, 4, 0.15]} />
           <meshStandardMaterial color="#2a1810" roughness={0.8} />
-        </mesh>
-        {/* Door opening */}
-        <mesh position={[0, 1.8, -0.05]}>
-          <boxGeometry args={[1.8, 3.6, 0.3]} />
-          <meshStandardMaterial color="#1a0e08" roughness={0.9} />
         </mesh>
       </group>
 
