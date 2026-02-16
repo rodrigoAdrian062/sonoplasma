@@ -51,7 +51,7 @@ export function StageCard({
   const [customTime, setCustomTime] = useState(defaultTime);
   const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
   const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
-  const [showAudioList, setShowAudioList] = useState(false);
+  const [showAudioList, setShowAudioList] = useState(audios.length >= 5);
   
   const timer = useTimer(() => {
     onStop();
@@ -70,6 +70,10 @@ export function StageCard({
     // Reset selected audio when audios change
     if (selectedAudioIndex >= audios.length) {
       setSelectedAudioIndex(0);
+    }
+    // Auto-expand list when 5+ audios
+    if (audios.length >= 5) {
+      setShowAudioList(true);
     }
   }, [audios.length, selectedAudioIndex]);
 
