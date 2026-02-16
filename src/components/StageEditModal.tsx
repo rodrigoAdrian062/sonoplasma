@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen } from 'lucide-react';
-import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
+import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconForName } from '@/types/ceremony';
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { IconPicker } from './IconPicker';
@@ -201,8 +201,12 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                 </Label>
                 <Input
                   value={formData.nome_simbolico}
-                  onChange={(e) => setFormData({ ...formData, nome_simbolico: e.target.value })}
-                  placeholder="Ex: Acendimento das Luzes"
+                  onChange={(e) => {
+                    const nome = e.target.value;
+                    const suggested = suggestIconForName(nome);
+                    setFormData({ ...formData, nome_simbolico: nome, icone: suggested });
+                  }}
+                  placeholder="Ex: Entrada no Templo"
                   required
                   autoFocus={isNew}
                   className="bg-secondary border-border text-foreground text-lg"

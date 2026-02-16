@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Save, FolderPlus, Type, FileText } from 'lucide-react';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
+import { suggestIconForName } from '@/types/ceremony';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,14 @@ const SECTION_ICONS = [
   { value: 'eye', label: 'Olho' },
   { value: 'sun', label: 'Sol' },
   { value: 'moon', label: 'Lua' },
+  { value: 'graduation-cap', label: 'Aprendiz' },
+  { value: 'hammer', label: 'Companheiro' },
+  { value: 'crown', label: 'Mestre' },
+  { value: 'church', label: 'Templo' },
+  { value: 'scroll', label: 'Pergaminho' },
+  { value: 'shield', label: 'Escudo' },
+  { value: 'heart', label: 'Coração' },
+  { value: 'users', label: 'Irmãos' },
 ];
 
 interface SectionEditModalProps {
@@ -110,7 +119,11 @@ export function SectionEditModal({
             </Label>
             <Input
               value={formData.nome}
-              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+              onChange={(e) => {
+                const nome = e.target.value;
+                const suggested = suggestIconForName(nome);
+                setFormData({ ...formData, nome, icone: suggested });
+              }}
               placeholder="Ex: Sessão de Aprendiz"
               required
               autoFocus
