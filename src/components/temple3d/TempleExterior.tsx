@@ -330,6 +330,79 @@ export function TempleExterior({ showCeiling }: TempleExteriorProps) {
         <meshStandardMaterial color="#e0d4bc" roughness={0.6} />
       </mesh>
 
+      {/* === LARGE MASONIC SYMBOL (Esquadro e Compasso) on front facade === */}
+      <group position={[0, wallHeight / 2 + 1.5, roomLength / 2 + 0.6]}>
+        {/* Circular background medallion */}
+        <mesh>
+          <cylinderGeometry args={[2.2, 2.2, 0.08, 32]} />
+          <meshStandardMaterial color="#1a1a2e" roughness={0.5} metalness={0.3} />
+        </mesh>
+        {/* Gold ring border */}
+        <mesh position={[0, 0, 0.04]}>
+          <torusGeometry args={[2.2, 0.1, 8, 32]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+        </mesh>
+        <mesh position={[0, 0, 0.04]}>
+          <torusGeometry args={[1.9, 0.05, 8, 32]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.25} metalness={0.8} />
+        </mesh>
+
+        {/* Compasses - two arms forming a V (top) */}
+        <mesh position={[-0.55, -0.15, 0.08]} rotation={[Math.PI / 2, 0, 0.38]}>
+          <boxGeometry args={[2.4, 0.1, 0.12]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0.55, -0.15, 0.08]} rotation={[Math.PI / 2, 0, -0.38]}>
+          <boxGeometry args={[2.4, 0.1, 0.12]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        {/* Compass hinge */}
+        <mesh position={[0, 0.95, 0.1]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.15, 16]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        {/* Compass tips */}
+        <mesh position={[-1.15, -1.1, 0.08]} rotation={[Math.PI / 2, 0, 0.38]}>
+          <coneGeometry args={[0.08, 0.25, 8]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
+        </mesh>
+        <mesh position={[1.15, -1.1, 0.08]} rotation={[Math.PI / 2, 0, -0.38]}>
+          <coneGeometry args={[0.08, 0.25, 8]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
+        </mesh>
+
+        {/* Square (Esquadro) - L shape, overlapping under compasses */}
+        {/* Vertical arm of square */}
+        <mesh position={[0, -0.2, 0.06]} rotation={[Math.PI / 2, 0, 0]}>
+          <boxGeometry args={[0.12, 0.1, 1.6]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        {/* Horizontal arm of square */}
+        <mesh position={[0.55, -0.95, 0.06]} rotation={[Math.PI / 2, 0, 0]}>
+          <boxGeometry args={[1.2, 0.1, 0.12]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        {/* Square corner reinforcement */}
+        <mesh position={[0, -0.95, 0.08]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.12, 12]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
+        </mesh>
+
+        {/* Letter "G" in center */}
+        <mesh position={[0, 0.05, 0.12]}>
+          <torusGeometry args={[0.35, 0.06, 8, 24, Math.PI * 1.7]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} emissive="#ff9900" emissiveIntensity={0.2} />
+        </mesh>
+        {/* G crossbar */}
+        <mesh position={[0.18, 0.05, 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+          <boxGeometry args={[0.25, 0.1, 0.06]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} emissive="#ff9900" emissiveIntensity={0.2} />
+        </mesh>
+
+        {/* Glow light behind the symbol */}
+        <pointLight position={[0, 0, 0.5]} intensity={0.8} color="#ffd700" distance={6} />
+      </group>
+
       {/* Portico steps */}
       {[0, 1, 2].map((step) => (
         <mesh key={`step-${step}`} position={[0, step * 0.15, roomLength / 2 + 3.5 + step * 0.5]} castShadow receiveShadow>
