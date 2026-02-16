@@ -2,6 +2,7 @@ import { Text } from '@react-three/drei';
 import { forwardRef, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
+import { AnimatedFlame } from './AnimatedFlame';
 
 interface CandelabraProps {
   position: [number, number, number];
@@ -11,15 +12,6 @@ interface CandelabraProps {
 }
 
 const Candelabra = forwardRef<Group, CandelabraProps>(({ position, title, name, onClick }, ref) => {
-  const flameRef = useRef<Group>(null);
-
-  useFrame((state) => {
-    if (flameRef.current) {
-      const t = state.clock.elapsedTime;
-      flameRef.current.scale.y = 1 + Math.sin(t * 8 + position[0]) * 0.15;
-      flameRef.current.position.x = Math.sin(t * 5 + position[2]) * 0.005;
-    }
-  });
 
   return (
     <group ref={ref} position={position} onClick={() => onClick?.(name)}>
@@ -65,18 +57,7 @@ const Candelabra = forwardRef<Group, CandelabraProps>(({ position, title, name, 
       </mesh>
 
       {/* Animated flame */}
-      <group ref={flameRef} position={[0, 1.95, 0]}>
-        <mesh>
-          <coneGeometry args={[0.035, 0.12, 8]} />
-          <meshBasicMaterial color="#ffaa00" />
-        </mesh>
-        {/* Inner flame */}
-        <mesh position={[0, -0.01, 0]}>
-          <coneGeometry args={[0.02, 0.08, 8]} />
-          <meshBasicMaterial color="#ffffff" />
-        </mesh>
-      </group>
-      <pointLight position={[0, 2, 0]} intensity={1.2} color="#ff8800" distance={8} />
+      <AnimatedFlame position={[0, 1.95, 0]} scale={1.2} lightDistance={8} lightIntensity={1.2} />
 
       {/* Title */}
       <Text
@@ -159,12 +140,8 @@ export function Lights({ onClick }: LightsProps) {
                     <cylinderGeometry args={[0.02, 0.02, 0.2, 8]} />
                     <meshStandardMaterial color="#fffaf0" roughness={0.9} />
                   </mesh>
-                  {/* Flame */}
-                  <mesh position={[armLen * 0.85, 0.55, 0]}>
-                    <coneGeometry args={[0.02, 0.06, 8]} />
-                    <meshBasicMaterial color="#ffaa00" />
-                  </mesh>
-                  <pointLight position={[armLen * 0.85, 0.5, 0]} intensity={0.25} color="#ff9900" distance={4} />
+                  {/* Animated flame */}
+                  <AnimatedFlame position={[armLen * 0.85, 0.55, 0]} scale={0.7} lightDistance={4} lightIntensity={0.25} />
                 </group>
               );
             })}

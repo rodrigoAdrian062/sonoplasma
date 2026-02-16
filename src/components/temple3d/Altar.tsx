@@ -1,6 +1,7 @@
 import { Text } from '@react-three/drei';
 import { useMemo } from 'react';
 import * as THREE from 'three';
+import { AnimatedFlame } from './AnimatedFlame';
 
 interface AltarProps {
   onClick?: () => void;
@@ -115,12 +116,8 @@ export function Altar({ onClick }: AltarProps) {
               <cylinderGeometry args={[0.014, 0.016, 0.18, 8]} />
               <meshStandardMaterial color="#faf5e8" roughness={0.95} />
             </mesh>
-            {/* Flame */}
-            <mesh position={[0, 0.24, 0]}>
-              <coneGeometry args={[0.01, 0.04, 8]} />
-              <meshBasicMaterial color="#ffcc44" />
-            </mesh>
-            <pointLight position={[0, 0.24, 0]} intensity={0.3} color="#ff8800" distance={2.5} />
+            {/* Animated flame */}
+            <AnimatedFlame position={[0, 0.24, 0]} scale={0.6} lightDistance={2.5} lightIntensity={0.3} />
           </group>
         ))}
       </group>
