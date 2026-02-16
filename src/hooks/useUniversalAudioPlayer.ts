@@ -148,6 +148,26 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     };
   }, []);
 
+  // Poll YouTube player for time updates
+  useEffect(() => {
+    if (!isYouTube || status === 'idle') return;
+
+    const interval = setInterval(() => {
+      if (ytPlayerRef.current && ytPlayerReadyRef.current) {
+        try {
+          const current = ytPlayerRef.current.getCurrentTime();
+          const dur = ytPlayerRef.current.getDuration();
+          if (typeof current === 'number') setCurrentTime(current);
+          if (typeof dur === 'number' && dur > 0) setDuration(dur);
+        } catch {
+          // Player may not be ready yet
+        }
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isYouTube, status]);
+
   const stopCurrentPlayback = useCallback(() => {
     // Stop HTML5 audio
     if (audioRef.current) {
@@ -214,8 +234,8 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
             ytPlayerReadyRef.current = true;
             event.target.setVolume(volume * 100);
             event.target.playVideo();
-            setCurrentStageId(stageId);
-            setStatus('playing');
+            // State already set optimistically in play()
+            pendingPlayRef.current = null;
             pendingPlayRef.current = null;
           },
           onStateChange: (event: any) => {
@@ -251,6 +271,13 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     // Stop any current playback first
     stopCurrentPlayback();
 
+    // Resume AudioContext if suspended (browser autoplay policy)
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume().catch(err => {
+        console.warn('AudioContext resume failed:', err);
+      });
+    }
+
     const isYT = isYouTubeUrl(url);
     setIsYouTube(isYT);
 
@@ -263,6 +290,8 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
 
       setYoutubeVideoId(videoId);
       currentUrlRef.current = url;
+      setCurrentStageId(stageId);
+      setStatus('playing');
       pendingPlayRef.current = { stageId, videoId };
       createYouTubePlayer(videoId, stageId);
     } else {
