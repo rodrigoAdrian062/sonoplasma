@@ -49,6 +49,8 @@ const SectionDetail = () => {
     resume,
     stop,
     setVolume,
+    seekForward,
+    seekBackward,
   } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
@@ -232,6 +234,8 @@ const SectionDetail = () => {
                       onStop={stop}
                       onEdit={() => setEditingStage(stage)}
                       onDelete={() => setDeleteStageData(stage)}
+                      onSeekForward={() => seekForward()}
+                      onSeekBackward={() => seekBackward()}
                     />
                   </div>
                 ))}
