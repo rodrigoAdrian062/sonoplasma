@@ -406,7 +406,8 @@ export function PresentationMode({
           {/* Stage Icon */}
           <div
             className={cn(
-              'p-6 sm:p-8 rounded-3xl mb-5 transition-all duration-500',
+              'rounded-3xl mb-5 transition-all duration-500 overflow-hidden',
+              (currentStage as any).icone_url ? 'p-0' : 'p-6 sm:p-8',
               isActive 
                 ? 'bg-gold/20 text-gold scale-110 shadow-[0_0_60px_rgba(212,175,55,0.3)]' 
                 : 'bg-secondary text-muted-foreground'
@@ -415,7 +416,7 @@ export function PresentationMode({
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
-              size={64} 
+              size={(currentStage as any).icone_url ? 128 : 64} 
             />
           </div>
 
