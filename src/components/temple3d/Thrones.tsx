@@ -292,16 +292,18 @@ export function Thrones({ onClick }: ThronesProps) {
   return (
     <group>
       <VMThrone />
+      {/* 1º Vigilante - Ocidente (West), centralizado, olhando para o Oriente */}
       <VigilanteThrone
-        position={[-3, 0, 9]}
+        position={[0, 0, 10]}
         title="1º Vigilante"
         name="throne-1v"
         steps={2}
         rotation={Math.PI}
         symbol="⊥"
       />
+      {/* 2º Vigilante - Sul (South), meio da coluna, olhando para o Norte */}
       <VigilanteThrone
-        position={[5.5, 0, 0]}
+        position={[5.8, 0, 0]}
         title="2º Vigilante"
         name="throne-2v"
         steps={1}

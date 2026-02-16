@@ -120,25 +120,24 @@ export function Benches({ onClick }: BenchesProps) {
 
   return (
     <group onClick={() => onClick?.('benches')}>
-      {/* North - Apprentices */}
-      <BenchRow position={[-4.5, 0, -8]} side="north" label="Aprendizes" fabricTex={grayFabric} />
-      <BenchRow position={[-4.5, 0, -5]} side="north" fabricTex={grayFabric} />
-      <BenchRow position={[-4.5, 0, -2]} side="north" fabricTex={grayFabric} />
-      <BenchRow position={[-4.5, 0, 1]} side="north" fabricTex={grayFabric} />
-      <BenchRow position={[-4.5, 0, 4]} side="north" fabricTex={grayFabric} />
-      <BenchRow position={[-4.5, 0, 7]} side="north" fabricTex={grayFabric} />
+      {/* === COLUNA DO NORTE - Aprendizes (cinza) === */}
+      <BenchRow position={[-5.5, 0, -4]} side="north" label="Aprendizes" fabricTex={grayFabric} />
+      <BenchRow position={[-5.5, 0, -1]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-5.5, 0, 2]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-5.5, 0, 5]} side="north" fabricTex={grayFabric} />
 
-      {/* South - Companions */}
-      <BenchRow position={[4.5, 0, -8]} side="south" label="Companheiros" fabricTex={redFabric} />
-      <BenchRow position={[4.5, 0, -5]} side="south" fabricTex={redFabric} />
-      <BenchRow position={[4.5, 0, -2]} side="south" fabricTex={redFabric} />
-      <BenchRow position={[4.5, 0, 1]} side="south" fabricTex={redFabric} />
-      <BenchRow position={[4.5, 0, 4]} side="south" fabricTex={redFabric} />
+      {/* === COLUNA DO SUL - Companheiros (vermelho) === */}
+      <BenchRow position={[5.5, 0, -4]} side="south" label="Companheiros" fabricTex={redFabric} />
+      <BenchRow position={[5.5, 0, -1]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[5.5, 0, 2]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[5.5, 0, 5]} side="south" fabricTex={redFabric} />
+
+      {/* === MESTRES - Próximos ao Oriente, ambos os lados === */}
       
-      {/* Masters - North Row 1 */}
-      <group position={[-3.5, 0, -13]} rotation={[0, Math.PI / 2, 0]}>
-        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-          <group key={`mn1-${i}`} position={[x, 0, 0]}>
+      {/* Mestres - Norte (dentro da balaustrada, próximo ao Oriente) */}
+      <group position={[-4.5, 0, -8]} rotation={[0, Math.PI / 2, 0]}>
+        {[-0.8, -0.0, 0.8].map((x, i) => (
+          <group key={`mn-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
               <boxGeometry args={[0.6, 0.06, 0.5]} />
               <meshStandardMaterial map={blueFabric} roughness={0.9} />
@@ -160,32 +159,10 @@ export function Benches({ onClick }: BenchesProps) {
         </Text>
       </group>
 
-      {/* Masters - North Row 2 */}
-      <group position={[-3.5, 0, -11.5]} rotation={[0, Math.PI / 2, 0]}>
-        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-          <group key={`mn2-${i}`} position={[x, 0, 0]}>
-            <mesh position={[0, 0.35, 0]} castShadow>
-              <boxGeometry args={[0.6, 0.06, 0.5]} />
-              <meshStandardMaterial map={blueFabric} roughness={0.9} />
-            </mesh>
-            <mesh position={[0, 0.65, -0.22]} castShadow>
-              <boxGeometry args={[0.6, 0.55, 0.06]} />
-              <meshStandardMaterial map={blueFabric} roughness={0.9} />
-            </mesh>
-            {[-0.25, 0.25].map((lx, j) => (
-              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
-                <boxGeometry args={[0.04, 0.34, 0.04]} />
-                <meshStandardMaterial map={woodTex} roughness={0.8} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-      </group>
-
-      {/* Masters - South Row 1 */}
-      <group position={[3.5, 0, -13]} rotation={[0, -Math.PI / 2, 0]}>
-        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-          <group key={`ms1-${i}`} position={[x, 0, 0]}>
+      {/* Mestres - Sul (dentro da balaustrada, próximo ao Oriente) */}
+      <group position={[4.5, 0, -8]} rotation={[0, -Math.PI / 2, 0]}>
+        {[-0.8, 0.0, 0.8].map((x, i) => (
+          <group key={`ms-${i}`} position={[x, 0, 0]}>
             <mesh position={[0, 0.35, 0]} castShadow>
               <boxGeometry args={[0.6, 0.06, 0.5]} />
               <meshStandardMaterial map={blueFabric} roughness={0.9} />
@@ -207,33 +184,11 @@ export function Benches({ onClick }: BenchesProps) {
         </Text>
       </group>
 
-      {/* Masters - South Row 2 */}
-      <group position={[3.5, 0, -11.5]} rotation={[0, -Math.PI / 2, 0]}>
-        {[-1.2, -0.4, 0.4, 1.2].map((x, i) => (
-          <group key={`ms2-${i}`} position={[x, 0, 0]}>
-            <mesh position={[0, 0.35, 0]} castShadow>
-              <boxGeometry args={[0.6, 0.06, 0.5]} />
-              <meshStandardMaterial map={blueFabric} roughness={0.9} />
-            </mesh>
-            <mesh position={[0, 0.65, -0.22]} castShadow>
-              <boxGeometry args={[0.6, 0.55, 0.06]} />
-              <meshStandardMaterial map={blueFabric} roughness={0.9} />
-            </mesh>
-            {[-0.25, 0.25].map((lx, j) => (
-              <mesh key={j} position={[lx, 0.17, 0]} castShadow>
-                <boxGeometry args={[0.04, 0.34, 0.04]} />
-                <meshStandardMaterial map={woodTex} roughness={0.8} />
-              </mesh>
-            ))}
-          </group>
-        ))}
-      </group>
-
       {/* Column labels */}
-      <Text position={[-4.5, 2.5, 0]} fontSize={0.15} color="#d4af37" anchorX="center" anchorY="middle" rotation={[0, Math.PI / 2, 0]}>
+      <Text position={[-6, 2.5, 0]} fontSize={0.15} color="#d4af37" anchorX="center" anchorY="middle" rotation={[0, Math.PI / 2, 0]}>
         Coluna do Norte
       </Text>
-      <Text position={[4.5, 2.5, 0]} fontSize={0.15} color="#d4af37" anchorX="center" anchorY="middle" rotation={[0, -Math.PI / 2, 0]}>
+      <Text position={[6, 2.5, 0]} fontSize={0.15} color="#d4af37" anchorX="center" anchorY="middle" rotation={[0, -Math.PI / 2, 0]}>
         Coluna do Sul
       </Text>
     </group>
