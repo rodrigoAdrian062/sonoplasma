@@ -9,70 +9,69 @@ export function Floor({ onClick }: FloorProps) {
   const floorWidth = 16;
   const floorLength = 28;
 
-  // Create high-quality oblique checkered pattern
+  // Create aligned black and white marble checkerboard
   const checkerTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1024;
+    const tiles = 8;
+    const tilePx = 128;
+    canvas.width = tiles * tilePx;
+    canvas.height = tiles * tilePx;
     const ctx = canvas.getContext('2d')!;
-    
-    // Marble white background
-    ctx.fillStyle = '#f0ece0';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add subtle marble veining to white
-    ctx.strokeStyle = 'rgba(200, 190, 175, 0.3)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 30; i++) {
+    // Helper: draw marble veining
+    const drawVeins = (x: number, y: number, w: number, h: number, color: string, count: number) => {
+      ctx.save();
       ctx.beginPath();
-      const startX = Math.random() * canvas.width;
-      const startY = Math.random() * canvas.height;
-      ctx.moveTo(startX, startY);
-      for (let j = 0; j < 5; j++) {
-        ctx.lineTo(
-          startX + (Math.random() - 0.5) * 200,
-          startY + (Math.random() - 0.5) * 200
-        );
-      }
-      ctx.stroke();
-    }
-    
-    // Draw diagonal pattern with marble-like black tiles
-    const tileSize = 128;
-    
-    for (let row = -2; row < 12; row++) {
-      for (let col = -2; col < 12; col++) {
-        if ((row + col) % 2 === 0) {
-          const x = col * tileSize;
-          const y = row * tileSize;
-          
-          ctx.save();
-          ctx.translate(x + tileSize / 2, y + tileSize / 2);
-          ctx.rotate(Math.PI / 4);
-
-          // Black marble tile
-          ctx.fillStyle = '#1a1a1a';
-          ctx.fillRect(-tileSize / 2 * 0.7, -tileSize / 2 * 0.7, tileSize * 0.7, tileSize * 0.7);
-          
-          // Subtle veining on black tiles
-          ctx.strokeStyle = 'rgba(60, 60, 60, 0.4)';
-          ctx.lineWidth = 0.5;
-          for (let v = 0; v < 3; v++) {
-            ctx.beginPath();
-            ctx.moveTo(-tileSize * 0.3 + Math.random() * tileSize * 0.6, -tileSize * 0.3);
-            ctx.lineTo(-tileSize * 0.3 + Math.random() * tileSize * 0.6, tileSize * 0.3);
-            ctx.stroke();
-          }
-          
-          ctx.restore();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i < count; i++) {
+        ctx.globalAlpha = 0.15 + Math.random() * 0.2;
+        ctx.beginPath();
+        let cx = x + Math.random() * w;
+        let cy = y + Math.random() * h;
+        ctx.moveTo(cx, cy);
+        for (let j = 0; j < 6; j++) {
+          cx += (Math.random() - 0.5) * 60;
+          cy += (Math.random() - 0.5) * 60;
+          ctx.lineTo(cx, cy);
         }
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    };
+
+    for (let row = 0; row < tiles; row++) {
+      for (let col = 0; col < tiles; col++) {
+        const x = col * tilePx;
+        const y = row * tilePx;
+        const isBlack = (row + col) % 2 === 1;
+
+        if (isBlack) {
+          // Black marble
+          ctx.fillStyle = '#111111';
+          ctx.fillRect(x, y, tilePx, tilePx);
+          drawVeins(x, y, tilePx, tilePx, 'rgba(80, 80, 80, 0.5)', 5);
+        } else {
+          // White marble
+          ctx.fillStyle = '#f0ece4';
+          ctx.fillRect(x, y, tilePx, tilePx);
+          drawVeins(x, y, tilePx, tilePx, 'rgba(190, 180, 165, 0.4)', 5);
+        }
+
+        // Subtle tile border / grout line
+        ctx.strokeStyle = 'rgba(100, 90, 80, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 0.5, y + 0.5, tilePx - 1, tilePx - 1);
       }
     }
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(5, 8);
+    texture.repeat.set(4, 7);
     texture.anisotropy = 16;
     return texture;
   }, []);
@@ -128,8 +127,8 @@ export function Floor({ onClick }: FloorProps) {
   return (
     <group onClick={onClick}>
       {/* Main checkered floor */}
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[floorWidth * 1.15, floorLength * 1.05]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[floorWidth, floorLength]} />
         <meshStandardMaterial 
           map={checkerTexture} 
           roughness={0.15}
