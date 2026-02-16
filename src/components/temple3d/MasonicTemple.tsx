@@ -36,82 +36,96 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
   return (
     <div className="w-full h-full relative">
       <Canvas
-        camera={{ position: [0, 8, 20], fov: 50 }}
+        camera={{ position: [0, 12, 25], fov: 45 }}
         shadows="soft"
         gl={{ 
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.95,
+          toneMappingExposure: 0.8,
           powerPreference: 'high-performance',
         }}
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
-          {/* Deep atmospheric background */}
-          <color attach="background" args={['#0d1520']} />
+          {/* Deep warm background */}
+          <color attach="background" args={['#080c14']} />
           
-          {/* Atmospheric fog - closer for more depth */}
-          <fog attach="fog" args={['#0d1520', 20, 45]} />
+          {/* Volumetric fog for depth */}
+          <fog attach="fog" args={['#080c14', 18, 50]} />
 
-          {/* === REALISTIC LIGHTING SETUP === */}
+          {/* === CINEMATIC LIGHTING === */}
           
-          {/* Very dim ambient for deep shadows */}
-          <ambientLight intensity={0.15} color="#ffeedd" />
+          {/* Very subtle ambient - deep shadows */}
+          <ambientLight intensity={0.08} color="#ffeedd" />
           
-          {/* Sky hemisphere - warm ground, cool sky */}
-          <hemisphereLight intensity={0.25} groundColor="#3a2515" color="#4a6a8a" />
+          {/* Warm ground, cool sky hemisphere */}
+          <hemisphereLight intensity={0.15} groundColor="#3a2010" color="#1a2a4a" />
           
-          {/* Main key light - warm overhead sun through skylight */}
+          {/* Main key light - warm golden, from above East */}
           <directionalLight
-            position={[2, 18, -5]}
-            intensity={0.8}
+            position={[0, 20, -10]}
+            intensity={0.6}
             castShadow
             shadow-mapSize={[4096, 4096]}
             shadow-camera-far={60}
-            shadow-camera-left={-18}
-            shadow-camera-right={18}
-            shadow-camera-top={22}
-            shadow-camera-bottom={-22}
+            shadow-camera-left={-20}
+            shadow-camera-right={20}
+            shadow-camera-top={25}
+            shadow-camera-bottom={-25}
             shadow-bias={-0.0001}
             shadow-normalBias={0.02}
-            color="#fff5e0"
+            color="#fff0d0"
           />
           
-          {/* Fill light from south - very subtle */}
-          <directionalLight position={[10, 8, 0]} intensity={0.12} color="#ffd4a0" />
+          {/* Rim light from south - golden warmth */}
+          <directionalLight position={[12, 6, 0]} intensity={0.08} color="#ffd080" />
           
-          {/* Fill light from north */}
-          <directionalLight position={[-10, 8, 0]} intensity={0.12} color="#d4d4ff" />
+          {/* Cool fill from north */}
+          <directionalLight position={[-12, 6, 0]} intensity={0.06} color="#8090c0" />
           
-          {/* East wall golden accent - Delta glow */}
+          {/* Delta Luminoso golden glow - dramatic spotlight */}
           <spotLight 
-            position={[0, 10, -13]} 
-            intensity={3}
+            position={[0, 12, -14]} 
+            intensity={4}
             color="#ffd700" 
-            angle={0.4}
+            angle={0.35}
             penumbra={1}
-            distance={25}
+            distance={30}
             castShadow
-            shadow-mapSize={[1024, 1024]}
-          />
-          
-          {/* Entrance backlight - moonlight feel */}
-          <spotLight 
-            position={[0, 7, 16]} 
-            intensity={0.5}
-            color="#8899cc"
-            angle={0.6}
-            penumbra={0.9}
-            distance={20}
+            shadow-mapSize={[2048, 2048]}
           />
 
-          {/* Contact shadows for ground realism */}
+          {/* Secondary Delta glow - warm wash on east wall */}
+          <spotLight 
+            position={[0, 8, -12]} 
+            intensity={1.5}
+            color="#ff9900" 
+            angle={0.5}
+            penumbra={0.9}
+            distance={15}
+          />
+          
+          {/* Entrance moonlight - cool blue backlight */}
+          <spotLight 
+            position={[0, 8, 18]} 
+            intensity={0.4}
+            color="#6688bb"
+            angle={0.5}
+            penumbra={0.95}
+            distance={25}
+          />
+
+          {/* Floor accent lights along sides */}
+          <pointLight position={[-7, 1, 0]} intensity={0.1} color="#ff8855" distance={8} />
+          <pointLight position={[7, 1, 0]} intensity={0.1} color="#ff8855" distance={8} />
+
+          {/* Contact shadows */}
           <ContactShadows 
             position={[0, 0.01, 0]}
-            opacity={0.4}
-            scale={40}
-            blur={2}
-            far={10}
+            opacity={0.5}
+            scale={50}
+            blur={2.5}
+            far={12}
             color="#000000"
           />
 
@@ -139,36 +153,33 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
             enableZoom={true}
             enableRotate={true}
             minDistance={3}
-            maxDistance={35}
+            maxDistance={40}
             maxPolarAngle={Math.PI / 2.05}
             target={[0, 2, 0]}
             enableDamping={true}
             dampingFactor={0.05}
           />
 
-          {/* HDR Environment for realistic reflections */}
-          <Environment preset="apartment" environmentIntensity={0.3} />
+          {/* HDR Environment for reflections */}
+          <Environment preset="apartment" environmentIntensity={0.2} />
 
           {/* === POST-PROCESSING === */}
           <EffectComposer>
-            {/* Ambient Occlusion - depth and realism in corners */}
             <N8AO 
-              aoRadius={0.8}
-              intensity={2.5}
-              distanceFalloff={1}
+              aoRadius={1}
+              intensity={3}
+              distanceFalloff={1.2}
               quality="medium"
             />
-            {/* Bloom - candle glow, gold shimmer, Delta radiance */}
             <Bloom 
-              luminanceThreshold={0.8}
-              luminanceSmoothing={0.5}
-              intensity={0.4}
+              luminanceThreshold={0.7}
+              luminanceSmoothing={0.4}
+              intensity={0.5}
               mipmapBlur
             />
-            {/* Vignette - cinematic framing */}
             <Vignette 
-              offset={0.3}
-              darkness={0.6}
+              offset={0.25}
+              darkness={0.7}
             />
           </EffectComposer>
         </Suspense>
@@ -186,7 +197,7 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
         <p>• Arraste para girar a câmera</p>
         <p>• Scroll para zoom</p>
         <p>• Clique nos elementos para informações</p>
-        <p className="mt-1 text-primary">81 Nós • 12 Colunas Zodiacais • Ferramentas de Trabalho</p>
+        <p className="mt-1 text-primary">Átrio • Sala dos PP∴PP∴ • 81 Nós • 12 Colunas Zodiacais</p>
       </div>
 
       {/* Ambient Sound Panel */}

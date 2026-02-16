@@ -8,33 +8,35 @@ interface FloorProps {
 export function Floor({ onClick }: FloorProps) {
   const floorWidth = 16;
   const floorLength = 28;
+  const entranceDepth = 8;
 
-  // Create aligned black and white marble checkerboard
+  // High-quality marble checkerboard
   const checkerTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
     const tiles = 8;
-    const tilePx = 128;
+    const tilePx = 256;
     canvas.width = tiles * tilePx;
     canvas.height = tiles * tilePx;
     const ctx = canvas.getContext('2d')!;
 
-    // Helper: draw marble veining
-    const drawVeins = (x: number, y: number, w: number, h: number, color: string, count: number) => {
+    const drawMarbleVeins = (x: number, y: number, w: number, h: number, colors: string[], count: number) => {
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, y, w, h);
       ctx.clip();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 0.8;
       for (let i = 0; i < count; i++) {
-        ctx.globalAlpha = 0.15 + Math.random() * 0.2;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 0.3 + Math.random() * 1.5;
+        ctx.globalAlpha = 0.08 + Math.random() * 0.15;
         ctx.beginPath();
         let cx = x + Math.random() * w;
         let cy = y + Math.random() * h;
         ctx.moveTo(cx, cy);
-        for (let j = 0; j < 6; j++) {
-          cx += (Math.random() - 0.5) * 60;
-          cy += (Math.random() - 0.5) * 60;
+        const segments = 4 + Math.floor(Math.random() * 6);
+        for (let j = 0; j < segments; j++) {
+          cx += (Math.random() - 0.5) * 80;
+          cy += (Math.random() - 0.5) * 80;
           ctx.lineTo(cx, cy);
         }
         ctx.stroke();
@@ -50,21 +52,33 @@ export function Floor({ onClick }: FloorProps) {
         const isBlack = (row + col) % 2 === 1;
 
         if (isBlack) {
-          // Black marble
-          ctx.fillStyle = '#111111';
+          // Rich black marble with subtle green-gray veins
+          const grad = ctx.createRadialGradient(
+            x + tilePx / 2, y + tilePx / 2, 0,
+            x + tilePx / 2, y + tilePx / 2, tilePx
+          );
+          grad.addColorStop(0, '#141414');
+          grad.addColorStop(1, '#0e0e0e');
+          ctx.fillStyle = grad;
           ctx.fillRect(x, y, tilePx, tilePx);
-          drawVeins(x, y, tilePx, tilePx, 'rgba(80, 80, 80, 0.5)', 5);
+          drawMarbleVeins(x, y, tilePx, tilePx, ['rgba(60,70,60,0.5)', 'rgba(80,80,80,0.4)', 'rgba(50,55,50,0.3)'], 8);
         } else {
-          // White marble
-          ctx.fillStyle = '#f0ece4';
+          // Carrara white marble with warm gray veins
+          const grad = ctx.createRadialGradient(
+            x + tilePx / 2, y + tilePx / 2, 0,
+            x + tilePx / 2, y + tilePx / 2, tilePx
+          );
+          grad.addColorStop(0, '#f5f0e8');
+          grad.addColorStop(1, '#ece5d8');
+          ctx.fillStyle = grad;
           ctx.fillRect(x, y, tilePx, tilePx);
-          drawVeins(x, y, tilePx, tilePx, 'rgba(190, 180, 165, 0.4)', 5);
+          drawMarbleVeins(x, y, tilePx, tilePx, ['rgba(180,170,155,0.35)', 'rgba(160,150,130,0.3)', 'rgba(140,135,120,0.25)'], 10);
         }
 
-        // Subtle tile border / grout line
-        ctx.strokeStyle = 'rgba(100, 90, 80, 0.3)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(x + 0.5, y + 0.5, tilePx - 1, tilePx - 1);
+        // Fine grout line
+        ctx.strokeStyle = 'rgba(80, 70, 60, 0.25)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, tilePx - 2, tilePx - 2);
       }
     }
 
@@ -76,25 +90,25 @@ export function Floor({ onClick }: FloorProps) {
     return texture;
   }, []);
 
-  // Enhanced dentate border texture
+  // Orla Denteada (dentate border) texture
   const borderTexture = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 128;
     const ctx = canvas.getContext('2d')!;
     
-    // Gold background
     const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
     grad.addColorStop(0, '#c9a227');
+    grad.addColorStop(0.3, '#e0c060');
     grad.addColorStop(0.5, '#d4af37');
-    grad.addColorStop(1, '#b8962e');
+    grad.addColorStop(0.7, '#c9a227');
+    grad.addColorStop(1, '#a88820');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Triangular teeth pattern
     const teethCount = 16;
     const teethWidth = canvas.width / teethCount;
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#151515';
     for (let i = 0; i < teethCount; i++) {
       if (i % 2 === 0) {
         ctx.beginPath();
@@ -105,7 +119,6 @@ export function Floor({ onClick }: FloorProps) {
         ctx.fill();
       }
     }
-    // Bottom teeth
     for (let i = 0; i < teethCount; i++) {
       if (i % 2 === 1) {
         ctx.beginPath();
@@ -124,6 +137,49 @@ export function Floor({ onClick }: FloorProps) {
     return texture;
   }, []);
 
+  // Stone floor for entrance areas
+  const stoneTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    
+    ctx.fillStyle = '#3a3530';
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Flagstone pattern
+    const stones = [
+      { x: 0, y: 0, w: 200, h: 170 },
+      { x: 200, y: 0, w: 180, h: 130 },
+      { x: 380, y: 0, w: 132, h: 160 },
+      { x: 0, y: 170, w: 160, h: 180 },
+      { x: 160, y: 130, w: 200, h: 150 },
+      { x: 360, y: 160, w: 152, h: 170 },
+      { x: 0, y: 350, w: 220, h: 162 },
+      { x: 220, y: 280, w: 170, h: 232 },
+      { x: 390, y: 330, w: 122, h: 182 },
+    ];
+    
+    stones.forEach(s => {
+      const brightness = 0.22 + Math.random() * 0.08;
+      const r = Math.floor(brightness * 255 * (0.95 + Math.random() * 0.1));
+      const g = Math.floor(brightness * 245 * (0.95 + Math.random() * 0.1));
+      const b = Math.floor(brightness * 230 * (0.95 + Math.random() * 0.1));
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(s.x + 2, s.y + 2, s.w - 4, s.h - 4);
+      
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(s.x, s.y, s.w, s.h);
+    });
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(3, 3);
+    return texture;
+  }, []);
+
   return (
     <group onClick={onClick}>
       {/* Main checkered floor */}
@@ -131,84 +187,150 @@ export function Floor({ onClick }: FloorProps) {
         <planeGeometry args={[floorWidth, floorLength]} />
         <meshStandardMaterial 
           map={checkerTexture} 
-          roughness={0.15}
-          metalness={0.35}
+          roughness={0.12}
+          metalness={0.4}
         />
       </mesh>
 
-      {/* Floor reflection layer */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
+      {/* Reflective floor overlay */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 0]}>
         <planeGeometry args={[floorWidth, floorLength]} />
         <meshStandardMaterial 
           color="#ffffff"
           transparent
-          opacity={0.03}
-          roughness={0.05}
-          metalness={0.6}
+          opacity={0.04}
+          roughness={0.02}
+          metalness={0.7}
         />
       </mesh>
 
-      {/* Orla Denteada */}
-      {/* North border */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-floorWidth / 2 + 0.15, 0.02, 0]}>
+      {/* === ORLA DENTEADA (Dentate Border) === */}
+      {/* North */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-floorWidth / 2 + 0.15, 0.015, 0]}>
         <planeGeometry args={[0.3, floorLength - 2]} />
-        <meshStandardMaterial map={borderTexture} roughness={0.4} />
+        <meshStandardMaterial map={borderTexture} roughness={0.35} metalness={0.15} />
       </mesh>
-      {/* South border */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorWidth / 2 - 0.15, 0.02, 0]}>
+      {/* South */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorWidth / 2 - 0.15, 0.015, 0]}>
         <planeGeometry args={[0.3, floorLength - 2]} />
-        <meshStandardMaterial map={borderTexture} roughness={0.4} />
+        <meshStandardMaterial map={borderTexture} roughness={0.35} metalness={0.15} />
       </mesh>
-      {/* East border */}
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[0, 0.02, -floorLength / 2 + 0.15]}>
+      {/* East */}
+      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[0, 0.015, -floorLength / 2 + 0.15]}>
         <planeGeometry args={[0.3, floorWidth - 0.6]} />
-        <meshStandardMaterial map={borderTexture} roughness={0.4} />
+        <meshStandardMaterial map={borderTexture} roughness={0.35} metalness={0.15} />
       </mesh>
-      {/* West border */}
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[0, 0.02, floorLength / 2 - 0.15]}>
+      {/* West */}
+      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[0, 0.015, floorLength / 2 - 0.15]}>
         <planeGeometry args={[0.3, floorWidth - 0.6]} />
-        <meshStandardMaterial map={borderTexture} roughness={0.4} />
+        <meshStandardMaterial map={borderTexture} roughness={0.35} metalness={0.15} />
       </mesh>
 
-      {/* Balaustrade (enhanced) */}
+      {/* === BALAUSTRADA (Balustrade separating Oriente) === */}
       <group position={[0, 0, -6]}>
-        {/* Main rail - polished gold */}
-        <mesh position={[0, 0.5, 0]} castShadow>
-          <boxGeometry args={[12, 0.08, 0.08]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.8} />
+        {/* Top rail - polished brass */}
+        <mesh position={[0, 0.55, 0]} castShadow>
+          <boxGeometry args={[13, 0.08, 0.1]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.15} metalness={0.85} />
         </mesh>
         {/* Bottom rail */}
-        <mesh position={[0, 0.15, 0]} castShadow>
-          <boxGeometry args={[12, 0.06, 0.06]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.8} />
+        <mesh position={[0, 0.12, 0]} castShadow>
+          <boxGeometry args={[13, 0.06, 0.08]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.15} metalness={0.85} />
         </mesh>
-        {/* Ornate balusters */}
-        {Array.from({ length: 24 }, (_, i) => {
-          const x = -5.5 + i * 0.5;
+        {/* Balusters */}
+        {Array.from({ length: 28 }, (_, i) => {
+          const x = -6.25 + i * 0.48;
           if (Math.abs(x) < 1.5) return null;
           return (
             <group key={i}>
-              {/* Main baluster */}
-              <mesh position={[x, 0.32, 0]} castShadow>
-                <cylinderGeometry args={[0.025, 0.025, 0.3, 8]} />
-                <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.8} />
+              <mesh position={[x, 0.34, 0]} castShadow>
+                <cylinderGeometry args={[0.02, 0.025, 0.35, 8]} />
+                <meshStandardMaterial color="#c9a227" roughness={0.15} metalness={0.85} />
               </mesh>
-              {/* Decorative bulge */}
-              <mesh position={[x, 0.32, 0]}>
-                <sphereGeometry args={[0.035, 8, 8]} />
-                <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.8} />
+              <mesh position={[x, 0.34, 0]}>
+                <sphereGeometry args={[0.03, 8, 8]} />
+                <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.85} />
               </mesh>
             </group>
           );
         })}
-        {/* Three steps up to Oriente - marble */}
+        {/* Three marble steps to Oriente */}
         {[0, 1, 2].map((step) => (
-          <mesh key={step} position={[0, 0.05 + step * 0.08, 0.3 + step * 0.25]} castShadow>
-            <boxGeometry args={[3 - step * 0.3, 0.08, 0.5]} />
-            <meshStandardMaterial color="#f0ece0" roughness={0.2} metalness={0.1} />
+          <mesh key={step} position={[0, 0.06 + step * 0.1, 0.35 + step * 0.3]} castShadow receiveShadow>
+            <boxGeometry args={[3.2 - step * 0.3, 0.1, 0.55]} />
+            <meshStandardMaterial color="#e8e0d0" roughness={0.2} metalness={0.08} />
           </mesh>
         ))}
       </group>
+
+      {/* === ÁTRIO (Narthex/Vestibule) === */}
+      <group position={[0, 0, floorLength / 2 + entranceDepth / 2]}>
+        {/* Átrio floor - right side */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[floorWidth / 4, 0, 0]} receiveShadow>
+          <planeGeometry args={[floorWidth / 2 - 0.5, entranceDepth]} />
+          <meshStandardMaterial map={stoneTexture} roughness={0.7} metalness={0.05} />
+        </mesh>
+        
+        {/* Sala dos Passos Perdidos floor - left side */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-floorWidth / 4, 0, 0]} receiveShadow>
+          <planeGeometry args={[floorWidth / 2 - 0.5, entranceDepth]} />
+          <meshStandardMaterial map={stoneTexture} roughness={0.7} metalness={0.05} />
+        </mesh>
+
+        {/* Dividing wall between Átrio and Sala PP */}
+        <mesh position={[0, 2, 0]} castShadow>
+          <boxGeometry args={[0.2, 4, entranceDepth]} />
+          <meshStandardMaterial color="#4a4035" roughness={0.8} />
+        </mesh>
+      </group>
+
+      {/* === ENTRANCE AREA WALLS === */}
+      {/* Left wall - Sala PP */}
+      <mesh position={[-floorWidth / 2, 2, floorLength / 2 + entranceDepth / 2]} castShadow>
+        <boxGeometry args={[0.3, 4, entranceDepth]} />
+        <meshStandardMaterial color="#4a6080" roughness={0.7} />
+      </mesh>
+      {/* Right wall - Átrio */}
+      <mesh position={[floorWidth / 2, 2, floorLength / 2 + entranceDepth / 2]} castShadow>
+        <boxGeometry args={[0.3, 4, entranceDepth]} />
+        <meshStandardMaterial color="#4a6080" roughness={0.7} />
+      </mesh>
+      {/* Back wall */}
+      <mesh position={[0, 2, floorLength / 2 + entranceDepth]} castShadow>
+        <boxGeometry args={[floorWidth + 0.3, 4, 0.3]} />
+        <meshStandardMaterial color="#4a6080" roughness={0.7} />
+      </mesh>
+
+      {/* Entrance door from Átrio into temple */}
+      <group position={[floorWidth / 4, 0, floorLength / 2]}>
+        {/* Door arch */}
+        <mesh position={[0, 2.5, 0]} castShadow>
+          <boxGeometry args={[2.5, 5, 0.15]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.8} />
+        </mesh>
+        {/* Door opening */}
+        <mesh position={[0, 1.8, -0.05]}>
+          <boxGeometry args={[1.8, 3.6, 0.3]} />
+          <meshStandardMaterial color="#1a0e08" roughness={0.9} />
+        </mesh>
+      </group>
+
+      {/* Entrance labels */}
+      {/* Sala PP label */}
+      <mesh position={[-floorWidth / 4, 3.5, floorLength / 2 + entranceDepth - 0.1]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[3, 0.6]} />
+        <meshStandardMaterial color="#2a1810" roughness={0.7} />
+      </mesh>
+      {/* Átrio label */}
+      <mesh position={[floorWidth / 4, 3.5, floorLength / 2 + entranceDepth - 0.1]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[3, 0.6]} />
+        <meshStandardMaterial color="#2a1810" roughness={0.7} />
+      </mesh>
+
+      {/* Entrance area lighting */}
+      <pointLight position={[-floorWidth / 4, 3, floorLength / 2 + 4]} intensity={0.3} color="#ff9966" distance={6} />
+      <pointLight position={[floorWidth / 4, 3, floorLength / 2 + 4]} intensity={0.3} color="#ff9966" distance={6} />
     </group>
   );
 }
