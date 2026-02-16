@@ -9,12 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 interface PresentationModeProps {
   stages: CeremonyStage[];
   audiosByStageId: Record<string, StageAudio[]>;
   currentStageId: string | null;
   status: 'idle' | 'playing' | 'paused';
   volume: number;
+  currentTime: number;
+  duration: number;
   onVolumeChange: (value: number) => void;
   onPlay: (stageId: string, audioUrl: string) => void;
   onPause: () => void;
@@ -23,6 +31,7 @@ interface PresentationModeProps {
   onClose: () => void;
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
+  onSeekTo?: (seconds: number) => void;
   settings?: {
     nome_app?: string;
     logo_url?: string | null;
@@ -43,7 +52,10 @@ export function PresentationMode({
   onClose,
   onSeekForward,
   onSeekBackward,
+  onSeekTo,
   settings,
+  currentTime: audioCurrentTime,
+  duration: audioDuration,
 }: PresentationModeProps) {
   const [selectedStageIndex, setSelectedStageIndex] = useState(0);
   const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
@@ -492,6 +504,36 @@ export function PresentationMode({
             </>
           )}
         </div>
+
+        {/* Audio Progress Bar */}
+        {isActive && audioDuration > 0 && (
+          <div className="w-full max-w-2xl mt-6 px-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-mono w-12 text-right">
+                {formatTime(audioCurrentTime)}
+              </span>
+              <div
+                className="flex-1 h-2 bg-secondary rounded-full cursor-pointer relative group"
+                onClick={(e) => {
+                  if (!onSeekTo) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = (e.clientX - rect.left) / rect.width;
+                  onSeekTo(ratio * audioDuration);
+                }}
+              >
+                <div
+                  className="h-full bg-gold rounded-full transition-all relative"
+                  style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground font-mono w-12">
+                {formatTime(audioDuration)}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* No Audio Warning */}
         {audios.length === 0 && (
