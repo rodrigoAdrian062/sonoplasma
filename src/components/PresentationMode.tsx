@@ -183,8 +183,13 @@ export function PresentationMode({
     
     if (useTimerEnabled && customTime > 0) {
       timer.start(customTime);
+      timer.pause();
     }
     onPlay(currentStage.id, currentAudio.audio_url);
+    // Immediately pause so it starts in paused state
+    setTimeout(() => {
+      onPause();
+    }, 100);
   };
 
   const handlePause = () => {
