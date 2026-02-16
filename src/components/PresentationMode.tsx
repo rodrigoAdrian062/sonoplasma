@@ -387,236 +387,233 @@ export function PresentationMode({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
         {/* Background Banner */}
         <img 
           src={presentationBanner} 
           alt="" 
-          className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none"
         />
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/60 to-background pointer-events-none" />
-        {/* Active Glow Effect */}
-        {isActive && (
-          <div className="absolute inset-0 bg-gradient-radial from-gold/8 via-transparent to-transparent pointer-events-none" />
-        )}
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
 
-        {/* Stage Icon */}
-        <div
-          className={cn(
-            'p-8 rounded-3xl mb-6 transition-all duration-500',
-            isActive 
-              ? 'bg-gold/20 text-gold scale-110 shadow-[0_0_60px_rgba(212,175,55,0.3)]' 
-              : 'bg-secondary text-muted-foreground'
+        {/* Central Card */}
+        <div className="relative z-10 w-full max-w-2xl bg-card/80 backdrop-blur-md border border-gold/15 rounded-2xl p-6 sm:p-10 shadow-2xl shadow-black/30 flex flex-col items-center">
+          {/* Active Glow Effect */}
+          {isActive && (
+            <div className="absolute inset-0 rounded-2xl bg-gradient-radial from-gold/5 via-transparent to-transparent pointer-events-none" />
           )}
-        >
-          <CeremonyIcon 
-            name={currentStage.icone} 
-            imageUrl={(currentStage as any).icone_url} 
-            size={80} 
-          />
-        </div>
 
-        {/* Stage Name */}
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-foreground text-center mb-3">
-          {currentStage.nome_simbolico}
-        </h1>
-
-        {/* Description */}
-        {currentStage.descricao && (
-          <p className="text-lg text-muted-foreground text-center max-w-2xl mb-6">
-            {currentStage.descricao}
-          </p>
-        )}
-
-        {/* Timer Display */}
-        {(timer.isRunning || timer.isPaused) && (
-          <div className="flex items-center gap-4 mb-6 animate-fade-in">
-            <TimerDisplay 
-              seconds={timer.timeRemaining} 
-              isActive={timer.isRunning && !timer.isPaused}
-              size="lg"
+          {/* Stage Icon */}
+          <div
+            className={cn(
+              'p-6 sm:p-8 rounded-3xl mb-5 transition-all duration-500',
+              isActive 
+                ? 'bg-gold/20 text-gold scale-110 shadow-[0_0_60px_rgba(212,175,55,0.3)]' 
+                : 'bg-secondary text-muted-foreground'
+            )}
+          >
+            <CeremonyIcon 
+              name={currentStage.icone} 
+              imageUrl={(currentStage as any).icone_url} 
+              size={64} 
             />
-            <button
-              onClick={() => timer.reset()}
-              className="p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
-              aria-label="Resetar cronômetro"
-            >
-              <RotateCcw size={24} />
-            </button>
           </div>
-        )}
 
-        {/* Audio Selector */}
-        {audios.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mb-8 max-w-xl">
-            {audios.map((audio, index) => (
-              <button
-                key={audio.id}
-                onClick={() => handleSelectAudio(index)}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-full border transition-all text-sm',
-                  index === selectedAudioIndex
-                    ? 'bg-gold/20 border-gold/50 text-gold'
-                    : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'
-                )}
-              >
-                <Music size={14} />
-                {audio.nome || `Áudio ${index + 1}`}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Stage Name */}
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground text-center mb-2">
+            {currentStage.nome_simbolico}
+          </h1>
 
-        {/* Timer Settings */}
-        <div className="flex items-center gap-3 mb-8">
-          <Clock size={18} className="text-muted-foreground" />
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={useTimerEnabled}
-              onChange={(e) => setUseTimerEnabled(e.target.checked)}
-              className="rounded border-border bg-secondary text-gold focus:ring-gold w-5 h-5"
-            />
-            Cronômetro
-          </label>
-          {useTimerEnabled && (
-            <>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={Math.floor(customTime / 60)}
-                onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                className="w-20 px-3 py-2 text-sm bg-secondary border border-border rounded-lg text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
-              />
-              <span className="text-sm text-muted-foreground">min</span>
-            </>
+          {/* Description */}
+          {currentStage.descricao && (
+            <p className="text-base text-muted-foreground text-center max-w-xl mb-5">
+              {currentStage.descricao}
+            </p>
           )}
-        </div>
 
-        {/* Play Controls */}
-        <div className="flex items-center gap-4">
-          {!isActive ? (
-            <Button
-              onClick={handlePlayWithTimer}
-              disabled={audios.length === 0}
-              size="lg"
-              className={cn(
-                'gap-3 px-8 py-6 text-lg rounded-xl transition-all',
-                audios.length > 0
-                  ? 'bg-gold hover:bg-gold-glow text-background shadow-lg hover:shadow-gold/30'
-                  : 'bg-secondary text-muted-foreground cursor-not-allowed'
-              )}
-            >
-              <Play size={28} />
-              Iniciar
-            </Button>
-          ) : (
-            <>
-              {/* Restart audio */}
-              <Button
-                onClick={() => onSeekTo?.(0)}
+          {/* Timer Display */}
+          {(timer.isRunning || timer.isPaused) && (
+            <div className="flex items-center gap-4 mb-5 animate-fade-in">
+              <TimerDisplay 
+                seconds={timer.timeRemaining} 
+                isActive={timer.isRunning && !timer.isPaused}
                 size="lg"
-                variant="outline"
-                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-                title="Reiniciar música"
+              />
+              <button
+                onClick={() => timer.reset()}
+                className="p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
+                aria-label="Resetar cronômetro"
               >
                 <RotateCcw size={24} />
-              </Button>
+              </button>
+            </div>
+          )}
 
-              {/* Seek backward */}
+          {/* Audio Selector */}
+          {audios.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-6 max-w-xl">
+              {audios.map((audio, index) => (
+                <button
+                  key={audio.id}
+                  onClick={() => handleSelectAudio(index)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-full border transition-all text-sm',
+                    index === selectedAudioIndex
+                      ? 'bg-gold/20 border-gold/50 text-gold'
+                      : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'
+                  )}
+                >
+                  <Music size={14} />
+                  {audio.nome || `Áudio ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Timer Settings */}
+          <div className="flex items-center gap-3 mb-6">
+            <Clock size={18} className="text-muted-foreground" />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={useTimerEnabled}
+                onChange={(e) => setUseTimerEnabled(e.target.checked)}
+                className="rounded border-border bg-secondary text-gold focus:ring-gold w-5 h-5"
+              />
+              Cronômetro
+            </label>
+            {useTimerEnabled && (
+              <>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={Math.floor(customTime / 60)}
+                  onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
+                  className="w-20 px-3 py-2 text-sm bg-secondary border border-border rounded-lg text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
+                />
+                <span className="text-sm text-muted-foreground">min</span>
+              </>
+            )}
+          </div>
+
+          {/* Play Controls */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {!isActive ? (
               <Button
-                onClick={onSeekBackward}
+                onClick={handlePlayWithTimer}
+                disabled={audios.length === 0}
                 size="lg"
-                variant="outline"
-                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-                title="Retroceder 10s"
+                className={cn(
+                  'gap-3 px-8 py-6 text-lg rounded-xl transition-all',
+                  audios.length > 0
+                    ? 'bg-gold hover:bg-gold-glow text-background shadow-lg hover:shadow-gold/30'
+                    : 'bg-secondary text-muted-foreground cursor-not-allowed'
+                )}
               >
-                <SkipBack size={24} />
+                <Play size={28} />
+                Iniciar
               </Button>
-
-              {isPlaying ? (
+            ) : (
+              <>
                 <Button
-                  onClick={handlePause}
+                  onClick={() => onSeekTo?.(0)}
                   size="lg"
-                  className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
                   variant="outline"
+                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  title="Reiniciar música"
                 >
-                  <Pause size={28} />
-                  Pausar
+                  <RotateCcw size={24} />
                 </Button>
-              ) : (
                 <Button
-                  onClick={handleResume}
+                  onClick={onSeekBackward}
                   size="lg"
-                  className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
+                  variant="outline"
+                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  title="Retroceder 10s"
                 >
-                  <Play size={28} />
-                  Continuar
+                  <SkipBack size={24} />
                 </Button>
-              )}
+                {isPlaying ? (
+                  <Button
+                    onClick={handlePause}
+                    size="lg"
+                    className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
+                    variant="outline"
+                  >
+                    <Pause size={28} />
+                    Pausar
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleResume}
+                    size="lg"
+                    className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
+                  >
+                    <Play size={28} />
+                    Continuar
+                  </Button>
+                )}
+                <Button
+                  onClick={onSeekForward}
+                  size="lg"
+                  variant="outline"
+                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  title="Avançar 10s"
+                >
+                  <SkipForward size={24} />
+                </Button>
+                <Button
+                  onClick={handleStop}
+                  size="lg"
+                  variant="outline"
+                  className="gap-3 px-6 py-6 text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
+                >
+                  <Square size={28} />
+                  Parar
+                </Button>
+              </>
+            )}
+          </div>
 
-              {/* Seek forward */}
-              <Button
-                onClick={onSeekForward}
-                size="lg"
-                variant="outline"
-                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-                title="Avançar 10s"
-              >
-                <SkipForward size={24} />
-              </Button>
+          {/* Audio Progress Bar */}
+          {isActive && audioDuration > 0 && (
+            <div className="w-full mt-5 px-2">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground font-mono w-12 text-right">
+                  {formatTime(audioCurrentTime)}
+                </span>
+                <div
+                  className="flex-1 h-2 bg-secondary rounded-full cursor-pointer relative group"
+                  onClick={(e) => {
+                    if (!onSeekTo) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const ratio = (e.clientX - rect.left) / rect.width;
+                    onSeekTo(ratio * audioDuration);
+                  }}
+                >
+                  <div
+                    className="h-full bg-gold rounded-full transition-all relative"
+                    style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground font-mono w-12">
+                  {formatTime(audioDuration)}
+                </span>
+              </div>
+            </div>
+          )}
 
-              <Button
-                onClick={handleStop}
-                size="lg"
-                variant="outline"
-                className="gap-3 px-6 py-6 text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
-              >
-                <Square size={28} />
-                Parar
-              </Button>
-            </>
+          {/* No Audio Warning */}
+          {audios.length === 0 && (
+            <p className="text-sm text-gold/60 mt-4 flex items-center gap-2">
+              <Music size={16} />
+              Sem áudio configurado para esta etapa
+            </p>
           )}
         </div>
-
-        {/* Audio Progress Bar */}
-        {isActive && audioDuration > 0 && (
-          <div className="w-full max-w-2xl mt-6 px-4">
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground font-mono w-12 text-right">
-                {formatTime(audioCurrentTime)}
-              </span>
-              <div
-                className="flex-1 h-2 bg-secondary rounded-full cursor-pointer relative group"
-                onClick={(e) => {
-                  if (!onSeekTo) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const ratio = (e.clientX - rect.left) / rect.width;
-                  onSeekTo(ratio * audioDuration);
-                }}
-              >
-                <div
-                  className="h-full bg-gold rounded-full transition-all relative"
-                  style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
-                >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </div>
-              <span className="text-xs text-muted-foreground font-mono w-12">
-                {formatTime(audioDuration)}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* No Audio Warning */}
-        {audios.length === 0 && (
-          <p className="text-sm text-gold/60 mt-4 flex items-center gap-2">
-            <Music size={16} />
-            Sem áudio configurado para esta etapa
-          </p>
-        )}
       </main>
 
       {/* Navigation Footer */}
