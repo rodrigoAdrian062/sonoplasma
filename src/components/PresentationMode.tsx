@@ -518,26 +518,55 @@ export function PresentationMode({
           <span className="hidden sm:inline">Anterior</span>
         </Button>
 
-        {/* Stage Indicators */}
-        <div className="flex items-center gap-2 overflow-x-auto max-w-[50vw] py-2">
-          {stages.map((stage, index) => (
-            <button
-              key={stage.id}
-              onClick={() => {
-                if (isActive) handleStop();
-                setSelectedStageIndex(index);
-              }}
-              className={cn(
-                'w-3 h-3 rounded-full transition-all shrink-0',
-                index === selectedStageIndex
-                  ? 'bg-gold w-8'
-                  : currentStageId === stage.id && status !== 'idle'
-                    ? 'bg-gold/50'
-                    : 'bg-border hover:bg-muted-foreground'
-              )}
-              title={stage.nome_simbolico}
-            />
-          ))}
+        {/* Timeline */}
+        <div className="flex items-center gap-0 overflow-x-auto max-w-[60vw] py-2">
+          {stages.map((stage, index) => {
+            const isSelected = index === selectedStageIndex;
+            const isPlayingStage = currentStageId === stage.id && status !== 'idle';
+            const isPast = index < selectedStageIndex;
+
+            return (
+              <div key={stage.id} className="flex items-center shrink-0">
+                <button
+                  onClick={() => {
+                    if (isActive) handleStop();
+                    setSelectedStageIndex(index);
+                  }}
+                  className="flex flex-col items-center gap-1 group"
+                  title={stage.nome_simbolico}
+                >
+                  <div
+                    className={cn(
+                      'w-4 h-4 rounded-full border-2 transition-all',
+                      isSelected
+                        ? 'bg-gold border-gold scale-125 shadow-[0_0_8px_rgba(212,175,55,0.5)]'
+                        : isPlayingStage
+                          ? 'bg-gold/50 border-gold/50'
+                          : isPast
+                            ? 'bg-gold/30 border-gold/40'
+                            : 'bg-secondary border-border group-hover:border-muted-foreground'
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'text-[10px] max-w-[60px] truncate transition-colors',
+                      isSelected ? 'text-gold font-medium' : 'text-muted-foreground'
+                    )}
+                  >
+                    {index + 1}
+                  </span>
+                </button>
+                {index < stages.length - 1 && (
+                  <div
+                    className={cn(
+                      'w-6 h-0.5 mx-0.5 transition-colors',
+                      isPast ? 'bg-gold/40' : 'bg-border'
+                    )}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <Button
