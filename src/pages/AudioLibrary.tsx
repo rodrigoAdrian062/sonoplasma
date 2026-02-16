@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
-import { useStageAudios } from '@/hooks/useStageAudios';
+import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
@@ -30,6 +31,25 @@ export default function AudioLibraryPage() {
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
+  const { allAudios: allStageAudios } = useAllStageAudios();
+
+  // Build a map: audio_url -> list of { stageName, sectionName }
+  const audioUsageMap = useMemo(() => {
+    const map = new Map<string, Array<{ stageName: string; sectionName: string }>>();
+    for (const sa of allStageAudios) {
+      const stage = stages.find(s => s.id === sa.etapa_id);
+      if (!stage) continue;
+      const section = sections.find(s => s.id === stage.secao_id);
+      const entry = { stageName: stage.nome_simbolico, sectionName: section?.nome || 'Sem seção' };
+      const existing = map.get(sa.audio_url) || [];
+      // Avoid duplicates
+      if (!existing.some(e => e.stageName === entry.stageName && e.sectionName === entry.sectionName)) {
+        existing.push(entry);
+        map.set(sa.audio_url, existing);
+      }
+    }
+    return map;
+  }, [allStageAudios, stages, sections]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -660,9 +680,16 @@ export default function AudioLibraryPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs text-muted-foreground">
+                      {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                    </span>
+                    {audioUsageMap.get(audio.audio_url)?.map((usage, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-gold/40 text-gold bg-gold/5">
+                        {usage.sectionName} › {usage.stageName}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
