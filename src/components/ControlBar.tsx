@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { SlidersHorizontal, Clock } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
 import { EqualizerPanel } from './EqualizerPanel';
+import { ElegantClock } from './ElegantClock';
 import { Button } from '@/components/ui/button';
-import { useClock } from '@/hooks/useClock';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
 interface ControlBarProps {
@@ -37,7 +37,6 @@ export function ControlBar({
   onEQChange,
 }: ControlBarProps) {
   const [showEQ, setShowEQ] = useState(false);
-  const { formatted: clockTime } = useClock();
 
   return (
     <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border">
@@ -59,9 +58,8 @@ export function ControlBar({
               <SlidersHorizontal size={18} />
             </Button>
           )}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-lg ml-auto sm:ml-0">
-            <Clock size={14} className="text-gold" />
-            <span className="text-sm font-mono text-foreground">{clockTime}</span>
+          <div className="ml-auto sm:ml-0">
+            <ElegantClock size="md" />
           </div>
         </div>
         {/* EQ Panel */}
