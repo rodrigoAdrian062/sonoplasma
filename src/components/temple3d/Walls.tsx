@@ -150,6 +150,117 @@ export function Walls({ showSouthWall = true }: WallsProps) {
     return texture;
   }, []);
 
+  // Procedural wood texture for door panels
+  const woodTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+
+    // Base dark mahogany
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    baseGrad.addColorStop(0, '#3a1c0a');
+    baseGrad.addColorStop(0.3, '#2e1508');
+    baseGrad.addColorStop(0.5, '#3d1f0c');
+    baseGrad.addColorStop(0.7, '#2a1206');
+    baseGrad.addColorStop(1, '#351a09');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Wood grain lines
+    for (let i = 0; i < 200; i++) {
+      const y = Math.random() * canvas.height;
+      const thickness = 0.3 + Math.random() * 1.5;
+      const alpha = 0.03 + Math.random() * 0.08;
+      const light = Math.random() > 0.5;
+      ctx.strokeStyle = light
+        ? `rgba(180, 120, 60, ${alpha})`
+        : `rgba(20, 8, 2, ${alpha})`;
+      ctx.lineWidth = thickness;
+      ctx.beginPath();
+      let x = 0;
+      ctx.moveTo(x, y);
+      while (x < canvas.width) {
+        x += 5 + Math.random() * 15;
+        const drift = (Math.random() - 0.5) * 3;
+        ctx.lineTo(x, y + drift);
+      }
+      ctx.stroke();
+    }
+
+    // Knots (subtle)
+    for (let k = 0; k < 3; k++) {
+      const kx = 80 + Math.random() * (canvas.width - 160);
+      const ky = 100 + Math.random() * (canvas.height - 200);
+      const kr = 8 + Math.random() * 15;
+      const kGrad = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+      kGrad.addColorStop(0, 'rgba(15, 5, 0, 0.4)');
+      kGrad.addColorStop(0.5, 'rgba(50, 25, 8, 0.2)');
+      kGrad.addColorStop(1, 'rgba(50, 25, 8, 0)');
+      ctx.fillStyle = kGrad;
+      ctx.beginPath();
+      ctx.arc(kx, ky, kr, 0, Math.PI * 2);
+      ctx.fill();
+      // Rings around knot
+      for (let r = 0; r < 5; r++) {
+        ctx.strokeStyle = `rgba(60, 30, 10, ${0.08 - r * 0.015})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.arc(kx, ky, kr + r * 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // Subtle varnish sheen
+    const sheenGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    sheenGrad.addColorStop(0, 'rgba(255, 200, 120, 0)');
+    sheenGrad.addColorStop(0.3, 'rgba(255, 200, 120, 0.04)');
+    sheenGrad.addColorStop(0.5, 'rgba(255, 200, 120, 0.07)');
+    sheenGrad.addColorStop(0.7, 'rgba(255, 200, 120, 0.03)');
+    sheenGrad.addColorStop(1, 'rgba(255, 200, 120, 0)');
+    ctx.fillStyle = sheenGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }, []);
+
+  // Darker wood for panel insets
+  const darkWoodTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    baseGrad.addColorStop(0, '#1e0e05');
+    baseGrad.addColorStop(0.5, '#251208');
+    baseGrad.addColorStop(1, '#1a0b04');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < 120; i++) {
+      const y = Math.random() * canvas.height;
+      ctx.strokeStyle = `rgba(80, 45, 15, ${0.03 + Math.random() * 0.06})`;
+      ctx.lineWidth = 0.3 + Math.random() * 1;
+      ctx.beginPath();
+      let x = 0;
+      ctx.moveTo(x, y);
+      while (x < canvas.width) {
+        x += 5 + Math.random() * 10;
+        ctx.lineTo(x, y + (Math.random() - 0.5) * 2);
+      }
+      ctx.stroke();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }, []);
+
   return (
     <group>
       {/* East Wall (behind VM) */}
@@ -283,17 +394,17 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       <group position={[-1.2, (wallHeight - 1.4) / 2, roomLength / 2 + 0.12]}>
         <mesh castShadow>
           <boxGeometry args={[2.3, wallHeight - 1.8, 0.12]} />
-          <meshStandardMaterial color="#2a1508" roughness={0.6} />
+          <meshStandardMaterial map={woodTexture} roughness={0.55} metalness={0.05} />
         </mesh>
         <mesh position={[0, 0, 0.065]}>
           <boxGeometry args={[2.1, wallHeight - 2.1, 0.02]} />
-          <meshStandardMaterial color="#3a2010" roughness={0.55} />
+          <meshStandardMaterial map={woodTexture} color="#3a2010" roughness={0.5} metalness={0.05} />
         </mesh>
         {[1.8, -0.2, -2].map((py, pi) => (
           <group key={`lp-${pi}`}>
             <mesh position={[0, py, 0.07]}>
               <boxGeometry args={[1.6, pi === 0 ? 1.8 : 1.4, 0.03]} />
-              <meshStandardMaterial color="#1e0e05" roughness={0.7} />
+              <meshStandardMaterial map={darkWoodTexture} roughness={0.65} metalness={0.03} />
             </mesh>
             <mesh position={[0, py + (pi === 0 ? 0.92 : 0.72), 0.085]}>
               <boxGeometry args={[1.7, 0.04, 0.01]} />
@@ -349,17 +460,17 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       <group position={[1.2, (wallHeight - 1.4) / 2, roomLength / 2 + 0.12]}>
         <mesh castShadow>
           <boxGeometry args={[2.3, wallHeight - 1.8, 0.12]} />
-          <meshStandardMaterial color="#2a1508" roughness={0.6} />
+          <meshStandardMaterial map={woodTexture} roughness={0.55} metalness={0.05} />
         </mesh>
         <mesh position={[0, 0, 0.065]}>
           <boxGeometry args={[2.1, wallHeight - 2.1, 0.02]} />
-          <meshStandardMaterial color="#3a2010" roughness={0.55} />
+          <meshStandardMaterial map={woodTexture} color="#3a2010" roughness={0.5} metalness={0.05} />
         </mesh>
         {[1.8, -0.2, -2].map((py, pi) => (
           <group key={`rp-${pi}`}>
             <mesh position={[0, py, 0.07]}>
               <boxGeometry args={[1.6, pi === 0 ? 1.8 : 1.4, 0.03]} />
-              <meshStandardMaterial color="#1e0e05" roughness={0.7} />
+              <meshStandardMaterial map={darkWoodTexture} roughness={0.65} metalness={0.03} />
             </mesh>
             <mesh position={[0, py + (pi === 0 ? 0.92 : 0.72), 0.085]}>
               <boxGeometry args={[1.7, 0.04, 0.01]} />
