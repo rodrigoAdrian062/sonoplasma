@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { MasonicFooter } from '@/components/MasonicFooter';
+import sectionBanner from '@/assets/section-banner.png';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -260,6 +261,24 @@ const SectionDetail = () => {
       />
 
       <main className="container px-3 sm:px-4 py-4 sm:py-6">
+        {/* Banner da seção */}
+        <div className="relative mb-5 rounded-2xl overflow-hidden border border-gold/20 shadow-lg shadow-gold/5">
+          <img 
+            src={sectionBanner} 
+            alt={section.nome} 
+            className="w-full h-28 sm:h-36 object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          <div className="absolute bottom-3 left-4 sm:bottom-4 sm:left-5 flex items-center gap-3">
+            <div className="p-2 bg-gold/20 backdrop-blur-sm rounded-lg border border-gold/30">
+              <CeremonyIcon name={section.icone || 'folder'} size={20} className="text-gold" />
+            </div>
+            <h2 className="font-display text-base sm:text-xl font-bold text-gold drop-shadow-lg">
+              {section.nome}
+            </h2>
+          </div>
+        </div>
+
         {sectionStages.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">Nenhuma etapa nesta seção</p>
