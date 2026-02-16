@@ -14,7 +14,7 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward
+  SkipBack, SkipForward, Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -60,6 +60,7 @@ export default function AudioLibraryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [showUnusedOnly, setShowUnusedOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,10 +75,13 @@ export default function AudioLibraryPage() {
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
 
-  // Filter audios by current folder
+  // Filter audios by current folder and usage filter
   const filteredAudios = audios.filter(a => {
     const audioPastaId = (a as any).pasta_id;
-    return currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
+    const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
+    if (!folderMatch) return false;
+    if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
+    return true;
   });
 
   const isYouTubeUrl = (url: string) =>
@@ -465,6 +469,16 @@ export default function AudioLibraryPage() {
                 </>
               ) : (
                 <>
+                  <Button
+                    variant={showUnusedOnly ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setShowUnusedOnly(!showUnusedOnly)}
+                    className={showUnusedOnly ? 'bg-gold hover:bg-gold/90 text-background' : ''}
+                    title={showUnusedOnly ? 'Mostrando apenas não utilizados' : 'Filtrar não utilizados'}
+                  >
+                    <Filter size={14} className="mr-1" />
+                    <span className="hidden sm:inline">{showUnusedOnly ? 'Não usados' : 'Filtrar'}</span>
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setBulkDeleteMode(true)}>
                     <CheckSquare size={14} className="mr-1" />
                     <span className="hidden sm:inline">Selecionar</span>
