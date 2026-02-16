@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -318,6 +318,17 @@ export function StageCard({
             </Button>
           ) : (
             <>
+              {/* Restart audio */}
+              <Button
+                onClick={() => onSeekTo?.(0)}
+                size="icon"
+                variant="outline"
+                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                title="Reiniciar música"
+              >
+                <RotateCw size={16} />
+              </Button>
+
               {/* Seek backward */}
               <Button
                 onClick={onSeekBackward}
