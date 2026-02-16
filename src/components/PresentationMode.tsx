@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { TimerDisplay } from './TimerDisplay';
+import { EqualizerPanel } from './EqualizerPanel';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -36,6 +38,8 @@ interface PresentationModeProps {
     nome_app?: string;
     logo_url?: string | null;
   } | null;
+  eq?: EQSettings;
+  onEQChange?: (settings: Partial<EQSettings>) => void;
 }
 
 export function PresentationMode({
@@ -56,6 +60,8 @@ export function PresentationMode({
   settings,
   currentTime: audioCurrentTime,
   duration: audioDuration,
+  eq,
+  onEQChange,
 }: PresentationModeProps) {
   const [selectedStageIndex, setSelectedStageIndex] = useState(0);
   const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
@@ -63,6 +69,7 @@ export function PresentationMode({
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
+  const [showEQ, setShowEQ] = useState(false);
   const [pendingPause, setPendingPause] = useState(false);
 
   const currentStage = stages[selectedStageIndex];
@@ -305,6 +312,18 @@ export function PresentationMode({
             </span>
           </div>
 
+          {eq && onEQChange && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEQ(!showEQ)}
+              className={`h-9 w-9 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              title="Equalizador"
+            >
+              <SlidersHorizontal size={18} />
+            </Button>
+          )}
+
           <span className="text-sm text-muted-foreground">
             {selectedStageIndex + 1} / {stages.length}
           </span>
@@ -352,6 +371,12 @@ export function PresentationMode({
             <span className="text-[10px] text-muted-foreground font-mono w-10">
               {formatTime(audioDuration)}
             </span>
+          </div>
+        )}
+        {/* EQ Panel */}
+        {showEQ && eq && onEQChange && (
+          <div className="mt-2 animate-fade-in">
+            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
           </div>
         )}
       </header>
