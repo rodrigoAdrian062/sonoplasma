@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface TempleExteriorProps {
@@ -132,6 +133,26 @@ function FlowerBed({ position, length }: { position: [number, number, number]; l
           <meshStandardMaterial color={i % 3 === 0 ? '#8B2252' : i % 3 === 1 ? '#FF6B35' : '#2d6a1e'} roughness={0.7} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+function MasonicEmblem({ position }: { position: [number, number, number] }) {
+  const texture = useTexture('/images/esquadro-compasso.png');
+  return (
+    <group position={position}>
+      <mesh>
+        <planeGeometry args={[5, 5]} />
+        <meshStandardMaterial
+          map={texture}
+          transparent
+          roughness={0.4}
+          metalness={0.3}
+          emissive="#ffd700"
+          emissiveIntensity={0.1}
+        />
+      </mesh>
+      <pointLight position={[0, 0, 1]} intensity={1} color="#ffd700" distance={8} />
     </group>
   );
 }
@@ -330,67 +351,8 @@ export function TempleExterior({ showCeiling }: TempleExteriorProps) {
         <meshStandardMaterial color="#e0d4bc" roughness={0.6} />
       </mesh>
 
-      {/* === LARGE MASONIC SYMBOL (Esquadro e Compasso) on front facade === */}
-      <group position={[0, wallHeight / 2 + 1.2, roomLength / 2 + 0.85]} rotation={[0, 0, 0]}>
-        {/* Circular background medallion - rotated to face Z+ */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[2.5, 2.5, 0.08, 32]} />
-          <meshStandardMaterial color="#0d0d1a" roughness={0.4} metalness={0.3} />
-        </mesh>
-        {/* Gold ring border */}
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
-          <torusGeometry args={[2.5, 0.12, 12, 48]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
-          <torusGeometry args={[2.15, 0.06, 8, 48]} />
-          <meshStandardMaterial color="#c9a227" roughness={0.25} metalness={0.8} />
-        </mesh>
-
-        {/* Compasses - two arms forming a V (top), flat on wall */}
-        <mesh position={[-0.6, -0.1, 0.08]} rotation={[0, 0, 0.4]}>
-          <boxGeometry args={[0.14, 2.6, 0.1]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
-        </mesh>
-        <mesh position={[0.6, -0.1, 0.08]} rotation={[0, 0, -0.4]}>
-          <boxGeometry args={[0.14, 2.6, 0.1]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
-        </mesh>
-        {/* Compass hinge at top */}
-        <mesh position={[0, 1.05, 0.1]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.15, 0.15, 0.12, 16]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
-        </mesh>
-
-        {/* Square (Esquadro) - V shape pointing down, under compasses */}
-        <mesh position={[-0.45, -0.55, 0.06]} rotation={[0, 0, -0.4]}>
-          <boxGeometry args={[0.14, 1.8, 0.1]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
-        </mesh>
-        <mesh position={[0.45, -0.55, 0.06]} rotation={[0, 0, 0.4]}>
-          <boxGeometry args={[0.14, 1.8, 0.1]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
-        </mesh>
-        {/* Square corner at bottom */}
-        <mesh position={[0, -1.25, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.12, 0.12, 0.12, 12]} />
-          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
-        </mesh>
-
-        {/* Letter "G" in center */}
-        <mesh position={[0, 0.05, 0.14]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.45, 0.08, 8, 24, Math.PI * 1.7]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} emissive="#ff9900" emissiveIntensity={0.3} />
-        </mesh>
-        {/* G crossbar */}
-        <mesh position={[0.22, 0.05, 0.14]}>
-          <boxGeometry args={[0.3, 0.08, 0.08]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} emissive="#ff9900" emissiveIntensity={0.3} />
-        </mesh>
-
-        {/* Glow light */}
-        <pointLight position={[0, 0, 1]} intensity={1.2} color="#ffd700" distance={8} />
-      </group>
+      {/* === LARGE MASONIC SYMBOL IMAGE on front facade === */}
+      <MasonicEmblem position={[0, wallHeight / 2 + 1.2, roomLength / 2 + 0.87]} />
 
       {/* Portico steps */}
       {[0, 1, 2].map((step) => (
