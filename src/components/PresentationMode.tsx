@@ -47,6 +47,7 @@ export function PresentationMode({
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
+  const [pendingPause, setPendingPause] = useState(false);
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
@@ -69,6 +70,17 @@ export function PresentationMode({
     }
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
+
+  // Auto-pause when playback starts (start paused feature)
+  useEffect(() => {
+    if (pendingPause && isPlaying) {
+      onPause();
+      if (timer.isRunning) {
+        timer.pause();
+      }
+      setPendingPause(false);
+    }
+  }, [pendingPause, isPlaying]);
 
   // Reset timer when playback stops
   useEffect(() => {
@@ -183,13 +195,10 @@ export function PresentationMode({
     
     if (useTimerEnabled && customTime > 0) {
       timer.start(customTime);
-      timer.pause();
     }
     onPlay(currentStage.id, currentAudio.audio_url);
-    // Immediately pause so it starts in paused state
-    setTimeout(() => {
-      onPause();
-    }, 100);
+    // Signal to pause as soon as playback actually starts
+    setPendingPause(true);
   };
 
   const handlePause = () => {
