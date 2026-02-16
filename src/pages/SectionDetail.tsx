@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { MasonicFooter } from '@/components/MasonicFooter';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   DndContext,
@@ -250,11 +251,7 @@ const SectionDetail = () => {
           </DndContext>
         )}
 
-        <footer className="mt-12 py-6 border-t border-border">
-          <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-            Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
-          </p>
-        </footer>
+        <MasonicFooter />
       </main>
 
       <StageEditModal

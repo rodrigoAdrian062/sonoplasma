@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MasonicFooter } from '@/components/MasonicFooter';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SectionEditModal } from '@/components/SectionEditModal';
@@ -190,11 +191,7 @@ const Index = () => {
           </div>
         )}
 
-        <footer className="mt-auto pt-12 py-6 border-t border-border">
-          <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-            Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
-          </p>
-        </footer>
+        <MasonicFooter />
       </main>
 
       <SectionEditModal
