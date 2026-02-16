@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useClock } from '@/hooks/useClock';
 import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
@@ -71,6 +72,7 @@ export function PresentationMode({
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [showEQ, setShowEQ] = useState(false);
   const [pendingPause, setPendingPause] = useState(false);
+  const { formatted: clockTime } = useClock();
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
@@ -327,6 +329,10 @@ export function PresentationMode({
           <span className="text-sm text-muted-foreground">
             {selectedStageIndex + 1} / {stages.length}
           </span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary rounded-lg">
+            <Clock size={14} className="text-gold" />
+            <span className="text-sm font-mono text-foreground">{clockTime}</span>
+          </div>
           <Button
             variant="ghost"
             size="icon"
