@@ -97,6 +97,31 @@ const elementInfo: Record<string, { title: string; description: string; symbolis
     description: 'Candelabro de sete braços e castiçais que iluminam a parte oriental do Templo.',
     symbolism: 'A Luz simboliza o esclarecimento e a razão. Quanto maior a evolução iniciática, mais luzes são acesas.',
   },
+  'tracing-board': {
+    title: 'Tábua de Delinear',
+    description: 'Quadro ou cavalete onde se traçam os planos da Obra. Tradicionalmente usado pelo Venerável Mestre para ensinar os símbolos do grau.',
+    symbolism: 'Representa o projeto de vida do Maçom, a planta baixa do Templo Interior. Sobre ela se delineiam os caminhos do aperfeiçoamento moral e espiritual.',
+  },
+  'rough-ashlar': {
+    title: 'Pedra Bruta',
+    description: 'Pedra irregular e não trabalhada, primeira das Joias Fixas. Posicionada na Coluna do Norte, próxima ao 1º Vigilante.',
+    symbolism: 'Representa o Aprendiz no início de sua jornada, com todas as imperfeições do ser humano ainda por desbastar. O trabalho sobre a Pedra Bruta é o trabalho sobre si mesmo.',
+  },
+  'cubic-stone': {
+    title: 'Pedra Cúbica',
+    description: 'Pedra perfeitamente talhada em forma cúbica, segunda das Joias Fixas. Posicionada na Coluna do Sul, próxima ao 2º Vigilante.',
+    symbolism: 'Representa o Companheiro que já trabalhou sobre si mesmo. A perfeição de suas faces simboliza a retidão moral alcançada através do esforço e da disciplina.',
+  },
+  'mallet-chisel': {
+    title: 'Maço e Cinzel',
+    description: 'Ferramentas essenciais do Aprendiz para desbastar a Pedra Bruta.',
+    symbolism: 'O Maço representa a Vontade e a Energia para a ação. O Cinzel representa a Inteligência que direciona o esforço. Juntos simbolizam que a transformação requer tanto força quanto discernimento.',
+  },
+  'gauge-24': {
+    title: 'Régua de 24 Polegadas',
+    description: 'Instrumento de medida dividido em três partes iguais de 8 polegadas.',
+    symbolism: 'Simboliza a divisão harmoniosa do dia: 8 horas para o trabalho, 8 horas para o descanso e 8 horas para o serviço à humanidade e à Divindade.',
+  },
 };
 
 // Add zodiac information
