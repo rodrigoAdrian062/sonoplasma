@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -21,6 +21,8 @@ interface PresentationModeProps {
   onResume: () => void;
   onStop: () => void;
   onClose: () => void;
+  onSeekForward?: () => void;
+  onSeekBackward?: () => void;
   settings?: {
     nome_app?: string;
     logo_url?: string | null;
@@ -39,6 +41,8 @@ export function PresentationMode({
   onResume,
   onStop,
   onClose,
+  onSeekForward,
+  onSeekBackward,
   settings,
 }: PresentationModeProps) {
   const [selectedStageIndex, setSelectedStageIndex] = useState(0);
@@ -433,6 +437,17 @@ export function PresentationMode({
             </Button>
           ) : (
             <>
+              {/* Seek backward */}
+              <Button
+                onClick={onSeekBackward}
+                size="lg"
+                variant="outline"
+                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                title="Retroceder 10s"
+              >
+                <SkipBack size={24} />
+              </Button>
+
               {isPlaying ? (
                 <Button
                   onClick={handlePause}
@@ -453,6 +468,18 @@ export function PresentationMode({
                   Continuar
                 </Button>
               )}
+
+              {/* Seek forward */}
+              <Button
+                onClick={onSeekForward}
+                size="lg"
+                variant="outline"
+                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                title="Avançar 10s"
+              >
+                <SkipForward size={24} />
+              </Button>
+
               <Button
                 onClick={handleStop}
                 size="lg"

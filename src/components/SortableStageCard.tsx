@@ -16,6 +16,8 @@ interface SortableStageCardProps {
   onStop: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSeekForward?: () => void;
+  onSeekBackward?: () => void;
 }
 
 export function SortableStageCard({
@@ -29,6 +31,8 @@ export function SortableStageCard({
   onStop,
   onEdit,
   onDelete,
+  onSeekForward,
+  onSeekBackward,
 }: SortableStageCardProps) {
   const {
     attributes,
@@ -67,6 +71,8 @@ export function SortableStageCard({
         onStop={onStop}
         onEdit={onEdit}
         onDelete={onDelete}
+        onSeekForward={onSeekForward}
+        onSeekBackward={onSeekBackward}
       />
     </div>
   );

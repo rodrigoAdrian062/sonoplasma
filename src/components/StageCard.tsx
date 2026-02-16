@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -22,6 +22,8 @@ interface StageCardProps {
   onStop: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onSeekForward?: () => void;
+  onSeekBackward?: () => void;
 }
 
 export function StageCard({
@@ -35,6 +37,8 @@ export function StageCard({
   onStop,
   onEdit,
   onDelete,
+  onSeekForward,
+  onSeekBackward,
 }: StageCardProps) {
   const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 0;
@@ -291,7 +295,7 @@ export function StageCard({
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
@@ -308,6 +312,17 @@ export function StageCard({
             </Button>
           ) : (
             <>
+              {/* Seek backward */}
+              <Button
+                onClick={onSeekBackward}
+                size="icon"
+                variant="outline"
+                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                title="Retroceder 10s"
+              >
+                <SkipBack size={16} />
+              </Button>
+
               {isPlaying ? (
                 <Button
                   onClick={handlePause}
@@ -325,6 +340,18 @@ export function StageCard({
                   <span>Continuar</span>
                 </Button>
               )}
+
+              {/* Seek forward */}
+              <Button
+                onClick={onSeekForward}
+                size="icon"
+                variant="outline"
+                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                title="Avançar 10s"
+              >
+                <SkipForward size={16} />
+              </Button>
+
               <Button
                 onClick={handleStop}
                 className="gap-2 h-10 rounded-lg bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 hover:border-destructive/50 font-semibold text-sm"
