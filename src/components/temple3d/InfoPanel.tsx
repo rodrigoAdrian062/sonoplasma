@@ -122,6 +122,41 @@ const elementInfo: Record<string, { title: string; description: string; symbolis
     description: 'Instrumento de medida dividido em três partes iguais de 8 polegadas.',
     symbolism: 'Simboliza a divisão harmoniosa do dia: 8 horas para o trabalho, 8 horas para o descanso e 8 horas para o serviço à humanidade e à Divindade.',
   },
+  '1-experto': {
+    title: '1º Experto',
+    description: 'Ocupa posição entre o Oriente e o Ocidente, do lado Norte. Auxilia nas cerimônias de iniciação e nos exames de visitantes.',
+    symbolism: 'É o braço executivo do Venerável Mestre nas cerimônias. Conduz o candidato durante a iniciação e verifica a regularidade dos visitantes.',
+  },
+  '2-experto': {
+    title: '2º Experto',
+    description: 'Ocupa posição entre o Oriente e o Ocidente, do lado Sul. Auxilia o 1º Experto nas cerimônias.',
+    symbolism: 'Coopera com o 1º Experto na condução das cerimônias e na verificação dos visitantes.',
+  },
+  'orador-adjunto': {
+    title: 'Orador Adjunto',
+    description: 'Substituto do Orador, ocupa mesa próxima à Coluna do Sul.',
+    symbolism: 'Auxilia o Orador na guarda da Lei e na fiscalização dos trabalhos.',
+  },
+  'secretario-adjunto': {
+    title: 'Secretário Adjunto',
+    description: 'Substituto do Secretário, ocupa mesa na Coluna do Norte.',
+    symbolism: 'Auxilia o Secretário na elaboração das atas e na correspondência da Loja.',
+  },
+  'mc-adjunto': {
+    title: 'Mestre de Cerimônias Adjunto',
+    description: 'Substituto do Mestre de Cerimônias, posicionado no Ocidente próximo à entrada.',
+    symbolism: 'Auxilia na condução do cerimonial e na ordenação dos trabalhos litúrgicos.',
+  },
+  'tronco-beneficencia': {
+    title: 'Tronco de Beneficência',
+    description: 'Cofre de madeira posicionado próximo à entrada do Templo, na Coluna do Norte. Circula durante os trabalhos para recolher as contribuições dos Irmãos.',
+    symbolism: 'Representa a caridade e a solidariedade maçônica. O ato de contribuir é feito em sigilo, simbolizando que a verdadeira caridade não busca reconhecimento.',
+  },
+  'hospitaleiro': {
+    title: 'Hospitaleiro',
+    description: 'Ocupa mesa na Coluna do Sul. Porta a joia da Cornucópia.',
+    symbolism: 'Responsável pela assistência aos Irmãos necessitados e pela administração do Tronco de Solidariedade.',
+  },
 };
 
 // Add zodiac information
