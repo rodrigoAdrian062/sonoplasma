@@ -325,14 +325,16 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       </group>
 
       {/* Lodge Emblem on NORTH Wall */}
-      <mesh position={[-roomWidth / 2 + 0.25, wallHeight / 2, -5]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[2.5, 2.5]} />
-        <meshStandardMaterial 
-          map={emblemTexture} 
-          transparent 
-          roughness={0.5}
-        />
-      </mesh>
+      {showSouthWall && (
+        <mesh position={[-roomWidth / 2 + 0.25, wallHeight / 2, -5]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[2.5, 2.5]} />
+          <meshStandardMaterial 
+            map={emblemTexture} 
+            transparent 
+            roughness={0.5}
+          />
+        </mesh>
+      )}
 
       {/* Lodge Emblem on SOUTH Wall */}
       {showSouthWall && (
@@ -552,11 +554,13 @@ export function Walls({ showSouthWall = true }: WallsProps) {
         </mesh>
       </group>
 
-      {/* North Wall */}
-      <mesh position={[-roomWidth / 2, wallHeight / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.3, wallHeight, roomLength]} />
-        <meshStandardMaterial map={wallTexture} roughness={0.7} />
-      </mesh>
+      {/* North Wall - toggleable */}
+      {showSouthWall && (
+        <mesh position={[-roomWidth / 2, wallHeight / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.3, wallHeight, roomLength]} />
+          <meshStandardMaterial map={wallTexture} roughness={0.7} />
+        </mesh>
+      )}
 
       {/* South Wall - toggleable */}
       {showSouthWall && (
@@ -568,10 +572,12 @@ export function Walls({ showSouthWall = true }: WallsProps) {
 
       {/* Lower wainscoting (dark wood panels) */}
       {/* North */}
-      <mesh position={[-roomWidth / 2 + 0.2, 1.2, 0]}>
-        <boxGeometry args={[0.1, 2.4, roomLength - 0.5]} />
-        <meshStandardMaterial color="#2a1810" roughness={0.8} />
-      </mesh>
+      {showSouthWall && (
+        <mesh position={[-roomWidth / 2 + 0.2, 1.2, 0]}>
+          <boxGeometry args={[0.1, 2.4, roomLength - 0.5]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.8} />
+        </mesh>
+      )}
       {/* South */}
       {showSouthWall && (
         <mesh position={[roomWidth / 2 - 0.2, 1.2, 0]}>
@@ -594,7 +600,7 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       {[
         { pos: [0, wallHeight, -roomLength / 2], size: [roomWidth + 0.5, 0.4, 0.6] },
         { pos: [0, wallHeight, roomLength / 2], size: [roomWidth + 0.5, 0.4, 0.6] },
-        { pos: [-roomWidth / 2, wallHeight, 0], size: [0.6, 0.4, roomLength] },
+        ...(showSouthWall ? [{ pos: [-roomWidth / 2, wallHeight, 0], size: [0.6, 0.4, roomLength] }] : []),
         ...(showSouthWall ? [{ pos: [roomWidth / 2, wallHeight, 0], size: [0.6, 0.4, roomLength] }] : []),
       ].map((molding, i) => (
         <mesh key={i} position={molding.pos as [number, number, number]}>
@@ -607,7 +613,7 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       {[
         { pos: [0, wallHeight - 0.3, -roomLength / 2 + 0.2], size: [roomWidth, 0.15, 0.1] },
         { pos: [0, wallHeight - 0.3, roomLength / 2 - 0.2], size: [roomWidth, 0.15, 0.1] },
-        { pos: [-roomWidth / 2 + 0.2, wallHeight - 0.3, 0], size: [0.1, 0.15, roomLength] },
+        ...(showSouthWall ? [{ pos: [-roomWidth / 2 + 0.2, wallHeight - 0.3, 0], size: [0.1, 0.15, roomLength] }] : []),
         ...(showSouthWall ? [{ pos: [roomWidth / 2 - 0.2, wallHeight - 0.3, 0], size: [0.1, 0.15, roomLength] }] : []),
       ].map((trim, i) => (
         <mesh key={`trim-${i}`} position={trim.pos as [number, number, number]}>
@@ -618,7 +624,7 @@ export function Walls({ showSouthWall = true }: WallsProps) {
 
       {/* Gold trim at wainscoting top */}
       {[
-        { pos: [-roomWidth / 2 + 0.22, 2.42, 0], size: [0.08, 0.06, roomLength - 0.5] },
+        ...(showSouthWall ? [{ pos: [-roomWidth / 2 + 0.22, 2.42, 0], size: [0.08, 0.06, roomLength - 0.5] }] : []),
         ...(showSouthWall ? [{ pos: [roomWidth / 2 - 0.22, 2.42, 0], size: [0.08, 0.06, roomLength - 0.5] }] : []),
         { pos: [0, 2.42, -roomLength / 2 + 0.22], size: [roomWidth - 0.5, 0.06, 0.08] },
         { pos: [0, 2.42, roomLength / 2 - 0.22], size: [roomWidth - 0.5, 0.06, 0.08] },
@@ -632,10 +638,12 @@ export function Walls({ showSouthWall = true }: WallsProps) {
       {/* Decorative gold pilasters on walls */}
       {[-8, -4, 0, 4, 8].map((z, i) => (
         <group key={`decor-${i}`}>
-          <mesh position={[-roomWidth / 2 + 0.2, wallHeight / 2, z]}>
-            <boxGeometry args={[0.12, wallHeight - 2.5, 0.6]} />
-            <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.6} />
-          </mesh>
+          {showSouthWall && (
+            <mesh position={[-roomWidth / 2 + 0.2, wallHeight / 2, z]}>
+              <boxGeometry args={[0.12, wallHeight - 2.5, 0.6]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.3} metalness={0.6} />
+            </mesh>
+          )}
           {showSouthWall && (
             <mesh position={[roomWidth / 2 - 0.2, wallHeight / 2, z]}>
               <boxGeometry args={[0.12, wallHeight - 2.5, 0.6]} />
