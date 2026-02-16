@@ -327,6 +327,33 @@ export function PresentationMode({
             <X size={20} />
           </Button>
         </div>
+        {/* Header Progress Bar */}
+        {isActive && audioDuration > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+              {formatTime(audioCurrentTime)}
+            </span>
+            <div
+              className="flex-1 h-1.5 bg-secondary rounded-full cursor-pointer relative group"
+              onClick={(e) => {
+                if (!onSeekTo) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const ratio = (e.clientX - rect.left) / rect.width;
+                onSeekTo(ratio * audioDuration);
+              }}
+            >
+              <div
+                className="h-full bg-gold rounded-full transition-all relative"
+                style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
+              >
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-mono w-10">
+              {formatTime(audioDuration)}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
