@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { SectionEditModal } from '@/components/SectionEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
-import { PresentationMode } from '@/components/PresentationMode';
+
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
-import { useAllStageAudios } from '@/hooks/useStageAudios';
-import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+
+
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
@@ -24,29 +24,11 @@ const Index = () => {
   
   const { stages, isLoading: stagesLoading } = useStages();
   const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection } = useSections();
-  const { audiosByStageId } = useAllStageAudios();
-  const {
-    currentStageId,
-    status,
-    volume,
-    currentTime,
-    duration,
-    eq,
-    play,
-    pause,
-    resume,
-    stop,
-    setVolume,
-    seekForward,
-    seekBackward,
-    seekTo,
-    setEQ,
-  } = useUniversalAudioPlayer();
 
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
   const [isNewSectionModal, setIsNewSectionModal] = useState(false);
   const [deleteSectionData, setDeleteSectionData] = useState<CeremonySection | null>(null);
-  const [isPresentationMode, setIsPresentationMode] = useState(false);
+  
 
   const handleSaveSection = (data: CeremonySectionInsert | CeremonySectionUpdate) => {
     if (editingSection) {
@@ -79,44 +61,12 @@ const Index = () => {
     );
   }
 
-  // Presentation mode
-  const handlePresentationPlay = (stageId: string, audioUrl: string) => {
-    play(stageId, audioUrl);
-  };
-
-  if (isPresentationMode) {
-    return (
-      <PresentationMode
-        stages={stages}
-        audiosByStageId={audiosByStageId}
-        currentStageId={currentStageId}
-        status={status}
-        volume={volume}
-        currentTime={currentTime}
-        duration={duration}
-        onVolumeChange={setVolume}
-        onPlay={handlePresentationPlay}
-        onPause={pause}
-        onResume={resume}
-        onStop={stop}
-        onClose={() => setIsPresentationMode(false)}
-        onSeekForward={() => seekForward()}
-        onSeekBackward={() => seekBackward()}
-        onSeekTo={seekTo}
-        settings={settings}
-        eq={eq}
-        onEQChange={setEQ}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header 
         onAddStage={() => {}}
         onAddSection={() => setIsNewSectionModal(true)}
-        onPresentationMode={() => setIsPresentationMode(true)}
-        hasStages={stages.length > 0}
       />
       
       <main className="container px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
