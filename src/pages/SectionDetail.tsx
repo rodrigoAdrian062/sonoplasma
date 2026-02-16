@@ -16,9 +16,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { ControlBar } from '@/components/ControlBar';
+import { PresentationMode } from '@/components/PresentationMode';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
@@ -62,6 +63,7 @@ const SectionDetail = () => {
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   const section = useMemo(() => {
     // sectionId can be "slug-shortid" format, extract the short ID (last 8 chars after last dash)
@@ -164,6 +166,36 @@ const SectionDetail = () => {
     );
   }
 
+  const handlePresentationPlay = (stageId: string, audioUrl: string) => {
+    play(stageId, audioUrl);
+  };
+
+  if (isPresentationMode) {
+    return (
+      <PresentationMode
+        stages={sectionStages}
+        audiosByStageId={audiosByStageId}
+        currentStageId={currentStageId}
+        status={status}
+        volume={volume}
+        currentTime={currentTime}
+        duration={duration}
+        onVolumeChange={setVolume}
+        onPlay={handlePresentationPlay}
+        onPause={pause}
+        onResume={resume}
+        onStop={stop}
+        onClose={() => setIsPresentationMode(false)}
+        onSeekForward={() => seekForward()}
+        onSeekBackward={() => seekBackward()}
+        onSeekTo={seekTo}
+        settings={settings}
+        eq={eq}
+        onEQChange={setEQ}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -191,6 +223,17 @@ const SectionDetail = () => {
                 </p>
               )}
             </div>
+            {sectionStages.length > 0 && (
+              <Button
+                onClick={() => setIsPresentationMode(true)}
+                size="sm"
+                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                variant="outline"
+              >
+                <Presentation size={16} />
+                <span className="hidden sm:inline">Apresentar</span>
+              </Button>
+            )}
             <Button
               onClick={() => setIsNewStageModal(true)}
               size="sm"
