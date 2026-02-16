@@ -231,101 +231,213 @@ export function Walls({ showSouthWall = true }: WallsProps) {
         </mesh>
       )}
 
-      {/* West Wall - split for door opening (wider door ~5m) */}
-      {/* Left section */}
+      {/* West Wall - split for grand door opening */}
       <mesh position={[-(roomWidth / 2 + 2.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
         <boxGeometry args={[(roomWidth / 2 - 2.5), wallHeight, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
-      {/* Right section */}
       <mesh position={[(roomWidth / 2 + 2.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
         <boxGeometry args={[(roomWidth / 2 - 2.5), wallHeight, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
-      {/* Above door */}
       <mesh position={[0, wallHeight - 0.5, roomLength / 2]} castShadow receiveShadow>
         <boxGeometry args={[5.2, 1, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
 
-      {/* Door frame - ornate wood */}
-      <mesh position={[-2.55, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
-        <boxGeometry args={[0.25, wallHeight - 1, 0.35]} />
-        <meshStandardMaterial color="#3a2515" roughness={0.7} />
+      {/* === GRAND DOOR FRAME === */}
+      <mesh position={[-2.6, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
+        <boxGeometry args={[0.3, wallHeight - 1, 0.4]} />
+        <meshStandardMaterial color="#1a0e08" roughness={0.75} />
       </mesh>
-      <mesh position={[2.55, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
-        <boxGeometry args={[0.25, wallHeight - 1, 0.35]} />
-        <meshStandardMaterial color="#3a2515" roughness={0.7} />
+      <mesh position={[2.6, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
+        <boxGeometry args={[0.3, wallHeight - 1, 0.4]} />
+        <meshStandardMaterial color="#1a0e08" roughness={0.75} />
       </mesh>
-      {/* Arch/lintel */}
+      <mesh position={[-2.42, wallHeight / 2 - 0.5, roomLength / 2 + 0.15]}>
+        <boxGeometry args={[0.06, wallHeight - 1.2, 0.06]} />
+        <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+      </mesh>
+      <mesh position={[2.42, wallHeight / 2 - 0.5, roomLength / 2 + 0.15]}>
+        <boxGeometry args={[0.06, wallHeight - 1.2, 0.06]} />
+        <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+      </mesh>
       <mesh position={[0, wallHeight - 1, roomLength / 2]} castShadow>
-        <boxGeometry args={[5.3, 0.3, 0.35]} />
-        <meshStandardMaterial color="#3a2515" roughness={0.7} />
+        <boxGeometry args={[5.5, 0.4, 0.42]} />
+        <meshStandardMaterial color="#1a0e08" roughness={0.75} />
       </mesh>
-      {/* Gold trim on arch */}
-      <mesh position={[0, wallHeight - 1.18, roomLength / 2 + 0.15]}>
-        <boxGeometry args={[5.1, 0.08, 0.05]} />
+      <mesh position={[0, wallHeight - 1.22, roomLength / 2 + 0.18]}>
+        <boxGeometry args={[5.3, 0.1, 0.05]} />
+        <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+      </mesh>
+      <mesh position={[0, wallHeight - 0.78, roomLength / 2 + 0.18]}>
+        <boxGeometry args={[5.3, 0.06, 0.05]} />
+        <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+      </mesh>
+      <mesh position={[0, wallHeight - 0.55, roomLength / 2 + 0.2]}>
+        <boxGeometry args={[5.8, 0.15, 0.08]} />
         <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
       </mesh>
 
-      {/* Door panels - two large leaves, slightly open */}
-      {/* Left door leaf */}
-      <group position={[-2.4, (wallHeight - 1) / 2 - 0.5, roomLength / 2]} rotation={[0, 0.12, 0]}>
+      {/* === CLOSED DOOR - Left leaf === */}
+      <group position={[-1.2, (wallHeight - 1.4) / 2, roomLength / 2 + 0.12]}>
         <mesh castShadow>
-          <boxGeometry args={[2.2, wallHeight - 1.5, 0.1]} />
-          <meshStandardMaterial color="#2a1810" roughness={0.65} />
+          <boxGeometry args={[2.3, wallHeight - 1.8, 0.12]} />
+          <meshStandardMaterial color="#2a1508" roughness={0.6} />
         </mesh>
-        {/* Panel insets */}
-        {[-2, 0, 2].map((y, i) => (
-          <mesh key={i} position={[0, y, 0.055]}>
-            <boxGeometry args={[1.6, 1.5, 0.02]} />
-            <meshStandardMaterial color="#1e1008" roughness={0.7} />
-          </mesh>
+        <mesh position={[0, 0, 0.065]}>
+          <boxGeometry args={[2.1, wallHeight - 2.1, 0.02]} />
+          <meshStandardMaterial color="#3a2010" roughness={0.55} />
+        </mesh>
+        {[1.8, -0.2, -2].map((py, pi) => (
+          <group key={`lp-${pi}`}>
+            <mesh position={[0, py, 0.07]}>
+              <boxGeometry args={[1.6, pi === 0 ? 1.8 : 1.4, 0.03]} />
+              <meshStandardMaterial color="#1e0e05" roughness={0.7} />
+            </mesh>
+            <mesh position={[0, py + (pi === 0 ? 0.92 : 0.72), 0.085]}>
+              <boxGeometry args={[1.7, 0.04, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[0, py - (pi === 0 ? 0.92 : 0.72), 0.085]}>
+              <boxGeometry args={[1.7, 0.04, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[-0.82, py, 0.085]}>
+              <boxGeometry args={[0.04, pi === 0 ? 1.88 : 1.48, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[0.82, py, 0.085]}>
+              <boxGeometry args={[0.04, pi === 0 ? 1.88 : 1.48, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+          </group>
         ))}
-        {/* Handle */}
-        <mesh position={[0.9, 0, 0.08]}>
-          <sphereGeometry args={[0.08, 12, 12]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
+        <mesh position={[1, 0, 0.1]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.12, 12]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
         </mesh>
-        {/* Decorative knocker ring */}
-        <mesh position={[0.9, 0.4, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
+        <mesh position={[1, 0, 0.16]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.2, 8]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
         </mesh>
-      </group>
-
-      {/* Right door leaf */}
-      <group position={[2.4, (wallHeight - 1) / 2 - 0.5, roomLength / 2]} rotation={[0, -0.12, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[2.2, wallHeight - 1.5, 0.1]} />
-          <meshStandardMaterial color="#2a1810" roughness={0.65} />
+        <mesh position={[1, 0, 0.08]}>
+          <boxGeometry args={[0.18, 0.3, 0.02]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
         </mesh>
-        {[-2, 0, 2].map((y, i) => (
-          <mesh key={i} position={[0, y, 0.055]}>
-            <boxGeometry args={[1.6, 1.5, 0.02]} />
-            <meshStandardMaterial color="#1e1008" roughness={0.7} />
-          </mesh>
-        ))}
-        <mesh position={[-0.9, 0, 0.08]}>
-          <sphereGeometry args={[0.08, 12, 12]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
+        <mesh position={[0.5, 0.8, 0.1]}>
+          <sphereGeometry args={[0.1, 16, 16]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.25} metalness={0.8} />
         </mesh>
-        <mesh position={[-0.9, 0.4, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} />
-          <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
+        <mesh position={[0.5, 0.55, 0.12]} rotation={[0.3, 0, 0]}>
+          <torusGeometry args={[0.1, 0.02, 8, 20]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
         </mesh>
-      </group>
-
-      {/* Esquadro e Compasso symbol above door */}
-      <group position={[0, 7.3, roomLength / 2 + 0.18]}>
-        {/* Square */}
-        <mesh rotation={[0, 0, Math.PI / 4]}>
-          <boxGeometry args={[0.3, 0.03, 0.03]} />
+        <mesh position={[0, 2.85, 0.08]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.03, 16]} />
           <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
         </mesh>
-        <mesh position={[0.1, -0.1, 0]} rotation={[0, 0, -Math.PI / 4]}>
-          <boxGeometry args={[0.3, 0.03, 0.03]} />
+        {[-2.5, -0.5, 1.5].map((y, i) => (
+          <mesh key={`hl-${i}`} position={[-1.1, y, 0.08]}>
+            <boxGeometry args={[0.15, 0.3, 0.04]} />
+            <meshStandardMaterial color="#8B7500" roughness={0.3} metalness={0.8} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* === CLOSED DOOR - Right leaf === */}
+      <group position={[1.2, (wallHeight - 1.4) / 2, roomLength / 2 + 0.12]}>
+        <mesh castShadow>
+          <boxGeometry args={[2.3, wallHeight - 1.8, 0.12]} />
+          <meshStandardMaterial color="#2a1508" roughness={0.6} />
+        </mesh>
+        <mesh position={[0, 0, 0.065]}>
+          <boxGeometry args={[2.1, wallHeight - 2.1, 0.02]} />
+          <meshStandardMaterial color="#3a2010" roughness={0.55} />
+        </mesh>
+        {[1.8, -0.2, -2].map((py, pi) => (
+          <group key={`rp-${pi}`}>
+            <mesh position={[0, py, 0.07]}>
+              <boxGeometry args={[1.6, pi === 0 ? 1.8 : 1.4, 0.03]} />
+              <meshStandardMaterial color="#1e0e05" roughness={0.7} />
+            </mesh>
+            <mesh position={[0, py + (pi === 0 ? 0.92 : 0.72), 0.085]}>
+              <boxGeometry args={[1.7, 0.04, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[0, py - (pi === 0 ? 0.92 : 0.72), 0.085]}>
+              <boxGeometry args={[1.7, 0.04, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[-0.82, py, 0.085]}>
+              <boxGeometry args={[0.04, pi === 0 ? 1.88 : 1.48, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+            <mesh position={[0.82, py, 0.085]}>
+              <boxGeometry args={[0.04, pi === 0 ? 1.88 : 1.48, 0.01]} />
+              <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+            </mesh>
+          </group>
+        ))}
+        <mesh position={[-1, 0, 0.1]}>
+          <cylinderGeometry args={[0.04, 0.04, 0.12, 12]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[-1, 0, 0.16]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.2, 8]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[-1, 0, 0.08]}>
+          <boxGeometry args={[0.18, 0.3, 0.02]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.2} metalness={0.85} />
+        </mesh>
+        <mesh position={[-0.5, 0.8, 0.1]}>
+          <sphereGeometry args={[0.1, 16, 16]} />
+          <meshStandardMaterial color="#c9a227" roughness={0.25} metalness={0.8} />
+        </mesh>
+        <mesh position={[-0.5, 0.55, 0.12]} rotation={[0.3, 0, 0]}>
+          <torusGeometry args={[0.1, 0.02, 8, 20]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0, 2.85, 0.08]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.03, 16]} />
           <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
+        </mesh>
+        {[-2.5, -0.5, 1.5].map((y, i) => (
+          <mesh key={`hr-${i}`} position={[1.1, y, 0.08]}>
+            <boxGeometry args={[0.15, 0.3, 0.04]} />
+            <meshStandardMaterial color="#8B7500" roughness={0.3} metalness={0.8} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Center seam */}
+      <mesh position={[0, (wallHeight - 1.4) / 2, roomLength / 2 + 0.2]}>
+        <boxGeometry args={[0.04, wallHeight - 1.8, 0.02]} />
+        <meshStandardMaterial color="#1a0e05" roughness={0.8} />
+      </mesh>
+
+      {/* === Esquadro e Compasso above door === */}
+      <group position={[0, wallHeight - 0.5, roomLength / 2 + 0.22]}>
+        <mesh position={[-0.15, -0.05, 0]} rotation={[0, 0, 0.25]}>
+          <boxGeometry args={[0.5, 0.04, 0.04]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0.15, -0.05, 0]} rotation={[0, 0, -0.25]}>
+          <boxGeometry args={[0.5, 0.04, 0.04]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0, -0.15, 0.02]} rotation={[0, 0, Math.PI]}>
+          <boxGeometry args={[0.04, 0.3, 0.04]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0.15, -0.3, 0.02]}>
+          <boxGeometry args={[0.35, 0.04, 0.04]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
+        </mesh>
+        <mesh position={[0, 0, 0.03]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.03, 16]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.15} metalness={0.9} />
         </mesh>
       </group>
 
