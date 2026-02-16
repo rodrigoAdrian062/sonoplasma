@@ -47,6 +47,7 @@ const SectionDetail = () => {
     volume,
     currentTime,
     duration,
+    eq,
     play,
     pause,
     resume,
@@ -55,6 +56,7 @@ const SectionDetail = () => {
     seekForward,
     seekBackward,
     seekTo,
+    setEQ,
   } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
@@ -210,6 +212,8 @@ const SectionDetail = () => {
         currentTime={currentTime}
         duration={duration}
         onSeekTo={seekTo}
+        eq={eq}
+        onEQChange={setEQ}
       />
 
       <main className="container px-3 sm:px-4 py-4 sm:py-6">

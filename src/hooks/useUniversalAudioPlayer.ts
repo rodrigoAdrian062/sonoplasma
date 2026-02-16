@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { PlaybackStatus } from '@/types/ceremony';
 
+export interface EQSettings {
+  bass: number;    // -12 to 12 dB
+  mid: number;     // -12 to 12 dB
+  treble: number;  // -12 to 12 dB
+}
+
 interface UseUniversalAudioPlayerReturn {
   currentStageId: string | null;
   status: PlaybackStatus;
@@ -9,6 +15,7 @@ interface UseUniversalAudioPlayerReturn {
   duration: number;
   isYouTube: boolean;
   youtubeVideoId: string | null;
+  eq: EQSettings;
   play: (stageId: string, url: string) => void;
   pause: () => void;
   resume: () => void;
@@ -17,6 +24,7 @@ interface UseUniversalAudioPlayerReturn {
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
+  setEQ: (settings: Partial<EQSettings>) => void;
 }
 
 // YouTube URL detection and ID extraction
@@ -39,18 +47,53 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
   const [isYouTube, setIsYouTube] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   
+  const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const bassFilterRef = useRef<BiquadFilterNode | null>(null);
+  const midFilterRef = useRef<BiquadFilterNode | null>(null);
+  const trebleFilterRef = useRef<BiquadFilterNode | null>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
 
-  // Initialize HTML5 Audio
+  // Initialize HTML5 Audio with EQ filters
   useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.volume = volume;
+    const audio = new Audio();
+    audio.volume = volume;
+    audio.crossOrigin = 'anonymous';
+    audioRef.current = audio;
 
-    const audio = audioRef.current;
+    // Create AudioContext and EQ filters
+    const ctx = new AudioContext();
+    audioContextRef.current = ctx;
+
+    const source = ctx.createMediaElementSource(audio);
+    sourceNodeRef.current = source;
+
+    const bass = ctx.createBiquadFilter();
+    bass.type = 'lowshelf';
+    bass.frequency.value = 200;
+    bass.gain.value = 0;
+    bassFilterRef.current = bass;
+
+    const mid = ctx.createBiquadFilter();
+    mid.type = 'peaking';
+    mid.frequency.value = 1000;
+    mid.Q.value = 1;
+    mid.gain.value = 0;
+    midFilterRef.current = mid;
+
+    const treble = ctx.createBiquadFilter();
+    treble.type = 'highshelf';
+    treble.frequency.value = 4000;
+    treble.gain.value = 0;
+    trebleFilterRef.current = treble;
+
+    source.connect(bass).connect(mid).connect(treble).connect(ctx.destination);
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
@@ -85,6 +128,7 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
       audio.pause();
+      ctx.close();
     };
   }, []);
 
@@ -309,6 +353,16 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     }
   }, [isYouTube]);
 
+  const setEQ = useCallback((settings: Partial<EQSettings>) => {
+    setEQState(prev => {
+      const next = { ...prev, ...settings };
+      if (bassFilterRef.current) bassFilterRef.current.gain.value = next.bass;
+      if (midFilterRef.current) midFilterRef.current.gain.value = next.mid;
+      if (trebleFilterRef.current) trebleFilterRef.current.gain.value = next.treble;
+      return next;
+    });
+  }, []);
+
   return {
     currentStageId,
     status,
@@ -317,6 +371,7 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     duration,
     isYouTube,
     youtubeVideoId,
+    eq,
     play,
     pause,
     resume,
@@ -325,5 +380,6 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     seekForward,
     seekBackward,
     seekTo,
+    setEQ,
   };
 }

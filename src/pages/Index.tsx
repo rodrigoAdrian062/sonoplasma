@@ -31,6 +31,7 @@ const Index = () => {
     volume,
     currentTime,
     duration,
+    eq,
     play,
     pause,
     resume,
@@ -39,6 +40,7 @@ const Index = () => {
     seekForward,
     seekBackward,
     seekTo,
+    setEQ,
   } = useUniversalAudioPlayer();
 
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
@@ -102,6 +104,8 @@ const Index = () => {
         onSeekBackward={() => seekBackward()}
         onSeekTo={seekTo}
         settings={settings}
+        eq={eq}
+        onEQChange={setEQ}
       />
     );
   }

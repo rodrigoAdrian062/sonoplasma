@@ -1,5 +1,10 @@
+import { useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
+import { EqualizerPanel } from './EqualizerPanel';
+import { Button } from '@/components/ui/button';
+import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
 interface ControlBarProps {
   volume: number;
@@ -9,6 +14,8 @@ interface ControlBarProps {
   currentTime?: number;
   duration?: number;
   onSeekTo?: (seconds: number) => void;
+  eq?: EQSettings;
+  onEQChange?: (settings: Partial<EQSettings>) => void;
 }
 
 function formatTime(seconds: number): string {
@@ -25,7 +32,11 @@ export function ControlBar({
   currentTime = 0,
   duration = 0,
   onSeekTo,
+  eq,
+  onEQChange,
 }: ControlBarProps) {
+  const [showEQ, setShowEQ] = useState(false);
+
   return (
     <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container py-3">
@@ -35,7 +46,24 @@ export function ControlBar({
             stageName={activeStage?.symbolicName || null} 
             isPlaying={isPlaying} 
           />
+          {eq && onEQChange && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEQ(!showEQ)}
+              className={`h-9 w-9 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              title="Equalizador"
+            >
+              <SlidersHorizontal size={18} />
+            </Button>
+          )}
         </div>
+        {/* EQ Panel */}
+        {showEQ && eq && onEQChange && (
+          <div className="mt-2 animate-fade-in">
+            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
+          </div>
+        )}
         {/* Progress bar */}
         {activeStage && duration > 0 && (
           <div className="flex items-center gap-2 mt-2">
