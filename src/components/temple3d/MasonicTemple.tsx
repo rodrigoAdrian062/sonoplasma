@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { EffectComposer, Bloom, Vignette, N8AO } from '@react-three/postprocessing';
 import { Suspense, useState } from 'react';
 import * as THREE from 'three';
 import { Floor } from './Floor';
@@ -35,56 +36,84 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
   return (
     <div className="w-full h-full relative">
       <Canvas
-        camera={{ position: [0, 8, 20], fov: 55 }}
-        shadows
+        camera={{ position: [0, 8, 20], fov: 50 }}
+        shadows="soft"
         gl={{ 
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
+          toneMappingExposure: 0.95,
+          powerPreference: 'high-performance',
         }}
+        dpr={[1, 2]}
       >
         <Suspense fallback={null}>
-          {/* Deep blue/dark background for atmosphere */}
-          <color attach="background" args={['#1a2a4a']} />
+          {/* Deep atmospheric background */}
+          <color attach="background" args={['#0d1520']} />
           
-          {/* Atmospheric fog for depth */}
-          <fog attach="fog" args={['#1a2a4a', 25, 50]} />
+          {/* Atmospheric fog - closer for more depth */}
+          <fog attach="fog" args={['#0d1520', 20, 45]} />
 
-          {/* Lighting - Warm and dramatic */}
-          <ambientLight intensity={0.3} color="#ffeedd" />
-          <hemisphereLight intensity={0.4} groundColor="#2a1810" color="#87CEEB" />
+          {/* === REALISTIC LIGHTING SETUP === */}
           
-          {/* Main overhead light */}
+          {/* Very dim ambient for deep shadows */}
+          <ambientLight intensity={0.15} color="#ffeedd" />
+          
+          {/* Sky hemisphere - warm ground, cool sky */}
+          <hemisphereLight intensity={0.25} groundColor="#3a2515" color="#4a6a8a" />
+          
+          {/* Main key light - warm overhead sun through skylight */}
           <directionalLight
-            position={[0, 15, 5]}
-            intensity={1.0}
+            position={[2, 18, -5]}
+            intensity={0.8}
             castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-far={50}
-            shadow-camera-left={-15}
-            shadow-camera-right={15}
-            shadow-camera-top={20}
-            shadow-camera-bottom={-20}
-            color="#fff8e7"
+            shadow-mapSize={[4096, 4096]}
+            shadow-camera-far={60}
+            shadow-camera-left={-18}
+            shadow-camera-right={18}
+            shadow-camera-top={22}
+            shadow-camera-bottom={-22}
+            shadow-bias={-0.0001}
+            shadow-normalBias={0.02}
+            color="#fff5e0"
           />
           
-          {/* Side fill lights - warm */}
-          <directionalLight position={[-8, 12, 0]} intensity={0.3} color="#ffd4a0" />
-          <directionalLight position={[8, 12, 0]} intensity={0.3} color="#ffd4a0" />
+          {/* Fill light from south - very subtle */}
+          <directionalLight position={[10, 8, 0]} intensity={0.12} color="#ffd4a0" />
           
-          {/* East wall accent light (golden from Delta) */}
+          {/* Fill light from north */}
+          <directionalLight position={[-10, 8, 0]} intensity={0.12} color="#d4d4ff" />
+          
+          {/* East wall golden accent - Delta glow */}
           <spotLight 
-            position={[0, 9, -12]} 
-            intensity={2} 
+            position={[0, 10, -13]} 
+            intensity={3}
             color="#ffd700" 
-            angle={0.5}
-            penumbra={0.8}
-            distance={20}
+            angle={0.4}
+            penumbra={1}
+            distance={25}
             castShadow
+            shadow-mapSize={[1024, 1024]}
           />
           
-          {/* Subtle rim light from entrance */}
-          <directionalLight position={[0, 6, 15]} intensity={0.2} color="#aaccff" />
+          {/* Entrance backlight - moonlight feel */}
+          <spotLight 
+            position={[0, 7, 16]} 
+            intensity={0.5}
+            color="#8899cc"
+            angle={0.6}
+            penumbra={0.9}
+            distance={20}
+          />
+
+          {/* Contact shadows for ground realism */}
+          <ContactShadows 
+            position={[0, 0.01, 0]}
+            opacity={0.4}
+            scale={40}
+            blur={2}
+            far={10}
+            color="#000000"
+          />
 
           {/* Temple Elements */}
           <Floor onClick={() => handleElementClick('floor')} />
@@ -109,16 +138,39 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
-            minDistance={4}
+            minDistance={3}
             maxDistance={35}
-            maxPolarAngle={Math.PI / 2.1}
+            maxPolarAngle={Math.PI / 2.05}
             target={[0, 2, 0]}
             enableDamping={true}
             dampingFactor={0.05}
           />
 
-          {/* Environment for reflections */}
-          <Environment preset="apartment" />
+          {/* HDR Environment for realistic reflections */}
+          <Environment preset="apartment" environmentIntensity={0.3} />
+
+          {/* === POST-PROCESSING === */}
+          <EffectComposer>
+            {/* Ambient Occlusion - depth and realism in corners */}
+            <N8AO 
+              aoRadius={0.8}
+              intensity={2.5}
+              distanceFalloff={1}
+              quality="medium"
+            />
+            {/* Bloom - candle glow, gold shimmer, Delta radiance */}
+            <Bloom 
+              luminanceThreshold={0.8}
+              luminanceSmoothing={0.5}
+              intensity={0.4}
+              mipmapBlur
+            />
+            {/* Vignette - cinematic framing */}
+            <Vignette 
+              offset={0.3}
+              darkness={0.6}
+            />
+          </EffectComposer>
         </Suspense>
       </Canvas>
 
