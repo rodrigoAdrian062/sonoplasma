@@ -44,37 +44,36 @@ function createFabricTex(color: string) {
   return new THREE.CanvasTexture(canvas);
 }
 
-export function OfficerDesks({ onClick }: OfficerDesksProps) {
-  const woodTex = useMemo(() => createWoodTex(), []);
-  const fabricTex = useMemo(() => createFabricTex('#7a0000'), []);
-
-  const OfficerDesk = ({
-    position,
-    rotation,
-    title,
-    name,
-    symbol,
-  }: {
-    position: [number, number, number];
-    rotation: number;
-    title: string;
-    name: string;
-    symbol?: string;
-  }) => (
+function OfficerDesk({
+  position,
+  rotation,
+  title,
+  name,
+  symbol,
+  woodTex,
+  fabricTex,
+  onClick,
+}: {
+  position: [number, number, number];
+  rotation: number;
+  title: string;
+  name: string;
+  symbol?: string;
+  woodTex: THREE.Texture;
+  fabricTex: THREE.Texture;
+  onClick?: (name: string) => void;
+}) {
+  return (
     <group position={position} rotation={[0, rotation, 0]} onClick={() => onClick?.(name)}>
-      {/* Desk - polished wood */}
+      {/* Desk */}
       <mesh position={[0, 0.42, 0]} castShadow>
         <boxGeometry args={[1.3, 0.08, 0.55]} />
         <meshStandardMaterial map={woodTex} roughness={0.5} />
       </mesh>
-      
-      {/* Desk front panel */}
       <mesh position={[0, 0.22, 0.25]} castShadow>
         <boxGeometry args={[1.3, 0.44, 0.04]} />
         <meshStandardMaterial map={woodTex} roughness={0.6} />
       </mesh>
-
-      {/* Desk legs */}
       {[-0.55, 0.55].map((x, i) => (
         <mesh key={i} position={[x, 0.22, -0.22]} castShadow>
           <boxGeometry args={[0.06, 0.44, 0.06]} />
@@ -91,7 +90,6 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
         <boxGeometry args={[0.55, 0.5, 0.06]} />
         <meshStandardMaterial map={fabricTex} roughness={0.85} />
       </mesh>
-      {/* Chair legs */}
       {[-0.22, 0.22].map((x, i) => (
         <group key={i}>
           <mesh position={[x, 0.13, -0.35]} castShadow>
@@ -105,7 +103,7 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
         </group>
       ))}
 
-      {/* Candelabrum on desk */}
+      {/* Candelabrum */}
       <group position={[0.45, 0.52, 0]}>
         <mesh castShadow>
           <cylinderGeometry args={[0.05, 0.07, 0.06, 12]} />
@@ -122,56 +120,36 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
         <AnimatedFlame position={[0, 0.26, 0]} scale={0.4} lightDistance={2} lightIntensity={0.2} />
       </group>
 
-      {/* Symbol on desk front */}
       {symbol && (
-        <Text
-          position={[0, 0.22, 0.28]}
-          fontSize={0.12}
-          color="#d4af37"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <Text position={[0, 0.22, 0.28]} fontSize={0.12} color="#d4af37" anchorX="center" anchorY="middle">
           {symbol}
         </Text>
       )}
 
-      {/* Title */}
-      <Text
-        position={[0, 0.95, 0]}
-        fontSize={0.08}
-        color="#d4af37"
-        anchorX="center"
-        anchorY="middle"
-        rotation={[0, -rotation, 0]}
-      >
+      <Text position={[0, 0.95, 0]} fontSize={0.08} color="#d4af37" anchorX="center" anchorY="middle" rotation={[0, -rotation, 0]}>
         {title}
       </Text>
     </group>
   );
+}
+
+export function OfficerDesks({ onClick }: OfficerDesksProps) {
+  const woodTex = useMemo(() => createWoodTex(), []);
+  const fabricTex = useMemo(() => createFabricTex('#7a0000'), []);
+
+  const deskProps = { woodTex, fabricTex, onClick };
 
   return (
     <group>
       {/* === ORIENTE (behind balustrade) === */}
       
-      {/* Orador (10) - North side of East, facing South */}
-      <OfficerDesk
-        position={[-5.5, 0, -9]}
-        rotation={Math.PI / 2}
-        title="Orador"
-        name="orador"
-        symbol="📖"
-      />
+      {/* 10 - Orador - North side of East, facing South */}
+      <OfficerDesk position={[-5.5, 0, -9]} rotation={Math.PI / 2} title="Orador" name="orador" symbol="📖" {...deskProps} />
 
-      {/* Secretário (16) - South side of East, facing North */}
-      <OfficerDesk
-        position={[5.5, 0, -9]}
-        rotation={-Math.PI / 2}
-        title="Secretário"
-        name="secretario"
-        symbol="✒"
-      />
+      {/* 16 - Secretário - South side of East, facing North */}
+      <OfficerDesk position={[5.5, 0, -9]} rotation={-Math.PI / 2} title="Secretário" name="secretario" symbol="✒" {...deskProps} />
 
-      {/* Altar dos Perfumes (near VM) */}
+      {/* 26 - Altar dos Perfumes (near VM/Secretário) */}
       <group position={[2.5, 0, -11]} onClick={() => onClick?.('altar-perfumes')}>
         <mesh position={[0, 0.35, 0]} castShadow>
           <cylinderGeometry args={[0.2, 0.25, 0.7, 16]} />
@@ -186,81 +164,76 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
         </Text>
       </group>
 
+      {/* 14 - 1º Experto - left of center, between Oriente and Ocidente */}
+      <OfficerDesk position={[-3, 0, -7]} rotation={Math.PI} title="1º Experto" name="1-experto" symbol="⚒" {...deskProps} />
+
+      {/* 15 - 2º Experto - right of center */}
+      <OfficerDesk position={[3, 0, -7]} rotation={0} title="2º Experto" name="2-experto" symbol="⚒" {...deskProps} />
+
       {/* === NORTH COLUMN (outside balustrade) === */}
       
-      {/* Tesoureiro (near balustrade, north) */}
-      <OfficerDesk
-        position={[-5.5, 0, -5]}
-        rotation={Math.PI / 2}
-        title="Tesoureiro"
-        name="tesoureiro"
-        symbol="🔑"
-      />
+      {/* 22 - Tesoureiro */}
+      <OfficerDesk position={[-5.5, 0, -3]} rotation={Math.PI / 2} title="Tesoureiro" name="tesoureiro" symbol="🔑" {...deskProps} />
 
-      {/* Hospitaleiro (north, further west) */}
-      <OfficerDesk
-        position={[-5.5, 0, -2]}
-        rotation={Math.PI / 2}
-        title="Hospitaleiro"
-        name="hospitaleiro"
-        symbol="💝"
-      />
+      {/* 8 - Orador Adjunto (North, near 2V area) */}
+      <OfficerDesk position={[5.5, 0, -3]} rotation={-Math.PI / 2} title="Or∴ Adjunto" name="orador-adjunto" symbol="📖" {...deskProps} />
 
       {/* === SOUTH COLUMN === */}
 
-      {/* Chanceler (south, near balustrade) */}
-      <OfficerDesk
-        position={[5.5, 0, -5]}
-        rotation={-Math.PI / 2}
-        title="Chanceler"
-        name="chanceler"
-        symbol="⚜"
-      />
+      {/* 9 - Secretário Adjunto */}
+      <OfficerDesk position={[-5.5, 0, 0]} rotation={Math.PI / 2} title="Sec∴ Adjunto" name="secretario-adjunto" symbol="✒" {...deskProps} />
+
+      {/* 21 - Hospitaleiro */}
+      <OfficerDesk position={[5.5, 0, 0]} rotation={-Math.PI / 2} title="Hospitaleiro" name="hospitaleiro" symbol="💝" {...deskProps} />
+
+      {/* 29 - Chanceler */}
+      <OfficerDesk position={[5.5, 0, -5]} rotation={-Math.PI / 2} title="Chanceler" name="chanceler" symbol="⚜" {...deskProps} />
 
       {/* === CENTER / WEST === */}
 
-      {/* Mestre de Cerimônias - center, near west */}
-      <OfficerDesk
-        position={[0, 0, 7]}
-        rotation={Math.PI}
-        title="M∴ de Cerimônias"
-        name="mestre-cerimonias"
-        symbol="🗡"
-      />
+      {/* 6 - 1º Diácono (near 1º Vigilante) */}
+      <OfficerDesk position={[-3.5, 0, 5]} rotation={Math.PI / 2} title="1º Diácono" name="1-diacono" {...deskProps} />
 
-      {/* 1º Diácono (6) - near 1º Vigilante (west) */}
-      <OfficerDesk
-        position={[-3.5, 0, 8]}
-        rotation={Math.PI}
-        title="1º Diácono"
-        name="1-diacono"
-      />
+      {/* 7 - 2º Diácono (near 2º Vigilante) */}
+      <OfficerDesk position={[5.5, 0, 3]} rotation={-Math.PI / 2} title="2º Diácono" name="2-diacono" {...deskProps} />
 
-      {/* 2º Diácono (9) - near 2º Vigilante (south) */}
-      <OfficerDesk
-        position={[5.5, 0, 2]}
-        rotation={-Math.PI / 2}
-        title="2º Diácono"
-        name="2-diacono"
-      />
+      {/* 12 - Mestre de Cerimônias */}
+      <OfficerDesk position={[-2, 0, 7]} rotation={Math.PI} title="M∴ de Cerimônias" name="mestre-cerimonias" symbol="🗡" {...deskProps} />
 
-      {/* Cobridor (19) - outside door, east side */}
-      <OfficerDesk
-        position={[3, 0, 12.5]}
-        rotation={Math.PI}
-        title="Cobridor"
-        name="cobridor"
-        symbol="⚔"
-      />
+      {/* 13 - Mestre de Cerimônias Adjunto */}
+      <OfficerDesk position={[2, 0, 7]} rotation={Math.PI} title="M∴C∴ Adjunto" name="mc-adjunto" symbol="🗡" {...deskProps} />
 
-      {/* Guarda Interno (18) - inside door, west side */}
-      <OfficerDesk
-        position={[-3, 0, 12.5]}
-        rotation={Math.PI}
-        title="Guarda Interno"
-        name="guarda-interno"
-        symbol="🛡"
-      />
+      {/* 27 - Tronco de Beneficência (near entrance, north) */}
+      <group position={[-4, 0, 8]} onClick={() => onClick?.('tronco-beneficencia')}>
+        <mesh position={[0, 0.3, 0]} castShadow>
+          <cylinderGeometry args={[0.15, 0.2, 0.6, 8]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.8} />
+        </mesh>
+        {/* Lid */}
+        <mesh position={[0, 0.65, 0]} castShadow>
+          <cylinderGeometry args={[0.22, 0.15, 0.1, 8]} />
+          <meshStandardMaterial color="#2a1810" roughness={0.7} />
+        </mesh>
+        {/* Slot */}
+        <mesh position={[0, 0.71, 0]}>
+          <boxGeometry args={[0.12, 0.01, 0.03]} />
+          <meshStandardMaterial color="#1a0e08" roughness={0.9} />
+        </mesh>
+        {/* Gold handle */}
+        <mesh position={[0, 0.75, 0]}>
+          <torusGeometry args={[0.04, 0.01, 8, 16, Math.PI]} />
+          <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.8} />
+        </mesh>
+        <Text position={[0, 1.0, 0]} fontSize={0.06} color="#d4af37" anchorX="center" anchorY="middle">
+          Tronco de Beneficência
+        </Text>
+      </group>
+
+      {/* 19 - Cobridor (outside door, south side) */}
+      <OfficerDesk position={[3, 0, 12.5]} rotation={Math.PI} title="Cobridor" name="cobridor" symbol="⚔" {...deskProps} />
+
+      {/* 11 - Guarda Interno (inside door, north side) */}
+      <OfficerDesk position={[-3, 0, 11]} rotation={Math.PI} title="Guarda Interno" name="guarda-interno" symbol="🛡" {...deskProps} />
     </group>
   );
 }

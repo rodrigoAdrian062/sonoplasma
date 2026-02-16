@@ -82,14 +82,14 @@ interface LightsProps {
 export function Lights({ onClick }: LightsProps) {
   return (
     <group>
-      {/* Sabedoria (Wisdom) - East */}
-      <Candelabra position={[2, 0, -8]} title="Sabedoria" name="light-wisdom" onClick={onClick} />
+      {/* 33 - Sabedoria (Wisdom) - East/North side */}
+      <Candelabra position={[-3, 0, -8]} title="Sabedoria" name="light-wisdom" onClick={onClick} />
 
-      {/* Força (Strength) - West */}
-      <Candelabra position={[-2, 0, 6]} title="Força" name="light-strength" onClick={onClick} />
+      {/* 33 - Força (Strength) - West/North side */}
+      <Candelabra position={[-3, 0, 6]} title="Força" name="light-strength" onClick={onClick} />
 
-      {/* Beleza (Beauty) - South */}
-      <Candelabra position={[5, 0, 2]} title="Beleza" name="light-beauty" onClick={onClick} />
+      {/* 33 - Beleza (Beauty) - South, mid-point */}
+      <Candelabra position={[3, 0, 0]} title="Beleza" name="light-beauty" onClick={onClick} />
 
       {/* Enhanced central chandelier */}
       <group position={[0, 8, 0]}>

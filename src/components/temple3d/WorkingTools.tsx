@@ -54,7 +54,7 @@ export function WorkingTools({ onClick }: WorkingToolsProps) {
       </group>
 
       {/* === Pedra Bruta (Rough Ashlar) === */}
-      <group position={[-2.5, 0, -4]} onClick={() => onClick?.('rough-ashlar')}>
+      <group position={[-4, 0, -4]} onClick={() => onClick?.('rough-ashlar')}>
         {/* Irregular rough stone */}
         <mesh position={[0, 0.2, 0]} castShadow>
           <dodecahedronGeometry args={[0.25, 0]} />
@@ -77,7 +77,7 @@ export function WorkingTools({ onClick }: WorkingToolsProps) {
       </group>
 
       {/* === Pedra Cúbica (Cubic Stone) === */}
-      <group position={[2.5, 0, -4]} onClick={() => onClick?.('cubic-stone')}>
+      <group position={[4, 0, 1]} onClick={() => onClick?.('cubic-stone')}>
         {/* Perfect cube */}
         <mesh position={[0, 0.18, 0]} castShadow>
           <boxGeometry args={[0.3, 0.3, 0.3]} />
@@ -107,7 +107,7 @@ export function WorkingTools({ onClick }: WorkingToolsProps) {
       </group>
 
       {/* === Maço e Cinzel (Mallet and Chisel) near Rough Ashlar === */}
-      <group position={[-2.5, 0.35, -3.6]} onClick={() => onClick?.('mallet-chisel')}>
+      <group position={[-4, 0.35, -3.6]} onClick={() => onClick?.('mallet-chisel')}>
         {/* Mallet head */}
         <mesh position={[0, 0.05, 0]} rotation={[0, 0.5, 0]} castShadow>
           <boxGeometry args={[0.15, 0.08, 0.08]} />

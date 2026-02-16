@@ -126,18 +126,26 @@ export function Benches({ onClick }: BenchesProps) {
   return (
     <group onClick={() => onClick?.('benches')}>
       {/* === NORTH COLUMN - Apprentices (gray) === */}
-      {/* Rows along the north wall, matching floor plan positions II-VI */}
-      <BenchRow position={[-5.5, 0, 7]} side="north" fabricTex={grayFabric} />
+      {/* Rows I-VI along the north wall */}
+      <BenchRow position={[-5.5, 0, 9]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-5.5, 0, 6.5]} side="north" fabricTex={grayFabric} />
       <BenchRow position={[-5.5, 0, 4]} side="north" fabricTex={grayFabric} />
-      <BenchRow position={[-5.5, 0, 1]} side="north" label="Aprendizes" fabricTex={grayFabric} />
-      <BenchRow position={[-5.5, 0, -2]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-5.5, 0, 1.5]} side="north" label="Aprendizes" fabricTex={grayFabric} />
+      {/* Second row of benches (32) - inner row */}
+      <BenchRow position={[-3.8, 0, 6.5]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-3.8, 0, 4]} side="north" fabricTex={grayFabric} />
+      <BenchRow position={[-3.8, 0, 1.5]} side="north" fabricTex={grayFabric} />
 
       {/* === SOUTH COLUMN - Fellows (red) === */}
-      {/* Rows along the south wall, matching floor plan positions VII-XI */}
-      <BenchRow position={[5.5, 0, 7]} side="south" fabricTex={redFabric} />
+      {/* Rows VII-XI along the south wall */}
+      <BenchRow position={[5.5, 0, 9]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[5.5, 0, 6.5]} side="south" fabricTex={redFabric} />
       <BenchRow position={[5.5, 0, 4]} side="south" fabricTex={redFabric} />
-      <BenchRow position={[5.5, 0, 1]} side="south" label="Companheiros" fabricTex={redFabric} />
-      <BenchRow position={[5.5, 0, -2]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[5.5, 0, 1.5]} side="south" label="Companheiros" fabricTex={redFabric} />
+      {/* Second row (31) - inner row */}
+      <BenchRow position={[3.8, 0, 6.5]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[3.8, 0, 4]} side="south" fabricTex={redFabric} />
+      <BenchRow position={[3.8, 0, 1.5]} side="south" fabricTex={redFabric} />
 
       {/* === MASTERS - Near East, both sides (blue) === */}
       
