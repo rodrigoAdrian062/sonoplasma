@@ -16,6 +16,7 @@ interface UseUniversalAudioPlayerReturn {
   setVolume: (value: number) => void;
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
+  seekTo: (seconds: number) => void;
 }
 
 // YouTube URL detection and ID extraction
@@ -300,6 +301,14 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     }
   }, [isYouTube]);
 
+  const seekTo = useCallback((seconds: number) => {
+    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+      ytPlayerRef.current.seekTo(seconds, true);
+    } else if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration || 0, seconds));
+    }
+  }, [isYouTube]);
+
   return {
     currentStageId,
     status,
@@ -315,5 +324,6 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
     setVolume,
     seekForward,
     seekBackward,
+    seekTo,
   };
 }
