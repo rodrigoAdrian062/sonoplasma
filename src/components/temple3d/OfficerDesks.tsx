@@ -109,43 +109,27 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
 
   return (
     <group>
-      {/* Orador (Northwest in Oriente, near balaustrade) */}
+      {/* === ORIENTE (atrás da balaustrada) === */}
+      
+      {/* Orador - Norte do Oriente, de frente para o Sul */}
       <OfficerDesk
-        position={[-3.5, 0, -10]}
+        position={[-5, 0, -9]}
         rotation={Math.PI / 2}
         title="Orador"
         name="orador"
         symbol="📖"
       />
 
-      {/* Secretário (Southeast in Oriente, near balaustrade) */}
+      {/* Secretário - Sul do Oriente, de frente para o Norte */}
       <OfficerDesk
-        position={[3.5, 0, -10]}
+        position={[5, 0, -9]}
         rotation={-Math.PI / 2}
         title="Secretário"
         name="secretario"
         symbol="✒"
       />
 
-      {/* Tesoureiro (North column, outside balaustrade) */}
-      <OfficerDesk
-        position={[-3.5, 0, -7]}
-        rotation={Math.PI / 2}
-        title="Tesoureiro"
-        name="tesoureiro"
-        symbol="🔑"
-      />
-
-      {/* Chanceler (South column, outside balaustrade) */}
-      <OfficerDesk
-        position={[3.5, 0, -7]}
-        rotation={-Math.PI / 2}
-        title="Chanceler"
-        name="chanceler"
-        symbol="⚜"
-      />
-
-      {/* Altar of Perfumes (between VM and Secretary) */}
+      {/* Altar dos Perfumes (entre VM e Secretário) */}
       <group position={[2.5, 0, -11]} onClick={() => onClick?.('altar-perfumes')}>
         <mesh position={[0, 0.35, 0]} castShadow>
           <cylinderGeometry args={[0.2, 0.25, 0.7, 16]} />
@@ -165,6 +149,82 @@ export function OfficerDesks({ onClick }: OfficerDesksProps) {
           Altar dos Perfumes
         </Text>
       </group>
+
+      {/* === COLUNA DO NORTE (fora da balaustrada) === */}
+      
+      {/* Tesoureiro - Norte, próximo à balaustrada */}
+      <OfficerDesk
+        position={[-5.5, 0, -5]}
+        rotation={Math.PI / 2}
+        title="Tesoureiro"
+        name="tesoureiro"
+        symbol="🔑"
+      />
+
+      {/* Hospitaleiro - Norte, mais ao Ocidente */}
+      <OfficerDesk
+        position={[-5.5, 0, -2]}
+        rotation={Math.PI / 2}
+        title="Hospitaleiro"
+        name="hospitaleiro"
+        symbol="💝"
+      />
+
+      {/* === COLUNA DO SUL (fora da balaustrada) === */}
+
+      {/* Chanceler - Sul, próximo à balaustrada */}
+      <OfficerDesk
+        position={[5.5, 0, -5]}
+        rotation={-Math.PI / 2}
+        title="Chanceler"
+        name="chanceler"
+        symbol="⚜"
+      />
+
+      {/* === CENTRO DO TEMPLO === */}
+
+      {/* Mestre de Cerimônias - centro, próximo ao Ocidente */}
+      <OfficerDesk
+        position={[0, 0, 6]}
+        rotation={Math.PI}
+        title="M∴ de Cerimônias"
+        name="mestre-cerimonias"
+        symbol="🗡"
+      />
+
+      {/* 1º Diácono - próximo ao 1º Vigilante (Ocidente) */}
+      <OfficerDesk
+        position={[-3, 0, 8]}
+        rotation={Math.PI}
+        title="1º Diácono"
+        name="1-diacono"
+      />
+
+      {/* 2º Diácono - próximo ao 2º Vigilante (Sul) */}
+      <OfficerDesk
+        position={[5.5, 0, 3]}
+        rotation={-Math.PI / 2}
+        title="2º Diácono"
+        name="2-diacono"
+      />
+
+      {/* Cobridor (Guarda do Templo) - na porta, Ocidente */}
+      <OfficerDesk
+        position={[3, 0, 12]}
+        rotation={Math.PI}
+        title="Cobridor"
+        name="cobridor"
+        symbol="⚔"
+      />
+
+      {/* Guarda do Templo Interno - dentro da porta */}
+      <OfficerDesk
+        position={[-3, 0, 12]}
+        rotation={Math.PI}
+        title="Guarda Interno"
+        name="guarda-interno"
+        symbol="🛡"
+      />
     </group>
   );
 }
