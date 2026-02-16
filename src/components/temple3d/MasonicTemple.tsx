@@ -28,6 +28,7 @@ interface MasonicTempleProps {
 
 export function MasonicTemple({ onClose }: MasonicTempleProps) {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [showSouthWall, setShowSouthWall] = useState(true);
 
   const handleElementClick = (elementName: string) => {
     setSelectedElement(elementName === selectedElement ? null : elementName);
@@ -138,7 +139,7 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           <Benches onClick={handleElementClick} />
           <OfficerDesks onClick={handleElementClick} />
           <CelestialVault />
-          <Walls />
+          <Walls showSouthWall={showSouthWall} />
           <Lights onClick={handleElementClick} />
           <RopeOfNodes onClick={() => handleElementClick('rope-81')} />
           <ZodiacColumns onClick={handleElementClick} />
@@ -202,6 +203,14 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
 
       {/* Ambient Sound Panel */}
       <AmbientSoundPanel />
+
+      {/* Toggle South Wall button */}
+      <button
+        onClick={() => setShowSouthWall(prev => !prev)}
+        className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
+      >
+        {showSouthWall ? '👁️ Ver Lateral' : '🧱 Fechar Lateral'}
+      </button>
 
       {/* Close button */}
       {onClose && (
