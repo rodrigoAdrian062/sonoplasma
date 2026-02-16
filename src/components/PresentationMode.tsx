@@ -449,6 +449,17 @@ export function PresentationMode({
             </Button>
           ) : (
             <>
+              {/* Restart audio */}
+              <Button
+                onClick={() => onSeekTo?.(0)}
+                size="lg"
+                variant="outline"
+                className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                title="Reiniciar música"
+              >
+                <RotateCcw size={24} />
+              </Button>
+
               {/* Seek backward */}
               <Button
                 onClick={onSeekBackward}
