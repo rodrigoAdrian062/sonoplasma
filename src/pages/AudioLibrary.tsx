@@ -12,7 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
-  Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus
+  Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
+  SkipBack, SkipForward
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -76,10 +77,58 @@ export default function AudioLibraryPage() {
   };
 
   const [isPaused, setIsPaused] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const timeUpdateRef = useRef<number | null>(null);
+
+  // Poll time for YouTube player
+  const startYtTimePolling = () => {
+    stopYtTimePolling();
+    timeUpdateRef.current = window.setInterval(() => {
+      if (ytPlayerRef.current?.getCurrentTime && ytPlayerRef.current?.getDuration) {
+        try {
+          setAudioCurrentTime(ytPlayerRef.current.getCurrentTime());
+          setAudioDuration(ytPlayerRef.current.getDuration());
+        } catch {}
+      }
+    }, 500);
+  };
+  const stopYtTimePolling = () => {
+    if (timeUpdateRef.current) {
+      clearInterval(timeUpdateRef.current);
+      timeUpdateRef.current = null;
+    }
+  };
+
+  const handleSeek = (seconds: number) => {
+    if (playingId) {
+      const currentAudio = audios.find(a => a.id === playingId);
+      if (currentAudio && isYouTubeUrl(currentAudio.audio_url) && ytPlayerRef.current) {
+        try {
+          const current = ytPlayerRef.current.getCurrentTime() || 0;
+          ytPlayerRef.current.seekTo(current + seconds, true);
+        } catch {}
+      } else if (audioElement) {
+        audioElement.currentTime = Math.max(0, Math.min(audioElement.duration || 0, audioElement.currentTime + seconds));
+      }
+    }
+  };
+
+  const handleSeekTo = (time: number) => {
+    if (playingId) {
+      const currentAudio = audios.find(a => a.id === playingId);
+      if (currentAudio && isYouTubeUrl(currentAudio.audio_url) && ytPlayerRef.current) {
+        try { ytPlayerRef.current.seekTo(time, true); } catch {}
+      } else if (audioElement) {
+        audioElement.currentTime = Math.max(0, Math.min(audioElement.duration || 0, time));
+      }
+    }
+  };
 
   const stopCurrentPlayback = (destroy = true) => {
     audioElement?.pause();
     setAudioElement(null);
+    stopYtTimePolling();
     if (ytPlayerRef.current) {
       try {
         if (destroy) {
@@ -93,6 +142,8 @@ export default function AudioLibraryPage() {
     }
     setPlayingId(null);
     setIsPaused(false);
+    setAudioCurrentTime(0);
+    setAudioDuration(0);
   };
 
   const handlePauseResume = (audio: { id: string; audio_url: string }) => {
@@ -155,6 +206,7 @@ export default function AudioLibraryPage() {
               event.target.setVolume(70);
               event.target.playVideo();
               setPlayingId(audio.id);
+              startYtTimePolling();
             },
             onStateChange: (event: any) => {
               const YT = (window as any).YT;
@@ -181,8 +233,10 @@ export default function AudioLibraryPage() {
       }
     } else {
       const newAudio = new Audio(audio.audio_url);
+      newAudio.ontimeupdate = () => { setAudioCurrentTime(newAudio.currentTime); };
+      newAudio.onloadedmetadata = () => { setAudioDuration(newAudio.duration); };
       newAudio.play();
-      newAudio.onended = () => { setPlayingId(null); setAudioElement(null); };
+      newAudio.onended = () => { setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0); };
       setAudioElement(newAudio);
       setPlayingId(audio.id);
     }
@@ -612,9 +666,21 @@ export default function AudioLibraryPage() {
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
+                    {/* Seek backward when playing */}
+                    {playingId === audio.id && (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(-10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Retroceder 10s">
+                        <SkipBack size={14} />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePauseResume(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
                       {playingId === audio.id && !isPaused ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
                     </Button>
+                    {/* Seek forward when playing */}
+                    {playingId === audio.id && (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Avançar 10s">
+                        <SkipForward size={14} />
+                      </Button>
+                    )}
                     {/* Stop button when playing */}
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); stopCurrentPlayback(); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
@@ -683,6 +749,33 @@ export default function AudioLibraryPage() {
                     </Button>
                   </div>
                 )}
+                {/* Progress bar */}
+                {playingId === audio.id && audioDuration > 0 && (
+                  <div className="w-full flex items-center gap-2 mt-2 px-1">
+                    <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+                      {formatLibTime(audioCurrentTime)}
+                    </span>
+                    <div
+                      className="flex-1 h-1.5 bg-secondary rounded-full cursor-pointer relative group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const ratio = (e.clientX - rect.left) / rect.width;
+                        handleSeekTo(ratio * audioDuration);
+                      }}
+                    >
+                      <div
+                        className="h-full bg-gold rounded-full transition-all relative"
+                        style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
+                      >
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-mono w-10">
+                      {formatLibTime(audioDuration)}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -690,4 +783,10 @@ export default function AudioLibraryPage() {
       </main>
     </div>
   );
+}
+
+function formatLibTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
