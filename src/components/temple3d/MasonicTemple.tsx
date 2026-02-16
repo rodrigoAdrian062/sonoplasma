@@ -19,6 +19,7 @@ import { GradePanel } from './GradePanel';
 import { OfficerDesks } from './OfficerDesks';
 import { WorkingTools } from './WorkingTools';
 import { StainedGlassWindows } from './StainedGlassWindows';
+import { AmbientSoundPanel } from './AmbientSoundPanel';
 
 interface MasonicTempleProps {
   onClose?: () => void;
@@ -135,6 +136,9 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
         <p>• Clique nos elementos para informações</p>
         <p className="mt-1 text-primary">81 Nós • 12 Colunas Zodiacais • Ferramentas de Trabalho</p>
       </div>
+
+      {/* Ambient Sound Panel */}
+      <AmbientSoundPanel />
 
       {/* Close button */}
       {onClose && (
