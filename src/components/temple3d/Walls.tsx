@@ -231,87 +231,87 @@ export function Walls({ showSouthWall = true }: WallsProps) {
         </mesh>
       )}
 
-      {/* West Wall - split for door opening */}
+      {/* West Wall - split for door opening (wider door ~5m) */}
       {/* Left section */}
-      <mesh position={[-(roomWidth / 2 + 1.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
-        <boxGeometry args={[(roomWidth / 2 - 1.5), wallHeight, 0.3]} />
+      <mesh position={[-(roomWidth / 2 + 2.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
+        <boxGeometry args={[(roomWidth / 2 - 2.5), wallHeight, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
       {/* Right section */}
-      <mesh position={[(roomWidth / 2 + 1.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
-        <boxGeometry args={[(roomWidth / 2 - 1.5), wallHeight, 0.3]} />
+      <mesh position={[(roomWidth / 2 + 2.5) / 2, wallHeight / 2, roomLength / 2]} castShadow receiveShadow>
+        <boxGeometry args={[(roomWidth / 2 - 2.5), wallHeight, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
       {/* Above door */}
-      <mesh position={[0, wallHeight - 1, roomLength / 2]} castShadow receiveShadow>
-        <boxGeometry args={[3.2, 2, 0.3]} />
+      <mesh position={[0, wallHeight - 0.5, roomLength / 2]} castShadow receiveShadow>
+        <boxGeometry args={[5.2, 1, 0.3]} />
         <meshStandardMaterial map={wallTexture} roughness={0.7} />
       </mesh>
 
       {/* Door frame - ornate wood */}
-      <mesh position={[-1.55, 3.5, roomLength / 2]} castShadow>
-        <boxGeometry args={[0.2, 7, 0.35]} />
+      <mesh position={[-2.55, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
+        <boxGeometry args={[0.25, wallHeight - 1, 0.35]} />
         <meshStandardMaterial color="#3a2515" roughness={0.7} />
       </mesh>
-      <mesh position={[1.55, 3.5, roomLength / 2]} castShadow>
-        <boxGeometry args={[0.2, 7, 0.35]} />
+      <mesh position={[2.55, wallHeight / 2 - 0.5, roomLength / 2]} castShadow>
+        <boxGeometry args={[0.25, wallHeight - 1, 0.35]} />
         <meshStandardMaterial color="#3a2515" roughness={0.7} />
       </mesh>
       {/* Arch/lintel */}
-      <mesh position={[0, 7, roomLength / 2]} castShadow>
-        <boxGeometry args={[3.3, 0.3, 0.35]} />
+      <mesh position={[0, wallHeight - 1, roomLength / 2]} castShadow>
+        <boxGeometry args={[5.3, 0.3, 0.35]} />
         <meshStandardMaterial color="#3a2515" roughness={0.7} />
       </mesh>
       {/* Gold trim on arch */}
-      <mesh position={[0, 6.82, roomLength / 2 + 0.15]}>
-        <boxGeometry args={[3.1, 0.08, 0.05]} />
+      <mesh position={[0, wallHeight - 1.18, roomLength / 2 + 0.15]}>
+        <boxGeometry args={[5.1, 0.08, 0.05]} />
         <meshStandardMaterial color="#d4af37" roughness={0.2} metalness={0.85} />
       </mesh>
 
-      {/* Door panels - two leaves, slightly open */}
+      {/* Door panels - two large leaves, slightly open */}
       {/* Left door leaf */}
-      <group position={[-1.4, 3.3, roomLength / 2]} rotation={[0, 0.15, 0]}>
+      <group position={[-2.4, (wallHeight - 1) / 2 - 0.5, roomLength / 2]} rotation={[0, 0.12, 0]}>
         <mesh castShadow>
-          <boxGeometry args={[1.3, 6.4, 0.1]} />
+          <boxGeometry args={[2.2, wallHeight - 1.5, 0.1]} />
           <meshStandardMaterial color="#2a1810" roughness={0.65} />
         </mesh>
         {/* Panel insets */}
-        {[-1.6, 0.8].map((y, i) => (
+        {[-2, 0, 2].map((y, i) => (
           <mesh key={i} position={[0, y, 0.055]}>
-            <boxGeometry args={[0.9, 2, 0.02]} />
+            <boxGeometry args={[1.6, 1.5, 0.02]} />
             <meshStandardMaterial color="#1e1008" roughness={0.7} />
           </mesh>
         ))}
         {/* Handle */}
-        <mesh position={[0.5, 0, 0.08]}>
-          <sphereGeometry args={[0.06, 12, 12]} />
+        <mesh position={[0.9, 0, 0.08]}>
+          <sphereGeometry args={[0.08, 12, 12]} />
           <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
         </mesh>
         {/* Decorative knocker ring */}
-        <mesh position={[0.5, 0.3, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.06, 0.012, 8, 16, Math.PI]} />
+        <mesh position={[0.9, 0.4, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} />
           <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
         </mesh>
       </group>
 
       {/* Right door leaf */}
-      <group position={[1.4, 3.3, roomLength / 2]} rotation={[0, -0.15, 0]}>
+      <group position={[2.4, (wallHeight - 1) / 2 - 0.5, roomLength / 2]} rotation={[0, -0.12, 0]}>
         <mesh castShadow>
-          <boxGeometry args={[1.3, 6.4, 0.1]} />
+          <boxGeometry args={[2.2, wallHeight - 1.5, 0.1]} />
           <meshStandardMaterial color="#2a1810" roughness={0.65} />
         </mesh>
-        {[-1.6, 0.8].map((y, i) => (
+        {[-2, 0, 2].map((y, i) => (
           <mesh key={i} position={[0, y, 0.055]}>
-            <boxGeometry args={[0.9, 2, 0.02]} />
+            <boxGeometry args={[1.6, 1.5, 0.02]} />
             <meshStandardMaterial color="#1e1008" roughness={0.7} />
           </mesh>
         ))}
-        <mesh position={[-0.5, 0, 0.08]}>
-          <sphereGeometry args={[0.06, 12, 12]} />
+        <mesh position={[-0.9, 0, 0.08]}>
+          <sphereGeometry args={[0.08, 12, 12]} />
           <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
         </mesh>
-        <mesh position={[-0.5, 0.3, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.06, 0.012, 8, 16, Math.PI]} />
+        <mesh position={[-0.9, 0.4, 0.08]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} />
           <meshStandardMaterial color="#d4af37" roughness={0.25} metalness={0.8} />
         </mesh>
       </group>
