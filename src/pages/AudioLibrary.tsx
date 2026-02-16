@@ -75,27 +75,52 @@ export default function AudioLibraryPage() {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const stopCurrentPlayback = () => {
+  const [isPaused, setIsPaused] = useState(false);
+
+  const stopCurrentPlayback = (destroy = true) => {
     audioElement?.pause();
     setAudioElement(null);
     if (ytPlayerRef.current) {
       try {
-        ytPlayerRef.current.stopVideo();
-        ytPlayerRef.current.destroy();
+        if (destroy) {
+          ytPlayerRef.current.stopVideo();
+          ytPlayerRef.current.destroy();
+          ytPlayerRef.current = null;
+          const container = document.getElementById('yt-library-player-container');
+          if (container) container.remove();
+        }
       } catch {}
-      ytPlayerRef.current = null;
     }
-    const container = document.getElementById('yt-library-player-container');
-    if (container) container.remove();
     setPlayingId(null);
+    setIsPaused(false);
+  };
+
+  const handlePauseResume = (audio: { id: string; audio_url: string }) => {
+    if (playingId === audio.id && !isPaused) {
+      // Pause
+      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+        try { ytPlayerRef.current.pauseVideo(); } catch {}
+      } else if (audioElement) {
+        audioElement.pause();
+      }
+      setIsPaused(true);
+      return;
+    }
+    if (playingId === audio.id && isPaused) {
+      // Resume
+      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+        try { ytPlayerRef.current.playVideo(); } catch {}
+      } else if (audioElement) {
+        audioElement.play();
+      }
+      setIsPaused(false);
+      return;
+    }
+    // Play new
+    handlePlay(audio);
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (playingId === audio.id) {
-      stopCurrentPlayback();
-      return;
-    }
-
     stopCurrentPlayback();
 
     if (isYouTubeUrl(audio.audio_url)) {
@@ -587,9 +612,15 @@ export default function AudioLibraryPage() {
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePlay(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
-                      {playingId === audio.id ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePauseResume(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
+                      {playingId === audio.id && !isPaused ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
                     </Button>
+                    {/* Stop button when playing */}
+                    {playingId === audio.id && (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); stopCurrentPlayback(); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
+                        <X size={16} />
+                      </Button>
+                    )}
                     {/* Add to stage */}
                     {stages.length > 0 && (
                       <DropdownMenu>
