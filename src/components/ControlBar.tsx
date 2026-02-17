@@ -4,7 +4,6 @@ import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
 import { EqualizerPanel } from './EqualizerPanel';
 import { ElegantClock } from './ElegantClock';
-import { SessionStopwatch } from './SessionStopwatch';
 import { Button } from '@/components/ui/button';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
@@ -42,8 +41,8 @@ export function ControlBar({
   return (
     <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container py-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border-primary rounded-lg opacity-100 border-4">
-          <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <VolumeControl volume={volume} onVolumeChange={onVolumeChange} className="border" />
           <AudioIndicator
             stageName={activeStage?.symbolicName || null}
             isPlaying={isPlaying} />
@@ -59,9 +58,8 @@ export function ControlBar({
               <SlidersHorizontal size={18} />
             </Button>
           }
-          <div className="ml-auto sm:ml-0 flex items-center gap-2">
+          <div className="ml-auto sm:ml-0">
             <ElegantClock size="md" />
-            <SessionStopwatch />
           </div>
         </div>
         {/* EQ Panel */}
