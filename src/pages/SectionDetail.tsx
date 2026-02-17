@@ -2,6 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import sectionBanner from '@/assets/section-banner.png';
 import { useParams, useNavigate } from 'react-router-dom';
+import { SlidersHorizontal } from 'lucide-react';
+import { VolumeControl } from '@/components/VolumeControl';
+import { ElegantClock } from '@/components/ElegantClock';
+import { EqualizerPanel } from '@/components/EqualizerPanel';
 import {
   DndContext,
   closestCenter,
@@ -19,7 +23,6 @@ import {
 } from '@dnd-kit/sortable';
 import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
 import { SortableStageCard } from '@/components/SortableStageCard';
-import { ControlBar } from '@/components/ControlBar';
 import { PresentationMode } from '@/components/PresentationMode';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
@@ -32,6 +35,12 @@ import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { Button } from '@/components/ui/button';
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
 
 const SectionDetail = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -65,6 +74,7 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [showEQ, setShowEQ] = useState(false);
 
   const section = useMemo(() => {
     // sectionId can be "slug-shortid" format, extract the short ID (last 8 chars after last dash)
@@ -199,7 +209,7 @@ const SectionDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header with integrated controls */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container px-3 sm:px-4 py-2">
           <div className="flex items-center gap-3">
@@ -207,58 +217,112 @@ const SectionDetail = () => {
               onClick={() => navigate('/')}
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0"
+              className="text-muted-foreground hover:text-foreground h-8 w-8 shrink-0"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </Button>
-            <div className="p-2 bg-gold/10 rounded-lg shrink-0">
-              <CeremonyIcon name={section.icone || 'folder'} size={22} className="text-gold" />
+            <div className="p-1.5 bg-gold/10 rounded-lg shrink-0">
+              <CeremonyIcon name={section.icone || 'folder'} size={18} className="text-gold" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="font-display text-lg sm:text-2xl font-semibold text-foreground truncate">
+              <h1 className="font-display text-sm sm:text-lg font-semibold text-foreground truncate">
                 {section.nome}
               </h1>
-              {section.descricao && (
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                  {section.descricao}
-                </p>
-              )}
             </div>
+
+            {/* Inline controls */}
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <VolumeControl volume={volume} onVolumeChange={setVolume} />
+              {eq && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowEQ(!showEQ)}
+                  className={`h-8 w-8 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+                  title="Equalizador"
+                >
+                  <SlidersHorizontal size={16} />
+                </Button>
+              )}
+              <ElegantClock size="sm" />
+            </div>
+
             {sectionStages.length > 0 && (
               <Button
                 onClick={() => setIsPresentationMode(true)}
                 size="sm"
-                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0 h-8"
                 variant="outline"
               >
-                <Presentation size={16} />
-                <span className="hidden sm:inline">Apresentar</span>
+                <Presentation size={14} />
+                <span className="hidden sm:inline text-xs">Apresentar</span>
               </Button>
             )}
             <Button
               onClick={() => setIsNewStageModal(true)}
               size="sm"
-              className="gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50 shrink-0"
+              className="gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50 shrink-0 h-8"
               variant="outline"
             >
-              <Plus size={16} />
-              <span className="hidden sm:inline">Nova Etapa</span>
+              <Plus size={14} />
+              <span className="hidden sm:inline text-xs">Nova Etapa</span>
             </Button>
           </div>
+
+          {/* Mobile controls row */}
+          <div className="flex sm:hidden items-center gap-2 mt-2">
+            <VolumeControl volume={volume} onVolumeChange={setVolume} />
+            {eq && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEQ(!showEQ)}
+                className={`h-8 w-8 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+                title="Equalizador"
+              >
+                <SlidersHorizontal size={16} />
+              </Button>
+            )}
+            <div className="ml-auto">
+              <ElegantClock size="sm" />
+            </div>
+          </div>
+
+          {/* EQ Panel */}
+          {showEQ && eq && (
+            <div className="mt-2 animate-fade-in">
+              <EqualizerPanel eq={eq} onEQChange={setEQ} />
+            </div>
+          )}
+
+          {/* Progress bar */}
+          {activeStage && duration > 0 && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+                {formatTime(currentTime)}
+              </span>
+              <div
+                className="flex-1 h-1 bg-secondary rounded-full cursor-pointer relative group"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = (e.clientX - rect.left) / rect.width;
+                  seekTo(ratio * duration);
+                }}
+              >
+                <div
+                  className="h-full bg-gold rounded-full transition-all relative"
+                  style={{ width: `${(currentTime / duration) * 100}%` }}
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+              <span className="text-[10px] text-muted-foreground font-mono w-10">
+                {formatTime(duration)}
+              </span>
+            </div>
+          )}
         </div>
       </header>
-
-      <ControlBar
-        volume={volume}
-        onVolumeChange={setVolume}
-        activeStage={activeStage ? { symbolicName: activeStage.nome_simbolico } : null}
-        isPlaying={status === 'playing'}
-        currentTime={currentTime}
-        duration={duration}
-        onSeekTo={seekTo}
-        eq={eq}
-        onEQChange={setEQ}
-      />
 
       <main className="container px-3 sm:px-4 py-4 sm:py-6">
         {/* Banner da seção */}
