@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, FolderPlus, Type, FileText } from 'lucide-react';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { suggestIconForName } from '@/types/ceremony';
-import { CeremonyIcon } from './icons/CeremonyIcon';
+import { IconPicker } from './IconPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,26 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-
-const SECTION_ICONS = [
-  { value: 'folder', label: 'Pasta' },
-  { value: 'star', label: 'Estrela' },
-  { value: 'book-open', label: 'Livro' },
-  { value: 'flame', label: 'Chama' },
-  { value: 'compass', label: 'Compasso' },
-  { value: 'eye', label: 'Olho' },
-  { value: 'sun', label: 'Sol' },
-  { value: 'moon', label: 'Lua' },
-  { value: 'graduation-cap', label: 'Aprendiz' },
-  { value: 'hammer', label: 'Companheiro' },
-  { value: 'crown', label: 'Mestre' },
-  { value: 'church', label: 'Templo' },
-  { value: 'scroll', label: 'Pergaminho' },
-  { value: 'shield', label: 'Escudo' },
-  { value: 'heart', label: 'Coração' },
-  { value: 'users', label: 'Irmãos' },
-];
 
 interface SectionEditModalProps {
   section: CeremonySection | null;
@@ -56,6 +36,7 @@ export function SectionEditModal({
     nome: '',
     descricao: '',
     icone: 'folder',
+    icone_url: null as string | null,
   });
 
   useEffect(() => {
@@ -64,12 +45,14 @@ export function SectionEditModal({
         nome: section.nome,
         descricao: section.descricao || '',
         icone: section.icone || 'folder',
+        icone_url: (section as any).icone_url || null,
       });
     } else if (isNew) {
       setFormData({
         nome: '',
         descricao: '',
         icone: 'folder',
+        icone_url: null,
       });
     }
   }, [section, isNew, isOpen]);
@@ -80,15 +63,16 @@ export function SectionEditModal({
       return;
     }
 
-    const data: CeremonySectionInsert | CeremonySectionUpdate = {
+    const data: any = {
       nome: formData.nome,
       descricao: formData.descricao || null,
       icone: formData.icone,
+      icone_url: formData.icone_url,
     };
 
     if (isNew) {
-      (data as CeremonySectionInsert).ordem = existingSectionsCount + 1;
-      (data as CeremonySectionInsert).ativo = true;
+      data.ordem = existingSectionsCount + 1;
+      data.ativo = true;
     }
 
     onSave(data);
@@ -97,7 +81,7 @@ export function SectionEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-w-md w-[calc(100%-1rem)] sm:w-full">
+      <DialogContent className="bg-card border-border max-w-md w-[calc(100%-1rem)] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
@@ -145,46 +129,13 @@ export function SectionEditModal({
             />
           </div>
 
-          {/* Icon Selection */}
-          <div className="space-y-2">
-            <Label>Ícone</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {SECTION_ICONS.map((icon) => (
-                <button
-                  key={icon.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, icone: icon.value })}
-                  className={cn(
-                    'flex flex-col items-center gap-1 p-3 rounded-lg border transition-all',
-                    formData.icone === icon.value
-                      ? 'bg-gold/20 border-gold text-gold'
-                      : 'bg-secondary border-border text-muted-foreground hover:border-gold/50'
-                  )}
-                >
-                  <CeremonyIcon name={icon.value} size={20} />
-                  <span className="text-[10px]">{icon.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Preview */}
-          {formData.nome && (
-            <div className="bg-secondary/30 rounded-xl p-4 border border-border/50 animate-fade-in">
-              <p className="text-xs text-muted-foreground mb-2">Prévia:</p>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gold/10 rounded-lg">
-                  <CeremonyIcon name={formData.icone} size={20} className="text-gold" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{formData.nome}</p>
-                  {formData.descricao && (
-                    <p className="text-xs text-muted-foreground truncate">{formData.descricao}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Icon Selection - using IconPicker */}
+          <IconPicker
+            selectedIcon={formData.icone}
+            iconUrl={formData.icone_url}
+            onIconChange={(icon) => setFormData({ ...formData, icone: icon })}
+            onIconUrlChange={(url) => setFormData({ ...formData, icone_url: url })}
+          />
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

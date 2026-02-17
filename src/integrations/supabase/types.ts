@@ -247,6 +247,7 @@ export type Database = {
           created_at: string
           descricao: string | null
           icone: string | null
+          icone_url: string | null
           id: string
           nome: string
           ordem: number
@@ -257,6 +258,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           icone?: string | null
+          icone_url?: string | null
           id?: string
           nome: string
           ordem?: number
@@ -267,6 +269,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           icone?: string | null
+          icone_url?: string | null
           id?: string
           nome?: string
           ordem?: number

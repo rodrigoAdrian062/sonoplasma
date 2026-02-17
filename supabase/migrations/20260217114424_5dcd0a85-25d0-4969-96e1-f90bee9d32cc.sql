@@ -1,0 +1,1 @@
+ALTER TABLE public.sonoplastia_secoes ADD COLUMN icone_url text DEFAULT NULL;
