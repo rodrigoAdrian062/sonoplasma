@@ -113,11 +113,15 @@ const Index = () => {
                   >
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2.5 sm:p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl transition-colors duration-300">
-                        <CeremonyIcon
-                          name={section.icone || 'folder'}
-                          size={24}
-                          className="text-gold"
-                        />
+                        {section.icone_url ? (
+                          <img src={section.icone_url} alt={section.nome} className="w-6 h-6 object-cover rounded" />
+                        ) : (
+                          <CeremonyIcon
+                            name={section.icone || 'folder'}
+                            size={24}
+                            className="text-gold"
+                          />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">
