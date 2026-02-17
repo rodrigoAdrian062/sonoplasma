@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
@@ -103,10 +103,13 @@ export function StageCard({
     onResume();
   };
 
+  const prevActiveRef = useRef(false);
   useEffect(() => {
-    if (!isPlaying && !isPaused && timer.isRunning) {
+    // Only reset timer when transitioning from active to idle (not on initial mount)
+    if (prevActiveRef.current && !isPlaying && !isPaused && timer.isRunning) {
       timer.reset();
     }
+    prevActiveRef.current = isPlaying || isPaused;
   }, [isPlaying, isPaused]);
 
   const handleTimeChange = (minutes: number) => {
