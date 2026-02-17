@@ -31,7 +31,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   return (
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container py-4">
+        <div className="container py-2">
           {/* Mobile: Logo centered at top */}
           <div className="flex flex-col items-center gap-3 sm:hidden">
             <div className="flex flex-col items-center gap-2">
