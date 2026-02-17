@@ -4,6 +4,7 @@ import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
 import { EqualizerPanel } from './EqualizerPanel';
 import { ElegantClock } from './ElegantClock';
+import { SessionStopwatch } from './SessionStopwatch';
 import { Button } from '@/components/ui/button';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
@@ -58,7 +59,8 @@ export function ControlBar({
               <SlidersHorizontal size={18} />
             </Button>
           }
-          <div className="ml-auto sm:ml-0">
+          <div className="ml-auto flex items-center gap-2">
+            <SessionStopwatch />
             <ElegantClock size="md" />
           </div>
         </div>
