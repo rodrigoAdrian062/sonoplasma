@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
+import { SessionStopwatch } from './SessionStopwatch';
 import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
@@ -264,6 +265,7 @@ export function PresentationMode({
           <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate hidden sm:block">
             {settings?.nome_app || 'Apresentação'}
           </span>
+          <SessionStopwatch />
           <ElegantClock size="sm" />
         </div>
         
