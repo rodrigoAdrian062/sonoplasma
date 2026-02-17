@@ -300,13 +300,6 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
       const audio = audioRef.current;
       if (!audio) return;
 
-      // If resuming same audio
-      if (currentUrlRef.current === url && status === 'paused') {
-        audio.play();
-        setStatus('playing');
-        return;
-      }
-
       currentUrlRef.current = url;
       audio.src = url;
       audio.volume = volume;
@@ -316,7 +309,7 @@ export function useUniversalAudioPlayer(): UseUniversalAudioPlayerReturn {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [status, volume, stopCurrentPlayback, createYouTubePlayer]);
+  }, [volume, stopCurrentPlayback, createYouTubePlayer]);
 
   const pause = useCallback(() => {
     if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
