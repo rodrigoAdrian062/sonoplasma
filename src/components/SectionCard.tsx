@@ -57,8 +57,12 @@ export function SectionCard({
           {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
         </button>
         
-        <div className="p-2 bg-gold/10 rounded-lg">
-          <CeremonyIcon name={section.icone || 'folder'} size={20} className="text-gold" />
+        <div className="p-2 bg-gold/10 rounded-lg overflow-hidden">
+          {(section as any).icone_url ? (
+            <img src={(section as any).icone_url} alt={section.nome} className="w-5 h-5 object-cover rounded" />
+          ) : (
+            <CeremonyIcon name={section.icone || 'folder'} size={20} className="text-gold" />
+          )}
         </div>
         
         <div className="flex-1 min-w-0">
