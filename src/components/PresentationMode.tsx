@@ -74,7 +74,6 @@ export function PresentationMode({
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [showEQ, setShowEQ] = useState(false);
-  const [pendingPause, setPendingPause] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const { formatted: clockTime } = useClock();
 
@@ -99,15 +98,8 @@ export function PresentationMode({
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
 
-  useEffect(() => {
-    if (pendingPause && isPlaying) {
-      onPause();
-      if (timer.isRunning) {
-        timer.pause();
-      }
-      setPendingPause(false);
-    }
-  }, [pendingPause, isPlaying]);
+
+
 
   useEffect(() => {
     if (!isActive && timer.isRunning) {
@@ -202,7 +194,6 @@ export function PresentationMode({
     if (!currentAudio || !currentStage) return;
     if (useTimerEnabled && customTime > 0) timer.start(customTime);
     onPlay(currentStage.id, currentAudio.audio_url);
-    setPendingPause(true);
   };
 
   const handlePause = () => {
