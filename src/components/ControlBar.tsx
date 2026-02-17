@@ -41,7 +41,7 @@ export function ControlBar({
   return (
     <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container py-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mx-[25px] my-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border-primary rounded-lg opacity-100 border-4">
           <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
           <AudioIndicator
             stageName={activeStage?.symbolicName || null}
