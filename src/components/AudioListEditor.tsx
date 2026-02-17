@@ -22,7 +22,7 @@ interface AudioListEditorProps {
 
 type InputMode = 'upload' | 'youtube' | 'library';
 
-export function AudioListEditor({ audios, onChange, maxAudios = 5 }: AudioListEditorProps) {
+export function AudioListEditor({ audios, onChange, maxAudios = 15 }: AudioListEditorProps) {
   const navigate = useNavigate();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
