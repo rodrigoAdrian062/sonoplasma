@@ -67,11 +67,9 @@ export function StageCard({
   }, [defaultTime]);
 
   useEffect(() => {
-    // Reset selected audio when audios change
     if (selectedAudioIndex >= audios.length) {
       setSelectedAudioIndex(0);
     }
-    // Auto-expand list when 5+ audios
     if (audios.length >= 5) {
       setShowAudioList(true);
     }
@@ -145,106 +143,109 @@ export function StageCard({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-lg border transition-all duration-300',
+        'relative overflow-hidden rounded-xl border transition-all duration-300',
         isActive 
-          ? 'bg-card-active border-gold/30 shadow-active' 
-          : 'bg-card border-border hover:border-gold/20 shadow-card'
+          ? 'bg-card border-gold/40 shadow-[0_0_20px_-4px_hsl(var(--gold)/0.15)]' 
+          : 'bg-card border-border/60 hover:border-gold/20'
       )}
     >
+      {/* Active indicator line */}
       {isActive && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="p-3 sm:p-5">
-        {/* Header */}
-        <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+      <div className="p-3 sm:p-4">
+        {/* Header row - icon, name, actions */}
+        <div className="flex items-center gap-3 mb-2.5">
           <div
             className={cn(
-              'p-2 sm:p-3 rounded-lg transition-colors duration-300',
-              isActive ? 'bg-gold/20 text-gold' : 'bg-secondary text-muted-foreground'
+              'shrink-0 rounded-lg overflow-hidden transition-colors duration-300',
+              isActive ? 'bg-gold/15' : 'bg-secondary/80',
+              (stage as any).icone_url ? 'p-0.5' : 'p-2'
             )}
           >
-            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 40 : 20} />
+            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="font-display text-base sm:text-xl font-medium text-foreground mb-1">
-                {stage.nome_simbolico}
-              </h3>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={onEdit}
-                  className="p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
-                  aria-label="Editar etapa"
-                >
-                  <Pencil size={16} />
-                </button>
-                <button
-                  onClick={onDelete}
-                  className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-secondary"
-                  aria-label="Remover etapa"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {stage.descricao}
-            </p>
+            <h3 className="font-display text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
+              {stage.nome_simbolico}
+            </h3>
+            {stage.descricao && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {stage.descricao}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              onClick={onEdit}
+              className="p-1.5 text-muted-foreground/60 hover:text-gold transition-colors rounded-md hover:bg-gold/10"
+              aria-label="Editar etapa"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 text-muted-foreground/60 hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"
+              aria-label="Remover etapa"
+            >
+              <Trash2 size={14} />
+            </button>
           </div>
         </div>
 
-        {/* Audio Selector */}
+        {/* Audio selector */}
         {hasAudios ? (
-          <div className="mb-3 sm:mb-4">
+          <div className="mb-2.5">
             <button
               onClick={() => setShowAudioList(!showAudioList)}
               className={cn(
-                'w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left',
+                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-all text-left',
                 isActive
-                  ? 'bg-gold/10 border-gold/30 text-gold'
-                  : 'bg-secondary border-border text-foreground hover:border-gold/30'
+                  ? 'bg-gold/8 border-gold/25 text-gold'
+                  : 'bg-secondary/50 border-border/40 text-foreground hover:border-gold/25'
               )}
             >
-              <Music size={16} className="text-gold shrink-0" />
+              <Music size={14} className="text-gold/70 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
+                <p className="text-xs font-medium truncate">
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
                 </p>
                 {audios.length > 1 && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground/70">
                     {selectedAudioIndex + 1} de {audios.length} áudios
                   </p>
                 )}
               </div>
               {audios.length > 1 && (
-                showAudioList ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+                showAudioList ? <ChevronUp size={14} className="text-muted-foreground/60" /> : <ChevronDown size={14} className="text-muted-foreground/60" />
               )}
             </button>
 
-            {/* Audio List Dropdown */}
+            {/* Audio list */}
             {showAudioList && (
-              <div className="mt-2 rounded-lg border border-border bg-card overflow-hidden animate-fade-in">
+              <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden">
                 {audios.map((audio, index) => (
                   <div
                     key={audio.id}
                     onClick={() => handleSelectAudio(index)}
                     className={cn(
-                      'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors cursor-pointer',
+                      'w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer',
                       index === selectedAudioIndex
                         ? 'bg-gold/10 text-gold'
-                        : 'hover:bg-secondary text-foreground'
+                        : 'hover:bg-secondary/60 text-foreground'
                     )}
                   >
-                    <Music size={14} className={index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground'} />
-                    <span className="text-sm truncate flex-1">{audio.nome || `Áudio ${index + 1}`}</span>
+                    <Music size={12} className={index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50'} />
+                    <span className="text-xs truncate flex-1">{audio.nome || `Áudio ${index + 1}`}</span>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
-                      className="p-1 text-muted-foreground hover:text-destructive transition-colors rounded hover:bg-destructive/10"
+                      className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10"
                       title="Remover áudio"
                     >
-                      <X size={14} />
+                      <X size={12} />
                     </button>
                   </div>
                 ))}
@@ -252,22 +253,23 @@ export function StageCard({
             )}
           </div>
         ) : (
-          <p className="text-xs text-gold/60 mb-3 sm:mb-4 flex items-center gap-1">
-            <Music size={12} />
+          <p className="text-[10px] text-muted-foreground/50 mb-2.5 flex items-center gap-1">
+            <Music size={10} />
             Sem áudio configurado
           </p>
         )}
 
-        {/* Timer Section */}
-        <div className="flex flex-col gap-3 mb-3 sm:mb-4">
-          <div className="flex items-center gap-2">
-            <Clock size={16} className="text-muted-foreground" />
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        {/* Timer + Controls row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Timer inline */}
+          <div className="flex items-center gap-1.5 mr-auto">
+            <Clock size={13} className="text-muted-foreground/50" />
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
               <input
                 type="checkbox"
                 checked={useTimerEnabled}
                 onChange={(e) => setUseTimerEnabled(e.target.checked)}
-                className="rounded border-border bg-secondary text-gold focus:ring-gold"
+                className="rounded border-border bg-secondary text-gold focus:ring-gold w-3.5 h-3.5"
               />
               Cronômetro
             </label>
@@ -279,120 +281,116 @@ export function StageCard({
                   max="60"
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                  className="w-16 px-2 py-1 text-sm bg-secondary border border-border rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
                 />
-                <span className="text-sm text-muted-foreground">min</span>
+                <span className="text-xs text-muted-foreground/60">min</span>
               </>
             )}
+            {(timer.isRunning || timer.isPaused) && (
+              <div className="flex items-center gap-1 ml-1">
+                <TimerDisplay 
+                  seconds={timer.timeRemaining} 
+                  isActive={timer.isRunning && !timer.isPaused}
+                  size="sm"
+                />
+                <button
+                  onClick={() => timer.reset()}
+                  className="p-0.5 text-muted-foreground hover:text-gold transition-colors"
+                  aria-label="Resetar cronômetro"
+                >
+                  <RotateCcw size={12} />
+                </button>
+              </div>
+            )}
           </div>
-
-          {(timer.isRunning || timer.isPaused) && (
-            <div className="flex items-center gap-2">
-              <TimerDisplay 
-                seconds={timer.timeRemaining} 
-                isActive={timer.isRunning && !timer.isPaused}
-                size="md"
-              />
-              <button
-                onClick={() => timer.reset()}
-                className="p-1 text-muted-foreground hover:text-gold transition-colors"
-                aria-label="Resetar cronômetro"
-              >
-                <RotateCcw size={16} />
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-2">
+        {/* Play / Control buttons */}
+        <div className="flex items-center gap-1.5 mt-2.5">
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
               disabled={!hasAudios}
               className={cn(
-                'flex-1 gap-2 text-sm font-semibold h-10 rounded-lg shadow-sm transition-all duration-200',
+                'flex-1 gap-2 text-xs font-semibold h-9 rounded-lg transition-all duration-200',
                 hasAudios 
-                  ? 'bg-gold hover:bg-gold/90 text-background border-none shadow-gold/30 hover:shadow-gold/50 hover:shadow-lg' 
+                  ? 'bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/20' 
                   : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
             >
-              <Play size={18} fill="currentColor" />
-              <span>Iniciar</span>
+              <Play size={15} fill="currentColor" />
+              Iniciar
             </Button>
           ) : (
             <>
-              {/* Restart audio */}
               <Button
                 onClick={() => onSeekTo?.(0)}
                 size="icon"
-                variant="outline"
-                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
                 title="Reiniciar música"
               >
-                <RotateCw size={16} />
+                <RotateCw size={14} />
               </Button>
 
-              {/* Seek backward */}
               <Button
                 onClick={onSeekBackward}
                 size="icon"
-                variant="outline"
-                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
                 title="Retroceder 10s"
               >
-                <SkipBack size={16} />
+                <SkipBack size={14} />
               </Button>
 
               {isPlaying ? (
                 <Button
                   onClick={handlePause}
-                  className="flex-1 gap-2 text-sm font-semibold h-10 rounded-lg bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/30"
+                  className="flex-1 gap-1.5 text-xs font-semibold h-9 rounded-lg bg-gold hover:bg-gold/90 text-background border-none"
                 >
-                  <Pause size={18} fill="currentColor" />
-                  <span>Pausar</span>
+                  <Pause size={15} fill="currentColor" />
+                  Pausar
                 </Button>
               ) : (
                 <Button
                   onClick={handleResume}
-                  className="flex-1 gap-2 text-sm font-semibold h-10 rounded-lg bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/30"
+                  className="flex-1 gap-1.5 text-xs font-semibold h-9 rounded-lg bg-gold hover:bg-gold/90 text-background border-none"
                 >
-                  <Play size={18} fill="currentColor" />
-                  <span>Continuar</span>
+                  <Play size={15} fill="currentColor" />
+                  Continuar
                 </Button>
               )}
 
-              {/* Seek forward */}
               <Button
                 onClick={onSeekForward}
                 size="icon"
-                variant="outline"
-                className="h-10 w-10 rounded-lg bg-secondary border-border text-muted-foreground hover:text-gold hover:border-gold/30"
+                variant="ghost"
+                className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
                 title="Avançar 10s"
               >
-                <SkipForward size={16} />
+                <SkipForward size={14} />
               </Button>
 
               <Button
                 onClick={handleStop}
-                className="gap-2 h-10 rounded-lg bg-destructive/15 hover:bg-destructive/25 text-destructive border border-destructive/30 hover:border-destructive/50 font-semibold text-sm"
-                variant="outline"
+                variant="ghost"
+                className="gap-1.5 h-8 px-2.5 text-xs text-destructive/80 hover:text-destructive hover:bg-destructive/10"
               >
-                <Square size={16} fill="currentColor" />
-                <span>Parar</span>
+                <Square size={13} fill="currentColor" />
+                Parar
               </Button>
             </>
           )}
         </div>
 
-        {/* Audio Progress Bar */}
+        {/* Audio progress bar */}
         {isActive && audioDuration > 0 && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+          <div className="mt-2 flex items-center gap-1.5">
+            <span className="text-[9px] text-muted-foreground/60 font-mono w-8 text-right">
               {formatTime(audioCurrentTime)}
             </span>
             <div
-              className="flex-1 h-1.5 bg-secondary rounded-full cursor-pointer relative group"
+              className="flex-1 h-1 bg-secondary/80 rounded-full cursor-pointer relative group"
               onClick={(e) => {
                 if (!onSeekTo) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -401,13 +399,13 @@ export function StageCard({
               }}
             >
               <div
-                className="h-full bg-gold rounded-full transition-all relative"
+                className="h-full bg-gold/80 rounded-full transition-all relative"
                 style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
               >
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-gold rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-            <span className="text-[10px] text-muted-foreground font-mono w-10">
+            <span className="text-[9px] text-muted-foreground/60 font-mono w-8">
               {formatTime(audioDuration)}
             </span>
           </div>
