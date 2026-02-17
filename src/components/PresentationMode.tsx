@@ -74,6 +74,7 @@ export function PresentationMode({
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [showEQ, setShowEQ] = useState(false);
   const [pendingPause, setPendingPause] = useState(false);
+  const [showVolume, setShowVolume] = useState(false);
   const { formatted: clockTime } = useClock();
 
   const currentStage = stages[selectedStageIndex];
@@ -88,7 +89,6 @@ export function PresentationMode({
     onStop();
   });
 
-  // Update timer settings when stage changes
   useEffect(() => {
     if (currentStage) {
       const defaultTime = currentStage.tempo_padrao || 0;
@@ -98,7 +98,6 @@ export function PresentationMode({
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
 
-  // Auto-pause when playback starts (start paused feature)
   useEffect(() => {
     if (pendingPause && isPlaying) {
       onPause();
@@ -109,14 +108,12 @@ export function PresentationMode({
     }
   }, [pendingPause, isPlaying]);
 
-  // Reset timer when playback stops
   useEffect(() => {
     if (!isActive && timer.isRunning) {
       timer.reset();
     }
   }, [isActive]);
 
-  // Hide keyboard hints after 5 seconds
   useEffect(() => {
     const timeout = setTimeout(() => {
       setShowKeyboardHints(false);
@@ -142,7 +139,6 @@ export function PresentationMode({
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
@@ -159,22 +155,15 @@ export function PresentationMode({
     onVolumeChange(Math.max(0, volume - 0.1));
   };
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Show hints briefly when using keyboard
       setShowKeyboardHints(true);
-      
       switch (e.key) {
         case 'ArrowLeft':
-          if (selectedStageIndex > 0) {
-            setSelectedStageIndex(prev => prev - 1);
-          }
+          if (selectedStageIndex > 0) setSelectedStageIndex(prev => prev - 1);
           break;
         case 'ArrowRight':
-          if (selectedStageIndex < stages.length - 1) {
-            setSelectedStageIndex(prev => prev + 1);
-          }
+          if (selectedStageIndex < stages.length - 1) setSelectedStageIndex(prev => prev + 1);
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -184,61 +173,44 @@ export function PresentationMode({
           e.preventDefault();
           handleVolumeDown();
           break;
-        case ' ':
+        case ' ' :
           e.preventDefault();
-          if (isPlaying) {
-            handlePause();
-          } else if (isPaused) {
-            handleResume();
-          } else if (currentAudio) {
-            handlePlayWithTimer();
-          }
+          if (isPlaying) handlePause();
+          else if (isPaused) handleResume();
+          else if (currentAudio) handlePlayWithTimer();
           break;
         case 'm':
         case 'M':
           handleToggleMute();
           break;
         case 'Escape':
-          if (!document.fullscreenElement) {
-            onClose();
-          }
+          if (!document.fullscreenElement) onClose();
           break;
         case 'f':
         case 'F':
           toggleFullscreen();
           break;
       }
-
-      // Hide hints after 3 seconds
       setTimeout(() => setShowKeyboardHints(false), 3000);
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume]);
 
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
-    
-    if (useTimerEnabled && customTime > 0) {
-      timer.start(customTime);
-    }
+    if (useTimerEnabled && customTime > 0) timer.start(customTime);
     onPlay(currentStage.id, currentAudio.audio_url);
-    // Signal to pause as soon as playback actually starts
     setPendingPause(true);
   };
 
   const handlePause = () => {
-    if (timer.isRunning) {
-      timer.pause();
-    }
+    if (timer.isRunning) timer.pause();
     onPause();
   };
 
   const handleResume = () => {
-    if (timer.isPaused) {
-      timer.resume();
-    }
+    if (timer.isPaused) timer.resume();
     onResume();
   };
 
@@ -282,37 +254,46 @@ export function PresentationMode({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-        <div className="flex items-center gap-4">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+      {/* Header - responsive */}
+      <header className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           {settings?.logo_url && (
-            <img src={settings.logo_url} alt="Logo" className="w-8 h-8 object-contain rounded" />
+            <img src={settings.logo_url} alt="Logo" className="w-6 h-6 sm:w-8 sm:h-8 object-contain rounded shrink-0" />
           )}
-          <span className="text-sm font-medium text-muted-foreground">
-            {settings?.nome_app || 'Modo Apresentação'}
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate hidden sm:block">
+            {settings?.nome_app || 'Apresentação'}
           </span>
-          <ElegantClock size="md" />
+          <ElegantClock size="sm" />
         </div>
         
-        <div className="flex items-center gap-2">
-          {/* Volume Control in Header */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-lg">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Volume toggle for mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowVolume(!showVolume)}
+            className="h-8 w-8 text-muted-foreground hover:text-gold sm:hidden"
+          >
+            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </Button>
+
+          {/* Desktop volume */}
+          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary rounded-lg">
             <button
               onClick={handleToggleMute}
               className="text-muted-foreground hover:text-gold transition-colors"
-              title={isMuted ? 'Ativar som (M)' : 'Silenciar (M)'}
             >
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
               step={5}
-              className="w-20"
+              className="w-16"
             />
-            <span className="text-xs text-muted-foreground w-8 text-right">
+            <span className="text-[10px] text-muted-foreground w-7 text-right">
               {Math.round(volume * 100)}%
             </span>
           </div>
@@ -322,43 +303,58 @@ export function PresentationMode({
               variant="ghost"
               size="icon"
               onClick={() => setShowEQ(!showEQ)}
-              className={`h-9 w-9 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-              title="Equalizador"
+              className={`h-8 w-8 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
             >
-              <SlidersHorizontal size={18} />
+              <SlidersHorizontal size={16} />
             </Button>
           )}
 
-          <span className="text-sm text-muted-foreground">
-            {selectedStageIndex + 1} / {stages.length}
+          <span className="text-xs text-muted-foreground px-1">
+            {selectedStageIndex + 1}/{stages.length}
           </span>
+
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleFullscreen}
-            className="text-muted-foreground hover:text-gold"
-            title="Tela cheia (F)"
+            className="h-8 w-8 text-muted-foreground hover:text-gold hidden sm:flex"
           >
-            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+            {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-muted-foreground hover:text-destructive"
-            title="Fechar (ESC)"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
           >
-            <X size={20} />
+            <X size={18} />
           </Button>
         </div>
+
+        {/* Mobile volume slider - expandable */}
+        {showVolume && (
+          <div className="w-full flex items-center gap-2 px-1 py-1 sm:hidden animate-fade-in">
+            <Slider
+              value={[volume * 100]}
+              onValueChange={(values) => onVolumeChange(values[0] / 100)}
+              max={100}
+              step={5}
+              className="flex-1"
+            />
+            <span className="text-[10px] text-muted-foreground w-8 text-right">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+        )}
+
         {/* Header Progress Bar */}
         {isActive && audioDuration > 0 && (
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
+          <div className="w-full flex items-center gap-2 mt-1">
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono w-8 sm:w-10 text-right">
               {formatTime(audioCurrentTime)}
             </span>
             <div
-              className="flex-1 h-1.5 bg-secondary rounded-full cursor-pointer relative group"
+              className="flex-1 h-1 sm:h-1.5 bg-secondary rounded-full cursor-pointer relative group"
               onClick={(e) => {
                 if (!onSeekTo) return;
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -370,24 +366,25 @@ export function PresentationMode({
                 className="h-full bg-gold rounded-full transition-all relative"
                 style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
               >
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
-            <span className="text-[10px] text-muted-foreground font-mono w-10">
+            <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono w-8 sm:w-10">
               {formatTime(audioDuration)}
             </span>
           </div>
         )}
+
         {/* EQ Panel */}
         {showEQ && eq && onEQChange && (
-          <div className="mt-2 animate-fade-in">
+          <div className="w-full mt-2 animate-fade-in">
             <EqualizerPanel eq={eq} onEQChange={onEQChange} />
           </div>
         )}
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      {/* Main Content - scrollable on mobile */}
+      <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 relative overflow-y-auto">
         {/* Background Banner */}
         <img 
           src={presentationBanner} 
@@ -396,45 +393,52 @@ export function PresentationMode({
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
 
-        {/* Central Card */}
-        <div className="relative z-10 w-full max-w-2xl bg-card/80 backdrop-blur-md border border-gold/15 rounded-2xl p-6 sm:p-10 shadow-2xl shadow-black/30 flex flex-col items-center">
-          {/* Active Glow Effect */}
+        {/* Central Card - responsive sizing */}
+        <div className="relative z-10 w-full max-w-2xl bg-card/80 backdrop-blur-md border border-gold/15 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-10 shadow-2xl shadow-black/30 flex flex-col items-center my-auto">
+          {/* Active Glow */}
           {isActive && (
-            <div className="absolute inset-0 rounded-2xl bg-gradient-radial from-gold/5 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-radial from-gold/5 via-transparent to-transparent pointer-events-none" />
           )}
 
-          {/* Stage Icon */}
+          {/* Stage Icon - smaller on mobile */}
           <div
             className={cn(
-              'rounded-3xl mb-5 transition-all duration-500 overflow-hidden',
-              (currentStage as any).icone_url ? 'p-0' : 'p-6 sm:p-8',
+              'rounded-2xl sm:rounded-3xl mb-3 sm:mb-5 transition-all duration-500 overflow-hidden',
+              (currentStage as any).icone_url ? 'p-0' : 'p-4 sm:p-6 md:p-8',
               isActive 
-                ? 'bg-gold/20 text-gold scale-110 shadow-[0_0_60px_rgba(212,175,55,0.3)]' 
+                ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_40px_rgba(212,175,55,0.3)]' 
                 : 'bg-secondary text-muted-foreground'
             )}
           >
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
+              size={(currentStage as any).icone_url ? 96 : 48} 
+              className="sm:hidden"
+            />
+            <CeremonyIcon 
+              name={currentStage.icone} 
+              imageUrl={(currentStage as any).icone_url} 
               size={(currentStage as any).icone_url ? 128 : 64} 
+              className="hidden sm:block"
             />
           </div>
 
           {/* Stage Name */}
-          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground text-center mb-2">
+          <h1 className="font-display text-xl sm:text-2xl md:text-4xl font-bold text-foreground text-center mb-1 sm:mb-2">
             {currentStage.nome_simbolico}
           </h1>
 
           {/* Description */}
           {currentStage.descricao && (
-            <p className="text-base text-muted-foreground text-center max-w-xl mb-5">
+            <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mb-3 sm:mb-5 line-clamp-2 sm:line-clamp-none">
               {currentStage.descricao}
             </p>
           )}
 
           {/* Timer Display */}
           {(timer.isRunning || timer.isPaused) && (
-            <div className="flex items-center gap-4 mb-5 animate-fade-in">
+            <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-5 animate-fade-in">
               <TimerDisplay 
                 seconds={timer.timeRemaining} 
                 isActive={timer.isRunning && !timer.isPaused}
@@ -442,46 +446,48 @@ export function PresentationMode({
               />
               <button
                 onClick={() => timer.reset()}
-                className="p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
+                className="p-1.5 sm:p-2 text-muted-foreground hover:text-gold transition-colors rounded-lg hover:bg-secondary"
                 aria-label="Resetar cronômetro"
               >
-                <RotateCcw size={24} />
+                <RotateCcw size={20} />
               </button>
             </div>
           )}
 
-          {/* Audio Selector */}
+          {/* Audio Selector - horizontal scroll on mobile */}
           {audios.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-2 mb-6 max-w-xl">
+            <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full overflow-x-auto pb-1 scrollbar-none">
               {audios.map((audio, index) => (
                 <button
                   key={audio.id}
                   onClick={() => handleSelectAudio(index)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-full border transition-all text-sm',
+                    'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
                     index === selectedAudioIndex
                       ? 'bg-gold/20 border-gold/50 text-gold'
                       : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'
                   )}
                 >
-                  <Music size={14} />
+                  <Music size={12} className="sm:hidden" />
+                  <Music size={14} className="hidden sm:block" />
                   {audio.nome || `Áudio ${index + 1}`}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Timer Settings */}
-          <div className="flex items-center gap-3 mb-6">
-            <Clock size={18} className="text-muted-foreground" />
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* Timer Settings - compact on mobile */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <Clock size={16} className="text-muted-foreground shrink-0" />
+            <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={useTimerEnabled}
                 onChange={(e) => setUseTimerEnabled(e.target.checked)}
-                className="rounded border-border bg-secondary text-gold focus:ring-gold w-5 h-5"
+                className="rounded border-border bg-secondary text-gold focus:ring-gold w-4 h-4 sm:w-5 sm:h-5"
               />
-              Cronômetro
+              <span className="hidden sm:inline">Cronômetro</span>
+              <span className="sm:hidden">Timer</span>
             </label>
             {useTimerEnabled && (
               <>
@@ -491,150 +497,122 @@ export function PresentationMode({
                   max="60"
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                  className="w-20 px-3 py-2 text-sm bg-secondary border border-border rounded-lg text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-14 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-secondary border border-border rounded-lg text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
                 />
-                <span className="text-sm text-muted-foreground">min</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">min</span>
               </>
             )}
           </div>
 
-          {/* Play Controls */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* Play Controls - responsive */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
             {!isActive ? (
               <Button
                 onClick={handlePlayWithTimer}
                 disabled={audios.length === 0}
                 size="lg"
                 className={cn(
-                  'gap-3 px-8 py-6 text-lg rounded-xl transition-all',
+                  'gap-2 sm:gap-3 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-xl transition-all',
                   audios.length > 0
                     ? 'bg-gold hover:bg-gold-glow text-background shadow-lg hover:shadow-gold/30'
                     : 'bg-secondary text-muted-foreground cursor-not-allowed'
                 )}
               >
-                <Play size={28} />
+                <Play size={22} className="sm:hidden" />
+                <Play size={28} className="hidden sm:block" />
                 Iniciar
               </Button>
             ) : (
               <>
                 <Button
                   onClick={() => onSeekTo?.(0)}
-                  size="lg"
                   variant="outline"
-                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-                  title="Reiniciar música"
+                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  title="Reiniciar"
                 >
-                  <RotateCcw size={24} />
+                  <RotateCcw size={20} className="sm:hidden" />
+                  <RotateCcw size={24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={onSeekBackward}
-                  size="lg"
                   variant="outline"
-                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
                   title="Retroceder 10s"
                 >
-                  <SkipBack size={24} />
+                  <SkipBack size={20} className="sm:hidden" />
+                  <SkipBack size={24} className="hidden sm:block" />
                 </Button>
                 {isPlaying ? (
                   <Button
                     onClick={handlePause}
-                    size="lg"
-                    className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
+                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
                     variant="outline"
                   >
-                    <Pause size={28} />
-                    Pausar
+                    <Pause size={22} className="sm:hidden" />
+                    <Pause size={28} className="hidden sm:block" />
+                    <span className="hidden sm:inline">Pausar</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleResume}
-                    size="lg"
-                    className="gap-3 px-8 py-6 text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
+                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
                   >
-                    <Play size={28} />
-                    Continuar
+                    <Play size={22} className="sm:hidden" />
+                    <Play size={28} className="hidden sm:block" />
+                    <span className="hidden sm:inline">Continuar</span>
                   </Button>
                 )}
                 <Button
                   onClick={onSeekForward}
-                  size="lg"
                   variant="outline"
-                  className="px-4 py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
                   title="Avançar 10s"
                 >
-                  <SkipForward size={24} />
+                  <SkipForward size={20} className="sm:hidden" />
+                  <SkipForward size={24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={handleStop}
-                  size="lg"
                   variant="outline"
-                  className="gap-3 px-6 py-6 text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
+                  className="gap-1.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
                 >
-                  <Square size={28} />
-                  Parar
+                  <Square size={20} className="sm:hidden" />
+                  <Square size={28} className="hidden sm:block" />
+                  <span className="hidden sm:inline">Parar</span>
                 </Button>
               </>
             )}
           </div>
 
-          {/* Audio Progress Bar */}
-          {isActive && audioDuration > 0 && (
-            <div className="w-full mt-5 px-2">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground font-mono w-12 text-right">
-                  {formatTime(audioCurrentTime)}
-                </span>
-                <div
-                  className="flex-1 h-2 bg-secondary rounded-full cursor-pointer relative group"
-                  onClick={(e) => {
-                    if (!onSeekTo) return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const ratio = (e.clientX - rect.left) / rect.width;
-                    onSeekTo(ratio * audioDuration);
-                  }}
-                >
-                  <div
-                    className="h-full bg-gold rounded-full transition-all relative"
-                    style={{ width: `${(audioCurrentTime / audioDuration) * 100}%` }}
-                  >
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-gold rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </div>
-                <span className="text-xs text-muted-foreground font-mono w-12">
-                  {formatTime(audioDuration)}
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* No Audio Warning */}
           {audios.length === 0 && (
-            <p className="text-sm text-gold/60 mt-4 flex items-center gap-2">
-              <Music size={16} />
-              Sem áudio configurado para esta etapa
+            <p className="text-xs sm:text-sm text-gold/60 mt-3 sm:mt-4 flex items-center gap-2">
+              <Music size={14} />
+              Sem áudio configurado
             </p>
           )}
         </div>
       </main>
 
-      {/* Navigation Footer */}
-      <footer className="flex items-center justify-between px-4 py-4 border-t border-border bg-card">
+      {/* Navigation Footer - responsive */}
+      <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-border bg-card shrink-0">
         <Button
           onClick={handlePrevStage}
           disabled={selectedStageIndex === 0}
           variant="ghost"
-          size="lg"
+          size="sm"
           className={cn(
-            'gap-2 px-6',
+            'gap-1 sm:gap-2 px-2 sm:px-6',
             selectedStageIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
           )}
         >
-          <ChevronLeft size={24} />
+          <ChevronLeft size={18} className="sm:hidden" />
+          <ChevronLeft size={24} className="hidden sm:block" />
           <span className="hidden sm:inline">Anterior</span>
         </Button>
 
-        {/* Timeline */}
-        <div className="flex items-center gap-0 overflow-x-auto max-w-[60vw] py-2">
+        {/* Timeline - scrollable */}
+        <div className="flex items-center gap-0 overflow-x-auto max-w-[55vw] sm:max-w-[60vw] py-1 sm:py-2 scrollbar-none">
           {stages.map((stage, index) => {
             const isSelected = index === selectedStageIndex;
             const isPlayingStage = currentStageId === stage.id && status !== 'idle';
@@ -647,12 +625,12 @@ export function PresentationMode({
                     if (isActive) handleStop();
                     setSelectedStageIndex(index);
                   }}
-                  className="flex flex-col items-center gap-1 group"
+                  className="flex flex-col items-center gap-0.5 sm:gap-1 group"
                   title={stage.nome_simbolico}
                 >
                   <div
                     className={cn(
-                      'w-4 h-4 rounded-full border-2 transition-all',
+                      'w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all',
                       isSelected
                         ? 'bg-gold border-gold scale-125 shadow-[0_0_8px_rgba(212,175,55,0.5)]'
                         : isPlayingStage
@@ -664,7 +642,7 @@ export function PresentationMode({
                   />
                   <span
                     className={cn(
-                      'text-[10px] max-w-[60px] truncate transition-colors',
+                      'text-[8px] sm:text-[10px] max-w-[40px] sm:max-w-[60px] truncate transition-colors',
                       isSelected ? 'text-gold font-medium' : 'text-muted-foreground'
                     )}
                   >
@@ -674,7 +652,7 @@ export function PresentationMode({
                 {index < stages.length - 1 && (
                   <div
                     className={cn(
-                      'w-6 h-0.5 mx-0.5 transition-colors',
+                      'w-4 sm:w-6 h-0.5 mx-0.5 transition-colors',
                       isPast ? 'bg-gold/40' : 'bg-border'
                     )}
                   />
@@ -688,43 +666,39 @@ export function PresentationMode({
           onClick={handleNextStage}
           disabled={selectedStageIndex === stages.length - 1}
           variant="ghost"
-          size="lg"
+          size="sm"
           className={cn(
-            'gap-2 px-6',
+            'gap-1 sm:gap-2 px-2 sm:px-6',
             selectedStageIndex === stages.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
           )}
         >
           <span className="hidden sm:inline">Próxima</span>
-          <ChevronRight size={24} />
+          <ChevronRight size={18} className="sm:hidden" />
+          <ChevronRight size={24} className="hidden sm:block" />
         </Button>
       </footer>
 
-      {/* Keyboard Hints Overlay */}
+      {/* Keyboard Hints - hidden on mobile */}
       <div 
         className={cn(
-          'absolute bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300',
+          'absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 hidden sm:block',
           showKeyboardHints ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         )}
       >
-        <div className="flex items-center gap-1 px-4 py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
+        <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
           <Keyboard size={14} className="text-gold mr-2" />
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">Espaço</kbd>
-          <span className="text-xs text-muted-foreground mr-3">play/pause</span>
-          
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">← →</kbd>
-          <span className="text-xs text-muted-foreground mr-3">etapas</span>
-          
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">↑ ↓</kbd>
-          <span className="text-xs text-muted-foreground mr-3">volume</span>
-          
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">M</kbd>
-          <span className="text-xs text-muted-foreground mr-3">mudo</span>
-          
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">F</kbd>
-          <span className="text-xs text-muted-foreground mr-3">tela cheia</span>
-          
-          <kbd className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground">ESC</kbd>
-          <span className="text-xs text-muted-foreground">sair</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">Espaço</kbd>
+          <span className="text-[10px] text-muted-foreground mr-2">play</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">← →</kbd>
+          <span className="text-[10px] text-muted-foreground mr-2">etapas</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">↑ ↓</kbd>
+          <span className="text-[10px] text-muted-foreground mr-2">vol</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">M</kbd>
+          <span className="text-[10px] text-muted-foreground mr-2">mudo</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">F</kbd>
+          <span className="text-[10px] text-muted-foreground mr-2">fullscreen</span>
+          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">ESC</kbd>
+          <span className="text-[10px] text-muted-foreground">sair</span>
         </div>
       </div>
     </div>
