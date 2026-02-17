@@ -7,7 +7,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Loader2, Sparkles, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -245,115 +245,115 @@ export default function Auth() {
         </div>
       </div>
 
-      <Card
+      <div
         className={cn(
-          "w-full max-w-sm border-border/50 shadow-xl transition-all",
-          shake && "animate-[shake_0.5s_ease-in-out]",
-          errorMessage && "border-destructive/50"
+          "relative z-10 w-full max-w-sm space-y-6 transition-all",
+          shake && "animate-[shake_0.5s_ease-in-out]"
         )}
       >
-        <CardHeader className="text-center space-y-4">
-          {/* Dynamic Logo */}
+        {/* Logo */}
+        <div className="text-center space-y-4">
           <div className="flex justify-center">
             {settings?.logo_url ? (
               <img
                 src={settings.logo_url}
                 alt="Logotipo"
-                className="w-24 h-24 object-contain rounded-xl"
+                className="w-28 h-28 object-contain rounded-xl drop-shadow-lg"
               />
             ) : (
-              <div className="p-5 bg-gold/10 rounded-xl border border-gold/20">
+              <div className="p-5 bg-gold/10 rounded-xl border border-gold/20 backdrop-blur-sm">
                 <Sparkles className="text-gold" size={56} />
               </div>
             )}
           </div>
           
           <div>
-            <CardTitle className="text-2xl font-display">
+            <h1 className="text-2xl font-display font-bold text-foreground drop-shadow-md">
               {settings?.nome_app || 'Sonoplastia Cerimonial'}
-            </CardTitle>
+            </h1>
             {settings?.subtitulo_app && (
-              <CardDescription className="mt-1">
+              <p className="mt-1 text-sm text-muted-foreground drop-shadow-sm">
                 {settings.subtitulo_app}
-              </CardDescription>
+              </p>
             )}
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Error Message Banner */}
-            {errorMessage && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm animate-fade-in">
-                <AlertCircle size={18} className="shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {errorMessage && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm animate-fade-in backdrop-blur-sm">
+              <AlertCircle size={18} className="shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                type="text"
-                placeholder="Digite seu nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                required
-                autoComplete="username"
-                autoFocus
-                className={cn(errorMessage && "border-destructive/50 focus:border-destructive")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
-              <div className="relative">
-                <Input
-                  id="senha"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className={cn(
-                    "pr-10",
-                    errorMessage && "border-destructive/50 focus:border-destructive"
-                  )}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-gold hover:bg-gold-glow text-background"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Entrando...
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Entrar
-                </>
+          <div className="space-y-2">
+            <Label htmlFor="nome" className="text-foreground/80 drop-shadow-sm">Nome</Label>
+            <Input
+              id="nome"
+              type="text"
+              placeholder="Digite seu nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              required
+              autoComplete="username"
+              autoFocus
+              className={cn(
+                "bg-background/40 backdrop-blur-md border-border/50 focus:bg-background/60",
+                errorMessage && "border-destructive/50 focus:border-destructive"
               )}
-            </Button>
-          </form>
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="senha" className="text-foreground/80 drop-shadow-sm">Senha</Label>
+            <div className="relative">
+              <Input
+                id="senha"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+                autoComplete="current-password"
+                className={cn(
+                  "pr-10 bg-background/40 backdrop-blur-md border-border/50 focus:bg-background/60",
+                  errorMessage && "border-destructive/50 focus:border-destructive"
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+          <Button
+            type="submit"
+            className="w-full bg-gold hover:bg-gold-glow text-background shadow-lg shadow-gold/20"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Entrando...
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4 mr-2" />
+                Entrar
+              </>
+            )}
+          </Button>
+        </form>
 
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Credenciais fornecidas pelo administrador
-          </p>
-        </CardContent>
-      </Card>
+        <p className="text-center text-xs text-muted-foreground/70 drop-shadow-sm">
+          Credenciais fornecidas pelo administrador
+        </p>
+      </div>
     </div>
   );
 }
