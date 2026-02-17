@@ -39,9 +39,9 @@ export function ControlBar({
   const [showEQ, setShowEQ] = useState(false);
 
   return (
-    <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="container py-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    <div className="sticky top-[73px] z-10 bg-background/80 backdrop-blur-md border-b border-border overflow-hidden">
+      <div className="container py-3 overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 overflow-hidden">
           <VolumeControl volume={volume} onVolumeChange={onVolumeChange} />
           <AudioIndicator
             stageName={activeStage?.symbolicName || null}
