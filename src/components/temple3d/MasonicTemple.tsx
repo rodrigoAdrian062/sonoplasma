@@ -30,7 +30,7 @@ interface MasonicTempleProps {
 export function MasonicTemple({ onClose }: MasonicTempleProps) {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [showSouthWall, setShowSouthWall] = useState(true);
-  const [showCeiling, setShowCeiling] = useState(true);
+  const [showCeiling, setShowCeiling] = useState(false);
 
   const handleElementClick = (elementName: string) => {
     setSelectedElement(elementName === selectedElement ? null : elementName);
