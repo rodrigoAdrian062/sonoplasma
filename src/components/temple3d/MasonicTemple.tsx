@@ -208,58 +208,43 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
         onClose={() => setSelectedElement(null)} 
       />
 
-      {/* Instructions */}
-      {!fpsMode && (
-        <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 text-xs text-muted-foreground max-w-xs shadow-lg border border-primary/20">
-          <p className="font-medium text-foreground mb-1">🏛️ Templo REAA - Navegação:</p>
-          <p>• Arraste para girar a câmera</p>
-          <p>• Scroll para zoom</p>
-          <p>• Clique nos elementos para informações</p>
-          <p className="mt-1 text-primary">Átrio • Sala dos PP∴PP∴ • 81 Nós • 12 Colunas Zodiacais</p>
-        </div>
-      )}
-
-      {/* Ambient Sound Panel */}
-      <AmbientSoundPanel />
-
-      {/* Toggle buttons */}
+      {/* Toggle buttons - icon only */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
         <button
           onClick={() => {
             setFpsMode(prev => !prev);
             setFpsLocked(false);
           }}
-          className={`backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border flex items-center gap-2 ${
+          className={`backdrop-blur-sm rounded-lg p-2 text-foreground hover:bg-background transition-colors shadow-lg border flex items-center justify-center ${
             fpsMode 
               ? 'bg-primary/20 border-primary/50 text-primary' 
               : 'bg-background/90 border-primary/20'
           }`}
+          title={fpsMode ? 'Desativar Primeira Pessoa' : 'Primeira Pessoa'}
         >
-          {fpsMode ? '🎮 Modo FPS (Ativo)' : '🚶 Primeira Pessoa'}
+          {fpsMode ? '🎮' : '🚶'}
         </button>
         <button
           onClick={() => setShowSouthWall(prev => !prev)}
-          className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
+          className="bg-background/90 backdrop-blur-sm rounded-lg p-2 text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center justify-center"
+          title={showSouthWall ? 'Ver Lateral' : 'Fechar Lateral'}
         >
-          {showSouthWall ? '👁️ Ver Lateral' : '🧱 Fechar Lateral'}
+          {showSouthWall ? '👁️' : '🧱'}
         </button>
         <button
           onClick={() => setShowCeiling(prev => !prev)}
-          className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
+          className="bg-background/90 backdrop-blur-sm rounded-lg p-2 text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center justify-center"
+          title={showCeiling ? 'Abrir Teto' : 'Fechar Teto'}
         >
-          {showCeiling ? '☀️ Abrir Teto' : '🏠 Fechar Teto'}
+          {showCeiling ? '☀️' : '🏠'}
         </button>
       </div>
 
-      {/* FPS mode instructions overlay */}
+      {/* FPS mode click prompt */}
       {fpsMode && !fpsLocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10 pointer-events-none">
-          <div className="text-center text-foreground pointer-events-auto">
-            <p className="text-2xl font-display mb-4">🚶 Modo Primeira Pessoa</p>
-            <p className="text-lg mb-2">Clique na tela para ativar</p>
-            <p className="text-sm text-muted-foreground mb-1">WASD ou Setas — Mover</p>
-            <p className="text-sm text-muted-foreground mb-1">Mouse — Olhar ao redor</p>
-            <p className="text-sm text-muted-foreground">ESC — Sair do modo</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10 pointer-events-none">
+          <div className="pointer-events-auto text-center">
+            <p className="text-4xl mb-2">🖱️</p>
           </div>
         </div>
       )}
@@ -268,9 +253,10 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20"
+          className="absolute top-4 right-4 bg-background/90 backdrop-blur-sm rounded-lg p-2 text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20"
+          title="Fechar"
         >
-          ✕ Fechar
+          ✕
         </button>
       )}
     </div>
