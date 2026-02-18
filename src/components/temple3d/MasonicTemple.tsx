@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, N8AO } from '@react-three/postprocessing';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { Floor } from './Floor';
 import { Pillars } from './Pillars';
@@ -22,6 +22,7 @@ import { WorkingTools } from './WorkingTools';
 import { StainedGlassWindows } from './StainedGlassWindows';
 import { AmbientSoundPanel } from './AmbientSoundPanel';
 import { TempleExterior } from './TempleExterior';
+import { FirstPersonMode } from './FirstPersonMode';
 
 interface MasonicTempleProps {
   onClose?: () => void;
@@ -31,6 +32,8 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [showSouthWall, setShowSouthWall] = useState(true);
   const [showCeiling, setShowCeiling] = useState(false);
+  const [fpsMode, setFpsMode] = useState(false);
+  const [fpsLocked, setFpsLocked] = useState(false);
 
   const handleElementClick = (elementName: string) => {
     setSelectedElement(elementName === selectedElement ? null : elementName);
@@ -153,16 +156,25 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           {/* Exterior structure and landscaping */}
           <TempleExterior showCeiling={showCeiling} />
           {/* Controls */}
-          <OrbitControls
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={3}
-            maxDistance={80}
-            maxPolarAngle={Math.PI / 2.05}
-            target={[0, 2, 0]}
-            enableDamping={true}
-            dampingFactor={0.05}
+          {!fpsMode && (
+            <OrbitControls
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={3}
+              maxDistance={80}
+              maxPolarAngle={Math.PI / 2.05}
+              target={[0, 2, 0]}
+              enableDamping={true}
+              dampingFactor={0.05}
+            />
+          )}
+
+          {/* First Person Mode */}
+          <FirstPersonMode
+            enabled={fpsMode}
+            onLock={() => setFpsLocked(true)}
+            onUnlock={() => setFpsLocked(false)}
           />
 
           {/* HDR Environment for reflections */}
@@ -197,19 +209,34 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
       />
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 text-xs text-muted-foreground max-w-xs shadow-lg border border-primary/20">
-        <p className="font-medium text-foreground mb-1">🏛️ Templo REAA - Navegação:</p>
-        <p>• Arraste para girar a câmera</p>
-        <p>• Scroll para zoom</p>
-        <p>• Clique nos elementos para informações</p>
-        <p className="mt-1 text-primary">Átrio • Sala dos PP∴PP∴ • 81 Nós • 12 Colunas Zodiacais</p>
-      </div>
+      {!fpsMode && (
+        <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 text-xs text-muted-foreground max-w-xs shadow-lg border border-primary/20">
+          <p className="font-medium text-foreground mb-1">🏛️ Templo REAA - Navegação:</p>
+          <p>• Arraste para girar a câmera</p>
+          <p>• Scroll para zoom</p>
+          <p>• Clique nos elementos para informações</p>
+          <p className="mt-1 text-primary">Átrio • Sala dos PP∴PP∴ • 81 Nós • 12 Colunas Zodiacais</p>
+        </div>
+      )}
 
       {/* Ambient Sound Panel */}
       <AmbientSoundPanel />
 
       {/* Toggle buttons */}
       <div className="absolute top-4 left-4 flex flex-col gap-2">
+        <button
+          onClick={() => {
+            setFpsMode(prev => !prev);
+            setFpsLocked(false);
+          }}
+          className={`backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border flex items-center gap-2 ${
+            fpsMode 
+              ? 'bg-primary/20 border-primary/50 text-primary' 
+              : 'bg-background/90 border-primary/20'
+          }`}
+        >
+          {fpsMode ? '🎮 Modo FPS (Ativo)' : '🚶 Primeira Pessoa'}
+        </button>
         <button
           onClick={() => setShowSouthWall(prev => !prev)}
           className="bg-background/90 backdrop-blur-sm rounded-lg px-4 py-2 text-sm text-foreground hover:bg-background transition-colors shadow-lg border border-primary/20 flex items-center gap-2"
@@ -223,6 +250,19 @@ export function MasonicTemple({ onClose }: MasonicTempleProps) {
           {showCeiling ? '☀️ Abrir Teto' : '🏠 Fechar Teto'}
         </button>
       </div>
+
+      {/* FPS mode instructions overlay */}
+      {fpsMode && !fpsLocked && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10 pointer-events-none">
+          <div className="text-center text-foreground pointer-events-auto">
+            <p className="text-2xl font-display mb-4">🚶 Modo Primeira Pessoa</p>
+            <p className="text-lg mb-2">Clique na tela para ativar</p>
+            <p className="text-sm text-muted-foreground mb-1">WASD ou Setas — Mover</p>
+            <p className="text-sm text-muted-foreground mb-1">Mouse — Olhar ao redor</p>
+            <p className="text-sm text-muted-foreground">ESC — Sair do modo</p>
+          </div>
+        </div>
+      )}
 
       {/* Close button */}
       {onClose && (
