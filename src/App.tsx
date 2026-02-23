@@ -39,14 +39,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/templo-3d" 
-              element={
-                <ProtectedRoute>
-                  <Temple3D />
-                </ProtectedRoute>
-              } 
-            />
+            <Route path="/templo-3d" element={<Temple3D />} />
             <Route 
               path="/biblioteca" 
               element={
