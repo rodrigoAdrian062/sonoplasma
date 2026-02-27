@@ -146,7 +146,7 @@ export function StageCard({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl border transition-all duration-300',
+        'relative rounded-xl border transition-all duration-300 overflow-hidden',
         isActive 
           ? 'bg-card border-gold/40 shadow-[0_0_20px_-4px_hsl(var(--gold)/0.15)]' 
           : 'bg-card border-border/60 hover:border-gold/20'
@@ -229,7 +229,7 @@ export function StageCard({
 
             {/* Audio list */}
             {showAudioList && (
-              <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden">
+              <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden max-h-48 overflow-y-auto">
                 {audios.map((audio, index) => (
                   <div
                     key={audio.id}
@@ -242,7 +242,7 @@ export function StageCard({
                     )}
                   >
                     <Music size={12} className={index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50'} />
-                    <span className="text-xs truncate flex-1">{audio.nome || `Áudio ${index + 1}`}</span>
+                    <span className="text-xs truncate flex-1 min-w-0">{audio.nome || `Áudio ${index + 1}`}</span>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
                       className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10"
