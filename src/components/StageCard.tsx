@@ -315,13 +315,13 @@ export function StageCard({
               onClick={handlePlayWithTimer}
               disabled={!hasAudios}
               className={cn(
-                'flex-1 gap-1.5 text-[11px] sm:text-xs font-semibold h-7 sm:h-9 rounded-lg transition-all duration-200',
+                'flex-1 gap-1 text-[10px] sm:text-xs font-semibold h-6 sm:h-8 rounded-md transition-all duration-200',
                 hasAudios 
                   ? 'bg-gold hover:bg-gold/90 text-background border-none shadow-sm shadow-gold/20' 
                   : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
             >
-              <Play size={15} fill="currentColor" />
+              <Play size={12} fill="currentColor" />
               Iniciar
             </Button>
           ) : (
