@@ -141,7 +141,7 @@ const Index = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setEditingSection(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                           title="Editar seção"
                         >
                           <Edit2 size={15} />
@@ -150,7 +150,7 @@ const Index = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteSectionData(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                           title="Excluir seção"
                         >
                           <Trash2 size={15} />
