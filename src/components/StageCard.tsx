@@ -157,7 +157,7 @@ export function StageCard({
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
         <div className="flex items-center gap-3 mb-2.5">
           <div
@@ -201,11 +201,11 @@ export function StageCard({
 
         {/* Audio selector */}
         {hasAudios ? (
-          <div className="mb-2.5">
+          <div className="mb-2.5 min-w-0 overflow-hidden">
             <button
               onClick={() => setShowAudioList(!showAudioList)}
               className={cn(
-                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-all text-left',
+                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-all text-left overflow-hidden',
                 isActive
                   ? 'bg-gold/8 border-gold/25 text-gold'
                   : 'bg-secondary/50 border-border/40 text-foreground hover:border-gold/25'
@@ -229,23 +229,23 @@ export function StageCard({
 
             {/* Audio list */}
             {showAudioList && (
-              <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden max-h-48 overflow-y-auto">
+              <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden max-h-48 overflow-y-auto w-full">
                 {audios.map((audio, index) => (
                   <div
                     key={audio.id}
                     onClick={() => handleSelectAudio(index)}
                     className={cn(
-                      'w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer',
+                      'w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer overflow-hidden',
                       index === selectedAudioIndex
                         ? 'bg-gold/10 text-gold'
                         : 'hover:bg-secondary/60 text-foreground'
                     )}
                   >
-                    <Music size={12} className={index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50'} />
-                    <span className="text-xs truncate flex-1 min-w-0">{audio.nome || `Áudio ${index + 1}`}</span>
+                    <Music size={12} className={cn('shrink-0', index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50')} />
+                    <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
-                      className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10"
+                      className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10 shrink-0"
                       title="Remover áudio"
                     >
                       <X size={12} />
