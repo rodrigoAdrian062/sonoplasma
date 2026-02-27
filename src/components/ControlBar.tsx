@@ -59,9 +59,9 @@ export function ControlBar({
               <SlidersHorizontal size={18} />
             </Button>
           }
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 shrink-0 max-w-full overflow-hidden">
             <SessionStopwatch />
-            <ElegantClock size="md" />
+            <ElegantClock size="sm" />
           </div>
         </div>
         {/* EQ Panel */}

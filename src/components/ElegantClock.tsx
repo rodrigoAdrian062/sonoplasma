@@ -19,7 +19,7 @@ export function ElegantClock({ size = 'md' }: {size?: 'sm' | 'md';}) {
   }
 
   return (
-    <div className="bg-card/60 backdrop-blur-sm border-gold/15 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.06)] px-[80px] py-[8px] mx-[36px] my-[10px] flex items-center justify-center gap-[8px] border-4">
+    <div className="bg-card/60 backdrop-blur-sm border-gold/15 rounded-2xl shadow-[0_0_20px_rgba(212,175,55,0.06)] px-4 sm:px-10 py-2 flex items-center justify-center gap-1 border-2 sm:border-4">
       <div className="flex items-baseline gap-0.5">
         <span className="text-xl font-mono font-bold text-gold tracking-widest tabular-nums">
           {hours}
