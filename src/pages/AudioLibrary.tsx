@@ -693,9 +693,22 @@ export default function AudioLibraryPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
-                  </p>
+                  {isYouTubeUrl(audio.audio_url) ? (
+                    <a
+                      href={audio.audio_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-red-400 hover:text-red-300 truncate block max-w-[260px] sm:max-w-[400px] underline underline-offset-2"
+                      title={audio.audio_url}
+                    >
+                      {audio.audio_url}
+                    </a>
+                  ) : (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                    </p>
+                  )}
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
