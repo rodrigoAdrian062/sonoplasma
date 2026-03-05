@@ -355,14 +355,6 @@ export default function Auth() {
         </p>
       </div>
 
-      {/* Floating Temple 3D button */}
-      <button
-        onClick={() => navigate('/templo-3d')}
-        className="fixed bottom-6 right-6 z-20 p-3 rounded-full bg-gold/20 backdrop-blur-md border border-gold/30 text-gold hover:bg-gold/30 hover:border-gold/50 transition-all shadow-lg shadow-gold/10 hover:shadow-gold/20 hover:scale-105"
-        title="Templo 3D"
-      >
-        <Box size={22} />
-      </button>
     </div>
   );
 }

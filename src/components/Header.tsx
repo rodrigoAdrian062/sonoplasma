@@ -85,19 +85,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => navigate('/templo-3d')}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-gold h-8 w-8"
-                  >
-                    <Box size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Templo 3D</TooltipContent>
-              </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
                 variant="ghost"
@@ -182,19 +169,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => navigate('/templo-3d')}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-gold"
-                  >
-                    <Box size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Templo 3D</TooltipContent>
               </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
