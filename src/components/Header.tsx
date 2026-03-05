@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Box } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { useSettings } from '@/hooks/useSettings';
@@ -84,19 +84,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => navigate('/templo-3d')}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-gold h-8 w-8"
-                  >
-                    <Box size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Templo 3D</TooltipContent>
               </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
@@ -182,19 +169,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => navigate('/templo-3d')}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-gold"
-                  >
-                    <Box size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Templo 3D</TooltipContent>
               </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}

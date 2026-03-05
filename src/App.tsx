@@ -8,7 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
 import Auth from "./pages/Auth";
-import Temple3D from "./pages/Temple3D";
+
 import AudioLibrary from "./pages/AudioLibrary";
 import NotFound from "./pages/NotFound";
 
@@ -39,7 +39,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route path="/templo-3d" element={<Temple3D />} />
+            
             <Route 
               path="/biblioteca" 
               element={
