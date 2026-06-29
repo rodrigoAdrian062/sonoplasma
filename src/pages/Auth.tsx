@@ -50,12 +50,8 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  // Clear error when user types
-  useEffect(() => {
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
-  }, [nome, senha]);
+
+
 
   const triggerShake = () => {
     setShake(true);
