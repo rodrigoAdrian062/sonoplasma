@@ -276,49 +276,8 @@ export default function Auth() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="nome" className="text-foreground/80 drop-shadow-sm">Nome</Label>
-            <Input
-              id="nome"
-              type="text"
-              placeholder="Digite seu nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-              autoComplete="username"
-              autoFocus
-              className={cn(
-                "bg-background/40 backdrop-blur-md border-border/50 focus:bg-background/60",
-                errorMessage && "border-destructive/50 focus:border-destructive"
-              )}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="senha" className="text-foreground/80 drop-shadow-sm">Senha</Label>
-            <div className="relative">
-              <Input
-                id="senha"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-                autoComplete="current-password"
-                className={cn(
-                  "pr-10 bg-background/40 backdrop-blur-md border-border/50 focus:bg-background/60",
-                  errorMessage && "border-destructive/50 focus:border-destructive"
-                )}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          </div>
+
+
           <Button
             type="submit"
             className="w-full bg-gold hover:bg-gold-glow text-background shadow-lg shadow-gold/20"
