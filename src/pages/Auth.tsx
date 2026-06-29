@@ -70,26 +70,13 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    
-    if (!nome.trim() || !senha.trim()) {
-      setErrorMessage('Preencha nome e senha');
-      triggerShake();
-      toast.error('Preencha nome e senha');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Convert nome to email format for Supabase auth
-      const email = `${nome.trim().toLowerCase()}@sistema.local`;
-      
-      const { error } = await signIn(email, senha);
+      const { error } = await signIn('plenitude@sistema.local', 'plenitude');
 
       if (error) {
-        const msg = error.message.includes('Invalid login credentials')
-          ? 'Nome ou senha incorretos'
-          : 'Erro ao fazer login';
+        const msg = 'Erro ao entrar';
         setErrorMessage(msg);
         triggerShake();
         toast.error(msg);
@@ -105,6 +92,7 @@ export default function Auth() {
       setIsSubmitting(false);
     }
   };
+
 
   if (authLoading) {
     return (
