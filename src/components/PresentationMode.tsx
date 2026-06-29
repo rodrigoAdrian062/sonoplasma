@@ -386,10 +386,10 @@ export function PresentationMode({
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
 
-        {/* Large Diagonal Volume Control - desktop side */}
+        {/* Large Vertical Volume Control - desktop side */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center">
-          <div className="rotate-[-45deg] flex flex-col items-center gap-5 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-8 shadow-2xl shadow-black/40">
-            <span className="text-base font-mono text-gold font-bold rotate-[45deg]">
+          <div className="flex flex-col items-center gap-5 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-8 shadow-2xl shadow-black/40">
+            <span className="text-base font-mono text-gold font-bold">
               {Math.round(volume * 100)}%
             </span>
             <Slider
@@ -402,13 +402,14 @@ export function PresentationMode({
             />
             <button
               onClick={handleToggleMute}
-              className="text-gold hover:text-gold-glow transition-colors rotate-[45deg]"
+              className="text-gold hover:text-gold-glow transition-colors"
               title={isMuted ? 'Reativar som' : 'Silenciar'}
             >
               {isMuted ? <VolumeX size={32} /> : <Volume2 size={32} />}
             </button>
           </div>
         </div>
+
 
 
         {/* Central Card - responsive sizing */}
