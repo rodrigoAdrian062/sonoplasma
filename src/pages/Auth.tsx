@@ -5,10 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-import { Loader2, Sparkles, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Sparkles, LogIn, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -18,12 +16,9 @@ export default function Auth() {
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
 
-  const [nome, setNome] = useState('');
-  const [senha, setSenha] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
 
   // Track mouse movement for eye following effect
