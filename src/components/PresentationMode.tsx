@@ -345,7 +345,7 @@ export function PresentationMode({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={handleClose}
             className="h-8 w-8 text-muted-foreground hover:text-destructive"
           >
             <X size={18} />
