@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 
 import AudioLibrary from "./pages/AudioLibrary";
 import NotFound from "./pages/NotFound";
+import { MiniPlayer } from "@/components/MiniPlayer";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <MiniPlayer />
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
