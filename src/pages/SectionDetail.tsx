@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import sectionBanner from '@/assets/section-banner.png';
 import { useParams, useNavigate } from 'react-router-dom';
