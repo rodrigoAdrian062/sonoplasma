@@ -275,11 +275,12 @@ const SectionDetail = () => {
               variant="ghost"
               size="icon"
               className="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0"
+              aria-label="Voltar para as seções"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={20} aria-hidden="true" />
             </Button>
             <div className="p-2 bg-gold/10 rounded-lg shrink-0">
-              <CeremonyIcon name={section.icone || 'folder'} size={22} className="text-gold" />
+              <CeremonyIcon name={section.icone || 'folder'} size={22} className="text-gold" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="font-display text-lg sm:text-2xl font-semibold text-foreground truncate">
