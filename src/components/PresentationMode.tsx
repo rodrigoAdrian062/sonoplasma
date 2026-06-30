@@ -243,6 +243,25 @@ export function PresentationMode({
     setSelectedAudioIndex(index);
   };
 
+  const handleClose = () => {
+    if (status === 'playing' || status === 'paused') {
+      setShowExitDialog(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleKeepPlaying = () => {
+    setShowExitDialog(false);
+    onClose();
+  };
+
+  const handleStopAndExit = () => {
+    setShowExitDialog(false);
+    onStop();
+    onClose();
+  };
+
   if (!currentStage) {
     return (
       <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
