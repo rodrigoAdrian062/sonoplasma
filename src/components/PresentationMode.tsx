@@ -186,7 +186,7 @@ export function PresentationMode({
           handleToggleMute();
           break;
         case 'Escape':
-          if (!document.fullscreenElement) onClose();
+          if (!document.fullscreenElement) handleClose();
           break;
         case 'f':
         case 'F':
