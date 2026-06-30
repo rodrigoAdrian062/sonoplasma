@@ -331,9 +331,10 @@ export function StageCard({
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                aria-label="Reiniciar música"
                 title="Reiniciar música"
               >
-                <RotateCw size={14} />
+                <RotateCw size={14} aria-hidden="true" />
               </Button>
 
               <Button
@@ -341,9 +342,10 @@ export function StageCard({
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                aria-label="Retroceder 10 segundos"
                 title="Retroceder 10s"
               >
-                <SkipBack size={14} />
+                <SkipBack size={14} aria-hidden="true" />
               </Button>
 
               {isPlaying ? (
