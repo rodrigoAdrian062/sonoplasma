@@ -1,4 +1,3 @@
-import { useLocation } from 'react-router-dom';
 import { Play, Pause, Square, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
