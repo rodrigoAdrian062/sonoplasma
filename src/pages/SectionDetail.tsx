@@ -74,6 +74,26 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
+  const handleBack = () => {
+    if (status === 'playing' || status === 'paused') {
+      setShowExitDialog(true);
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleKeepPlaying = () => {
+    setShowExitDialog(false);
+    navigate('/');
+  };
+
+  const handleStopAndExit = () => {
+    setShowExitDialog(false);
+    stop();
+    navigate('/');
+  };
 
   const section = useMemo(() => {
     // sectionId can be "slug-shortid" format, extract the short ID (last 8 chars after last dash)
