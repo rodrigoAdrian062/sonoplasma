@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import sectionBanner from '@/assets/section-banner.png';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -75,25 +75,63 @@ const SectionDetail = () => {
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const pendingNavRef = useRef<(() => void) | null>(null);
 
-  const handleBack = () => {
+  const isAudioActive = status === 'playing' || status === 'paused';
+
+  const requestExit = (proceed: () => void) => {
     if (status === 'playing' || status === 'paused') {
+      pendingNavRef.current = proceed;
       setShowExitDialog(true);
     } else {
-      navigate('/');
+      proceed();
     }
   };
 
+  const handleBack = () => requestExit(() => navigate('/'));
+
   const handleKeepPlaying = () => {
     setShowExitDialog(false);
-    navigate('/');
+    const proceed = pendingNavRef.current;
+    pendingNavRef.current = null;
+    proceed?.();
   };
 
   const handleStopAndExit = () => {
     setShowExitDialog(false);
     stop();
-    navigate('/');
+    const proceed = pendingNavRef.current;
+    pendingNavRef.current = null;
+    proceed?.();
   };
+
+  const handleDismissExit = () => {
+    setShowExitDialog(false);
+    pendingNavRef.current = null;
+  };
+
+  // Intercept browser back button while audio is active
+  useEffect(() => {
+    if (!isAudioActive) return;
+
+    window.history.pushState(null, '', window.location.href);
+    const onPopState = () => {
+      // Re-trap so the user stays until they choose
+      window.history.pushState(null, '', window.location.href);
+      pendingNavRef.current = () => navigate('/');
+      setShowExitDialog(true);
+    };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('popstate', onPopState);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [isAudioActive, navigate]);
 
   const section = useMemo(() => {
     // sectionId can be "slug-shortid" format, extract the short ID (last 8 chars after last dash)
@@ -372,7 +410,7 @@ const SectionDetail = () => {
         stageName={deleteStageData?.nome_simbolico || ''}
       />
 
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+      <AlertDialog open={showExitDialog} onOpenChange={(open) => { if (!open) handleDismissExit(); }}>
         <AlertDialogContent className="bg-card border-gold/20">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-gold">
@@ -388,7 +426,7 @@ const SectionDetail = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setShowExitDialog(false)}>
+            <Button variant="outline" onClick={handleDismissExit}>
               Voltar
             </Button>
             <Button variant="destructive" onClick={handleStopAndExit}>
