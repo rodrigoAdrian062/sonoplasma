@@ -83,6 +83,7 @@ export function PresentationMode({
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const { formatted: clockTime } = useClock();
 
   const currentStage = stages[selectedStageIndex];
