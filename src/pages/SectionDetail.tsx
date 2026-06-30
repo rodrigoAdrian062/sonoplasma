@@ -233,7 +233,7 @@ const SectionDetail = () => {
         <div className="container px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => navigate('/')}
+              onClick={handleBack}
               variant="ghost"
               size="icon"
               className="text-muted-foreground hover:text-foreground h-9 w-9 shrink-0"
