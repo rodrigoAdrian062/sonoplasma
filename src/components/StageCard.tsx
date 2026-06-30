@@ -371,9 +371,10 @@ export function StageCard({
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                aria-label="Avançar 10 segundos"
                 title="Avançar 10s"
               >
-                <SkipForward size={14} />
+                <SkipForward size={14} aria-hidden="true" />
               </Button>
 
               <Button
