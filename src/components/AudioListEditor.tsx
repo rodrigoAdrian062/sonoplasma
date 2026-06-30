@@ -22,7 +22,7 @@ interface AudioListEditorProps {
 
 type InputMode = 'upload' | 'youtube' | 'library';
 
-export function AudioListEditor({ audios, onChange, maxAudios = 15 }: AudioListEditorProps) {
+export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: AudioListEditorProps) {
   const navigate = useNavigate();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
@@ -181,7 +181,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = 15 }: AudioListE
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2">
           <Music size={14} className="text-gold" />
-          Áudios ({audios.length}/{maxAudios})
+          Áudios ({audios.length}{Number.isFinite(maxAudios) ? `/${maxAudios}` : ''})
         </Label>
         {audios.length < maxAudios && (
           <Button

@@ -335,7 +335,6 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
               <AudioListEditor
                 audios={audioItems}
                 onChange={setAudioItems}
-                maxAudios={5}
               />
             </div>
           )}
