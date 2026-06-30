@@ -426,7 +426,7 @@ const SectionDetail = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setShowExitDialog(false)}>
+            <Button variant="outline" onClick={handleDismissExit}>
               Voltar
             </Button>
             <Button variant="destructive" onClick={handleStopAndExit}>
