@@ -410,7 +410,7 @@ const SectionDetail = () => {
         stageName={deleteStageData?.nome_simbolico || ''}
       />
 
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+      <AlertDialog open={showExitDialog} onOpenChange={(open) => { if (!open) handleDismissExit(); }}>
         <AlertDialogContent className="bg-card border-gold/20">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-gold">
