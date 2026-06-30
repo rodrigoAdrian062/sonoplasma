@@ -176,8 +176,9 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground hover:text-foreground"
+                aria-label="Configurações"
               >
-                <Settings size={20} />
+                <Settings size={20} aria-hidden="true" />
               </Button>
               {hasStages && onPresentationMode && (
                 <Tooltip>
