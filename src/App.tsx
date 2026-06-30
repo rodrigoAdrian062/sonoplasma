@@ -22,6 +22,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <AudioPlayerProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
