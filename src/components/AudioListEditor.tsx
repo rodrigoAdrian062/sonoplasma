@@ -181,7 +181,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2">
           <Music size={14} className="text-gold" />
-          Áudios ({audios.length}/{maxAudios})
+          Áudios ({audios.length}{Number.isFinite(maxAudios) ? `/${maxAudios}` : ''})
         </Label>
         {audios.length < maxAudios && (
           <Button
