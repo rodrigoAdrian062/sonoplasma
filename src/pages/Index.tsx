@@ -108,18 +108,28 @@ const Index = () => {
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div
-                    className="group bg-card/50 hover:bg-card border border-border/50 hover:border-gold/20 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gold/5"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Abrir seção ${section.nome}`}
+                    className="group bg-card/50 hover:bg-card border border-border/50 hover:border-gold/20 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gold/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     onClick={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3 sm:gap-4">
                       <div className="p-2.5 sm:p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl transition-colors duration-300">
                         {section.icone_url ? (
-                          <img src={section.icone_url} alt={section.nome} className="w-6 h-6 object-cover rounded" />
+                          <img src={section.icone_url} alt="" className="w-6 h-6 object-cover rounded" />
                         ) : (
                           <CeremonyIcon
                             name={section.icone || 'folder'}
                             size={24}
                             className="text-gold"
+                            aria-hidden="true"
                           />
                         )}
                       </div>
@@ -141,22 +151,22 @@ const Index = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setEditingSection(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                          title="Editar seção"
+                          className="h-9 w-9 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          aria-label={`Editar seção ${section.nome}`}
                         >
-                          <Edit2 size={15} />
+                          <Edit2 size={15} aria-hidden="true" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteSectionData(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                          title="Excluir seção"
+                          className="h-9 w-9 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          aria-label={`Excluir seção ${section.nome}`}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={15} aria-hidden="true" />
                         </Button>
                       </div>
-                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" />
+                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" aria-hidden="true" />
                     </div>
                   </div>
                 </div>
