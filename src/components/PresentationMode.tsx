@@ -748,6 +748,35 @@ export function PresentationMode({
           <span className="text-[10px] text-muted-foreground">sair</span>
         </div>
       </div>
+
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent className="bg-card border-gold/20">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-gold">
+              <Music size={18} />
+              Áudio em reprodução
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {currentAudio?.nome ? (
+                <>Ainda há um áudio ativo: <strong className="text-foreground">{currentAudio.nome}</strong>. Deseja continuar ouvindo ao sair da apresentação ou parar o som?</>
+              ) : (
+                <>Ainda há um áudio ativo. Deseja continuar ouvindo ao sair da apresentação ou parar o som?</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setShowExitDialog(false)}>
+              Voltar
+            </Button>
+            <Button variant="destructive" onClick={handleStopAndExit}>
+              <Square size={16} className="mr-1" /> Parar e sair
+            </Button>
+            <Button className="bg-gold text-background hover:bg-gold/90" onClick={handleKeepPlaying}>
+              <Play size={16} className="mr-1" /> Continuar ouvindo
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
