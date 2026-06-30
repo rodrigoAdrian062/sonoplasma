@@ -1,4 +1,5 @@
-import { Play, Pause, Square, Music2 } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Play, Pause, Square, Music2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
@@ -9,6 +10,8 @@ function formatTime(seconds: number) {
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
+
+const MARGIN = 16;
 
 export function MiniPlayer() {
   const { stages } = useStages();
@@ -22,22 +25,93 @@ export function MiniPlayer() {
     stop,
   } = useUniversalAudioPlayer();
 
-  const isActive = status === 'playing' || status === 'paused';
+  const cardRef = useRef<HTMLDivElement>(null);
+  // null = not yet positioned (defaults to bottom-right via CSS)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const dragState = useRef<{ dx: number; dy: number } | null>(null);
 
+  const clamp = useCallback((x: number, y: number) => {
+    const el = cardRef.current;
+    const w = el?.offsetWidth ?? 320;
+    const h = el?.offsetHeight ?? 96;
+    const maxX = window.innerWidth - w - MARGIN;
+    const maxY = window.innerHeight - h - MARGIN;
+    return {
+      x: Math.max(MARGIN, Math.min(x, maxX)),
+      y: Math.max(MARGIN, Math.min(y, maxY)),
+    };
+  }, []);
+
+  const onPointerMove = useCallback(
+    (e: PointerEvent) => {
+      if (!dragState.current) return;
+      const next = clamp(e.clientX - dragState.current.dx, e.clientY - dragState.current.dy);
+      setPos(next);
+    },
+    [clamp]
+  );
+
+  const onPointerUp = useCallback(() => {
+    dragState.current = null;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+  }, [onPointerMove]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    dragState.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    setPos({ x: rect.left, y: rect.top });
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  // Keep inside viewport on resize
+  useEffect(() => {
+    if (!pos) return;
+    const onResize = () => setPos((p) => (p ? clamp(p.x, p.y) : p));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [pos, clamp]);
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [onPointerMove, onPointerUp]);
+
+  const isActive = status === 'playing' || status === 'paused';
   if (!isActive) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
   const name = stage?.nome_simbolico || 'Reproduzindo';
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
+  const positionStyle: React.CSSProperties = pos
+    ? { left: pos.x, top: pos.y }
+    : { right: MARGIN, bottom: MARGIN };
+
   return (
     <div
+      ref={cardRef}
       role="region"
       aria-label="Reprodução de áudio em segundo plano"
-      className="fixed bottom-4 right-4 z-[2147483647] w-[min(20rem,calc(100vw-2rem))] animate-fade-in"
+      style={{ position: 'fixed', touchAction: 'none', ...positionStyle }}
+      className="z-[2147483647] w-[min(20rem,calc(100vw-2rem))] animate-fade-in"
     >
       <div className="bg-card/95 backdrop-blur-md border border-gold/30 rounded-2xl shadow-xl shadow-gold/10 overflow-hidden">
-        <div className="flex items-center gap-3 p-3">
+        <div className="flex items-center gap-2 p-3">
+          <button
+            onPointerDown={onPointerDown}
+            aria-label="Arrastar player"
+            title="Arraste para mover"
+            className="shrink-0 -ml-1 p-1 text-muted-foreground/60 hover:text-gold cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical size={16} aria-hidden="true" />
+          </button>
+
           <div className="relative shrink-0 p-2.5 bg-gold/10 rounded-xl">
             <Music2 size={20} className="text-gold" aria-hidden="true" />
             {status === 'playing' && (
