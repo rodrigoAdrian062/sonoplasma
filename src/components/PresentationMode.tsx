@@ -14,6 +14,14 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import presentationBanner from '@/assets/presentation-banner.png';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from '@/components/ui/alert-dialog';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
