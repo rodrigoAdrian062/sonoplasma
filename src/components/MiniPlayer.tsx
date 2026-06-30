@@ -12,7 +12,6 @@ function formatTime(seconds: number) {
 }
 
 export function MiniPlayer() {
-  const location = useLocation();
   const { stages } = useStages();
   const {
     currentStageId,
@@ -25,10 +24,8 @@ export function MiniPlayer() {
   } = useUniversalAudioPlayer();
 
   const isActive = status === 'playing' || status === 'paused';
-  // Hide on the section detail page (already has full controls there)
-  const onSectionPage = location.pathname.startsWith('/secao/');
 
-  if (!isActive || onSectionPage) return null;
+  if (!isActive) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
   const name = stage?.nome_simbolico || 'Reproduzindo';
@@ -38,7 +35,7 @@ export function MiniPlayer() {
     <div
       role="region"
       aria-label="Reprodução de áudio em segundo plano"
-      className="fixed bottom-4 right-4 z-50 w-[min(20rem,calc(100vw-2rem))] animate-fade-in"
+      className="fixed bottom-4 right-4 z-[2147483647] w-[min(20rem,calc(100vw-2rem))] animate-fade-in"
     >
       <div className="bg-card/95 backdrop-blur-md border border-gold/30 rounded-2xl shadow-xl shadow-gold/10 overflow-hidden">
         <div className="flex items-center gap-3 p-3">
