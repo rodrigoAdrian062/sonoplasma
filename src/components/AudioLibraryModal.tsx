@@ -136,7 +136,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleDownloadAll = async () => {
     const downloadableAudios = audios.filter(
-      (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url)
+      (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url) && a.tipo !== 'spotify' && !isSpotifyUrl(a.audio_url)
     );
 
     if (downloadableAudios.length === 0) {
