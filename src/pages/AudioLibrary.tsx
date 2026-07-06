@@ -783,17 +783,6 @@ export default function AudioLibraryPage() {
                     >
                       {audio.audio_url}
                     </a>
-                  ) : isSpotifyUrl(audio.audio_url) ? (
-                    <a
-                      href={audio.audio_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-green-400 hover:text-green-300 truncate block max-w-[260px] sm:max-w-[400px] underline underline-offset-2"
-                      title={audio.audio_url}
-                    >
-                      {audio.audio_url}
-                    </a>
                   ) : (
                     <p className="text-xs text-muted-foreground truncate">
                       {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
