@@ -305,7 +305,7 @@ export default function AudioLibraryPage() {
       const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
-        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : isSpotifyUrl(newAudioUrl) ? 'spotify' : 'external',
       });
       if (currentFolderId && result?.id) {
         await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
