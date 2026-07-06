@@ -351,7 +351,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   ) : (
                     <div className="flex gap-2">
                       <Input
-                        placeholder="URL do áudio ou YouTube"
+                        placeholder="URL do áudio, YouTube ou Spotify"
                         value={newAudioUrl}
                         onChange={(e) => setNewAudioUrl(e.target.value)}
                         className="flex-1"
