@@ -58,7 +58,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (isYouTubeUrl(audio.audio_url)) {
+    if (isYouTubeUrl(audio.audio_url) || isSpotifyUrl(audio.audio_url)) {
       window.open(audio.audio_url, '_blank');
       return;
     }
