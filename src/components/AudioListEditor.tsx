@@ -99,6 +99,13 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       return;
     }
 
+    // For Spotify, open the link in Spotify
+    if (isSpotifyUrl(url)) {
+      window.open(url, '_blank');
+      return;
+    }
+
+
     if (playingIndex === index) {
       stopPreview();
       return;
