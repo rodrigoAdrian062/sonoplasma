@@ -8,6 +8,7 @@ import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -211,7 +212,7 @@ export function StageCard({
                   : 'bg-secondary/50 border-border/40 text-foreground hover:border-gold/25'
               )}
             >
-              <Music size={14} className="text-gold/70 shrink-0" />
+              <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} active />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
@@ -241,7 +242,7 @@ export function StageCard({
                         : 'hover:bg-secondary/60 text-foreground'
                     )}
                   >
-                    <Music size={12} className={cn('shrink-0', index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50')} />
+                    <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                     <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
