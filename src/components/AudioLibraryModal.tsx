@@ -116,7 +116,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
       await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
-        tipo: isSpotifyUrl(newAudioUrl) ? 'spotify' : isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
       });
       setNewAudioName('');
       setNewAudioUrl('');
