@@ -515,8 +515,8 @@ export function PresentationMode({
                       : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'
                   )}
                 >
-                  <Music size={12} className="sm:hidden" />
-                  <Music size={14} className="hidden sm:block" />
+                  <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={index === selectedAudioIndex} />
+                  <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={index === selectedAudioIndex} />
                   {audio.nome || `Áudio ${index + 1}`}
                 </button>
               ))}
