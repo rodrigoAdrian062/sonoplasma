@@ -13,7 +13,8 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter
+  SkipBack, SkipForward, Filter, Disc3
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
