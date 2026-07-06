@@ -443,8 +443,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                   <div className="flex items-center gap-1.5">
                     {hasYouTubeUrl ? (
                       <Youtube size={10} className="text-red-500 shrink-0" />
-                    ) : hasSpotifyUrl ? (
-                      <Disc3 size={10} className="text-green-500 shrink-0" />
                     ) : (
                       <Music size={10} className="text-gold shrink-0" />
                     )}
