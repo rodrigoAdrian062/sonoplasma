@@ -379,7 +379,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                       {playingIndex === index ? <Square size={14} /> : <Play size={14} />}
                     </Button>
                   </div>
-                ) : mode === 'youtube' ? (
+                ) : (
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Youtube className="absolute left-2.5 top-1/2 -translate-y-1/2 text-red-500" size={14} />
@@ -404,35 +404,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                           : 'border-border text-muted-foreground opacity-50'
                       )}
                       title="Abrir no YouTube"
-                    >
-                      <Play size={14} />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Disc3 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-green-500" size={14} />
-                      <Input
-                        value={hasSpotifyUrl ? audio.audio_url : ''}
-                        onChange={(e) => updateAudio(index, 'audio_url', e.target.value)}
-                        placeholder="https://open.spotify.com/track/..."
-                        className="bg-secondary border-border text-foreground text-sm h-9 pl-9"
-                      />
-                    </div>
-                    {/* Open Spotify button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => togglePreview(index, audio.audio_url)}
-                      disabled={!audio.audio_url || !hasSpotifyUrl}
-                      className={cn(
-                        'shrink-0 h-9 w-9 transition-all',
-                        hasSpotifyUrl
-                          ? 'border-green-500/50 text-green-500 hover:bg-green-500/10'
-                          : 'border-border text-muted-foreground opacity-50'
-                      )}
-                      title="Abrir no Spotify"
                     >
                       <Play size={14} />
                     </Button>
