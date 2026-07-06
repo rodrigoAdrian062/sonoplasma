@@ -20,7 +20,7 @@ interface AudioListEditorProps {
   maxAudios?: number;
 }
 
-type InputMode = 'upload' | 'youtube' | 'spotify' | 'library';
+type InputMode = 'upload' | 'youtube' | 'library';
 
 export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: AudioListEditorProps) {
   const navigate = useNavigate();
