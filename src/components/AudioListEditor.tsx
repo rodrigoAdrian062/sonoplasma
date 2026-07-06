@@ -284,19 +284,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                   </button>
                   <button
                     type="button"
-                    onClick={() => setInputMode(index, 'spotify')}
-                    className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
-                      mode === 'spotify'
-                        ? 'bg-green-500/20 text-green-500 font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Disc3 size={12} />
-                    Spotify
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => navigate('/biblioteca')}
                     className={cn(
                       'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
