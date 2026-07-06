@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Music } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
-import { SpotifyGuideModal } from '@/components/SpotifyGuideModal';
+
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -22,7 +22,6 @@ interface HeaderProps {
 export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSpotifyOpen, setIsSpotifyOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
 
@@ -86,19 +85,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setIsSpotifyOpen(true)}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-green-500 h-8 w-8"
-                  >
-                    <Music size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Conectar Spotify</TooltipContent>
               </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
@@ -186,19 +172,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => setIsSpotifyOpen(true)}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-green-500"
-                  >
-                    <Music size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Conectar Spotify</TooltipContent>
-              </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
                 variant="ghost"
@@ -243,11 +216,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-      />
-
-      <SpotifyGuideModal
-        isOpen={isSpotifyOpen}
-        onClose={() => setIsSpotifyOpen(false)}
       />
 
 
