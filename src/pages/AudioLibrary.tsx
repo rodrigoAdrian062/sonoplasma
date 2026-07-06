@@ -187,9 +187,7 @@ export default function AudioLibraryPage() {
     }
     if (playingId === audio.id && isPaused) {
       // Resume
-      if (isSpotifyUrl(audio.audio_url) && spotifyRef.current) {
-        try { spotifyRef.current.resume(); } catch { try { spotifyRef.current.play(); } catch {} }
-      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.playVideo(); } catch {}
       } else if (audioElement) {
         audioElement.play();
@@ -204,35 +202,6 @@ export default function AudioLibraryPage() {
   const handlePlay = (audio: { id: string; audio_url: string }) => {
     stopCurrentPlayback();
 
-    if (isSpotifyUrl(audio.audio_url)) {
-      const uri = getSpotifyUri(audio.audio_url);
-      if (!uri) { toast({ title: 'Link do Spotify inválido', variant: 'destructive' }); return; }
-      setSpotifyActive(true);
-      setPlayingId(audio.id);
-      setIsPaused(false);
-      // Wait for the embed container to render, then mount the Spotify controller
-      setTimeout(() => {
-        loadSpotifyApi((IFrameAPI) => {
-          const el = document.getElementById('spotify-library-embed');
-          if (!el) return;
-          el.innerHTML = '';
-          IFrameAPI.createController(el, { uri, width: '100%', height: 152 }, (controller: any) => {
-            spotifyRef.current = controller;
-            controller.addListener('ready', () => {
-              try { controller.play(); } catch {}
-            });
-            controller.addListener('playback_update', (e: any) => {
-              const d = e?.data;
-              if (!d) return;
-              setAudioCurrentTime((d.position || 0) / 1000);
-              setAudioDuration((d.duration || 0) / 1000);
-              setIsPaused(!!d.isPaused);
-            });
-          });
-        });
-      }, 60);
-      return;
-    }
 
 
 
