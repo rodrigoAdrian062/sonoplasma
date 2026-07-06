@@ -379,7 +379,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                       {playingIndex === index ? <Square size={14} /> : <Play size={14} />}
                     </Button>
                   </div>
-                ) : (
+                ) : mode === 'youtube' ? (
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Youtube className="absolute left-2.5 top-1/2 -translate-y-1/2 text-red-500" size={14} />
