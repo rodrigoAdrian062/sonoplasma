@@ -698,6 +698,8 @@ export default function AudioLibraryPage() {
                 <div className="p-2 bg-gold/10 rounded-lg shrink-0">
                   {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
                     <Youtube size={18} className="text-red-500" />
+                  ) : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? (
+                    <Disc3 size={18} className="text-green-500" />
                   ) : (
                     <Music size={18} className="text-gold" />
                   )}
