@@ -177,9 +177,7 @@ export default function AudioLibraryPage() {
   const handlePauseResume = (audio: { id: string; audio_url: string }) => {
     if (playingId === audio.id && !isPaused) {
       // Pause
-      if (isSpotifyUrl(audio.audio_url) && spotifyRef.current) {
-        try { spotifyRef.current.pause(); } catch {}
-      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.pauseVideo(); } catch {}
       } else if (audioElement) {
         audioElement.pause();
