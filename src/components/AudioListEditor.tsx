@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Play, Square, GripVertical, Music, Upload, Loader2, Link, Youtube, Library, Disc3 } from 'lucide-react';
+import { Plus, Trash2, Play, Square, GripVertical, Music, Upload, Loader2, Link, Youtube, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ interface AudioListEditorProps {
   maxAudios?: number;
 }
 
-type InputMode = 'upload' | 'youtube' | 'spotify' | 'library';
+type InputMode = 'upload' | 'youtube' | 'library';
 
 export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: AudioListEditorProps) {
   const navigate = useNavigate();
@@ -72,9 +72,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  const isSpotifyUrl = (url: string): boolean => {
-    return url.includes('open.spotify.com') || url.startsWith('spotify:');
-  };
 
   const getYouTubeVideoId = (url: string): string | null => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -99,11 +96,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       return;
     }
 
-    // For Spotify, open the link in Spotify
-    if (isSpotifyUrl(url)) {
-      window.open(url, '_blank');
-      return;
-    }
 
 
     if (playingIndex === index) {
@@ -223,7 +215,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
           {audios.map((audio, index) => {
             const mode = getInputMode(index);
             const hasYouTubeUrl = isYouTubeUrl(audio.audio_url);
-            const hasSpotifyUrl = isSpotifyUrl(audio.audio_url);
+            
             
             return (
               <div
@@ -281,19 +273,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                   >
                     <Youtube size={12} />
                     YouTube
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInputMode(index, 'spotify')}
-                    className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
-                      mode === 'spotify'
-                        ? 'bg-green-500/20 text-green-500 font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Disc3 size={12} />
-                    Spotify
                   </button>
                   <button
                     type="button"
@@ -379,7 +358,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                       {playingIndex === index ? <Square size={14} /> : <Play size={14} />}
                     </Button>
                   </div>
-                ) : mode === 'youtube' ? (
+                ) : (
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Youtube className="absolute left-2.5 top-1/2 -translate-y-1/2 text-red-500" size={14} />
@@ -408,43 +387,12 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                       <Play size={14} />
                     </Button>
                   </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Disc3 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-green-500" size={14} />
-                      <Input
-                        value={hasSpotifyUrl ? audio.audio_url : ''}
-                        onChange={(e) => updateAudio(index, 'audio_url', e.target.value)}
-                        placeholder="https://open.spotify.com/track/..."
-                        className="bg-secondary border-border text-foreground text-sm h-9 pl-9"
-                      />
-                    </div>
-                    {/* Open Spotify button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => togglePreview(index, audio.audio_url)}
-                      disabled={!audio.audio_url || !hasSpotifyUrl}
-                      className={cn(
-                        'shrink-0 h-9 w-9 transition-all',
-                        hasSpotifyUrl
-                          ? 'border-green-500/50 text-green-500 hover:bg-green-500/10'
-                          : 'border-border text-muted-foreground opacity-50'
-                      )}
-                      title="Abrir no Spotify"
-                    >
-                      <Play size={14} />
-                    </Button>
-                  </div>
                 )}
 
                 {audio.audio_url && (
                   <div className="flex items-center gap-1.5">
                     {hasYouTubeUrl ? (
                       <Youtube size={10} className="text-red-500 shrink-0" />
-                    ) : hasSpotifyUrl ? (
-                      <Disc3 size={10} className="text-green-500 shrink-0" />
                     ) : (
                       <Music size={10} className="text-gold shrink-0" />
                     )}
@@ -478,7 +426,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
         <ul className="text-xs text-muted-foreground space-y-0.5 pl-5">
           <li>• <strong>Upload:</strong> Formatos MP3, WAV, OGG (máx 20MB)</li>
           <li>• <strong>YouTube:</strong> Cole o link do vídeo diretamente</li>
-          <li>• <strong>Spotify:</strong> Cole o link da música (abre no Spotify, sem precisar de chaves)</li>
+          
           <li>• <strong>Biblioteca:</strong> Reutilize áudios salvos anteriormente</li>
         </ul>
       </div>

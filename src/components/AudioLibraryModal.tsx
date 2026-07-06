@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, Disc3 } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -46,9 +46,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  const isSpotifyUrl = (url: string) => {
-    return url.includes('open.spotify.com') || url.startsWith('spotify:');
-  };
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return '';
@@ -58,7 +55,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (isYouTubeUrl(audio.audio_url) || isSpotifyUrl(audio.audio_url)) {
+    if (isYouTubeUrl(audio.audio_url)) {
       window.open(audio.audio_url, '_blank');
       return;
     }
@@ -119,7 +116,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
       await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
-        tipo: isSpotifyUrl(newAudioUrl) ? 'spotify' : isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
       });
       setNewAudioName('');
       setNewAudioUrl('');
@@ -136,7 +133,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleDownloadAll = async () => {
     const downloadableAudios = audios.filter(
-      (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url) && a.tipo !== 'spotify' && !isSpotifyUrl(a.audio_url)
+      (a) => a.tipo !== 'youtube' && !isYouTubeUrl(a.audio_url)
     );
 
     if (downloadableAudios.length === 0) {
@@ -309,7 +306,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       className={addMode === 'url' ? 'bg-gold hover:bg-gold-glow text-background' : ''}
                     >
                       <ExternalLink size={14} className="mr-1" />
-                      URL / YouTube / Spotify
+                      URL / YouTube
                     </Button>
                   </div>
 
@@ -351,7 +348,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   ) : (
                     <div className="flex gap-2">
                       <Input
-                        placeholder="URL do áudio, YouTube ou Spotify"
+                        placeholder="URL do áudio ou YouTube"
                         value={newAudioUrl}
                         onChange={(e) => setNewAudioUrl(e.target.value)}
                         className="flex-1"
@@ -461,8 +458,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="p-2 bg-primary/10 rounded-lg">
                       {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
                         <Youtube size={18} className="text-destructive" />
-                      ) : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? (
-                        <Disc3 size={18} className="text-green-500" />
                       ) : (
                         <Music size={18} className="text-primary" />
                       )}
@@ -471,7 +466,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {audio.tipo === 'youtube' ? 'YouTube' : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? 'Spotify' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                       </p>
                     </div>
 
