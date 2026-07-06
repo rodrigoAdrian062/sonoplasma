@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Music } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 
