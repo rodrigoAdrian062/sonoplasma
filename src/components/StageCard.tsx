@@ -212,8 +212,7 @@ export function StageCard({
                   : 'bg-secondary/50 border-border/40 text-foreground hover:border-gold/25'
               )}
             >
-              <Music size={14} className="text-gold/70 shrink-0" />
-              <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} className="text-gold/70" active />
+              <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} active />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
