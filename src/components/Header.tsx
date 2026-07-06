@@ -87,6 +87,19 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Biblioteca de Áudios</TooltipContent>
               </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setIsSpotifyOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-green-500 h-8 w-8"
+                  >
+                    <Music size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Conectar Spotify</TooltipContent>
+              </Tooltip>
               <Button
                 onClick={() => setIsSettingsOpen(true)}
                 variant="ghost"
