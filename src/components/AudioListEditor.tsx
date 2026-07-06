@@ -478,6 +478,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
         <ul className="text-xs text-muted-foreground space-y-0.5 pl-5">
           <li>• <strong>Upload:</strong> Formatos MP3, WAV, OGG (máx 20MB)</li>
           <li>• <strong>YouTube:</strong> Cole o link do vídeo diretamente</li>
+          <li>• <strong>Spotify:</strong> Cole o link da música (abre no Spotify, sem precisar de chaves)</li>
           <li>• <strong>Biblioteca:</strong> Reutilize áudios salvos anteriormente</li>
         </ul>
       </div>
