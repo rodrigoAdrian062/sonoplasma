@@ -245,6 +245,13 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
         onClose={() => setIsSettingsOpen(false)}
       />
 
+      <SpotifyGuideModal
+        isOpen={isSpotifyOpen}
+        onClose={() => setIsSpotifyOpen(false)}
+      />
+
+
+
     </>
   );
 }
