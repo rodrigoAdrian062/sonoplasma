@@ -215,7 +215,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
           {audios.map((audio, index) => {
             const mode = getInputMode(index);
             const hasYouTubeUrl = isYouTubeUrl(audio.audio_url);
-            const hasSpotifyUrl = isSpotifyUrl(audio.audio_url);
+            
             
             return (
               <div
