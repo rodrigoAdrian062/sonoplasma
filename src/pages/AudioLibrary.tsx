@@ -381,7 +381,7 @@ export default function AudioLibraryPage() {
       const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
-        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : isSpotifyUrl(newAudioUrl) ? 'spotify' : 'external',
+        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
       });
       if (currentFolderId && result?.id) {
         await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
@@ -691,7 +691,7 @@ export default function AudioLibraryPage() {
                   onClick={() => setAddMode('url')}
                   className={addMode === 'url' ? 'bg-gold hover:bg-gold/90 text-background' : ''}
                 >
-                  <ExternalLink size={14} className="mr-1" /> URL / YouTube / Spotify
+                  <ExternalLink size={14} className="mr-1" /> URL / YouTube
                 </Button>
               </div>
               <Input
@@ -720,7 +720,7 @@ export default function AudioLibraryPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Input placeholder="URL do áudio, YouTube ou Spotify" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
+                  <Input placeholder="URL do áudio ou YouTube" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
                   <Button onClick={handleAddUrl} disabled={!newAudioUrl.trim() || !newAudioName.trim() || addAudio.isPending} className="bg-gold hover:bg-gold/90 text-background">
                     {addAudio.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Adicionar'}
                   </Button>
