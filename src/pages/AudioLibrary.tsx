@@ -920,6 +920,23 @@ export default function AudioLibraryPage() {
           </div>
         )}
       </main>
+
+      {spotifyActive && (
+        <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gold/30 bg-card/95 backdrop-blur-md p-3">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <div id="spotify-library-embed" className="flex-1 min-w-0 rounded-xl overflow-hidden" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => stopCurrentPlayback()}
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+              title="Fechar player do Spotify"
+            >
+              <X size={18} />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
