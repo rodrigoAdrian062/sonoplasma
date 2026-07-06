@@ -623,7 +623,7 @@ export default function AudioLibraryPage() {
                   onClick={() => setAddMode('url')}
                   className={addMode === 'url' ? 'bg-gold hover:bg-gold/90 text-background' : ''}
                 >
-                  <ExternalLink size={14} className="mr-1" /> URL / YouTube
+                  <ExternalLink size={14} className="mr-1" /> URL / YouTube / Spotify
                 </Button>
               </div>
               <Input
