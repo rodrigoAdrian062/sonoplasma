@@ -72,9 +72,6 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  const isSpotifyUrl = (url: string): boolean => {
-    return url.includes('open.spotify.com') || url.startsWith('spotify:');
-  };
 
   const getYouTubeVideoId = (url: string): string | null => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
