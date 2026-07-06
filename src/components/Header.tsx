@@ -22,7 +22,6 @@ interface HeaderProps {
 export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSpotifyOpen, setIsSpotifyOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
 
