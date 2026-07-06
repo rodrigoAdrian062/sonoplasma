@@ -89,6 +89,8 @@ export type Database = {
           id: string
           logo_url: string | null
           nome_app: string
+          spotify_client_id: string | null
+          spotify_client_secret: string | null
           subtitulo_app: string | null
           updated_at: string
         }
@@ -98,6 +100,8 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_app?: string
+          spotify_client_id?: string | null
+          spotify_client_secret?: string | null
           subtitulo_app?: string | null
           updated_at?: string
         }
@@ -107,6 +111,8 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_app?: string
+          spotify_client_id?: string | null
+          spotify_client_secret?: string | null
           subtitulo_app?: string | null
           updated_at?: string
         }
