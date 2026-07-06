@@ -53,6 +53,8 @@ export default function AudioLibraryPage() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  const spotifyRef = useRef<any>(null);
+  const [spotifyActive, setSpotifyActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -101,6 +103,30 @@ export default function AudioLibraryPage() {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const getSpotifyUri = (url: string): string | null => {
+    if (url.startsWith('spotify:')) return url;
+    const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|episode|playlist|album|show)\/([a-zA-Z0-9]+)/);
+    return m ? `spotify:${m[1]}:${m[2]}` : null;
+  };
+
+  const loadSpotifyApi = (cb: (api: any) => void) => {
+    const w = window as any;
+    if (w.SpotifyIframeApi) { cb(w.SpotifyIframeApi); return; }
+    const prev = w.onSpotifyIframeApiReady;
+    w.onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      w.SpotifyIframeApi = IFrameAPI;
+      if (typeof prev === 'function') prev(IFrameAPI);
+      cb(IFrameAPI);
+    };
+    if (!document.getElementById('spotify-iframe-api')) {
+      const tag = document.createElement('script');
+      tag.id = 'spotify-iframe-api';
+      tag.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      tag.async = true;
+      document.body.appendChild(tag);
+    }
   };
 
   const [isPaused, setIsPaused] = useState(false);
@@ -167,6 +193,16 @@ export default function AudioLibraryPage() {
         }
       } catch {}
     }
+    if (spotifyRef.current) {
+      try {
+        spotifyRef.current.pause();
+        if (destroy) {
+          spotifyRef.current.destroy();
+          spotifyRef.current = null;
+        }
+      } catch {}
+    }
+    if (destroy) setSpotifyActive(false);
     setPlayingId(null);
     setIsPaused(false);
     setAudioCurrentTime(0);
@@ -176,7 +212,9 @@ export default function AudioLibraryPage() {
   const handlePauseResume = (audio: { id: string; audio_url: string }) => {
     if (playingId === audio.id && !isPaused) {
       // Pause
-      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isSpotifyUrl(audio.audio_url) && spotifyRef.current) {
+        try { spotifyRef.current.pause(); } catch {}
+      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.pauseVideo(); } catch {}
       } else if (audioElement) {
         audioElement.pause();
@@ -186,7 +224,9 @@ export default function AudioLibraryPage() {
     }
     if (playingId === audio.id && isPaused) {
       // Resume
-      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isSpotifyUrl(audio.audio_url) && spotifyRef.current) {
+        try { spotifyRef.current.resume(); } catch { try { spotifyRef.current.play(); } catch {} }
+      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.playVideo(); } catch {}
       } else if (audioElement) {
         audioElement.play();
@@ -202,9 +242,37 @@ export default function AudioLibraryPage() {
     stopCurrentPlayback();
 
     if (isSpotifyUrl(audio.audio_url)) {
-      window.open(audio.audio_url, '_blank');
+      const uri = getSpotifyUri(audio.audio_url);
+      if (!uri) { toast({ title: 'Link do Spotify inválido', variant: 'destructive' }); return; }
+      setSpotifyActive(true);
+      setPlayingId(audio.id);
+      setIsPaused(false);
+      // Wait for the embed container to render, then mount the Spotify controller
+      setTimeout(() => {
+        loadSpotifyApi((IFrameAPI) => {
+          const el = document.getElementById('spotify-library-embed');
+          if (!el) return;
+          el.innerHTML = '';
+          IFrameAPI.createController(el, { uri, width: '100%', height: 152 }, (controller: any) => {
+            spotifyRef.current = controller;
+            controller.addListener('ready', () => {
+              try { controller.play(); } catch {}
+            });
+            controller.addListener('playback_update', (e: any) => {
+              const d = e?.data;
+              if (!d) return;
+              setAudioCurrentTime((d.position || 0) / 1000);
+              setAudioDuration((d.duration || 0) / 1000);
+              setIsPaused(!!d.isPaused);
+            });
+          });
+        });
+      }, 60);
       return;
     }
+
+
+
 
 
 
@@ -852,6 +920,23 @@ export default function AudioLibraryPage() {
           </div>
         )}
       </main>
+
+      {spotifyActive && (
+        <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gold/30 bg-card/95 backdrop-blur-md p-3">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <div id="spotify-library-embed" className="flex-1 min-w-0 rounded-xl overflow-hidden" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => stopCurrentPlayback()}
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+              title="Fechar player do Spotify"
+            >
+              <X size={18} />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
