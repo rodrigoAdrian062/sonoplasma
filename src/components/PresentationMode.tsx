@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
+import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import presentationBanner from '@/assets/presentation-banner.png';
 import {
   AlertDialog,
