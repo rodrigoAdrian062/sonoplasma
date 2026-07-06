@@ -461,6 +461,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="p-2 bg-primary/10 rounded-lg">
                       {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
                         <Youtube size={18} className="text-destructive" />
+                      ) : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? (
+                        <Disc3 size={18} className="text-green-500" />
                       ) : (
                         <Music size={18} className="text-primary" />
                       )}
@@ -469,7 +471,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        {audio.tipo === 'youtube' ? 'YouTube' : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? 'Spotify' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                       </p>
                     </div>
 
