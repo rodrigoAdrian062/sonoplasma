@@ -53,6 +53,8 @@ export default function AudioLibraryPage() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  const spotifyRef = useRef<any>(null);
+  const [spotifyActive, setSpotifyActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
