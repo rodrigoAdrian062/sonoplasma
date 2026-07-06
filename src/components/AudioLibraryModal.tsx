@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, Disc3 } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -306,7 +306,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       className={addMode === 'url' ? 'bg-gold hover:bg-gold-glow text-background' : ''}
                     >
                       <ExternalLink size={14} className="mr-1" />
-                      URL / YouTube / Spotify
+                      URL / YouTube
                     </Button>
                   </div>
 
@@ -348,7 +348,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   ) : (
                     <div className="flex gap-2">
                       <Input
-                        placeholder="URL do áudio, YouTube ou Spotify"
+                        placeholder="URL do áudio ou YouTube"
                         value={newAudioUrl}
                         onChange={(e) => setNewAudioUrl(e.target.value)}
                         className="flex-1"
