@@ -46,9 +46,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  const isSpotifyUrl = (url: string) => {
-    return url.includes('open.spotify.com') || url.startsWith('spotify:');
-  };
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return '';
