@@ -309,7 +309,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       className={addMode === 'url' ? 'bg-gold hover:bg-gold-glow text-background' : ''}
                     >
                       <ExternalLink size={14} className="mr-1" />
-                      URL / YouTube
+                      URL / YouTube / Spotify
                     </Button>
                   </div>
 
