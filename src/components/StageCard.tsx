@@ -213,6 +213,7 @@ export function StageCard({
               )}
             >
               <Music size={14} className="text-gold/70 shrink-0" />
+              <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} className="text-gold/70" active />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
