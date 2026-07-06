@@ -193,6 +193,16 @@ export default function AudioLibraryPage() {
         }
       } catch {}
     }
+    if (spotifyRef.current) {
+      try {
+        spotifyRef.current.pause();
+        if (destroy) {
+          spotifyRef.current.destroy();
+          spotifyRef.current = null;
+        }
+      } catch {}
+    }
+    if (destroy) setSpotifyActive(false);
     setPlayingId(null);
     setIsPaused(false);
     setAudioCurrentTime(0);
