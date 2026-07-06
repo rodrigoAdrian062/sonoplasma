@@ -105,6 +105,30 @@ export default function AudioLibraryPage() {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const getSpotifyUri = (url: string): string | null => {
+    if (url.startsWith('spotify:')) return url;
+    const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|episode|playlist|album|show)\/([a-zA-Z0-9]+)/);
+    return m ? `spotify:${m[1]}:${m[2]}` : null;
+  };
+
+  const loadSpotifyApi = (cb: (api: any) => void) => {
+    const w = window as any;
+    if (w.SpotifyIframeApi) { cb(w.SpotifyIframeApi); return; }
+    const prev = w.onSpotifyIframeApiReady;
+    w.onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      w.SpotifyIframeApi = IFrameAPI;
+      if (typeof prev === 'function') prev(IFrameAPI);
+      cb(IFrameAPI);
+    };
+    if (!document.getElementById('spotify-iframe-api')) {
+      const tag = document.createElement('script');
+      tag.id = 'spotify-iframe-api';
+      tag.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      tag.async = true;
+      document.body.appendChild(tag);
+    }
+  };
+
   const [isPaused, setIsPaused] = useState(false);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
