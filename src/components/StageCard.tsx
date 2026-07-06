@@ -242,7 +242,7 @@ export function StageCard({
                         : 'hover:bg-secondary/60 text-foreground'
                     )}
                   >
-                    <Music size={12} className={cn('shrink-0', index === selectedAudioIndex ? 'text-gold' : 'text-muted-foreground/50')} />
+                    <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                     <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
