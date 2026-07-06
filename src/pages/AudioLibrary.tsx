@@ -13,7 +13,8 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter
+  SkipBack, SkipForward, Filter, Disc3
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -85,6 +86,9 @@ export default function AudioLibraryPage() {
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
+
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return '';
@@ -197,6 +201,13 @@ export default function AudioLibraryPage() {
   const handlePlay = (audio: { id: string; audio_url: string }) => {
     stopCurrentPlayback();
 
+    if (isSpotifyUrl(audio.audio_url)) {
+      window.open(audio.audio_url, '_blank');
+      return;
+    }
+
+
+
     if (isYouTubeUrl(audio.audio_url)) {
       const videoId = getYouTubeVideoId(audio.audio_url);
       if (!videoId) { toast({ title: 'URL do YouTube inválida', variant: 'destructive' }); return; }
@@ -302,7 +313,7 @@ export default function AudioLibraryPage() {
       const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
         audio_url: newAudioUrl.trim(),
-        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : isSpotifyUrl(newAudioUrl) ? 'spotify' : 'external',
       });
       if (currentFolderId && result?.id) {
         await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
@@ -641,7 +652,7 @@ export default function AudioLibraryPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Input placeholder="URL do áudio ou YouTube" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
+                  <Input placeholder="URL do áudio, YouTube ou Spotify" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
                   <Button onClick={handleAddUrl} disabled={!newAudioUrl.trim() || !newAudioName.trim() || addAudio.isPending} className="bg-gold hover:bg-gold/90 text-background">
                     {addAudio.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Adicionar'}
                   </Button>
@@ -687,6 +698,8 @@ export default function AudioLibraryPage() {
                 <div className="p-2 bg-gold/10 rounded-lg shrink-0">
                   {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
                     <Youtube size={18} className="text-red-500" />
+                  ) : audio.tipo === 'spotify' || isSpotifyUrl(audio.audio_url) ? (
+                    <Disc3 size={18} className="text-green-500" />
                   ) : (
                     <Music size={18} className="text-gold" />
                   )}
@@ -704,10 +717,22 @@ export default function AudioLibraryPage() {
                     >
                       {audio.audio_url}
                     </a>
+                  ) : isSpotifyUrl(audio.audio_url) ? (
+                    <a
+                      href={audio.audio_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-green-400 hover:text-green-300 truncate block max-w-[260px] sm:max-w-[400px] underline underline-offset-2"
+                      title={audio.audio_url}
+                    >
+                      {audio.audio_url}
+                    </a>
                   ) : (
                     <p className="text-xs text-muted-foreground truncate">
                       {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                     </p>
+
                   )}
                 </div>
                 {!bulkDeleteMode && (
