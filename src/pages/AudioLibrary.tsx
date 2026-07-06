@@ -200,6 +200,13 @@ export default function AudioLibraryPage() {
   const handlePlay = (audio: { id: string; audio_url: string }) => {
     stopCurrentPlayback();
 
+    if (isSpotifyUrl(audio.audio_url)) {
+      window.open(audio.audio_url, '_blank');
+      return;
+    }
+
+
+
     if (isYouTubeUrl(audio.audio_url)) {
       const videoId = getYouTubeVideoId(audio.audio_url);
       if (!videoId) { toast({ title: 'URL do YouTube inválida', variant: 'destructive' }); return; }
