@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 
 import AudioLibrary from "./pages/AudioLibrary";
 import SpotifyLibrary from "./pages/SpotifyLibrary";
+import YoutubeLibrary from "./pages/YoutubeLibrary";
 import NotFound from "./pages/NotFound";
 import { MiniPlayer } from "@/components/MiniPlayer";
 
