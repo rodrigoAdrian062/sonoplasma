@@ -332,7 +332,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           {/* Step 4: Áudios */}
           {currentStep === 3 && (
             <div className="animate-fade-in">
-              <AudioListEditor
+              <AudioPicker
                 audios={audioItems}
                 onChange={setAudioItems}
               />
