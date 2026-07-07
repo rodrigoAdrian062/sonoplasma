@@ -167,11 +167,17 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   };
 
   const togglePreview = (url: string) => {
-    // Spotify can't be played inline; open its player
+    // Spotify: play inline via embedded iframe (no new tab)
     if (isSpotifyUrl(url)) {
-      window.open(url, '_blank');
+      if (playingUrl === url) {
+        stopPreview();
+      } else {
+        stopPreview();
+        setPlayingUrl(url);
+      }
       return;
     }
+
 
     // YouTube: toggle pause/resume via IFrame API (inline, no new tab)
     if (isYouTubeUrl(url)) {
