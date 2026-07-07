@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
-  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
+  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2,
 
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
