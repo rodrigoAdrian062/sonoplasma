@@ -78,14 +78,23 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const selectedUrls = useMemo(() => new Set(audios.map((a) => a.audio_url)), [audios]);
   const atMax = audios.length >= maxAudios;
 
+  const matchesSource = (url: string) => {
+    if (sourceFilter === 'all') return true;
+    if (sourceFilter === 'youtube') return isYouTubeUrl(url);
+    if (sourceFilter === 'spotify') return isSpotifyUrl(url);
+    return !isYouTubeUrl(url) && !isSpotifyUrl(url); // upload/link
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return library.filter((a) => {
-      const inFolder = search ? true : (a as any).pasta_id === currentFolderId;
+      // when searching or filtering by source, ignore folder scoping
+      const scoped = search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
-      return inFolder && matches;
+      return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, search, currentFolderId]);
+  }, [library, search, currentFolderId, sourceFilter]);
+
 
   const formatTime = (s: number) => {
     if (!Number.isFinite(s)) return '0:00';
