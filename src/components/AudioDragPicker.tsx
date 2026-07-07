@@ -54,6 +54,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [curTime, setCurTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const ytPollRef = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
 
