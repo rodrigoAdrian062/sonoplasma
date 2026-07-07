@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
-  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
+  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2,
 
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -52,7 +52,7 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
 }
 
 export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity }: AudioDragPickerProps) {
-  const { audios: library, isLoading, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
@@ -230,6 +230,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       audioRef.current.currentTime = ratio * duration;
     }
   };
+
+  const handleDeleteFromLibrary = (item: { id: string; audio_url: string }) => {
+    if (!window.confirm('Excluir este áudio da biblioteca? Esta ação não pode ser desfeita.')) return;
+    if (playingUrl === item.audio_url) stopPreview();
+    // also remove it from the current stage selection if present
+    if (selectedUrls.has(item.audio_url)) {
+      onChange(audios.filter((a) => a.audio_url !== item.audio_url));
+    }
+    deleteAudio.mutate(item.id);
+  };
+
+
 
 
   // Stop playback when the dialog closes / unmounts
@@ -483,7 +495,16 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                               <Plus size={14} />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFromLibrary(item)}
+                            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Excluir da biblioteca"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
+
 
                         {/* Progress bar (same model as library) */}
                         {playingUrl === item.audio_url && duration > 0 && (
