@@ -494,16 +494,28 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       )}
 
       {audios.length > 0 && audios.length < maxAudios && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addAudio}
-          className="w-full gap-2 border-dashed border-border text-muted-foreground hover:border-gold/30 hover:text-gold"
-        >
-          <Plus size={16} />
-          Adicionar mais áudio
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setLibraryPickerIndex(-1)}
+            className="gap-2 border-dashed border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10"
+          >
+            <Library size={16} />
+            Biblioteca
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addAudio}
+            className="gap-2 border-dashed border-gold/30 text-gold hover:border-gold/50 hover:bg-gold/10"
+          >
+            <Plus size={16} />
+            Novo áudio
+          </Button>
+        </div>
       )}
+
 
       <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
         <p className="text-xs text-muted-foreground">
