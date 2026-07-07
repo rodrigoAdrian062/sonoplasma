@@ -11,6 +11,7 @@ import SectionDetail from "./pages/SectionDetail";
 import Auth from "./pages/Auth";
 
 import AudioLibrary from "./pages/AudioLibrary";
+import SpotifyLibrary from "./pages/SpotifyLibrary";
 import NotFound from "./pages/NotFound";
 import { MiniPlayer } from "@/components/MiniPlayer";
 
