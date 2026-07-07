@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
-import { useStageAudios } from '@/hooks/useStageAudios';
+import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play, Pause } from 'lucide-react';
@@ -62,6 +62,24 @@ export default function SpotifyLibraryPage() {
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
+  const { allAudios: allStageAudios } = useAllStageAudios();
+
+  // Map audio_url -> stages/sections where it is used
+  const usageMap = useMemo(() => {
+    const map = new Map<string, Array<{ stageName: string; sectionName: string }>>();
+    for (const sa of allStageAudios) {
+      const stage = stages.find((s) => s.id === sa.etapa_id);
+      if (!stage) continue;
+      const section = sections.find((s) => s.id === stage.secao_id);
+      const entry = { stageName: stage.nome_simbolico, sectionName: section?.nome || 'Sem seção' };
+      const existing = map.get(sa.audio_url) || [];
+      if (!existing.some((e) => e.stageName === entry.stageName && e.sectionName === entry.sectionName)) {
+        existing.push(entry);
+        map.set(sa.audio_url, existing);
+      }
+    }
+    return map;
+  }, [allStageAudios, stages, sections]);
 
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -263,12 +281,18 @@ export default function SpotifyLibraryPage() {
             {spotifyAudios.map((audio) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
+              const usage = usageMap.get(audio.audio_url) || [];
+              const isUsed = usage.length > 0;
               return (
                 <div
                   key={audio.id}
                   className={cn(
-                    'rounded-lg border border-border/50 bg-card/50 overflow-hidden transition-colors',
-                    isCurrent && 'border-[#1DB954]/50'
+                    'rounded-lg border overflow-hidden transition-colors',
+                    isCurrent
+                      ? 'border-[#1DB954]/50 bg-card/50'
+                      : isUsed
+                        ? 'border-l-4 border-l-[#1DB954] border-y-border/50 border-r-border/50 bg-[#1DB954]/5'
+                        : 'border-border/50 bg-card/50'
                   )}
                 >
                   <div className="flex items-center gap-3 p-3 sm:p-4">
@@ -286,6 +310,25 @@ export default function SpotifyLibraryPage() {
                       >
                         {audio.audio_url}
                       </a>
+                      {isUsed ? (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {usage.map((u, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1DB954]/15 text-[#1DB954] text-[10px] font-medium"
+                              title={`${u.sectionName} › ${u.stageName}`}
+                            >
+                              <span className="opacity-70">{u.sectionName}</span>
+                              <span>›</span>
+                              <span>{u.stageName}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium">
+                          Não adicionada
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
