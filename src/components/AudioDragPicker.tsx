@@ -52,7 +52,7 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
 }
 
 export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity }: AudioDragPickerProps) {
-  const { audios: library, isLoading, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
