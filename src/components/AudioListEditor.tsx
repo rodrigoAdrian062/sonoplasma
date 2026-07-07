@@ -382,6 +382,35 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                       {playingIndex === index ? <Square size={14} /> : <Play size={14} />}
                     </Button>
                   </div>
+                ) : mode === 'spotify' ? (
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Music2 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#1DB954]" size={14} />
+                      <Input
+                        value={hasSpotifyUrl ? audio.audio_url : ''}
+                        onChange={(e) => updateAudio(index, 'audio_url', e.target.value)}
+                        placeholder="https://open.spotify.com/track/..."
+                        className="bg-secondary border-border text-foreground text-sm h-9 pl-9"
+                      />
+                    </div>
+                    {/* Open Spotify button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => togglePreview(index, audio.audio_url)}
+                      disabled={!audio.audio_url || !hasSpotifyUrl}
+                      className={cn(
+                        'shrink-0 h-9 w-9 transition-all',
+                        hasSpotifyUrl
+                          ? 'border-[#1DB954]/50 text-[#1DB954] hover:bg-[#1DB954]/10'
+                          : 'border-border text-muted-foreground opacity-50'
+                      )}
+                      title="Abrir no Spotify"
+                    >
+                      <Play size={14} />
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <div className="relative flex-1">
