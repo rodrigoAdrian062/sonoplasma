@@ -36,6 +36,14 @@ const getYouTubeVideoId = (url: string): string | null => {
   return m && m[2].length === 11 ? m[2] : null;
 };
 
+const getSpotifyEmbedUrl = (url: string): string | null => {
+  // supports track / album / playlist / episode links (and spotify: URIs)
+  const m = url.match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?|spotify:)(track|album|playlist|episode)[/:]([a-zA-Z0-9]+)/);
+  if (!m) return null;
+  return `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`;
+};
+
+
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
