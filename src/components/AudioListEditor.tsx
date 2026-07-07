@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Play, Square, GripVertical, Music, Upload, Loader2, Link, Youtube, Library, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AudioLibraryModal } from './AudioLibraryModal';
 
 
 interface AudioItem {
@@ -23,12 +23,32 @@ interface AudioListEditorProps {
 type InputMode = 'upload' | 'youtube' | 'spotify' | 'library';
 
 export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: AudioListEditorProps) {
-  const navigate = useNavigate();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [inputModes, setInputModes] = useState<Map<number, InputMode>>(new Map());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  // libraryPickerIndex: null = closed, -1 = adding new slot, >=0 = replacing slot
+  const [libraryPickerIndex, setLibraryPickerIndex] = useState<number | null>(null);
+
+  const handleLibrarySelect = (audio: { nome: string; audio_url: string }) => {
+    if (libraryPickerIndex === null) return;
+    if (libraryPickerIndex === -1) {
+      if (audios.length >= maxAudios) {
+        toast.error(`Máximo de ${maxAudios} áudios permitidos`);
+      } else {
+        onChange([...audios, { nome: audio.nome, audio_url: audio.audio_url }]);
+        toast.success('Áudio adicionado da biblioteca');
+      }
+    } else {
+      const newAudios = audios.map((a, i) =>
+        i === libraryPickerIndex ? { nome: audio.nome, audio_url: audio.audio_url } : a
+      );
+      onChange(newAudios);
+      toast.success('Áudio adicionado da biblioteca');
+    }
+    setLibraryPickerIndex(null);
+  };
 
   const getInputMode = (index: number): InputMode => {
     return inputModes.get(index) || 'upload';
@@ -196,31 +216,42 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
           <Music size={14} className="text-gold" />
           Áudios ({audios.length}{Number.isFinite(maxAudios) ? `/${maxAudios}` : ''})
         </Label>
-        {audios.length < maxAudios && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addAudio}
-            className="gap-1 h-7 text-xs border-gold/30 text-gold hover:bg-gold/10"
-          >
-            <Plus size={12} />
-            Adicionar
-          </Button>
-        )}
       </div>
 
+      {/* Quick add actions */}
+      {audios.length < maxAudios && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setLibraryPickerIndex(-1)}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 py-4 transition-all hover:bg-primary/10 hover:border-primary/50"
+          >
+            <div className="p-2 rounded-lg bg-primary/15">
+              <Library size={18} className="text-primary" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Da Biblioteca</span>
+            <span className="text-[10px] text-muted-foreground">Reutilizar salvos</span>
+          </button>
+          <button
+            type="button"
+            onClick={addAudio}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/30 bg-gold/5 py-4 transition-all hover:bg-gold/10 hover:border-gold/50"
+          >
+            <div className="p-2 rounded-lg bg-gold/15">
+              <Plus size={18} className="text-gold" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Novo áudio</span>
+            <span className="text-[10px] text-muted-foreground">Upload / link</span>
+          </button>
+        </div>
+      )}
+
       {audios.length === 0 ? (
-        <div 
-          onClick={addAudio}
-          className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-gold/30 transition-colors"
-        >
-          <Music className="mx-auto mb-2 text-muted-foreground" size={24} />
-          <p className="text-sm text-muted-foreground">
-            Clique para adicionar um áudio
-          </p>
+        <div className="text-center text-xs text-muted-foreground py-2">
+          Nenhum áudio ainda — escolha uma opção acima.
         </div>
       ) : (
+
         <div className="space-y-3">
           {audios.map((audio, index) => {
             const mode = getInputMode(index);
@@ -300,12 +331,10 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate('/biblioteca')}
+                    onClick={() => setLibraryPickerIndex(index)}
                     className={cn(
                       'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
-                      mode === 'library'
-                        ? 'bg-primary/20 text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
+                      'text-muted-foreground hover:text-primary'
                     )}
                   >
                     <Library size={12} />
@@ -463,16 +492,28 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       )}
 
       {audios.length > 0 && audios.length < maxAudios && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addAudio}
-          className="w-full gap-2 border-dashed border-border text-muted-foreground hover:border-gold/30 hover:text-gold"
-        >
-          <Plus size={16} />
-          Adicionar mais áudio
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setLibraryPickerIndex(-1)}
+            className="gap-2 border-dashed border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10"
+          >
+            <Library size={16} />
+            Biblioteca
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addAudio}
+            className="gap-2 border-dashed border-gold/30 text-gold hover:border-gold/50 hover:bg-gold/10"
+          >
+            <Plus size={16} />
+            Novo áudio
+          </Button>
+        </div>
       )}
+
 
       <div className="bg-secondary/30 rounded-lg p-3 space-y-2">
         <p className="text-xs text-muted-foreground">
@@ -486,6 +527,13 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
         </ul>
       </div>
 
+      <AudioLibraryModal
+        isOpen={libraryPickerIndex !== null}
+        onClose={() => setLibraryPickerIndex(null)}
+        selectionMode
+        onSelectAudio={handleLibrarySelect}
+      />
     </div>
+
   );
 }
