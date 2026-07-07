@@ -391,7 +391,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             </div>
 
             <ScrollArea className="flex-1 px-3 pb-3">
-              {!search && !currentFolderId && folders.length > 0 && (
+              {!search && sourceFilter === 'all' && !currentFolderId && folders.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   {folders.map((folder) => (
                     <button
