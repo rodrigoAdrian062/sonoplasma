@@ -218,31 +218,42 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
           <Music size={14} className="text-gold" />
           Áudios ({audios.length}{Number.isFinite(maxAudios) ? `/${maxAudios}` : ''})
         </Label>
-        {audios.length < maxAudios && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addAudio}
-            className="gap-1 h-7 text-xs border-gold/30 text-gold hover:bg-gold/10"
-          >
-            <Plus size={12} />
-            Adicionar
-          </Button>
-        )}
       </div>
 
+      {/* Quick add actions */}
+      {audios.length < maxAudios && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setLibraryPickerIndex(-1)}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 py-4 transition-all hover:bg-primary/10 hover:border-primary/50"
+          >
+            <div className="p-2 rounded-lg bg-primary/15">
+              <Library size={18} className="text-primary" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Da Biblioteca</span>
+            <span className="text-[10px] text-muted-foreground">Reutilizar salvos</span>
+          </button>
+          <button
+            type="button"
+            onClick={addAudio}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gold/30 bg-gold/5 py-4 transition-all hover:bg-gold/10 hover:border-gold/50"
+          >
+            <div className="p-2 rounded-lg bg-gold/15">
+              <Plus size={18} className="text-gold" />
+            </div>
+            <span className="text-xs font-medium text-foreground">Novo áudio</span>
+            <span className="text-[10px] text-muted-foreground">Upload / link</span>
+          </button>
+        </div>
+      )}
+
       {audios.length === 0 ? (
-        <div 
-          onClick={addAudio}
-          className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-gold/30 transition-colors"
-        >
-          <Music className="mx-auto mb-2 text-muted-foreground" size={24} />
-          <p className="text-sm text-muted-foreground">
-            Clique para adicionar um áudio
-          </p>
+        <div className="text-center text-xs text-muted-foreground py-2">
+          Nenhum áudio ainda — escolha uma opção acima.
         </div>
       ) : (
+
         <div className="space-y-3">
           {audios.map((audio, index) => {
             const mode = getInputMode(index);
