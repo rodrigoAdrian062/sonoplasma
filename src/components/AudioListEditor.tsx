@@ -23,7 +23,6 @@ interface AudioListEditorProps {
 type InputMode = 'upload' | 'youtube' | 'spotify' | 'library';
 
 export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: AudioListEditorProps) {
-  const navigate = useNavigate();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [inputModes, setInputModes] = useState<Map<number, InputMode>>(new Map());
