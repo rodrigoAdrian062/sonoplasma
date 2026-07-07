@@ -208,6 +208,17 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   };
 
 
+  // Stop playback when the dialog closes / unmounts
+  useEffect(() => {
+    if (!isOpen) stopPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => stopPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const addItem = (item: AudioItem) => {
     if (selectedUrls.has(item.audio_url)) return;
