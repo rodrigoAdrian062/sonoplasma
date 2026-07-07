@@ -335,6 +335,47 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 />
               </div>
 
+              {/* Source filter chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { id: 'all', label: 'Todos', icon: Library },
+                  { id: 'upload', label: 'Áudio', icon: Music },
+                  { id: 'youtube', label: 'YouTube', icon: Youtube },
+                  { id: 'spotify', label: 'Spotify', icon: Music2 },
+                ] as const).map((f) => {
+                  const active = sourceFilter === f.id;
+                  const count = f.id === 'all'
+                    ? library.length
+                    : library.filter((a) => (
+                        f.id === 'youtube' ? isYouTubeUrl(a.audio_url)
+                        : f.id === 'spotify' ? isSpotifyUrl(a.audio_url)
+                        : !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url)
+                      )).length;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setSourceFilter(f.id)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        active
+                          ? f.id === 'youtube'
+                            ? 'border-red-500/50 bg-red-500/15 text-red-500'
+                            : f.id === 'spotify'
+                            ? 'border-[#1DB954]/50 bg-[#1DB954]/15 text-[#1DB954]'
+                            : 'border-gold/50 bg-gold/15 text-gold'
+                          : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <f.icon size={12} />
+                      {f.label}
+                      <span className="opacity-70">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+
               {!search && currentFolderId && (
                 <Button
                   type="button"
