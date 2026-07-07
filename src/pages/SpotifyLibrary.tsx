@@ -62,6 +62,24 @@ export default function SpotifyLibraryPage() {
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
+  const { allAudios: allStageAudios } = useAllStageAudios();
+
+  // Map audio_url -> stages/sections where it is used
+  const usageMap = useMemo(() => {
+    const map = new Map<string, Array<{ stageName: string; sectionName: string }>>();
+    for (const sa of allStageAudios) {
+      const stage = stages.find((s) => s.id === sa.etapa_id);
+      if (!stage) continue;
+      const section = sections.find((s) => s.id === stage.secao_id);
+      const entry = { stageName: stage.nome_simbolico, sectionName: section?.nome || 'Sem seção' };
+      const existing = map.get(sa.audio_url) || [];
+      if (!existing.some((e) => e.stageName === entry.stageName && e.sectionName === entry.sectionName)) {
+        existing.push(entry);
+        map.set(sa.audio_url, existing);
+      }
+    }
+    return map;
+  }, [allStageAudios, stages, sections]);
 
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
