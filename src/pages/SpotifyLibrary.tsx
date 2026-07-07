@@ -1,29 +1,52 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play, Pause } from 'lucide-react';
 
-function getSpotifyEmbedUrl(url: string): string | null {
+function parseSpotify(url: string): { type: string; id: string } | null {
   const u = (url || '').trim();
-  // spotify:track:ID  |  spotify:playlist:ID ...
   const uriMatch = u.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)/);
-  if (uriMatch) {
-    return `https://open.spotify.com/embed/${uriMatch[1]}/${uriMatch[2]}`;
-  }
-  // https://open.spotify.com/track/ID?...  (with optional /intl-xx/ prefix)
+  if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] };
   const urlMatch = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/);
-  if (urlMatch) {
-    return `https://open.spotify.com/embed/${urlMatch[1]}/${urlMatch[2]}`;
-  }
+  if (urlMatch) return { type: urlMatch[1], id: urlMatch[2] };
   return null;
 }
 
+function getSpotifyUri(url: string): string | null {
+  const p = parseSpotify(url);
+  return p ? `spotify:${p.type}:${p.id}` : null;
+}
+
 function isSpotifyUrl(url: string): boolean {
-  return getSpotifyEmbedUrl(url) !== null;
+  return parseSpotify(url) !== null;
+}
+
+// Load the Spotify IFrame API once and resolve with the API object.
+let spotifyApiPromise: Promise<any> | null = null;
+function loadSpotifyApi(): Promise<any> {
+  if (spotifyApiPromise) return spotifyApiPromise;
+  spotifyApiPromise = new Promise((resolve) => {
+    if ((window as any).SpotifyIframeApi) {
+      resolve((window as any).SpotifyIframeApi);
+      return;
+    }
+    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      (window as any).SpotifyIframeApi = IFrameAPI;
+      resolve(IFrameAPI);
+    };
+    if (!document.getElementById('spotify-iframe-api')) {
+      const script = document.createElement('script');
+      script.id = 'spotify-iframe-api';
+      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  });
+  return spotifyApiPromise;
 }
 
 export default function SpotifyLibraryPage() {
@@ -34,11 +57,81 @@ export default function SpotifyLibraryPage() {
   const [newUrl, setNewUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const controllerRef = useRef<any>(null);
+  const embedElRef = useRef<HTMLDivElement | null>(null);
 
   const spotifyAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)),
     [audios]
   );
+
+  const destroyController = useCallback(() => {
+    if (controllerRef.current) {
+      try { controllerRef.current.destroy(); } catch { /* noop */ }
+      controllerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => destroyController(), [destroyController]);
+
+  // Create/switch the controller whenever the playing track changes.
+  useEffect(() => {
+    if (!playingId) {
+      destroyController();
+      return;
+    }
+    const audio = spotifyAudios.find((a) => a.id === playingId);
+    const uri = audio ? getSpotifyUri(audio.audio_url) : null;
+    if (!uri) return;
+
+    let cancelled = false;
+    loadSpotifyApi().then((IFrameAPI) => {
+      if (cancelled || !embedElRef.current) return;
+      if (controllerRef.current) {
+        try {
+          controllerRef.current.loadUri(uri);
+          controllerRef.current.play();
+        } catch { /* noop */ }
+        return;
+      }
+      IFrameAPI.createController(
+        embedElRef.current,
+        { uri, width: '100%', height: 152 },
+        (controller: any) => {
+          if (cancelled) { try { controller.destroy(); } catch { /* noop */ } return; }
+          controllerRef.current = controller;
+          controller.addListener('ready', () => {
+            try { controller.play(); } catch { /* noop */ }
+          });
+          controller.addListener('playback_update', (e: any) => {
+            if (typeof e?.data?.isPaused === 'boolean') setIsPaused(e.data.isPaused);
+          });
+        }
+      );
+    });
+
+    return () => { cancelled = true; };
+  }, [playingId, spotifyAudios, destroyController]);
+
+  const handlePlayPause = (id: string) => {
+    if (playingId !== id) {
+      setIsPaused(false);
+      setPlayingId(id);
+      return;
+    }
+    // Same track: toggle
+    if (controllerRef.current) {
+      try { controllerRef.current.togglePlay(); } catch { /* noop */ }
+    }
+  };
+
+  const handleStop = () => {
+    destroyController();
+    setPlayingId(null);
+    setIsPaused(false);
+  };
 
   const handleAdd = async () => {
     if (!newName.trim() || !newUrl.trim()) return;
@@ -47,11 +140,7 @@ export default function SpotifyLibraryPage() {
       return;
     }
     try {
-      await addAudio.mutateAsync({
-        nome: newName.trim(),
-        audio_url: newUrl.trim(),
-        tipo: 'spotify',
-      });
+      await addAudio.mutateAsync({ nome: newName.trim(), audio_url: newUrl.trim(), tipo: 'spotify' });
       setNewName('');
       setNewUrl('');
       setShowAddForm(false);
@@ -127,14 +216,14 @@ export default function SpotifyLibraryPage() {
         ) : (
           <div className="space-y-3">
             {spotifyAudios.map((audio) => {
-              const embedUrl = getSpotifyEmbedUrl(audio.audio_url);
-              const isPlaying = playingId === audio.id;
+              const isCurrent = playingId === audio.id;
+              const isPlaying = isCurrent && !isPaused;
               return (
                 <div
                   key={audio.id}
                   className={cn(
                     'rounded-lg border border-border/50 bg-card/50 overflow-hidden transition-colors',
-                    isPlaying && 'border-[#1DB954]/50'
+                    isCurrent && 'border-[#1DB954]/50'
                   )}
                 >
                   <div className="flex items-center gap-3 p-3 sm:p-4">
@@ -157,35 +246,38 @@ export default function SpotifyLibraryPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setPlayingId(isPlaying ? null : audio.id)}
-                        className="h-8 w-8 sm:h-9 sm:w-9"
-                        title={isPlaying ? 'Fechar player' : 'Tocar'}
+                        onClick={() => handlePlayPause(audio.id)}
+                        className="h-9 w-9"
+                        title={isPlaying ? 'Pausar' : 'Tocar'}
                       >
-                        {isPlaying ? <X size={16} className="text-muted-foreground" /> : <Play size={16} className="text-[#1DB954]" />}
+                        {isPlaying ? <Pause size={18} className="text-[#1DB954]" /> : <Play size={18} className="text-[#1DB954]" />}
                       </Button>
+                      {isCurrent && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleStop}
+                          className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                          title="Parar"
+                        >
+                          <X size={18} />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteAudio.mutate(audio.id)}
-                        className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
+                        onClick={() => { if (isCurrent) handleStop(); deleteAudio.mutate(audio.id); }}
+                        className="h-9 w-9 text-muted-foreground hover:text-destructive"
                         title="Remover"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </Button>
                     </div>
                   </div>
-                  {isPlaying && embedUrl && (
+                  {isCurrent && (
                     <div className="px-3 pb-3">
-                      <iframe
-                        title={audio.nome}
-                        src={`${embedUrl}?utm_source=generator`}
-                        width="100%"
-                        height="152"
-                        frameBorder="0"
-                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                        loading="lazy"
-                        className="rounded-xl"
-                      />
+                      {/* The IFrame API replaces this element with the embedded player */}
+                      <div ref={embedElRef} className="rounded-xl overflow-hidden" />
                     </div>
                   )}
                 </div>
