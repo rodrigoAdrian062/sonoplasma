@@ -36,6 +36,14 @@ const getYouTubeVideoId = (url: string): string | null => {
   return m && m[2].length === 11 ? m[2] : null;
 };
 
+const getSpotifyEmbedUrl = (url: string): string | null => {
+  // supports track / album / playlist / episode links (and spotify: URIs)
+  const m = url.match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?|spotify:)(track|album|playlist|episode)[/:]([a-zA-Z0-9]+)/);
+  if (!m) return null;
+  return `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`;
+};
+
+
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
@@ -159,11 +167,17 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   };
 
   const togglePreview = (url: string) => {
-    // Spotify can't be played inline; open its player
+    // Spotify: play inline via embedded iframe (no new tab)
     if (isSpotifyUrl(url)) {
-      window.open(url, '_blank');
+      if (playingUrl === url) {
+        stopPreview();
+      } else {
+        stopPreview();
+        setPlayingUrl(url);
+      }
       return;
     }
+
 
     // YouTube: toggle pause/resume via IFrame API (inline, no new tab)
     if (isYouTubeUrl(url)) {
@@ -445,7 +459,24 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                             </span>
                           </div>
                         )}
+
+                        {/* Spotify inline embed player */}
+                        {playingUrl === item.audio_url && isSpotifyUrl(item.audio_url) && getSpotifyEmbedUrl(item.audio_url) && (
+                          <div className="mt-2 overflow-hidden rounded-lg">
+                            <iframe
+                              title={`spotify-${item.id}`}
+                              src={getSpotifyEmbedUrl(item.audio_url)!}
+                              width="100%"
+                              height="80"
+                              frameBorder="0"
+                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                              className="rounded-lg"
+                            />
+                          </div>
+                        )}
                       </div>
+
 
                     );
                   })}
