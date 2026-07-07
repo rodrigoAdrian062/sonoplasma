@@ -68,6 +68,15 @@ export default function Auth() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
+    if (nome.trim().toLowerCase() !== 'plenitude' || senha !== '353959') {
+      const msg = 'Nome ou senha incorretos';
+      setErrorMessage(msg);
+      triggerShake();
+      toast.error(msg);
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const { error } = await signIn('plenitude@sistema.local', 'plenitude');
 
