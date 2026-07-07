@@ -63,6 +63,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
   });
   const [audioItems, setAudioItems] = useState<AudioItem[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const steps = [
     { title: 'Nome e Descrição', icon: Type },
