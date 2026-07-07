@@ -75,8 +75,16 @@ export default function AudioLibraryPage() {
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
 
-  // Filter audios by current folder and usage filter
+  const isYouTubeUrl = (url: string) =>
+    url.includes('youtube.com') || url.includes('youtu.be');
+
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
+
+  // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
   const filteredAudios = audios.filter(a => {
+    if (a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)) return false;
+    if (a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)) return false;
     const audioPastaId = (a as any).pasta_id;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
@@ -84,8 +92,6 @@ export default function AudioLibraryPage() {
     return true;
   });
 
-  const isYouTubeUrl = (url: string) =>
-    url.includes('youtube.com') || url.includes('youtu.be');
 
 
   const formatFileSize = (bytes: number | null) => {
