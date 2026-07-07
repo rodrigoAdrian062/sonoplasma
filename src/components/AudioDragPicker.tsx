@@ -1,7 +1,8 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Search, Music, Youtube, Music2, Play, Square, Plus, Upload, Loader2,
+  Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
+
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,9 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [search, setSearch] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [curTime, setCurTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
@@ -66,10 +70,20 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     });
   }, [library, search, currentFolderId]);
 
+  const formatTime = (s: number) => {
+    if (!Number.isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
   const stopPreview = () => {
     audioRef.current?.pause();
     audioRef.current = null;
     setPlayingUrl(null);
+    setIsPaused(false);
+    setCurTime(0);
+    setDuration(0);
   };
 
   const togglePreview = (url: string) => {
@@ -77,16 +91,32 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       window.open(url, '_blank');
       return;
     }
-    if (playingUrl === url) {
-      stopPreview();
+    // Same audio: toggle pause/resume
+    if (playingUrl === url && audioRef.current) {
+      if (isPaused) {
+        audioRef.current.play();
+        setIsPaused(false);
+      } else {
+        audioRef.current.pause();
+        setIsPaused(true);
+      }
       return;
     }
     stopPreview();
     const el = new Audio(url);
     audioRef.current = el;
-    el.play().then(() => setPlayingUrl(url)).catch(() => toast.error('Erro ao tocar áudio'));
-    el.onended = () => setPlayingUrl(null);
+    el.onloadedmetadata = () => setDuration(el.duration);
+    el.ontimeupdate = () => setCurTime(el.currentTime);
+    el.onended = () => stopPreview();
+    el.play().then(() => { setPlayingUrl(url); setIsPaused(false); }).catch(() => toast.error('Erro ao tocar áudio'));
   };
+
+  const seekTo = (url: string, ratio: number) => {
+    if (playingUrl === url && audioRef.current && duration > 0) {
+      audioRef.current.currentTime = ratio * duration;
+    }
+  };
+
 
   const addItem = (item: AudioItem) => {
     if (selectedUrls.has(item.audio_url)) return;
@@ -241,41 +271,80 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                         }}
                         onDragEnd={() => setDraggingUrl(null)}
                         className={cn(
-                          'flex items-center gap-2 rounded-lg border p-2 transition-all',
+                          'rounded-lg border p-2 transition-all',
                           selected
                             ? 'border-gold/40 bg-gold/5 opacity-60'
                             : 'border-border/50 bg-card/50 hover:border-gold/40 hover:bg-card cursor-grab active:cursor-grabbing',
                           draggingUrl === item.audio_url && 'opacity-40'
                         )}
                       >
-                        {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
-                        <div className="rounded-md bg-secondary p-1.5 shrink-0">
-                          <SourceIcon url={item.audio_url} />
-                        </div>
-                        <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(item.audio_url)}
-                          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
-                          title="Ouvir"
-                        >
-                          {playingUrl === item.audio_url ? <Square size={14} /> : <Play size={14} />}
-                        </button>
-                        {selected ? (
-                          <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
-                            <Check size={14} />
-                          </span>
-                        ) : (
+                        <div className="flex items-center gap-2">
+                          {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
+                          <div className="rounded-md bg-secondary p-1.5 shrink-0">
+                            <SourceIcon url={item.audio_url} />
+                          </div>
+                          <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
                           <button
                             type="button"
-                            onClick={() => addItem(item)}
+                            onClick={() => togglePreview(item.audio_url)}
                             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
-                            title="Adicionar"
+                            title="Ouvir"
                           >
-                            <Plus size={14} />
+                            {playingUrl === item.audio_url && !isPaused ? <Pause size={14} className="text-gold" /> : <Play size={14} />}
                           </button>
+                          {playingUrl === item.audio_url && (
+                            <button
+                              type="button"
+                              onClick={() => stopPreview()}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              title="Parar"
+                            >
+                              <Square size={14} />
+                            </button>
+                          )}
+                          {selected ? (
+                            <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
+                              <Check size={14} />
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => addItem(item)}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                              title="Adicionar"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Progress bar (same model as library) */}
+                        {playingUrl === item.audio_url && duration > 0 && (
+                          <div className="mt-2 flex items-center gap-2 px-1">
+                            <span className="w-9 text-right font-mono text-[10px] text-muted-foreground">
+                              {formatTime(curTime)}
+                            </span>
+                            <div
+                              className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-secondary"
+                              onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                seekTo(item.audio_url, (e.clientX - rect.left) / rect.width);
+                              }}
+                            >
+                              <div
+                                className="relative h-full rounded-full bg-gold transition-all"
+                                style={{ width: `${(curTime / duration) * 100}%` }}
+                              >
+                                <div className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-gold opacity-0 shadow-lg transition-opacity group-hover:opacity-100" />
+                              </div>
+                            </div>
+                            <span className="w-9 font-mono text-[10px] text-muted-foreground">
+                              {formatTime(duration)}
+                            </span>
+                          </div>
                         )}
                       </div>
+
                     );
                   })}
                 </div>
