@@ -4,7 +4,7 @@ import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconFor
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { IconPicker } from './IconPicker';
-import { AudioListEditor } from './AudioListEditor';
+import { AudioPicker } from './AudioPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -332,7 +332,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           {/* Step 4: Áudios */}
           {currentStep === 3 && (
             <div className="animate-fade-in">
-              <AudioListEditor
+              <AudioPicker
                 audios={audioItems}
                 onChange={setAudioItems}
               />
