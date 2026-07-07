@@ -22,6 +22,9 @@ export default function Auth() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
   const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
+  const [nome, setNome] = useState('');
+  const [senha, setSenha] = useState('');
+  const [showSenha, setShowSenha] = useState(false);
 
   // Track mouse movement for eye following effect
   const handleMouseMove = useCallback((e: MouseEvent) => {
