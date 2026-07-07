@@ -31,6 +31,12 @@ type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
+const getYouTubeVideoId = (url: string): string | null => {
+  const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+  return m && m[2].length === 11 ? m[2] : null;
+};
+
+
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
   if (isSpotifyUrl(url)) return <Music2 size={size} className="text-[#1DB954]" />;
