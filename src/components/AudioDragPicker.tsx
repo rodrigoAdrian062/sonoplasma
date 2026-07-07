@@ -56,6 +56,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'upload' | 'youtube' | 'spotify'>('all');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -77,14 +78,23 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const selectedUrls = useMemo(() => new Set(audios.map((a) => a.audio_url)), [audios]);
   const atMax = audios.length >= maxAudios;
 
+  const matchesSource = (url: string) => {
+    if (sourceFilter === 'all') return true;
+    if (sourceFilter === 'youtube') return isYouTubeUrl(url);
+    if (sourceFilter === 'spotify') return isSpotifyUrl(url);
+    return !isYouTubeUrl(url) && !isSpotifyUrl(url); // upload/link
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return library.filter((a) => {
-      const inFolder = search ? true : (a as any).pasta_id === currentFolderId;
+      // when searching or filtering by source, ignore folder scoping
+      const scoped = search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
-      return inFolder && matches;
+      return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, search, currentFolderId]);
+  }, [library, search, currentFolderId, sourceFilter]);
+
 
   const formatTime = (s: number) => {
     if (!Number.isFinite(s)) return '0:00';
@@ -325,6 +335,47 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 />
               </div>
 
+              {/* Source filter chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {([
+                  { id: 'all', label: 'Todos', icon: Library },
+                  { id: 'upload', label: 'Áudio', icon: Music },
+                  { id: 'youtube', label: 'YouTube', icon: Youtube },
+                  { id: 'spotify', label: 'Spotify', icon: Music2 },
+                ] as const).map((f) => {
+                  const active = sourceFilter === f.id;
+                  const count = f.id === 'all'
+                    ? library.length
+                    : library.filter((a) => (
+                        f.id === 'youtube' ? isYouTubeUrl(a.audio_url)
+                        : f.id === 'spotify' ? isSpotifyUrl(a.audio_url)
+                        : !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url)
+                      )).length;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setSourceFilter(f.id)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        active
+                          ? f.id === 'youtube'
+                            ? 'border-red-500/50 bg-red-500/15 text-red-500'
+                            : f.id === 'spotify'
+                            ? 'border-[#1DB954]/50 bg-[#1DB954]/15 text-[#1DB954]'
+                            : 'border-gold/50 bg-gold/15 text-gold'
+                          : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <f.icon size={12} />
+                      {f.label}
+                      <span className="opacity-70">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+
               {!search && currentFolderId && (
                 <Button
                   type="button"
@@ -340,7 +391,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             </div>
 
             <ScrollArea className="flex-1 px-3 pb-3">
-              {!search && !currentFolderId && folders.length > 0 && (
+              {!search && sourceFilter === 'all' && !currentFolderId && folders.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   {folders.map((folder) => (
                     <button
