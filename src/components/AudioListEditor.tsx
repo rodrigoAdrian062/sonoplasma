@@ -333,12 +333,10 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate('/biblioteca')}
+                    onClick={() => setLibraryPickerIndex(index)}
                     className={cn(
                       'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
-                      mode === 'library'
-                        ? 'bg-primary/20 text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
+                      'text-muted-foreground hover:text-primary'
                     )}
                   >
                     <Library size={12} />
