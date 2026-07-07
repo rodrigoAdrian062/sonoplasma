@@ -157,6 +157,41 @@ export default function SpotifyLibraryPage() {
     } catch { /* handled by hook */ }
   };
 
+  const handleAddToStage = async (audioNome: string, audioUrl: string, etapaId: string) => {
+    try {
+      const { data: existingAudios } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .select('*')
+        .eq('etapa_id', etapaId)
+        .order('ordem', { ascending: true });
+
+      const currentAudios = existingAudios || [];
+      if (currentAudios.length >= 5) {
+        toast({ title: 'Esta etapa já possui 5 áudios (máximo)', variant: 'destructive' });
+        return;
+      }
+
+      await saveAudios.mutateAsync({
+        etapa_id: etapaId,
+        audios: [
+          ...currentAudios.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          { nome: audioNome, audio_url: audioUrl },
+        ],
+      });
+
+      const stage = stages.find((s) => s.id === etapaId);
+      toast({ title: `"${audioNome}" enviado para "${stage?.nome_simbolico || ''}"` });
+    } catch {
+      toast({ title: 'Erro ao enviar áudio para a etapa', variant: 'destructive' });
+    }
+  };
+
+  const stagesBySection = sections.map((sec) => ({
+    section: sec,
+    stages: stages.filter((s) => s.secao_id === sec.id),
+  }));
+  const unassignedStages = stages.filter((s) => !s.secao_id);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
