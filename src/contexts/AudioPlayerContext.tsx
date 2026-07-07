@@ -104,6 +104,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
+  const spotifyControllerRef = useRef<any>(null);
+  const spotifyReadyRef = useRef(false);
   const volumeRef = useRef(volume);
 
   useEffect(() => {
