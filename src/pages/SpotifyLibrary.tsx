@@ -1,11 +1,18 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
+import { useStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play, Pause } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 function parseSpotify(url: string): { type: string; id: string } | null {
   const u = (url || '').trim();
@@ -52,6 +59,9 @@ function loadSpotifyApi(): Promise<any> {
 export default function SpotifyLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, addAudio } = useAudioLibrary();
+  const { stages } = useStages();
+  const { sections } = useSections();
+  const { saveAudios } = useStageAudios();
 
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -146,6 +156,41 @@ export default function SpotifyLibraryPage() {
       setShowAddForm(false);
     } catch { /* handled by hook */ }
   };
+
+  const handleAddToStage = async (audioNome: string, audioUrl: string, etapaId: string) => {
+    try {
+      const { data: existingAudios } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .select('*')
+        .eq('etapa_id', etapaId)
+        .order('ordem', { ascending: true });
+
+      const currentAudios = existingAudios || [];
+      if (currentAudios.length >= 5) {
+        toast({ title: 'Esta etapa já possui 5 áudios (máximo)', variant: 'destructive' });
+        return;
+      }
+
+      await saveAudios.mutateAsync({
+        etapa_id: etapaId,
+        audios: [
+          ...currentAudios.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          { nome: audioNome, audio_url: audioUrl },
+        ],
+      });
+
+      const stage = stages.find((s) => s.id === etapaId);
+      toast({ title: `"${audioNome}" enviado para "${stage?.nome_simbolico || ''}"` });
+    } catch {
+      toast({ title: 'Erro ao enviar áudio para a etapa', variant: 'destructive' });
+    }
+  };
+
+  const stagesBySection = sections.map((sec) => ({
+    section: sec,
+    stages: stages.filter((s) => s.secao_id === sec.id),
+  }));
+  const unassignedStages = stages.filter((s) => !s.secao_id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,6 +307,40 @@ export default function SpotifyLibraryPage() {
                         >
                           <X size={18} />
                         </Button>
+                      )}
+                      {stages.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-[#1DB954]" title="Enviar para etapa">
+                              <Plus size={18} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
+                            {stagesBySection.map(({ section, stages: sectionStages }) => (
+                              sectionStages.length > 0 && (
+                                <div key={section.id}>
+                                  <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{section.nome}</p>
+                                  {sectionStages.map((stage) => (
+                                    <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
+                                      <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
+                                    </DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                </div>
+                              )
+                            ))}
+                            {unassignedStages.length > 0 && (
+                              <>
+                                <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sem seção</p>
+                                {unassignedStages.map((stage) => (
+                                  <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
+                                    <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       <Button
                         variant="ghost"
