@@ -100,6 +100,12 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       return;
     }
 
+    // For Spotify, open the link (playback happens on the stage)
+    if (isSpotifyUrl(url)) {
+      window.open(url, '_blank');
+      return;
+    }
+
 
 
     if (playingIndex === index) {
