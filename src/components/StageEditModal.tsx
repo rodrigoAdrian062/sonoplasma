@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen } from 'lucide-react';
+import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen, Youtube, Music2, X } from 'lucide-react';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconForName } from '@/types/ceremony';
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { IconPicker } from './IconPicker';
-import { AudioPicker } from './AudioPicker';
+import { AudioDragPicker } from './AudioDragPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
