@@ -14,6 +14,7 @@ interface AudioPlayerContextValue {
   currentTime: number;
   duration: number;
   isYouTube: boolean;
+  isSpotify: boolean;
   youtubeVideoId: string | null;
   eq: EQSettings;
   play: (stageId: string, url: string) => void;
@@ -37,6 +38,48 @@ function getYouTubeVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+function parseSpotify(url: string): { type: string; id: string } | null {
+  const u = (url || '').trim();
+  const uriMatch = u.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)/);
+  if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] };
+  const urlMatch = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/);
+  if (urlMatch) return { type: urlMatch[1], id: urlMatch[2] };
+  return null;
+}
+
+function isSpotifyUrl(url: string): boolean {
+  return parseSpotify(url) !== null;
+}
+
+function getSpotifyUri(url: string): string | null {
+  const p = parseSpotify(url);
+  return p ? `spotify:${p.type}:${p.id}` : null;
+}
+
+// Load the Spotify IFrame API once.
+let spotifyApiPromise: Promise<any> | null = null;
+function loadSpotifyApi(): Promise<any> {
+  if (spotifyApiPromise) return spotifyApiPromise;
+  spotifyApiPromise = new Promise((resolve) => {
+    if ((window as any).SpotifyIframeApi) {
+      resolve((window as any).SpotifyIframeApi);
+      return;
+    }
+    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      (window as any).SpotifyIframeApi = IFrameAPI;
+      resolve(IFrameAPI);
+    };
+    if (!document.getElementById('spotify-iframe-api')) {
+      const script = document.createElement('script');
+      script.id = 'spotify-iframe-api';
+      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  });
+  return spotifyApiPromise;
+}
+
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
@@ -46,6 +89,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
+  const [isSpotify, setIsSpotify] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
 
   const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
@@ -60,6 +104,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
+  const spotifyControllerRef = useRef<any>(null);
+  const spotifyReadyRef = useRef(false);
   const volumeRef = useRef(volume);
 
   useEffect(() => {
@@ -178,6 +224,43 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     const existingContainer = document.getElementById('yt-player-container');
     if (existingContainer) existingContainer.remove();
+    if (spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.destroy(); } catch { /* noop */ }
+      spotifyControllerRef.current = null;
+      spotifyReadyRef.current = false;
+    }
+    const spotifyContainer = document.getElementById('spotify-player-container');
+    if (spotifyContainer) spotifyContainer.remove();
+  }, []);
+
+  const createSpotifyPlayer = useCallback((uri: string) => {
+    let container = document.getElementById('spotify-player-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'spotify-player-container';
+      container.style.cssText = 'position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; z-index: -1;';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    container.innerHTML = '';
+    container.appendChild(el);
+
+    loadSpotifyApi().then((IFrameAPI) => {
+      IFrameAPI.createController(el, { uri, width: '300', height: '80' }, (controller: any) => {
+        spotifyControllerRef.current = controller;
+        controller.addListener('ready', () => {
+          spotifyReadyRef.current = true;
+          try { controller.play(); } catch { /* noop */ }
+        });
+        controller.addListener('playback_update', (e: any) => {
+          const d = e?.data;
+          if (!d) return;
+          if (typeof d.position === 'number') setCurrentTime(d.position / 1000);
+          if (typeof d.duration === 'number' && d.duration > 0) setDuration(d.duration / 1000);
+          if (typeof d.isPaused === 'boolean') setStatus(d.isPaused ? 'paused' : 'playing');
+        });
+      });
+    });
   }, []);
 
   const createYouTubePlayer = useCallback((videoId: string, stageId: string) => {
@@ -255,9 +338,24 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
 
     const isYT = isYouTubeUrl(url);
+    const isSpot = isSpotifyUrl(url);
     setIsYouTube(isYT);
+    setIsSpotify(isSpot);
 
-    if (isYT) {
+    if (isSpot) {
+      const uri = getSpotifyUri(url);
+      if (!uri) {
+        console.error('Invalid Spotify URL:', url);
+        return;
+      }
+      setYoutubeVideoId(null);
+      currentUrlRef.current = url;
+      setCurrentStageId(stageId);
+      setStatus('playing');
+      setCurrentTime(0);
+      setDuration(0);
+      createSpotifyPlayer(uri);
+    } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
         console.error('Invalid YouTube URL:', url);
@@ -282,25 +380,29 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [stopCurrentPlayback, createYouTubePlayer]);
+  }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
 
   const pause = useCallback(() => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.pauseVideo();
     } else if (audioRef.current) {
       audioRef.current.pause();
     }
     setStatus('paused');
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const resume = useCallback(() => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
       audioRef.current.play();
     }
     setStatus('playing');
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const stop = useCallback(() => {
     stopCurrentPlayback();
@@ -308,6 +410,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentStageId(null);
     setCurrentTime(0);
     setIsYouTube(false);
+    setIsSpotify(false);
     setYoutubeVideoId(null);
     currentUrlRef.current = null;
   }, [stopCurrentPlayback]);
@@ -321,30 +424,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seekForward = useCallback((seconds = 10) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, currentTime + seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + seconds);
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify, currentTime]);
 
   const seekBackward = useCallback((seconds = 10) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, currentTime - seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - seconds);
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify, currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration || 0, seconds));
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const setEQ = useCallback((settings: Partial<EQSettings>) => {
     setEQState(prev => {
@@ -363,6 +472,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     currentTime,
     duration,
     isYouTube,
+    isSpotify,
     youtubeVideoId,
     eq,
     play,
