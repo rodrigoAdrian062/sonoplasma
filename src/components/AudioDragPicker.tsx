@@ -43,6 +43,9 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [search, setSearch] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [curTime, setCurTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
@@ -66,10 +69,20 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     });
   }, [library, search, currentFolderId]);
 
+  const formatTime = (s: number) => {
+    if (!Number.isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
   const stopPreview = () => {
     audioRef.current?.pause();
     audioRef.current = null;
     setPlayingUrl(null);
+    setIsPaused(false);
+    setCurTime(0);
+    setDuration(0);
   };
 
   const togglePreview = (url: string) => {
@@ -77,16 +90,32 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       window.open(url, '_blank');
       return;
     }
-    if (playingUrl === url) {
-      stopPreview();
+    // Same audio: toggle pause/resume
+    if (playingUrl === url && audioRef.current) {
+      if (isPaused) {
+        audioRef.current.play();
+        setIsPaused(false);
+      } else {
+        audioRef.current.pause();
+        setIsPaused(true);
+      }
       return;
     }
     stopPreview();
     const el = new Audio(url);
     audioRef.current = el;
-    el.play().then(() => setPlayingUrl(url)).catch(() => toast.error('Erro ao tocar áudio'));
-    el.onended = () => setPlayingUrl(null);
+    el.onloadedmetadata = () => setDuration(el.duration);
+    el.ontimeupdate = () => setCurTime(el.currentTime);
+    el.onended = () => stopPreview();
+    el.play().then(() => { setPlayingUrl(url); setIsPaused(false); }).catch(() => toast.error('Erro ao tocar áudio'));
   };
+
+  const seekTo = (url: string, ratio: number) => {
+    if (playingUrl === url && audioRef.current && duration > 0) {
+      audioRef.current.currentTime = ratio * duration;
+    }
+  };
+
 
   const addItem = (item: AudioItem) => {
     if (selectedUrls.has(item.audio_url)) return;
