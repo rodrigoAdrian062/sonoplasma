@@ -15,6 +15,7 @@ import SpotifyLibrary from "./pages/SpotifyLibrary";
 import YoutubeLibrary from "./pages/YoutubeLibrary";
 import NotFound from "./pages/NotFound";
 import { MiniPlayer } from "@/components/MiniPlayer";
+import { QuickNav } from "@/components/QuickNav";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <MiniPlayer />
+          <QuickNav />
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
