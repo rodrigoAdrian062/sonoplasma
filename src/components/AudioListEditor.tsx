@@ -30,6 +30,27 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
   const [inputModes, setInputModes] = useState<Map<number, InputMode>>(new Map());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+  // libraryPickerIndex: null = closed, -1 = adding new slot, >=0 = replacing slot
+  const [libraryPickerIndex, setLibraryPickerIndex] = useState<number | null>(null);
+
+  const handleLibrarySelect = (audio: { nome: string; audio_url: string }) => {
+    if (libraryPickerIndex === null) return;
+    if (libraryPickerIndex === -1) {
+      if (audios.length >= maxAudios) {
+        toast.error(`Máximo de ${maxAudios} áudios permitidos`);
+      } else {
+        onChange([...audios, { nome: audio.nome, audio_url: audio.audio_url }]);
+        toast.success('Áudio adicionado da biblioteca');
+      }
+    } else {
+      const newAudios = audios.map((a, i) =>
+        i === libraryPickerIndex ? { nome: audio.nome, audio_url: audio.audio_url } : a
+      );
+      onChange(newAudios);
+      toast.success('Áudio adicionado da biblioteca');
+    }
+    setLibraryPickerIndex(null);
+  };
 
   const getInputMode = (index: number): InputMode => {
     return inputModes.get(index) || 'upload';
