@@ -74,6 +74,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <MiniPlayer />
+          <QuickNav />
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
