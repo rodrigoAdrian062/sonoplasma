@@ -383,22 +383,26 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
 
   const pause = useCallback(() => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.pauseVideo();
     } else if (audioRef.current) {
       audioRef.current.pause();
     }
     setStatus('paused');
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const resume = useCallback(() => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
       audioRef.current.play();
     }
     setStatus('playing');
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const stop = useCallback(() => {
     stopCurrentPlayback();
@@ -406,6 +410,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentStageId(null);
     setCurrentTime(0);
     setIsYouTube(false);
+    setIsSpotify(false);
     setYoutubeVideoId(null);
     currentUrlRef.current = null;
   }, [stopCurrentPlayback]);
@@ -419,30 +424,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seekForward = useCallback((seconds = 10) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, currentTime + seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + seconds);
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify, currentTime]);
 
   const seekBackward = useCallback((seconds = 10) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, currentTime - seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - seconds);
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify, currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
-    if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    if (isSpotify && spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.seek(Math.max(0, seconds)); } catch { /* noop */ }
+    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration || 0, seconds));
     }
-  }, [isYouTube]);
+  }, [isYouTube, isSpotify]);
 
   const setEQ = useCallback((settings: Partial<EQSettings>) => {
     setEQState(prev => {
