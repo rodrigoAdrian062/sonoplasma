@@ -14,6 +14,7 @@ interface AudioPlayerContextValue {
   currentTime: number;
   duration: number;
   isYouTube: boolean;
+  isSpotify: boolean;
   youtubeVideoId: string | null;
   eq: EQSettings;
   play: (stageId: string, url: string) => void;
