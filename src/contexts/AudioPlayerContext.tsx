@@ -472,6 +472,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     currentTime,
     duration,
     isYouTube,
+    isSpotify,
     youtubeVideoId,
     eq,
     play,
