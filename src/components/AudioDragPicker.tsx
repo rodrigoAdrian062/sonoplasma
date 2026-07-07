@@ -495,7 +495,16 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                               <Plus size={14} />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFromLibrary(item)}
+                            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Excluir da biblioteca"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
+
 
                         {/* Progress bar (same model as library) */}
                         {playingUrl === item.audio_url && duration > 0 && (
