@@ -517,6 +517,13 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
         </ul>
       </div>
 
+      <AudioLibraryModal
+        isOpen={libraryPickerIndex !== null}
+        onClose={() => setLibraryPickerIndex(null)}
+        selectionMode
+        onSelectAudio={handleLibrarySelect}
+      />
     </div>
+
   );
 }
