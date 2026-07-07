@@ -56,6 +56,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'upload' | 'youtube' | 'spotify'>('all');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
