@@ -4,7 +4,7 @@ import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconFor
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { IconPicker } from './IconPicker';
-import { AudioListEditor } from './AudioListEditor';
+import { AudioPicker } from './AudioPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
