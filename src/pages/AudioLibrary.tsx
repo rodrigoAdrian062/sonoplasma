@@ -75,8 +75,16 @@ export default function AudioLibraryPage() {
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
 
-  // Filter audios by current folder and usage filter
+  const isYouTubeUrl = (url: string) =>
+    url.includes('youtube.com') || url.includes('youtu.be');
+
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
+
+  // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
   const filteredAudios = audios.filter(a => {
+    if (a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)) return false;
+    if (a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)) return false;
     const audioPastaId = (a as any).pasta_id;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
@@ -84,8 +92,6 @@ export default function AudioLibraryPage() {
     return true;
   });
 
-  const isYouTubeUrl = (url: string) =>
-    url.includes('youtube.com') || url.includes('youtu.be');
 
 
   const formatFileSize = (bytes: number | null) => {
@@ -463,6 +469,18 @@ export default function AudioLibraryPage() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => navigate('/youtube')}
+              className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
+            >
+              <Youtube size={14} className="mr-1" />
+              <span className="hidden sm:inline">YouTube</span>
+            </Button>
+          )}
+
+          {!currentFolderId && (
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate('/spotify')}
               className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
             >
@@ -633,7 +651,7 @@ export default function AudioLibraryPage() {
                   onClick={() => setAddMode('url')}
                   className={addMode === 'url' ? 'bg-gold hover:bg-gold/90 text-background' : ''}
                 >
-                  <ExternalLink size={14} className="mr-1" /> URL / YouTube
+                  <ExternalLink size={14} className="mr-1" /> URL
                 </Button>
               </div>
               <Input
@@ -662,7 +680,7 @@ export default function AudioLibraryPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Input placeholder="URL do áudio ou YouTube" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
+                  <Input placeholder="URL do áudio (mp3, wav...)" value={newAudioUrl} onChange={(e) => setNewAudioUrl(e.target.value)} className="flex-1" />
                   <Button onClick={handleAddUrl} disabled={!newAudioUrl.trim() || !newAudioName.trim() || addAudio.isPending} className="bg-gold hover:bg-gold/90 text-background">
                     {addAudio.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Adicionar'}
                   </Button>
