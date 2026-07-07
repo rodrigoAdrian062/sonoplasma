@@ -459,7 +459,24 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                             </span>
                           </div>
                         )}
+
+                        {/* Spotify inline embed player */}
+                        {playingUrl === item.audio_url && isSpotifyUrl(item.audio_url) && getSpotifyEmbedUrl(item.audio_url) && (
+                          <div className="mt-2 overflow-hidden rounded-lg">
+                            <iframe
+                              title={`spotify-${item.id}`}
+                              src={getSpotifyEmbedUrl(item.audio_url)!}
+                              width="100%"
+                              height="80"
+                              frameBorder="0"
+                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                              className="rounded-lg"
+                            />
+                          </div>
+                        )}
                       </div>
+
 
                     );
                   })}
