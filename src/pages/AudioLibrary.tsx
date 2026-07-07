@@ -459,6 +459,18 @@ export default function AudioLibraryPage() {
             )}
           </div>
 
+          {!currentFolderId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/spotify')}
+              className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
+            >
+              <Music2 size={14} className="mr-1" />
+              <span className="hidden sm:inline">Spotify</span>
+            </Button>
+          )}
+
           {filteredAudios.length > 0 && (
             <div className="flex items-center gap-1 sm:gap-2">
               {bulkDeleteMode ? (
