@@ -331,6 +331,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const play = useCallback((stageId: string, url: string) => {
     stopCurrentPlayback();
 
+    // Sempre iniciar o áudio com volume em 10%
+    volumeRef.current = 0.1;
+    setVolumeState(0.1);
+
+
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume().catch(err => {
         console.warn('AudioContext resume failed:', err);
