@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
