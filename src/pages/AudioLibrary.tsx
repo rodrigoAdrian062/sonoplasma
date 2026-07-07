@@ -469,6 +469,18 @@ export default function AudioLibraryPage() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => navigate('/youtube')}
+              className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
+            >
+              <Youtube size={14} className="mr-1" />
+              <span className="hidden sm:inline">YouTube</span>
+            </Button>
+          )}
+
+          {!currentFolderId && (
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => navigate('/spotify')}
               className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
             >
