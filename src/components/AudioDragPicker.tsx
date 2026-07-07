@@ -1,7 +1,8 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Search, Music, Youtube, Music2, Play, Square, Plus, Upload, Loader2,
+  Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
+
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
