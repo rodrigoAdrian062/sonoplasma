@@ -231,6 +231,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     }
   };
 
+  const handleDeleteFromLibrary = (item: { id: string; audio_url: string }) => {
+    if (!window.confirm('Excluir este áudio da biblioteca? Esta ação não pode ser desfeita.')) return;
+    if (playingUrl === item.audio_url) stopPreview();
+    // also remove it from the current stage selection if present
+    if (selectedUrls.has(item.audio_url)) {
+      onChange(audios.filter((a) => a.audio_url !== item.audio_url));
+    }
+    deleteAudio.mutate(item.id);
+  };
+
+
+
 
   // Stop playback when the dialog closes / unmounts
   useEffect(() => {
