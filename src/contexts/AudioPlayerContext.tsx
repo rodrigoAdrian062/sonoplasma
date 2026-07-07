@@ -224,6 +224,43 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     const existingContainer = document.getElementById('yt-player-container');
     if (existingContainer) existingContainer.remove();
+    if (spotifyControllerRef.current) {
+      try { spotifyControllerRef.current.destroy(); } catch { /* noop */ }
+      spotifyControllerRef.current = null;
+      spotifyReadyRef.current = false;
+    }
+    const spotifyContainer = document.getElementById('spotify-player-container');
+    if (spotifyContainer) spotifyContainer.remove();
+  }, []);
+
+  const createSpotifyPlayer = useCallback((uri: string) => {
+    let container = document.getElementById('spotify-player-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'spotify-player-container';
+      container.style.cssText = 'position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; z-index: -1;';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    container.innerHTML = '';
+    container.appendChild(el);
+
+    loadSpotifyApi().then((IFrameAPI) => {
+      IFrameAPI.createController(el, { uri, width: '300', height: '80' }, (controller: any) => {
+        spotifyControllerRef.current = controller;
+        controller.addListener('ready', () => {
+          spotifyReadyRef.current = true;
+          try { controller.play(); } catch { /* noop */ }
+        });
+        controller.addListener('playback_update', (e: any) => {
+          const d = e?.data;
+          if (!d) return;
+          if (typeof d.position === 'number') setCurrentTime(d.position / 1000);
+          if (typeof d.duration === 'number' && d.duration > 0) setDuration(d.duration / 1000);
+          if (typeof d.isPaused === 'boolean') setStatus(d.isPaused ? 'paused' : 'playing');
+        });
+      });
+    });
   }, []);
 
   const createYouTubePlayer = useCallback((videoId: string, stageId: string) => {
