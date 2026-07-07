@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
-import { useStageAudios } from '@/hooks/useStageAudios';
+import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play, Pause } from 'lucide-react';
