@@ -332,13 +332,62 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
           {/* Step 4: Áudios */}
           {currentStep === 3 && (
-            <div className="animate-fade-in">
-              <AudioPicker
+            <div className="animate-fade-in space-y-3">
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gold/40 bg-gold/5 py-4 text-sm font-medium text-gold transition-colors hover:bg-gold/10"
+              >
+                <Music size={18} />
+                Escolher áudios (arrastar da biblioteca)
+              </button>
+
+              {audioItems.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  Nenhum áudio selecionado ainda.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {audioItems.map((a) => {
+                    const isYt = a.audio_url.includes('youtube.com') || a.audio_url.includes('youtu.be');
+                    const isSp = a.audio_url.includes('open.spotify.com') || a.audio_url.startsWith('spotify:');
+                    return (
+                      <div
+                        key={a.audio_url}
+                        className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-2"
+                      >
+                        <div className="rounded-md bg-secondary p-1.5 shrink-0">
+                          {isYt ? (
+                            <Youtube size={14} className="text-red-500" />
+                          ) : isSp ? (
+                            <Music2 size={14} className="text-[#1DB954]" />
+                          ) : (
+                            <Music size={14} className="text-gold" />
+                          )}
+                        </div>
+                        <span className="flex-1 truncate text-sm text-foreground">{a.nome || 'Áudio'}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAudioItems(audioItems.filter((x) => x.audio_url !== a.audio_url))}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <AudioDragPicker
+                isOpen={pickerOpen}
+                onClose={() => setPickerOpen(false)}
                 audios={audioItems}
                 onChange={setAudioItems}
               />
             </div>
           )}
+
 
           {/* Preview Card */}
           {formData.nome_simbolico && (
