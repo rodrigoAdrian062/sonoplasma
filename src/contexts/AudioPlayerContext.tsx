@@ -338,9 +338,24 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
 
     const isYT = isYouTubeUrl(url);
+    const isSpot = isSpotifyUrl(url);
     setIsYouTube(isYT);
+    setIsSpotify(isSpot);
 
-    if (isYT) {
+    if (isSpot) {
+      const uri = getSpotifyUri(url);
+      if (!uri) {
+        console.error('Invalid Spotify URL:', url);
+        return;
+      }
+      setYoutubeVideoId(null);
+      currentUrlRef.current = url;
+      setCurrentStageId(stageId);
+      setStatus('playing');
+      setCurrentTime(0);
+      setDuration(0);
+      createSpotifyPlayer(uri);
+    } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
         console.error('Invalid YouTube URL:', url);
@@ -365,7 +380,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [stopCurrentPlayback, createYouTubePlayer]);
+  }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
 
   const pause = useCallback(() => {
     if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
