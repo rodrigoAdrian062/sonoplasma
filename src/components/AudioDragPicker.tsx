@@ -271,41 +271,80 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                         }}
                         onDragEnd={() => setDraggingUrl(null)}
                         className={cn(
-                          'flex items-center gap-2 rounded-lg border p-2 transition-all',
+                          'rounded-lg border p-2 transition-all',
                           selected
                             ? 'border-gold/40 bg-gold/5 opacity-60'
                             : 'border-border/50 bg-card/50 hover:border-gold/40 hover:bg-card cursor-grab active:cursor-grabbing',
                           draggingUrl === item.audio_url && 'opacity-40'
                         )}
                       >
-                        {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
-                        <div className="rounded-md bg-secondary p-1.5 shrink-0">
-                          <SourceIcon url={item.audio_url} />
-                        </div>
-                        <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
-                        <button
-                          type="button"
-                          onClick={() => togglePreview(item.audio_url)}
-                          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
-                          title="Ouvir"
-                        >
-                          {playingUrl === item.audio_url ? <Square size={14} /> : <Play size={14} />}
-                        </button>
-                        {selected ? (
-                          <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
-                            <Check size={14} />
-                          </span>
-                        ) : (
+                        <div className="flex items-center gap-2">
+                          {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
+                          <div className="rounded-md bg-secondary p-1.5 shrink-0">
+                            <SourceIcon url={item.audio_url} />
+                          </div>
+                          <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
                           <button
                             type="button"
-                            onClick={() => addItem(item)}
+                            onClick={() => togglePreview(item.audio_url)}
                             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
-                            title="Adicionar"
+                            title="Ouvir"
                           >
-                            <Plus size={14} />
+                            {playingUrl === item.audio_url && !isPaused ? <Pause size={14} className="text-gold" /> : <Play size={14} />}
                           </button>
+                          {playingUrl === item.audio_url && (
+                            <button
+                              type="button"
+                              onClick={() => stopPreview()}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              title="Parar"
+                            >
+                              <Square size={14} />
+                            </button>
+                          )}
+                          {selected ? (
+                            <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
+                              <Check size={14} />
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => addItem(item)}
+                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                              title="Adicionar"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Progress bar (same model as library) */}
+                        {playingUrl === item.audio_url && duration > 0 && (
+                          <div className="mt-2 flex items-center gap-2 px-1">
+                            <span className="w-9 text-right font-mono text-[10px] text-muted-foreground">
+                              {formatTime(curTime)}
+                            </span>
+                            <div
+                              className="group relative h-1.5 flex-1 cursor-pointer rounded-full bg-secondary"
+                              onClick={(e) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                seekTo(item.audio_url, (e.clientX - rect.left) / rect.width);
+                              }}
+                            >
+                              <div
+                                className="relative h-full rounded-full bg-gold transition-all"
+                                style={{ width: `${(curTime / duration) * 100}%` }}
+                              >
+                                <div className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-gold opacity-0 shadow-lg transition-opacity group-hover:opacity-100" />
+                              </div>
+                            </div>
+                            <span className="w-9 font-mono text-[10px] text-muted-foreground">
+                              {formatTime(duration)}
+                            </span>
+                          </div>
                         )}
                       </div>
+
                     );
                   })}
                 </div>
