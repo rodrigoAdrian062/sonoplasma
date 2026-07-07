@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check,
@@ -31,6 +31,12 @@ type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
+const getYouTubeVideoId = (url: string): string | null => {
+  const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+  return m && m[2].length === 11 ? m[2] : null;
+};
+
+
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
   if (isSpotifyUrl(url)) return <Music2 size={size} className="text-[#1DB954]" />;
@@ -48,6 +54,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [curTime, setCurTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const ytPollRef = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
 
@@ -80,17 +88,96 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const stopPreview = () => {
     audioRef.current?.pause();
     audioRef.current = null;
+    if (ytPollRef.current) { clearInterval(ytPollRef.current); ytPollRef.current = null; }
+    if (ytPlayerRef.current) {
+      try { ytPlayerRef.current.stopVideo?.(); ytPlayerRef.current.destroy?.(); } catch { /* noop */ }
+      ytPlayerRef.current = null;
+    }
     setPlayingUrl(null);
     setIsPaused(false);
     setCurTime(0);
     setDuration(0);
   };
 
+  const playYouTube = (url: string) => {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) { toast.error('URL do YouTube inválida'); return; }
+    stopPreview();
+
+    let container = document.getElementById('yt-picker-player-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'yt-picker-player-container';
+      container.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+      document.body.appendChild(container);
+    }
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-picker-player';
+    container.innerHTML = '';
+    container.appendChild(playerDiv);
+
+    const initPlayer = () => {
+      if (!(window as any).YT || !(window as any).YT.Player) {
+        setTimeout(initPlayer, 100);
+        return;
+      }
+      ytPlayerRef.current = new (window as any).YT.Player('yt-picker-player', {
+        height: '1',
+        width: '1',
+        videoId,
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0 },
+        events: {
+          onReady: (e: any) => {
+            e.target.setVolume(70);
+            e.target.playVideo();
+            setPlayingUrl(url);
+            setIsPaused(false);
+            ytPollRef.current = setInterval(() => {
+              try {
+                setCurTime(ytPlayerRef.current?.getCurrentTime?.() || 0);
+                setDuration(ytPlayerRef.current?.getDuration?.() || 0);
+              } catch { /* noop */ }
+            }, 500);
+          },
+          onStateChange: (e: any) => {
+            const YT = (window as any).YT;
+            if (e.data === YT.PlayerState.ENDED) stopPreview();
+          },
+          onError: () => { toast.error('Erro ao reproduzir vídeo'); stopPreview(); },
+        },
+      });
+    };
+
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.getElementsByTagName('script')[0]?.parentNode?.insertBefore(tag, document.getElementsByTagName('script')[0]);
+      (window as any).onYouTubeIframeAPIReady = initPlayer;
+    } else {
+      initPlayer();
+    }
+  };
+
   const togglePreview = (url: string) => {
-    if (isYouTubeUrl(url) || isSpotifyUrl(url)) {
+    // Spotify can't be played inline; open its player
+    if (isSpotifyUrl(url)) {
       window.open(url, '_blank');
       return;
     }
+
+    // YouTube: toggle pause/resume via IFrame API (inline, no new tab)
+    if (isYouTubeUrl(url)) {
+      if (playingUrl === url && ytPlayerRef.current) {
+        try {
+          if (isPaused) { ytPlayerRef.current.playVideo(); setIsPaused(false); }
+          else { ytPlayerRef.current.pauseVideo(); setIsPaused(true); }
+        } catch { /* noop */ }
+        return;
+      }
+      playYouTube(url);
+      return;
+    }
+
     // Same audio: toggle pause/resume
     if (playingUrl === url && audioRef.current) {
       if (isPaused) {
@@ -112,10 +199,25 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   };
 
   const seekTo = (url: string, ratio: number) => {
-    if (playingUrl === url && audioRef.current && duration > 0) {
+    if (playingUrl !== url || duration <= 0) return;
+    if (isYouTubeUrl(url) && ytPlayerRef.current) {
+      try { ytPlayerRef.current.seekTo(ratio * duration, true); } catch { /* noop */ }
+    } else if (audioRef.current) {
       audioRef.current.currentTime = ratio * duration;
     }
   };
+
+
+  // Stop playback when the dialog closes / unmounts
+  useEffect(() => {
+    if (!isOpen) stopPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => stopPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const addItem = (item: AudioItem) => {
