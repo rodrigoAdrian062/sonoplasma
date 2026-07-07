@@ -37,6 +37,48 @@ function getYouTubeVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+function parseSpotify(url: string): { type: string; id: string } | null {
+  const u = (url || '').trim();
+  const uriMatch = u.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)/);
+  if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] };
+  const urlMatch = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/);
+  if (urlMatch) return { type: urlMatch[1], id: urlMatch[2] };
+  return null;
+}
+
+function isSpotifyUrl(url: string): boolean {
+  return parseSpotify(url) !== null;
+}
+
+function getSpotifyUri(url: string): string | null {
+  const p = parseSpotify(url);
+  return p ? `spotify:${p.type}:${p.id}` : null;
+}
+
+// Load the Spotify IFrame API once.
+let spotifyApiPromise: Promise<any> | null = null;
+function loadSpotifyApi(): Promise<any> {
+  if (spotifyApiPromise) return spotifyApiPromise;
+  spotifyApiPromise = new Promise((resolve) => {
+    if ((window as any).SpotifyIframeApi) {
+      resolve((window as any).SpotifyIframeApi);
+      return;
+    }
+    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
+      (window as any).SpotifyIframeApi = IFrameAPI;
+      resolve(IFrameAPI);
+    };
+    if (!document.getElementById('spotify-iframe-api')) {
+      const script = document.createElement('script');
+      script.id = 'spotify-iframe-api';
+      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  });
+  return spotifyApiPromise;
+}
+
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
