@@ -25,6 +25,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
+  const { isSuperAdmin } = useUserRole();
 
   const handleLogout = async () => {
     await signOut();
