@@ -1,0 +1,1 @@
+ALTER TABLE public.sonoplastia_configuracoes ADD COLUMN IF NOT EXISTS banner_url text;
