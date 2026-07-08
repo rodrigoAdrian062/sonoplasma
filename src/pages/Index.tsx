@@ -16,7 +16,7 @@ import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@
 import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import masonicBanner from '@/assets/masonic-banner.png';
+import { EditableBanner } from '@/components/EditableBanner';
 
 const Index = () => {
   const navigate = useNavigate();
