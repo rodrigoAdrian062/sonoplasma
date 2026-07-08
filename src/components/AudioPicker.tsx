@@ -302,8 +302,8 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
             <div className="flex gap-1 rounded-lg bg-secondary p-1">
               {([
                 { id: 'upload', label: 'Upload', icon: Upload },
-                { id: 'youtube', label: 'YouTube', icon: Youtube },
-                { id: 'spotify', label: 'Spotify', icon: Music2 },
+                { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
+                { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 { id: 'link', label: 'Link', icon: LinkIcon },
               ] as const).map((t) => (
                 <button
