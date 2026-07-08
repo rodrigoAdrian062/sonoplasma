@@ -32,9 +32,9 @@ const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.include
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
-  if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
-  if (isSpotifyUrl(url)) return <Music2 size={size} className="text-[#1DB954]" />;
-  return <Music size={size} className="text-gold" />;
+  if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
+  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
+  return <FolderMusicIcon size={size} />;
 }
 
 export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPickerProps) {
