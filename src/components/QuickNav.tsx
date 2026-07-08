@@ -1,9 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library } from 'lucide-react';
+import { Home, Library, UserPlus } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
