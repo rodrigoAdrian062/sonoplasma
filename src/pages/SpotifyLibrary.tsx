@@ -9,7 +9,8 @@ import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Plus, Trash2, Loader2, Music2, X, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
@@ -217,7 +218,7 @@ export default function SpotifyLibraryPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/biblioteca')}>
             <ArrowLeft size={20} />
           </Button>
-          <Music2 className="text-[#1DB954]" size={22} />
+          <SpotifyIcon className="text-[#1DB954]" size={22} />
           <h1 className="font-display text-lg sm:text-xl font-semibold text-foreground flex-1 truncate">
             Spotify
           </h1>
@@ -272,7 +273,7 @@ export default function SpotifyLibraryPage() {
           </div>
         ) : spotifyAudios.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Music2 size={48} className="mx-auto mb-3 opacity-50" />
+            <SpotifyIcon size={48} className="mx-auto mb-3 opacity-50 text-[#1DB954]" />
             <p className="text-lg">Nenhum link do Spotify</p>
             <p className="text-sm mt-1">Adicione músicas, álbuns ou playlists do Spotify</p>
           </div>
@@ -297,7 +298,7 @@ export default function SpotifyLibraryPage() {
                 >
                   <div className="flex items-center gap-3 p-3 sm:p-4">
                     <div className="p-2 bg-[#1DB954]/10 rounded-lg shrink-0">
-                      <Music2 size={18} className="text-[#1DB954]" />
+                      <SpotifyIcon size={18} className="text-[#1DB954]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>

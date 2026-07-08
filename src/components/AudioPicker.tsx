@@ -1,8 +1,11 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Search, Music, Youtube, Music2, Play, Square, Check, Plus, Upload,
+  Search, Music, Play, Square, Check, Plus, Upload,
   Loader2, Link as LinkIcon, X, Folder, ChevronLeft, Library,
 } from 'lucide-react';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,9 +32,9 @@ const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.include
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
-  if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
-  if (isSpotifyUrl(url)) return <Music2 size={size} className="text-[#1DB954]" />;
-  return <Music size={size} className="text-gold" />;
+  if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
+  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
+  return <FolderMusicIcon size={size} />;
 }
 
 export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPickerProps) {
@@ -299,8 +302,8 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
             <div className="flex gap-1 rounded-lg bg-secondary p-1">
               {([
                 { id: 'upload', label: 'Upload', icon: Upload },
-                { id: 'youtube', label: 'YouTube', icon: Youtube },
-                { id: 'spotify', label: 'Spotify', icon: Music2 },
+                { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
+                { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 { id: 'link', label: 'Link', icon: LinkIcon },
               ] as const).map((t) => (
                 <button

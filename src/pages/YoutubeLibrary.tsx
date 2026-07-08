@@ -9,7 +9,8 @@ import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Plus, Trash2, Loader2, Youtube, X, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause } from 'lucide-react';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
@@ -206,7 +207,7 @@ export default function YoutubeLibraryPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/biblioteca')}>
             <ArrowLeft size={20} />
           </Button>
-          <Youtube className="text-red-500" size={22} />
+          <YoutubeIcon size={24} />
           <h1 className="font-display text-lg sm:text-xl font-semibold text-foreground flex-1 truncate">
             YouTube
           </h1>
@@ -261,7 +262,7 @@ export default function YoutubeLibraryPage() {
           </div>
         ) : ytAudios.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Youtube size={48} className="mx-auto mb-3 opacity-50" />
+            <YoutubeIcon size={48} className="mx-auto mb-3 opacity-50" />
             <p className="text-lg">Nenhum link do YouTube</p>
             <p className="text-sm mt-1">Adicione vídeos do YouTube</p>
           </div>
@@ -286,7 +287,7 @@ export default function YoutubeLibraryPage() {
                 >
                   <div className="flex items-center gap-3 p-3 sm:p-4">
                     <div className="p-2 bg-red-500/10 rounded-lg shrink-0">
-                      <Youtube size={18} className="text-red-500" />
+                      <YoutubeIcon size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>

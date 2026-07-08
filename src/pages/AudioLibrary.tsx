@@ -11,11 +11,14 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
-  Youtube, Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
+  Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter, Music2
+  SkipBack, SkipForward, Filter
 
 } from 'lucide-react';
+import { AudioSourceIcon } from '@/components/AudioSourceIcon';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -472,7 +475,7 @@ export default function AudioLibraryPage() {
               onClick={() => navigate('/youtube')}
               className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
             >
-              <Youtube size={14} className="mr-1" />
+              <YoutubeIcon size={14} className="mr-1" />
               <span className="hidden sm:inline">YouTube</span>
             </Button>
           )}
@@ -484,7 +487,7 @@ export default function AudioLibraryPage() {
               onClick={() => navigate('/spotify')}
               className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
             >
-              <Music2 size={14} className="mr-1" />
+              <SpotifyIcon size={14} className="mr-1 text-[#1DB954]" />
               <span className="hidden sm:inline">Spotify</span>
             </Button>
           )}
@@ -724,11 +727,7 @@ export default function AudioLibraryPage() {
                   />
                 )}
                 <div className="p-2 bg-gold/10 rounded-lg shrink-0">
-                  {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
-                    <Youtube size={18} className="text-red-500" />
-                  ) : (
-                    <Music size={18} className="text-gold" />
-                  )}
+                  <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
