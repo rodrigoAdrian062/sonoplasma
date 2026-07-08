@@ -638,7 +638,7 @@ export function PresentationMode({
                   </div>
                 )}
 
-                <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 w-full min-w-0 max-w-full overflow-x-auto pb-1 scrollbar-none">
                   {filteredAudios.map(({ audio, index }) => {
                     const selected = index === selectedAudioIndex;
                     return (
