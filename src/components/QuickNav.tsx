@@ -16,9 +16,18 @@ const LINKS = [
 export function QuickNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSuperAdmin } = useUserRole();
 
   // Hide on the auth page
   if (location.pathname === '/auth') return null;
+
+  const links = isSuperAdmin
+    ? [
+        ...LINKS,
+        { to: '/usuarios', label: 'Criar acesso', icon: UserPlus, activeClass: 'bg-gold/20 text-gold border-gold/40' },
+      ]
+    : LINKS;
+
 
   return (
     <nav
