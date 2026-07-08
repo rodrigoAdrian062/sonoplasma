@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { ColorPicker } from '@/components/ColorPicker';
 import { resizeImage, formatFileSize } from '@/lib/imageUtils';
-import { Loader2, ImagePlus, X, Upload, CheckCircle2 } from 'lucide-react';
+import { Loader2, ImagePlus, X, Upload, CheckCircle2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingsModalProps {
