@@ -174,6 +174,21 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Sair</TooltipContent>
               </Tooltip>
+              {isSuperAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => navigate('/usuarios')}
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-gold"
+                    >
+                      <Users size={20} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Gerenciar acessos</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
