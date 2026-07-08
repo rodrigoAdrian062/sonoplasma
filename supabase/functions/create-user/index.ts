@@ -63,6 +63,14 @@ Deno.serve(async (req) => {
       return json({ error: msg }, 400)
     }
 
+    // Store username + password in the profile so the master can view/edit later.
+    if (created.user?.id) {
+      await admin.from('profiles').upsert(
+        { user_id: created.user.id, username, password },
+        { onConflict: 'user_id' },
+      )
+    }
+
     return json({ success: true, username, user_id: created.user?.id }, 200)
   } catch (e) {
     return json({ error: String(e) }, 500)
