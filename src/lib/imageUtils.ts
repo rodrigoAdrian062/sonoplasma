@@ -2,7 +2,13 @@ const MAX_WIDTH = 512;
 const MAX_HEIGHT = 512;
 const QUALITY = 0.85;
 
-export async function resizeImage(file: File): Promise<File> {
+export async function resizeImage(
+  file: File,
+  maxWidth: number = MAX_WIDTH,
+  maxHeight: number = MAX_HEIGHT
+): Promise<File> {
+  const MAX_WIDTH = maxWidth;
+  const MAX_HEIGHT = maxHeight;
   return new Promise((resolve, reject) => {
     const img = new Image();
     const canvas = document.createElement('canvas');
