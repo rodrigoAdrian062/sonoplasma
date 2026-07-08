@@ -297,7 +297,7 @@ export function PresentationMode({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
       {/* Header - responsive */}
       <header className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
