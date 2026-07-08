@@ -16,6 +16,9 @@ import {
   SkipBack, SkipForward, Filter
 
 } from 'lucide-react';
+import { AudioSourceIcon } from '@/components/AudioSourceIcon';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
