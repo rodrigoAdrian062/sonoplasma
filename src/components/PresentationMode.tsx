@@ -598,9 +598,9 @@ export function PresentationMode({
             const sourcesPresent = new Set(audios.map((a) => getAudioSource(a.audio_url, (a as any).tipo)));
             const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
               { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
-              { key: 'youtube', label: 'YouTube', icon: <Youtube size={13} className="shrink-0 text-red-500" /> },
+              { key: 'youtube', label: 'YouTube', icon: <YoutubeIcon size={13} className="shrink-0" /> },
               { key: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={13} className="shrink-0 text-[#1DB954]" /> },
-              { key: 'file', label: 'Baixado', icon: <Download size={13} className="shrink-0" /> },
+              { key: 'file', label: 'Baixado', icon: <FolderMusicIcon size={13} className="shrink-0" /> },
             ];
             const visibleFilters = filterOptions.filter((f) => f.key === 'all' || sourcesPresent.has(f.key as AudioSource));
             const effectiveFilter = sourceFilter !== 'all' && !sourcesPresent.has(sourceFilter as AudioSource) ? 'all' : sourceFilter;
