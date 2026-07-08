@@ -34,7 +34,7 @@ export function QuickNav() {
       className="fixed bottom-4 left-4 z-[60] flex items-center gap-1 rounded-full border border-border bg-card/95 p-1 shadow-lg shadow-black/20 backdrop-blur-md"
       aria-label="Atalhos rápidos"
     >
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to);
         return (
           <Tooltip key={link.to}>
