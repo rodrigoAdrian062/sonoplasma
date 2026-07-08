@@ -98,7 +98,7 @@ const Index = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-3 sm:gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {sections.map((section, index) => {
               const stageCount = getStageCount(section.id);
               return (
@@ -111,7 +111,7 @@ const Index = () => {
                     role="button"
                     tabIndex={0}
                     aria-label={`Abrir seção ${section.nome}`}
-                    className="group bg-card/50 hover:bg-card border border-border/50 hover:border-gold/20 rounded-xl p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gold/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-sm p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     onClick={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -120,38 +120,47 @@ const Index = () => {
                       }
                     }}
                   >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="p-2.5 sm:p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl transition-colors duration-300">
+                    {/* Barra dourada lateral */}
+                    <span className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-gold to-gold/20 scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300" aria-hidden="true" />
+                    {/* Brilho decorativo */}
+                    <span className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gold/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
+
+                    <div className="flex items-start gap-4">
+                      <div className="shrink-0 p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl ring-1 ring-gold/10 group-hover:ring-gold/30 transition-all duration-300">
                         {section.icone_url ? (
-                          <img src={section.icone_url} alt="" className="w-6 h-6 object-cover rounded" />
+                          <img src={section.icone_url} alt="" className="w-7 h-7 object-cover rounded" />
                         ) : (
                           <CeremonyIcon
                             name={section.icone || 'folder'}
-                            size={24}
+                            size={26}
                             className="text-gold"
                             aria-hidden="true"
                           />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">
+                        <h3 className="font-display text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">
                           {section.nome}
                         </h3>
                         {section.descricao && (
-                          <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                             {section.descricao}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {stageCount} {stageCount === 1 ? 'etapa' : 'etapas'}
-                        </p>
                       </div>
+                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-gold group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-secondary/60 rounded-full px-2.5 py-1">
+                        {stageCount} {stageCount === 1 ? 'etapa' : 'etapas'}
+                      </span>
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setEditingSection(section)}
-                          className="h-9 w-9 text-muted-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                           aria-label={`Editar seção ${section.nome}`}
                         >
                           <Edit2 size={15} aria-hidden="true" />
@@ -160,13 +169,12 @@ const Index = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteSectionData(section)}
-                          className="h-9 w-9 text-muted-foreground hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                           aria-label={`Excluir seção ${section.nome}`}
                         >
                           <Trash2 size={15} aria-hidden="true" />
                         </Button>
                       </div>
-                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-gold transition-colors shrink-0" aria-hidden="true" />
                     </div>
                   </div>
                 </div>
@@ -174,6 +182,7 @@ const Index = () => {
             })}
           </div>
         )}
+
 
         <MasonicFooter />
       </main>
