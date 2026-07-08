@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   Tooltip,
   TooltipContent,
