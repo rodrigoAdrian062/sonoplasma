@@ -1,10 +1,12 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
-  Search, Music, Youtube, Play, Pause, Square, Plus, Upload, Loader2,
+  Search, Music, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2,
 
 } from 'lucide-react';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
