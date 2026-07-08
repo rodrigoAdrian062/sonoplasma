@@ -54,6 +54,8 @@ const SectionDetail = () => {
   const { audiosByStageId } = useAllStageAudios();
   const {
     currentStageId,
+    currentUrl,
+
     status,
     volume,
     currentTime,
@@ -244,6 +246,8 @@ const SectionDetail = () => {
         stages={sectionStages}
         audiosByStageId={audiosByStageId}
         currentStageId={currentStageId}
+        currentUrl={currentUrl}
+
         status={status}
         volume={volume}
         currentTime={currentTime}
