@@ -84,6 +84,8 @@ const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [currentStageId, setCurrentStageId] = useState<string | null>(null);
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+
   const [status, setStatus] = useState<PlaybackStatus>('idle');
   const [volume, setVolumeState] = useState(0.7);
   const [currentTime, setCurrentTime] = useState(0);
