@@ -1,5 +1,6 @@
-import { Music, Youtube } from 'lucide-react';
 import { SpotifyIcon } from './icons/SpotifyIcon';
+import { YoutubeIcon } from './icons/YoutubeIcon';
+import { FolderMusicIcon } from './icons/FolderMusicIcon';
 import { cn } from '@/lib/utils';
 
 
@@ -23,16 +24,12 @@ interface AudioSourceIconProps {
 export function AudioSourceIcon({ url, tipo, size = 14, className, active }: AudioSourceIconProps) {
   const source = getAudioSource(url, tipo);
   if (source === 'youtube') {
-    return <Youtube size={size} className={cn('shrink-0 text-red-500', className)} />;
+    return <YoutubeIcon size={size} className={cn('shrink-0', className)} />;
   }
   if (source === 'spotify') {
     return <SpotifyIcon size={size} className={cn('shrink-0 text-[#1DB954]', className)} />;
   }
 
-  return (
-    <Music
-      size={size}
-      className={cn('shrink-0', active ? 'text-gold' : 'text-muted-foreground/50', className)}
-    />
-  );
+  return <FolderMusicIcon size={size} className={cn('shrink-0', className)} />;
 }
+
