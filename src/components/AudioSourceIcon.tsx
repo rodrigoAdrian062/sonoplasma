@@ -26,8 +26,9 @@ export function AudioSourceIcon({ url, tipo, size = 14, className, active }: Aud
     return <Youtube size={size} className={cn('shrink-0 text-red-500', className)} />;
   }
   if (source === 'spotify') {
-    return <Music2 size={size} className={cn('shrink-0 text-[#1DB954]', className)} />;
+    return <SpotifyIcon size={size} className={cn('shrink-0 text-[#1DB954]', className)} />;
   }
+
   return (
     <Music
       size={size}
