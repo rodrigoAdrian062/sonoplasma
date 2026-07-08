@@ -314,7 +314,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label>Cor do Tema</Label>
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
+
+          {/* Gerenciar acessos (apenas Plenitude) */}
+          {isSuperAdmin && (
+            <div className="space-y-2 border-t border-border pt-5">
+              <Label>Acessos</Label>
+              <p className="text-xs text-muted-foreground">
+                Crie, edite ou exclua usuários e senhas para outras pessoas.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => { handleClose(); navigate('/usuarios'); }}
+              >
+                <Users size={16} className="mr-2 text-gold" />
+                Gerenciar acessos
+              </Button>
+            </div>
+          )}
         </div>
+
 
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={handleClose}>
