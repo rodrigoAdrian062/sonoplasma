@@ -36,6 +36,8 @@ interface PresentationModeProps {
   stages: CeremonyStage[];
   audiosByStageId: Record<string, StageAudio[]>;
   currentStageId: string | null;
+  currentUrl?: string | null;
+
   status: 'idle' | 'playing' | 'paused';
   volume: number;
   currentTime: number;
