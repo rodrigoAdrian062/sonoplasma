@@ -649,7 +649,7 @@ export function PresentationMode({
       </main>
 
       {/* Navigation Footer - responsive */}
-      <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-border bg-card shrink-0">
+      <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
         <Button
           onClick={handlePrevStage}
           disabled={selectedStageIndex === 0}
