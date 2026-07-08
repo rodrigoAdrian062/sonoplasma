@@ -254,9 +254,11 @@ export default function Auth() {
                 className="w-28 h-28 object-contain rounded-xl drop-shadow-lg"
               />
             ) : (
-              <div className="p-5 bg-gold/10 rounded-xl border border-gold/20 backdrop-blur-sm">
-                <Sparkles className="text-gold" size={56} />
-              </div>
+              <img
+                src="https://storage.googleapis.com/gpt-engineer-file-uploads/yBZ1cCUYGQM9TWDE1j1FgtavnWJ2/uploads/1769434199738-Captura de tela 2026-01-26 102828.png"
+                alt="Logotipo"
+                className="w-28 h-28 object-contain rounded-xl drop-shadow-lg"
+              />
             )}
           </div>
           
