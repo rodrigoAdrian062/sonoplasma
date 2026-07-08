@@ -157,6 +157,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setIsYouTube(false);
       setYoutubeVideoId(null);
       currentUrlRef.current = null;
+      setCurrentUrl(null);
     };
     const handleError = (e: Event) => {
       console.error('Audio playback error:', e);
@@ -310,6 +311,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               setIsYouTube(false);
               setYoutubeVideoId(null);
               currentUrlRef.current = null;
+      setCurrentUrl(null);
             } else if (event.data === YT.PlayerState.PLAYING) {
               setStatus('playing');
             } else if (event.data === YT.PlayerState.PAUSED) {
@@ -323,6 +325,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             setIsYouTube(false);
             setYoutubeVideoId(null);
             currentUrlRef.current = null;
+      setCurrentUrl(null);
           },
         },
       });
@@ -357,6 +360,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
       setYoutubeVideoId(null);
       currentUrlRef.current = url;
+      setCurrentUrl(url);
       setCurrentStageId(stageId);
       setStatus('playing');
       setCurrentTime(0);
@@ -370,6 +374,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
       setYoutubeVideoId(videoId);
       currentUrlRef.current = url;
+      setCurrentUrl(url);
       setCurrentStageId(stageId);
       setStatus('playing');
       pendingPlayRef.current = { stageId, videoId };
@@ -379,6 +384,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       const audio = audioRef.current;
       if (!audio) return;
       currentUrlRef.current = url;
+      setCurrentUrl(url);
       audio.src = url;
       audio.volume = volumeRef.current;
       audio.play().catch(err => {
@@ -420,6 +426,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsSpotify(false);
     setYoutubeVideoId(null);
     currentUrlRef.current = null;
+      setCurrentUrl(null);
   }, [stopCurrentPlayback]);
 
   const setVolume = useCallback((value: number) => {
