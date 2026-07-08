@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
-import { Youtube, Download } from 'lucide-react';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 
 
 import presentationBanner from '@/assets/presentation-banner.png';
