@@ -54,6 +54,8 @@ const SectionDetail = () => {
   const { audiosByStageId } = useAllStageAudios();
   const {
     currentStageId,
+    currentUrl,
+
     status,
     volume,
     currentTime,
