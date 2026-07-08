@@ -724,11 +724,7 @@ export default function AudioLibraryPage() {
                   />
                 )}
                 <div className="p-2 bg-gold/10 rounded-lg shrink-0">
-                  {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
-                    <Youtube size={18} className="text-red-500" />
-                  ) : (
-                    <Music size={18} className="text-gold" />
-                  )}
+                  <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
