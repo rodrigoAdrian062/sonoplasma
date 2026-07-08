@@ -302,7 +302,31 @@ export function PresentationMode({
   const handleSelectAudio = (index: number) => {
     if (isActive) handleStop();
     setSelectedAudioIndex(index);
+    const audio = audios[index];
+    if (currentStage && audio) {
+      try {
+        localStorage.setItem(`presMode:selectedAudio:${currentStage.id}`, audio.audio_url);
+      } catch {
+        // ignore storage errors
+      }
+    }
   };
+
+  // Restaura a música salva sempre que a etapa selecionada muda
+  useEffect(() => {
+    if (!currentStage) return;
+    if (currentStageId === currentStage.id) return; // não sobrescreve o que está tocando
+    try {
+      const savedUrl = localStorage.getItem(`presMode:selectedAudio:${currentStage.id}`);
+      if (!savedUrl) return;
+      const list = audiosByStageId[currentStage.id] || [];
+      const idx = list.findIndex((a) => a.audio_url === savedUrl);
+      if (idx >= 0) setSelectedAudioIndex(idx);
+    } catch {
+      // ignore storage errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStageIndex]);
 
   const handleClose = () => {
     if (status === 'playing' || status === 'paused') {
