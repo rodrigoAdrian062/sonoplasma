@@ -50,7 +50,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <div className="text-center">
                 <h1 className="font-display text-lg font-semibold text-foreground tracking-wide flex items-center gap-2 justify-center">
                   {settings?.nome_app || 'Sonoplastia Cerimonial'}
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-gold/20 text-gold border border-gold/30 px-1.5 py-0.5 rounded-full leading-none">Beta</span>
                 </h1>
                 {settings?.subtitulo_app && (
                   <p className="text-xs text-muted-foreground">
@@ -135,7 +134,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <div>
                 <h1 className="font-display text-2xl font-semibold text-foreground tracking-wide flex items-center gap-2">
                   {settings?.nome_app || 'Sonoplastia Cerimonial'}
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-gold/20 text-gold border border-gold/30 px-2 py-0.5 rounded-full leading-none">Beta</span>
                 </h1>
                 {settings?.subtitulo_app && (
                   <p className="text-sm text-muted-foreground">
