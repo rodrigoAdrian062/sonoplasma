@@ -147,29 +147,41 @@ export function StageCard({
   return (
     <div
       className={cn(
-        'relative rounded-xl border transition-all duration-300 overflow-hidden',
-        isActive 
-          ? 'bg-card border-gold/40 shadow-[0_0_20px_-4px_hsl(var(--gold)/0.15)]' 
-          : 'bg-card border-border/60 hover:border-gold/20'
+        'group relative rounded-2xl border transition-all duration-300 overflow-hidden backdrop-blur-sm',
+        isActive
+          ? 'bg-gradient-to-br from-gold/10 to-card/40 border-gold/40 shadow-[0_0_28px_-6px_hsl(var(--gold)/0.25)]'
+          : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10'
       )}
     >
+      {/* Barra dourada lateral */}
+      <span
+        className={cn(
+          'absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-gold to-gold/20 origin-top transition-transform duration-300',
+          isActive ? 'scale-y-100' : 'scale-y-0 group-hover:scale-y-100'
+        )}
+        aria-hidden="true"
+      />
+      {/* Brilho decorativo */}
+      <span className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gold/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
+
       {/* Active indicator line */}
       {isActive && (
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="p-3 sm:p-4 min-w-0 overflow-hidden">
+      <div className="relative p-3 sm:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
         <div className="flex items-center gap-3 mb-2.5">
           <div
             className={cn(
-              'shrink-0 rounded-lg overflow-hidden transition-colors duration-300',
-              isActive ? 'bg-gold/15' : 'bg-secondary/80',
+              'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
+              isActive ? 'bg-gold/15 ring-gold/30' : 'bg-secondary/80 ring-border/30 group-hover:ring-gold/25',
               (stage as any).icone_url ? 'p-0.5' : 'p-2'
             )}
           >
             <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
           </div>
+
           
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-sm sm:text-base font-semibold text-foreground truncate leading-tight">
