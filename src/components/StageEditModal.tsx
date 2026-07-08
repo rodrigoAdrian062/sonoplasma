@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen, Youtube, Music2, X } from 'lucide-react';
+import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen, X } from 'lucide-react';
+import { YoutubeIcon } from './icons/YoutubeIcon';
+import { SpotifyIcon } from './icons/SpotifyIcon';
+import { FolderMusicIcon } from './icons/FolderMusicIcon';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconForName } from '@/types/ceremony';
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
