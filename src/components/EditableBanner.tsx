@@ -31,7 +31,9 @@ export function EditableBanner() {
         return;
       }
 
-      const fileName = `banner-${Date.now()}.jpg`;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+      const fileName = `${user.id}/banner-${Date.now()}.jpg`;
 
       // Remove old banner if it was uploaded to storage
       if (settings?.banner_url && settings.banner_url.includes('logos/')) {
