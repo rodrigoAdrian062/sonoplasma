@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
