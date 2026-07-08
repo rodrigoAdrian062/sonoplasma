@@ -9,6 +9,8 @@ export interface EQSettings {
 
 interface AudioPlayerContextValue {
   currentStageId: string | null;
+  currentUrl: string | null;
+
   status: PlaybackStatus;
   volume: number;
   currentTime: number;
