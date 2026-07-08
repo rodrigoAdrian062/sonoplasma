@@ -63,6 +63,8 @@ export function PresentationMode({
   stages,
   audiosByStageId,
   currentStageId,
+  currentUrl,
+
   status,
   volume,
   onVolumeChange,
