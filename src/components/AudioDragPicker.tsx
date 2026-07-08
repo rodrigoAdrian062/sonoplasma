@@ -575,7 +575,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                     <div className="flex gap-1 rounded-lg bg-secondary p-1">
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
-                        { id: 'youtube', label: 'YouTube', icon: Youtube },
+                        { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
                         { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                         { id: 'link', label: 'Link', icon: LinkIcon },
                       ] as const).map((t) => (
