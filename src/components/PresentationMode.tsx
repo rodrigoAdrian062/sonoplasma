@@ -16,7 +16,9 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
-import { Youtube, Music2, Download } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { Youtube, Download } from 'lucide-react';
+
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import {
