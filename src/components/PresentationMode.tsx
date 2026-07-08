@@ -126,19 +126,39 @@ export function PresentationMode({
     return () => clearTimeout(timeout);
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+        const el: any = containerRef.current || document.documentElement;
+        const request =
+          el.requestFullscreen ||
+          el.webkitRequestFullscreen ||
+          el.webkitRequestFullScreen ||
+          el.mozRequestFullScreen ||
+          el.msRequestFullscreen;
+        if (!request) {
+          toast.error('Tela cheia não é suportada neste navegador.');
+          return;
+        }
+        await request.call(el);
         setIsFullscreen(true);
       } else {
-        await document.exitFullscreen();
+        const exit: any =
+          document.exitFullscreen ||
+          (document as any).webkitExitFullscreen ||
+          (document as any).mozCancelFullScreen ||
+          (document as any).msExitFullscreen;
+        await exit.call(document);
         setIsFullscreen(false);
       }
     } catch (err) {
       console.error('Fullscreen error:', err);
+      toast.error('Não foi possível abrir em tela cheia. Se estiver na pré-visualização, abra o app publicado.');
     }
   }, []);
+
 
   useEffect(() => {
     const handleFullscreenChange = () => {
