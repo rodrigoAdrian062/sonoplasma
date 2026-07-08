@@ -483,6 +483,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const value: AudioPlayerContextValue = {
     currentStageId,
+    currentUrl,
+
     status,
     volume,
     currentTime,
