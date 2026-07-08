@@ -1,8 +1,11 @@
 import { useState, useRef, useMemo } from 'react';
 import {
-  Search, Music, Youtube, Music2, Play, Square, Check, Plus, Upload,
+  Search, Music, Play, Square, Check, Plus, Upload,
   Loader2, Link as LinkIcon, X, Folder, ChevronLeft, Library,
 } from 'lucide-react';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
