@@ -3,6 +3,7 @@ export interface AppSettings {
   nome_app: string;
   subtitulo_app: string | null;
   logo_url: string | null;
+  banner_url: string | null;
   cor_tema: string | null;
   created_at: string;
   updated_at: string;
