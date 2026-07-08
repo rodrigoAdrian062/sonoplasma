@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library } from 'lucide-react';
+import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   Tooltip,
   TooltipContent,
@@ -24,6 +25,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
   const { signOut } = useAuth();
+  const { isSuperAdmin } = useUserRole();
 
   const handleLogout = async () => {
     await signOut();
@@ -72,6 +74,21 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Sair</TooltipContent>
               </Tooltip>
+              {isSuperAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => navigate('/usuarios')}
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-gold h-8 w-8"
+                    >
+                      <Users size={18} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Gerenciar acessos</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -157,6 +174,21 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 </TooltipTrigger>
                 <TooltipContent>Sair</TooltipContent>
               </Tooltip>
+              {isSuperAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => navigate('/usuarios')}
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-gold"
+                    >
+                      <Users size={20} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Gerenciar acessos</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
