@@ -133,8 +133,14 @@ export function PresentationMode({
       setCustomTime(defaultTime);
       setUseTimerEnabled(defaultTime > 0);
     }
+    // Não reseta o áudio na primeira montagem (preserva a música em reprodução)
+    if (didInitRef.current) {
+      didInitRef.current = false;
+      return;
+    }
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
+
 
 
 
