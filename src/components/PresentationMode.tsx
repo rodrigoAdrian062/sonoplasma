@@ -16,7 +16,9 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
-import { Youtube, Music2, Download } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { Youtube, Download } from 'lucide-react';
+
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import {
@@ -573,7 +575,7 @@ export function PresentationMode({
             const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
               { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
               { key: 'youtube', label: 'YouTube', icon: <Youtube size={13} className="shrink-0 text-red-500" /> },
-              { key: 'spotify', label: 'Spotify', icon: <Music2 size={13} className="shrink-0 text-[#1DB954]" /> },
+              { key: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={13} className="shrink-0 text-[#1DB954]" /> },
               { key: 'file', label: 'Baixado', icon: <Download size={13} className="shrink-0" /> },
             ];
             const visibleFilters = filterOptions.filter((f) => f.key === 'all' || sourcesPresent.has(f.key as AudioSource));

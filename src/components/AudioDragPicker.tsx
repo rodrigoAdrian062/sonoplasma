@@ -1,9 +1,11 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
-  Search, Music, Youtube, Music2, Play, Pause, Square, Plus, Upload, Loader2,
+  Search, Music, Youtube, Play, Pause, Square, Plus, Upload, Loader2,
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2,
 
 } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -47,7 +49,7 @@ const getSpotifyEmbedUrl = (url: string): string | null => {
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <Youtube size={size} className="text-red-500" />;
-  if (isSpotifyUrl(url)) return <Music2 size={size} className="text-[#1DB954]" />;
+  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
   return <Music size={size} className="text-gold" />;
 }
 
@@ -353,7 +355,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                   { id: 'all', label: 'Todos', icon: Library },
                   { id: 'upload', label: 'Áudio', icon: Music },
                   { id: 'youtube', label: 'YouTube', icon: Youtube },
-                  { id: 'spotify', label: 'Spotify', icon: Music2 },
+                  { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 ] as const).map((f) => {
                   const active = sourceFilter === f.id;
                   const count = f.id === 'all'
@@ -572,7 +574,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
                         { id: 'youtube', label: 'YouTube', icon: Youtube },
-                        { id: 'spotify', label: 'Spotify', icon: Music2 },
+                        { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                         { id: 'link', label: 'Link', icon: LinkIcon },
                       ] as const).map((t) => (
                         <button
