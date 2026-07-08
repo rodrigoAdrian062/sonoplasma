@@ -14,6 +14,7 @@ import AudioLibrary from "./pages/AudioLibrary";
 import SpotifyLibrary from "./pages/SpotifyLibrary";
 import YoutubeLibrary from "./pages/YoutubeLibrary";
 import NotFound from "./pages/NotFound";
+import UserManagement from "./pages/UserManagement";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 
@@ -67,6 +68,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <YoutubeLibrary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/usuarios" 
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
                 </ProtectedRoute>
               } 
             />

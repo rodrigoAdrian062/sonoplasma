@@ -68,8 +68,9 @@ export default function Auth() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    if (nome.trim().toLowerCase() !== 'plenitude' || senha !== '353959') {
-      const msg = 'Nome ou senha incorretos';
+    const username = nome.trim().toLowerCase();
+    if (!username || !senha) {
+      const msg = 'Informe usuário e senha';
       setErrorMessage(msg);
       triggerShake();
       toast.error(msg);
@@ -77,11 +78,13 @@ export default function Auth() {
       return;
     }
 
+    const email = `${username}@plenitude.app`;
+
     try {
-      const { error } = await signIn('plenitude@sistema.local', 'plenitude');
+      const { error } = await signIn(email, senha);
 
       if (error) {
-        const msg = 'Erro ao entrar';
+        const msg = 'Usuário ou senha incorretos';
         setErrorMessage(msg);
         triggerShake();
         toast.error(msg);

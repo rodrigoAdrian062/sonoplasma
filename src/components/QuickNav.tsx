@@ -1,9 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library } from 'lucide-react';
+import { Home, Library, UserPlus } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
@@ -15,16 +16,25 @@ const LINKS = [
 export function QuickNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSuperAdmin } = useUserRole();
 
   // Hide on the auth page
   if (location.pathname === '/auth') return null;
+
+  const links = isSuperAdmin
+    ? [
+        ...LINKS,
+        { to: '/usuarios', label: 'Criar acesso', icon: UserPlus, activeClass: 'bg-gold/20 text-gold border-gold/40' },
+      ]
+    : LINKS;
+
 
   return (
     <nav
       className="fixed bottom-4 left-4 z-[60] flex items-center gap-1 rounded-full border border-border bg-card/95 p-1 shadow-lg shadow-black/20 backdrop-blur-md"
       aria-label="Atalhos rápidos"
     >
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to);
         return (
           <Tooltip key={link.to}>
