@@ -71,20 +71,8 @@ const Index = () => {
       />
       
       <main className="container px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
-        {/* Banner decorativo */}
-        <div className="relative mb-6 rounded-2xl overflow-hidden border border-gold/20 shadow-lg shadow-gold/5">
-          <img 
-            src={masonicBanner} 
-            alt="Sonoplastia Cerimonial" 
-            className="w-full h-32 sm:h-44 object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          <div className="absolute bottom-3 left-4 sm:bottom-4 sm:left-6">
-            <h2 className="font-display text-lg sm:text-2xl font-bold text-gold drop-shadow-lg">
-              Seções do Cerimonial
-            </h2>
-          </div>
-        </div>
+        {/* Banner principal editável */}
+        <EditableBanner />
 
         {sections.length === 0 ? (
           <div className="text-center py-12">
