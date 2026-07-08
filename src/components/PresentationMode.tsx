@@ -567,46 +567,85 @@ export function PresentationMode({
           )}
 
           {/* Audio Selector - horizontal scroll on mobile */}
-          {audios.length > 0 && (
-            <div className="w-full mb-4 sm:mb-6">
-              {audios.length > 1 && (
-                <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground/70 text-center mb-2">
-                  {isActive ? 'Tocando agora' : 'Selecione a música que vai tocar'}
-                </p>
-              )}
-              <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
-                {audios.map((audio, index) => {
-                  const selected = index === selectedAudioIndex;
-                  return (
-                    <button
-                      key={audio.id}
-                      data-selected={selected}
-                      ref={(el) => {
-                        if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
-                      }}
-                      onClick={() => handleSelectAudio(index)}
-                      className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
-                        selected
-                          ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
-                          : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
-                      )}
-                    >
-                      {selected ? (
-                        <Check size={14} className="shrink-0" />
-                      ) : (
-                        <>
-                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
-                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
-                        </>
-                      )}
-                      {audio.nome || `Áudio ${index + 1}`}
-                    </button>
-                  );
-                })}
+          {audios.length > 0 && (() => {
+            // Fontes disponíveis nesta etapa
+            const sourcesPresent = new Set(audios.map((a) => getAudioSource(a.audio_url, (a as any).tipo)));
+            const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
+              { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
+              { key: 'youtube', label: 'YouTube', icon: <Youtube size={13} className="shrink-0 text-red-500" /> },
+              { key: 'spotify', label: 'Spotify', icon: <Music2 size={13} className="shrink-0 text-[#1DB954]" /> },
+              { key: 'file', label: 'Baixado', icon: <Download size={13} className="shrink-0" /> },
+            ];
+            const visibleFilters = filterOptions.filter((f) => f.key === 'all' || sourcesPresent.has(f.key as AudioSource));
+            const effectiveFilter = sourceFilter !== 'all' && !sourcesPresent.has(sourceFilter as AudioSource) ? 'all' : sourceFilter;
+            const filteredAudios = audios
+              .map((audio, index) => ({ audio, index }))
+              .filter(({ audio }) => effectiveFilter === 'all' || getAudioSource(audio.audio_url, (audio as any).tipo) === effectiveFilter);
+
+            return (
+              <div className="w-full mb-4 sm:mb-6">
+                {audios.length > 1 && (
+                  <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground/70 text-center mb-2">
+                    {isActive ? 'Tocando agora' : 'Selecione a música que vai tocar'}
+                  </p>
+                )}
+
+                {/* Filtro por fonte */}
+                {visibleFilters.length > 2 && (
+                  <div className="flex justify-start sm:justify-center gap-1.5 mb-3 overflow-x-auto scrollbar-none">
+                    {visibleFilters.map((f) => (
+                      <button
+                        key={f.key}
+                        onClick={() => setSourceFilter(f.key)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition-all whitespace-nowrap shrink-0',
+                          effectiveFilter === f.key
+                            ? 'bg-gold/15 border-gold/50 text-gold'
+                            : 'bg-secondary/60 border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
+                        )}
+                      >
+                        {f.icon}
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
+                  {filteredAudios.map(({ audio, index }) => {
+                    const selected = index === selectedAudioIndex;
+                    return (
+                      <button
+                        key={audio.id}
+                        data-selected={selected}
+                        ref={(el) => {
+                          if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
+                        }}
+                        onClick={() => handleSelectAudio(index)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
+                          selected
+                            ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
+                            : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
+                        )}
+                      >
+                        {selected ? (
+                          <Check size={14} className="shrink-0" />
+                        ) : (
+                          <>
+                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
+                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
+                          </>
+                        )}
+                        {audio.nome || `Áudio ${index + 1}`}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
+
 
 
           {/* Timer Settings - compact on mobile */}
