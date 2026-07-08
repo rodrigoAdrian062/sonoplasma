@@ -358,11 +358,11 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                       >
                         <div className="rounded-md bg-secondary p-1.5 shrink-0">
                           {isYt ? (
-                            <Youtube size={14} className="text-red-500" />
+                            <YoutubeIcon size={14} />
                           ) : isSp ? (
-                            <Music2 size={14} className="text-[#1DB954]" />
+                            <SpotifyIcon size={14} className="text-[#1DB954]" />
                           ) : (
-                            <Music size={14} className="text-gold" />
+                            <FolderMusicIcon size={14} />
                           )}
                         </div>
                         <span className="flex-1 truncate text-sm text-foreground">{a.nome || 'Áudio'}</span>
