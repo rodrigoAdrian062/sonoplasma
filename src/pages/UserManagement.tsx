@@ -1,16 +1,37 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, UserPlus, Loader2, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  ArrowLeft, UserPlus, Loader2, Eye, EyeOff, ShieldAlert, Users, Trash2, Pencil, Check, X,
+} from 'lucide-react';
 import { toast } from 'sonner';
+
+interface ManagedUser {
+  user_id: string;
+  username: string;
+  password: string | null;
+  created_at: string;
+}
 
 export default function UserManagement() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
   const { isSuperAdmin, isLoading: roleLoading } = useUserRole();
 
@@ -18,12 +39,31 @@ export default function UserManagement() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [created, setCreated] = useState<string[]>([]);
+
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPassword, setEditPassword] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['managed-users'],
+    enabled: isSuperAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, username, password, created_at')
+        .neq('user_id', user!.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as ManagedUser[];
+    },
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const uname = username.trim().toLowerCase();
-
     if (!/^[a-z0-9_.-]{3,30}$/.test(uname)) {
       toast.error('Usuário inválido (3-30 caracteres: letras, números, _ . -)');
       return;
@@ -32,26 +72,69 @@ export default function UserManagement() {
       toast.error('A senha deve ter pelo menos 6 caracteres');
       return;
     }
-
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: { username: uname, password },
       });
-
       if (error || (data as any)?.error) {
         toast.error((data as any)?.error || 'Erro ao criar acesso');
         return;
       }
-
       toast.success(`Acesso "${uname}" criado com sucesso!`);
-      setCreated((prev) => [uname, ...prev]);
       setUsername('');
       setPassword('');
+      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
     } catch {
       toast.error('Erro ao criar acesso');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveEdit = async (u: ManagedUser) => {
+    if (editPassword.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user', {
+        body: { user_id: u.user_id, password: editPassword },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || 'Erro ao salvar');
+        return;
+      }
+      toast.success('Senha atualizada!');
+      setEditingId(null);
+      setEditPassword('');
+      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+    } catch {
+      toast.error('Erro ao salvar');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: deleteTarget.user_id },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || 'Erro ao excluir');
+        return;
+      }
+      toast.success(`Acesso "${deleteTarget.username}" excluído`);
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+    } catch {
+      toast.error('Erro ao excluir');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -77,7 +160,7 @@ export default function UserManagement() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-2xl">
         <button
           onClick={() => navigate('/')}
           className="mb-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -87,81 +170,184 @@ export default function UserManagement() {
 
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <UserPlus className="text-gold" /> Criar acesso
+            <Users className="text-gold" /> Acessos
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Crie um usuário e senha para outra pessoa ter o próprio espaço.
+            Crie usuários e senhas para outras pessoas terem o próprio espaço.
           </p>
         </div>
 
+        {/* Create form */}
         <form
           onSubmit={handleCreate}
           className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-lg"
         >
-          <div className="space-y-2">
-            <Label htmlFor="username">Usuário</Label>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="ex: loja01"
-              autoCapitalize="none"
-              autoComplete="off"
-              className="bg-secondary"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <div className="relative">
+          <h2 className="flex items-center gap-2 font-medium text-foreground">
+            <UserPlus size={18} className="text-gold" /> Criar acesso
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuário</Label>
               <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="mínimo 6 caracteres"
-                autoComplete="new-password"
-                className="bg-secondary pr-10"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="ex: loja01"
+                autoCapitalize="none"
+                autoComplete="off"
+                className="bg-secondary"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="mínimo 6 caracteres"
+                  autoComplete="new-password"
+                  className="bg-secondary pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
           </div>
-
-          <Button type="submit" disabled={isSubmitting} className="w-full">
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...
-              </>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando...</>
             ) : (
-              <>
-                <UserPlus className="mr-2 h-4 w-4" /> Criar acesso
-              </>
+              <><UserPlus className="mr-2 h-4 w-4" /> Criar acesso</>
             )}
           </Button>
         </form>
 
-        {created.length > 0 && (
-          <div className="mt-6">
-            <h2 className="mb-2 text-sm font-medium text-muted-foreground">Criados nesta sessão</h2>
-            <ul className="space-y-1">
-              {created.map((u) => (
-                <li
-                  key={u}
-                  className="rounded-lg border border-gold/30 bg-gold/5 px-3 py-2 text-sm text-foreground"
-                >
-                  {u}
-                </li>
-              ))}
+        {/* List */}
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">
+            Acessos criados ({users.length})
+          </h2>
+
+          {usersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 text-gold animate-spin" />
+            </div>
+          ) : users.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+              Nenhum acesso criado ainda.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {users.map((u) => {
+                const isEditing = editingId === u.user_id;
+                const pwVisible = visiblePasswords[u.user_id];
+                return (
+                  <li
+                    key={u.user_id}
+                    className="rounded-lg border border-border bg-card p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-foreground">{u.username}</p>
+                        {isEditing ? (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Input
+                              value={editPassword}
+                              onChange={(e) => setEditPassword(e.target.value)}
+                              placeholder="nova senha"
+                              className="h-8 bg-secondary text-sm"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              className="h-8"
+                              onClick={() => handleSaveEdit(u)}
+                              disabled={savingEdit}
+                            >
+                              {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8"
+                              onClick={() => { setEditingId(null); setEditPassword(''); }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Senha: <span className="font-mono">{pwVisible ? (u.password || '—') : '••••••'}</span>
+                            <button
+                              type="button"
+                              onClick={() => setVisiblePasswords((p) => ({ ...p, [u.user_id]: !p[u.user_id] }))}
+                              className="ml-2 align-middle text-muted-foreground hover:text-foreground"
+                            >
+                              {pwVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                            </button>
+                          </p>
+                        )}
+                      </div>
+
+                      {!isEditing && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => { setEditingId(u.user_id); setEditPassword(''); }}
+                            title="Editar senha"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteTarget(u)}
+                            title="Excluir acesso"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir acesso</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o acesso "{deleteTarget?.username}"? Essa pessoa perderá o login e não poderá mais entrar. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
