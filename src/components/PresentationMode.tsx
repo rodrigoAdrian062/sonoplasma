@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -564,25 +564,46 @@ export function PresentationMode({
 
           {/* Audio Selector - horizontal scroll on mobile */}
           {audios.length > 0 && (
-            <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 max-w-full overflow-x-auto pb-1 scrollbar-none">
-              {audios.map((audio, index) => (
-                <button
-                  key={audio.id}
-                  onClick={() => handleSelectAudio(index)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
-                    index === selectedAudioIndex
-                      ? 'bg-gold/20 border-gold/50 text-gold'
-                      : 'bg-secondary border-border text-muted-foreground hover:border-gold/30'
-                  )}
-                >
-                  <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={index === selectedAudioIndex} />
-                  <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={index === selectedAudioIndex} />
-                  {audio.nome || `Áudio ${index + 1}`}
-                </button>
-              ))}
+            <div className="w-full mb-4 sm:mb-6">
+              {audios.length > 1 && (
+                <p className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground/70 text-center mb-2">
+                  {isActive ? 'Tocando agora' : 'Selecione a música que vai tocar'}
+                </p>
+              )}
+              <div className="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center gap-1.5 sm:gap-2 max-w-full overflow-x-auto pb-1 scrollbar-none">
+                {audios.map((audio, index) => {
+                  const selected = index === selectedAudioIndex;
+                  return (
+                    <button
+                      key={audio.id}
+                      data-selected={selected}
+                      ref={(el) => {
+                        if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
+                      }}
+                      onClick={() => handleSelectAudio(index)}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
+                        selected
+                          ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
+                          : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
+                      )}
+                    >
+                      {selected ? (
+                        <Check size={14} className="shrink-0" />
+                      ) : (
+                        <>
+                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
+                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
+                        </>
+                      )}
+                      {audio.nome || `Áudio ${index + 1}`}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
+
 
           {/* Timer Settings - compact on mobile */}
           <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
