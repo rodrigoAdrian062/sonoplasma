@@ -115,6 +115,8 @@ export function PresentationMode({
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
+
   const { formatted: clockTime } = useClock();
 
   const currentStage = stages[selectedStageIndex];
