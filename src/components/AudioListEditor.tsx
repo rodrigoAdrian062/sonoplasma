@@ -170,9 +170,11 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
     setUploadingIndex(index);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
       const timestamp = Date.now();
       const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `${timestamp}-${cleanName}`;
+      const filePath = `${user.id}/${timestamp}-${cleanName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('stage-audios')
