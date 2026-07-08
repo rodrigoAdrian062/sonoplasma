@@ -256,9 +256,11 @@ export default function Auth() {
               />
             ) : (
               <img
-                src="https://storage.googleapis.com/gpt-engineer-file-uploads/yBZ1cCUYGQM9TWDE1j1FgtavnWJ2/uploads/1769434199738-Captura de tela 2026-01-26 102828.png"
+                src={appLogo}
                 alt="Logotipo"
-                className="w-28 h-28 object-contain rounded-xl drop-shadow-lg"
+                width={1024}
+                height={1024}
+                className="w-28 h-28 object-contain drop-shadow-lg"
               />
             )}
           </div>
