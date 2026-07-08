@@ -121,9 +121,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const uploadLogo = async (file: File): Promise<string | null> => {
     try {
-      // Generate unique filename
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+      // Generate unique filename inside the user's folder
       const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`;
 
       // Delete old logo if exists
       if (logoUrl && logoUrl.includes('logos/')) {
