@@ -14,12 +14,37 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       sonoplastia_audios_biblioteca: {
         Row: {
           audio_url: string
           created_at: string
           id: string
           nome: string
+          owner_id: string | null
           pasta_id: string | null
           tamanho_bytes: number | null
           tipo: string | null
@@ -30,6 +55,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          owner_id?: string | null
           pasta_id?: string | null
           tamanho_bytes?: number | null
           tipo?: string | null
@@ -40,6 +66,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          owner_id?: string | null
           pasta_id?: string | null
           tamanho_bytes?: number | null
           tipo?: string | null
@@ -62,6 +89,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -70,6 +98,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -78,6 +107,7 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -89,6 +119,7 @@ export type Database = {
           id: string
           logo_url: string | null
           nome_app: string
+          owner_id: string | null
           spotify_client_id: string | null
           spotify_client_secret: string | null
           subtitulo_app: string | null
@@ -100,6 +131,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_app?: string
+          owner_id?: string | null
           spotify_client_id?: string | null
           spotify_client_secret?: string | null
           subtitulo_app?: string | null
@@ -111,6 +143,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nome_app?: string
+          owner_id?: string | null
           spotify_client_id?: string | null
           spotify_client_secret?: string | null
           subtitulo_app?: string | null
@@ -126,6 +159,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -135,6 +169,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -144,6 +179,7 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -167,6 +203,7 @@ export type Database = {
           id: string
           nome_simbolico: string
           ordem: number
+          owner_id: string | null
           secao_id: string | null
           tempo_padrao: number | null
           updated_at: string
@@ -181,6 +218,7 @@ export type Database = {
           id?: string
           nome_simbolico: string
           ordem?: number
+          owner_id?: string | null
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
@@ -195,6 +233,7 @@ export type Database = {
           id?: string
           nome_simbolico?: string
           ordem?: number
+          owner_id?: string | null
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
@@ -216,6 +255,7 @@ export type Database = {
           fim: string | null
           id: string
           inicio: string | null
+          owner_id: string | null
           status: string | null
           tempo_executado: number | null
         }
@@ -225,6 +265,7 @@ export type Database = {
           fim?: string | null
           id?: string
           inicio?: string | null
+          owner_id?: string | null
           status?: string | null
           tempo_executado?: number | null
         }
@@ -234,6 +275,7 @@ export type Database = {
           fim?: string | null
           id?: string
           inicio?: string | null
+          owner_id?: string | null
           status?: string | null
           tempo_executado?: number | null
         }
@@ -257,6 +299,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          owner_id: string | null
           updated_at: string
         }
         Insert: {
@@ -268,6 +311,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -279,7 +323,29 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          owner_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -288,10 +354,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -418,6 +490,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "user"],
+    },
   },
 } as const
