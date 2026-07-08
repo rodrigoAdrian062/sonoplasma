@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { ColorPicker } from '@/components/ColorPicker';
 import { resizeImage, formatFileSize } from '@/lib/imageUtils';
-import { Loader2, ImagePlus, X, Upload, CheckCircle2 } from 'lucide-react';
+import { Loader2, ImagePlus, X, Upload, CheckCircle2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SettingsModalProps {
@@ -22,6 +24,8 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings } = useSettings();
+  const { isSuperAdmin } = useUserRole();
+  const navigate = useNavigate();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -310,7 +314,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label>Cor do Tema</Label>
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
+
+          {/* Gerenciar acessos (apenas Plenitude) */}
+          {isSuperAdmin && (
+            <div className="space-y-2 border-t border-border pt-5">
+              <Label>Acessos</Label>
+              <p className="text-xs text-muted-foreground">
+                Crie, edite ou exclua usuários e senhas para outras pessoas.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => { handleClose(); navigate('/usuarios'); }}
+              >
+                <Users size={16} className="mr-2 text-gold" />
+                Gerenciar acessos
+              </Button>
+            </div>
+          )}
         </div>
+
 
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={handleClose}>
