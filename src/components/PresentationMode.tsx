@@ -442,20 +442,25 @@ export function PresentationMode({
 
 
         {/* Central Card - responsive sizing */}
-        <div className="relative z-10 w-full max-w-2xl bg-card/80 backdrop-blur-md border border-gold/15 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-10 shadow-2xl shadow-black/30 flex flex-col items-center my-auto">
+        <div className="relative z-10 w-full max-w-2xl bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-2xl shadow-black/40 flex flex-col items-center my-auto">
           {/* Active Glow */}
           {isActive && (
-            <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-radial from-gold/5 via-transparent to-transparent pointer-events-none" />
+            <>
+              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-radial from-gold/10 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute -inset-px rounded-2xl sm:rounded-3xl border border-gold/40 pointer-events-none animate-pulse" />
+            </>
           )}
+          {/* Top accent line */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-2/3 bg-gradient-to-r from-transparent via-gold/70 to-transparent rounded-full" />
 
           {/* Stage Icon - smaller on mobile */}
           <div
             className={cn(
-              'rounded-2xl sm:rounded-3xl mb-3 sm:mb-5 transition-all duration-500 overflow-hidden',
+              'rounded-2xl sm:rounded-3xl mb-3 sm:mb-5 transition-all duration-500 overflow-hidden ring-1',
               (currentStage as any).icone_url ? 'p-0' : 'p-4 sm:p-6 md:p-8',
               isActive 
-                ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_40px_rgba(212,175,55,0.3)]' 
-                : 'bg-secondary text-muted-foreground'
+                ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_50px_rgba(212,175,55,0.35)] ring-gold/40' 
+                : 'bg-secondary/80 text-muted-foreground ring-border/40'
             )}
           >
             <CeremonyIcon 
@@ -473,9 +478,10 @@ export function PresentationMode({
           </div>
 
           {/* Stage Name */}
-          <h1 className="font-display text-xl sm:text-2xl md:text-4xl font-bold text-foreground text-center mb-1 sm:mb-2">
+          <h1 className="font-display text-xl sm:text-2xl md:text-4xl font-bold text-center mb-1 sm:mb-2 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
             {currentStage.nome_simbolico}
           </h1>
+
 
           {/* Description */}
           {currentStage.descricao && (
