@@ -24,6 +24,8 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings } = useSettings();
+  const { isSuperAdmin } = useUserRole();
+  const navigate = useNavigate();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
