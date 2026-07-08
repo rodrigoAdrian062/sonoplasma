@@ -82,8 +82,30 @@ export function PresentationMode({
   eq,
   onEQChange,
 }: PresentationModeProps) {
-  const [selectedStageIndex, setSelectedStageIndex] = useState(0);
-  const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
+  // Restaura a etapa que está tocando ao abrir a apresentação
+  const initialStageIndex = (() => {
+    if (currentStageId) {
+      const idx = stages.findIndex((s) => s.id === currentStageId);
+      if (idx >= 0) return idx;
+    }
+    return 0;
+  })();
+  const initialAudioIndex = (() => {
+    if (currentStageId && currentUrl) {
+      const idx = stages.findIndex((s) => s.id === currentStageId);
+      if (idx >= 0) {
+        const list = audiosByStageId[stages[idx].id] || [];
+        const aIdx = list.findIndex((a) => a.audio_url === currentUrl);
+        if (aIdx >= 0) return aIdx;
+      }
+    }
+    return 0;
+  })();
+
+  const [selectedStageIndex, setSelectedStageIndex] = useState(initialStageIndex);
+  const [selectedAudioIndex, setSelectedAudioIndex] = useState(initialAudioIndex);
+  const didInitRef = useRef(true);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
