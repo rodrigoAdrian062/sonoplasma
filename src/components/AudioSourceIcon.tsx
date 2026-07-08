@@ -1,5 +1,7 @@
-import { Music, Youtube, Music2 } from 'lucide-react';
+import { Music, Youtube } from 'lucide-react';
+import { SpotifyIcon } from './icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
+
 
 export type AudioSource = 'youtube' | 'spotify' | 'file';
 
