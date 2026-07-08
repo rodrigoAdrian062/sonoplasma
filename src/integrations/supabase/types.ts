@@ -117,6 +117,7 @@ export type Database = {
       }
       sonoplastia_configuracoes: {
         Row: {
+          banner_url: string | null
           cor_tema: string | null
           created_at: string
           id: string
@@ -129,6 +130,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           cor_tema?: string | null
           created_at?: string
           id?: string
@@ -141,6 +143,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           cor_tema?: string | null
           created_at?: string
           id?: string
