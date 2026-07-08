@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
@@ -124,19 +126,39 @@ export function PresentationMode({
     return () => clearTimeout(timeout);
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+        const el: any = containerRef.current || document.documentElement;
+        const request =
+          el.requestFullscreen ||
+          el.webkitRequestFullscreen ||
+          el.webkitRequestFullScreen ||
+          el.mozRequestFullScreen ||
+          el.msRequestFullscreen;
+        if (!request) {
+          toast.error('Tela cheia não é suportada neste navegador.');
+          return;
+        }
+        await request.call(el);
         setIsFullscreen(true);
       } else {
-        await document.exitFullscreen();
+        const exit: any =
+          document.exitFullscreen ||
+          (document as any).webkitExitFullscreen ||
+          (document as any).mozCancelFullScreen ||
+          (document as any).msExitFullscreen;
+        await exit.call(document);
         setIsFullscreen(false);
       }
     } catch (err) {
       console.error('Fullscreen error:', err);
+      toast.error('Não foi possível abrir em tela cheia. Se estiver na pré-visualização, abra o app publicado.');
     }
   }, []);
+
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -275,7 +297,7 @@ export function PresentationMode({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
       {/* Header - responsive */}
       <header className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
