@@ -475,7 +475,7 @@ export default function AudioLibraryPage() {
               onClick={() => navigate('/youtube')}
               className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
             >
-              <Youtube size={14} className="mr-1" />
+              <YoutubeIcon size={14} className="mr-1" />
               <span className="hidden sm:inline">YouTube</span>
             </Button>
           )}
@@ -487,7 +487,7 @@ export default function AudioLibraryPage() {
               onClick={() => navigate('/spotify')}
               className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
             >
-              <Music2 size={14} className="mr-1" />
+              <SpotifyIcon size={14} className="mr-1 text-[#1DB954]" />
               <span className="hidden sm:inline">Spotify</span>
             </Button>
           )}
