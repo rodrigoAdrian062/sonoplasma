@@ -14,6 +14,8 @@ import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 function getYouTubeVideoId(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
