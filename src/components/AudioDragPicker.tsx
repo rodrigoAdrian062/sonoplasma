@@ -461,12 +461,12 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           draggingUrl === item.audio_url && 'opacity-40'
                         )}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
                           <div className="rounded-md bg-secondary p-1.5 shrink-0">
                             <SourceIcon url={item.audio_url} />
                           </div>
-                          <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
+                          <span className="flex-1 min-w-0 truncate text-sm text-foreground">{item.nome}</span>
                           <button
                             type="button"
                             onClick={() => togglePreview(item.audio_url)}
