@@ -669,7 +669,8 @@ export function PresentationMode({
                         }}
                         onClick={() => handleSelectAudio(index)}
                         className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
+                          'flex items-center gap-1.5 rounded-full border transition-all whitespace-nowrap shrink-0',
+                          compact ? 'px-2.5 py-1 text-[11px] sm:text-xs' : 'px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm',
                           selected
                             ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
                             : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
