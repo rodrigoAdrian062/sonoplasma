@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
-  useDraggable, useDroppable, DragStartEvent, DragEndEvent,
+  useDraggable, useDroppable, DragStartEvent, DragEndEvent, pointerWithin, MeasuringStrategy,
 } from '@dnd-kit/core';
 import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -188,7 +188,14 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
 
   return (
     <RowCtx.Provider value={{ accent }}>
-      <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd} onDragCancel={() => setActive(null)}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+        onDragStart={handleStart}
+        onDragEnd={handleEnd}
+        onDragCancel={() => setActive(null)}
+      >
         {children}
 
         <DragOverlay dropAnimation={null}>

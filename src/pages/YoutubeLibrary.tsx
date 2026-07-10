@@ -245,7 +245,7 @@ export default function YoutubeLibraryPage() {
         </div>
       </header>
 
-      <main className="container py-4 sm:py-6 space-y-4 max-w-3xl mx-auto">
+      <main className="container py-4 sm:py-6 space-y-4 max-w-7xl mx-auto">
         {/* Add form */}
         <div className="border border-border rounded-lg p-3">
           {!showAddForm ? (
@@ -352,7 +352,7 @@ export default function YoutubeLibraryPage() {
             onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 pb-24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-3 pb-24">
             {ytAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
