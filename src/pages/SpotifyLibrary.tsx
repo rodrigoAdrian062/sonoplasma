@@ -222,6 +222,18 @@ export default function SpotifyLibraryPage() {
     }
   };
 
+  const handleMoveToFolder = async (audio: { id: string; nome: string }, folderId: string | null) => {
+    try {
+      await moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId });
+      const folderName = folders.find((f) => f.id === folderId)?.nome;
+      toast({ title: folderId ? `"${audio.nome}" movido para "${folderName}"` : `"${audio.nome}" removido da pasta` });
+    } catch {
+      toast({ title: 'Erro ao mover para a pasta', variant: 'destructive' });
+    }
+  };
+
+
+
   const stagesBySection = sections.map((sec) => ({
     section: sec,
     stages: stages.filter((s) => s.secao_id === sec.id),
