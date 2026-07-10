@@ -326,7 +326,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-1.5rem)] h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-none w-screen h-[100dvh] sm:h-screen rounded-none border-0 flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 py-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Library className="text-gold" size={18} />
