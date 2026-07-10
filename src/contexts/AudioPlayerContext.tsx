@@ -449,15 +449,23 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
 
   const pause = useCallback(() => {
-    if (isSpotify && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
-    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
-      ytPlayerRef.current.pauseVideo();
-    } else if (audioRef.current) {
-      audioRef.current.pause();
+    const doPause = () => {
+      if (isSpotify && spotifyControllerRef.current) {
+        try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
+      } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+        ytPlayerRef.current.pauseVideo();
+      } else if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setStatus('paused');
+    };
+    // Spotify iframe controller does not expose reliable volume control
+    if (fadeEnabledRef.current && !isSpotify) {
+      fadeOutThen(doPause);
+    } else {
+      doPause();
     }
-    setStatus('paused');
-  }, [isYouTube, isSpotify]);
+  }, [isYouTube, isSpotify, fadeOutThen]);
 
   const resume = useCallback(() => {
     if (isSpotify && spotifyControllerRef.current) {
