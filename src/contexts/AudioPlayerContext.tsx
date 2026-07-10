@@ -19,6 +19,8 @@ interface AudioPlayerContextValue {
   isSpotify: boolean;
   youtubeVideoId: string | null;
   eq: EQSettings;
+  fadeEnabled: boolean;
+  setFadeEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
   pause: () => void;
   resume: () => void;
