@@ -126,6 +126,20 @@ export function StageCard({
     }
   };
 
+  const handlePlayAudio = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audios[index];
+    if (!audio) return;
+    setSelectedAudioIndex(index);
+    if (isActive) {
+      handleStop();
+    }
+    if (useTimerEnabled && customTime > 0) {
+      timer.start(customTime);
+    }
+    onPlay(audio.audio_url);
+  };
+
   const handleDeleteAudio = async (audioId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -256,6 +270,22 @@ export function StageCard({
                   >
                     <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                     <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
+                    <button
+                      onClick={(e) => handlePlayAudio(index, e)}
+                      className={cn(
+                        'p-1 rounded transition-colors shrink-0',
+                        isPlaying && index === selectedAudioIndex
+                          ? 'text-gold bg-gold/15'
+                          : 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'
+                      )}
+                      title="Tocar áudio"
+                    >
+                      {isPlaying && index === selectedAudioIndex ? (
+                        <Pause size={13} fill="currentColor" />
+                      ) : (
+                        <Play size={13} fill="currentColor" />
+                      )}
+                    </button>
                     <button
                       onClick={(e) => handleDeleteAudio(audio.id, e)}
                       className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10 shrink-0"
