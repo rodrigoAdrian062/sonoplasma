@@ -386,6 +386,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const play = useCallback((stageId: string, url: string) => {
+    clearFade();
     stopCurrentPlayback();
 
     // Sempre iniciar o áudio com volume em 10%
