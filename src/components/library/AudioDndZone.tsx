@@ -237,6 +237,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                             sub="Pasta"
                             accent={accent}
                             icon={<Folder size={16} className={acc.icon} />}
+                            count={folderCounts[f.id] ?? 0}
                           />
                         ))}
                       </div>
