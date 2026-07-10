@@ -114,10 +114,57 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const spotifyControllerRef = useRef<any>(null);
   const spotifyReadyRef = useRef(false);
   const volumeRef = useRef(volume);
+  const fadeEnabledRef = useRef(fadeEnabled);
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  useEffect(() => {
+    fadeEnabledRef.current = fadeEnabled;
+  }, [fadeEnabled]);
+
+  const setFadeEnabled = useCallback((value: boolean) => {
+    setFadeEnabledState(value);
+  }, []);
+
+  const clearFade = useCallback(() => {
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+  }, []);
+
+  // Apply a volume level to whichever player is active (no state change)
+  const applyPlayerVolume = useCallback((v: number) => {
+    if (audioRef.current) audioRef.current.volume = v;
+    if (ytPlayerRef.current && ytPlayerReadyRef.current) {
+      try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
+    }
+  }, []);
+
+  // Gradually reduce volume, then run onDone. Restores player volume afterwards.
+  const fadeOutThen = useCallback((onDone: () => void) => {
+    clearFade();
+    const startVol = volumeRef.current;
+    if (startVol <= 0) { onDone(); return; }
+    const steps = 24;
+    const totalMs = 1400;
+    let step = 0;
+    fadeIntervalRef.current = setInterval(() => {
+      step++;
+      const v = Math.max(0, startVol * (1 - step / steps));
+      applyPlayerVolume(v);
+      if (step >= steps) {
+        clearFade();
+        onDone();
+        // restore actual player volume so the next resume/play sounds normal
+        applyPlayerVolume(startVol);
+      }
+    }, totalMs / steps);
+  }, [clearFade, applyPlayerVolume]);
+
 
   // Initialize HTML5 Audio with EQ filters (once, lives for app lifetime)
   useEffect(() => {
