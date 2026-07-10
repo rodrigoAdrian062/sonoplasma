@@ -35,6 +35,14 @@ const ACCENTS: Record<Accent, { grip: string; overlay: string; icon: string; ove
   },
 };
 
+// pointerWithin funciona bem no desktop, mas em toque/animação pode não achar o alvo.
+// Faz fallback para rectIntersection quando pointerWithin não retorna nada.
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return rectIntersection(args);
+};
+
 interface AudioDndZoneProps {
   accent?: Accent;
   onSendToStage: (audio: DragAudio, stageId: string) => void;
