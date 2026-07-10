@@ -14,6 +14,8 @@ import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 function parseSpotify(url: string): { type: string; id: string } | null {
   const u = (url || '').trim();
@@ -60,6 +62,7 @@ function loadSpotifyApi(): Promise<any> {
 export default function SpotifyLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, addAudio } = useAudioLibrary();
+  const { folders, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
@@ -219,6 +222,18 @@ export default function SpotifyLibraryPage() {
     }
   };
 
+  const handleMoveToFolder = async (audio: { id: string; nome: string }, folderId: string | null) => {
+    try {
+      await moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId });
+      const folderName = folders.find((f) => f.id === folderId)?.nome;
+      toast({ title: folderId ? `"${audio.nome}" movido para "${folderName}"` : `"${audio.nome}" removido da pasta` });
+    } catch {
+      toast({ title: 'Erro ao mover para a pasta', variant: 'destructive' });
+    }
+  };
+
+
+
   const stagesBySection = sections.map((sec) => ({
     section: sec,
     stages: stages.filter((s) => s.secao_id === sec.id),
@@ -341,15 +356,21 @@ export default function SpotifyLibraryPage() {
                 <p className="text-sm mt-1">Ajuste a busca ou o filtro</p>
               </div>
             ) : (
-          <div className="space-y-3">
+          <AudioDndZone
+            accent="green"
+            onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
+            onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
+          >
+          <div className="space-y-3 pb-24">
             {spotifyAudios.map((audio) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
               const isUsed = usage.length > 0;
               return (
+                <DraggableAudioRow key={audio.id} audio={audio}>
+                  {({ handleProps }) => (
                 <div
-                  key={audio.id}
                   className={cn(
                     'rounded-lg border overflow-hidden transition-colors',
                     isCurrent
@@ -395,6 +416,7 @@ export default function SpotifyLibraryPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <DragHandle handleProps={handleProps} />
                       <Button
                         variant="ghost"
                         size="icon"
@@ -467,9 +489,12 @@ export default function SpotifyLibraryPage() {
                     </div>
                   )}
                 </div>
+                  )}
+                </DraggableAudioRow>
               );
             })}
           </div>
+          </AudioDndZone>
             )}
           </>
         )}
