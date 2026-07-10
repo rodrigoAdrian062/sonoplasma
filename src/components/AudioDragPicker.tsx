@@ -677,12 +677,12 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                   {audios.map((a) => (
                     <div
                       key={a.audio_url}
-                      className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-2"
+                      className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-2 min-w-0"
                     >
                       <div className="rounded-md bg-secondary p-1.5 shrink-0">
                         <SourceIcon url={a.audio_url} />
                       </div>
-                      <span className="flex-1 truncate text-sm text-foreground">{a.nome || 'Áudio'}</span>
+                      <span className="flex-1 min-w-0 truncate text-sm text-foreground">{a.nome || 'Áudio'}</span>
                       <button
                         type="button"
                         onClick={() => removeItem(a.audio_url)}
