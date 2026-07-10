@@ -363,69 +363,53 @@ export default function YoutubeLibraryPage() {
                   {({ handleProps }) => (
                 <div
                   className={cn(
-                    'rounded-lg border overflow-hidden transition-colors',
+                    'rounded-md border overflow-hidden transition-colors',
                     isCurrent
                       ? 'border-red-500/50 bg-card/50'
                       : isUsed
-                        ? 'border-l-4 border-l-red-500 border-y-border/50 border-r-border/50 bg-red-500/5'
+                        ? 'border-l-2 border-l-red-500 border-y-border/50 border-r-border/50 bg-red-500/5'
                         : 'border-border/50 bg-card/50'
                   )}
                 >
-                  <div className="flex items-center gap-3 p-3 sm:p-4">
-                    <div className="p-2 bg-red-500/10 rounded-lg shrink-0">
-                      <YoutubeIcon size={18} />
-                    </div>
+                  <div className="flex items-center gap-2 px-2 py-1.5">
+                    <YoutubeIcon size={16} className="shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
-                      <a
-                        href={audio.audio_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-red-400 hover:underline truncate block max-w-[260px] sm:max-w-[400px]"
-                        title={audio.audio_url}
-                      >
-                        {audio.audio_url}
-                      </a>
-                      {isUsed ? (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {usage.map((u, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500 text-[10px] font-medium"
-                              title={`${u.sectionName} › ${u.stageName}`}
-                            >
-                              <span className="opacity-70">{u.sectionName}</span>
-                              <span>›</span>
-                              <span>{u.stageName}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium">
-                          Não adicionada
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className="font-medium text-sm truncate">{audio.nome}</p>
+                        {isUsed ? (
+                          <span
+                            className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500 text-[10px] font-medium"
+                            title={usage.map((u) => `${u.sectionName} › ${u.stageName}`).join(', ')}
+                          >
+                            {usage[0].stageName}{usage.length > 1 ? ` +${usage.length - 1}` : ''}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium">
+                            Não usada
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-0.5 shrink-0">
                       <DragHandle handleProps={handleProps} />
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handlePlayPause(audio.id)}
-                        className="h-9 w-9"
+                        className="h-8 w-8"
                         title={isPlaying ? 'Pausar' : 'Tocar'}
                       >
-                        {isPlaying ? <Pause size={18} className="text-red-500" /> : <Play size={18} className="text-red-500" />}
+                        {isPlaying ? <Pause size={16} className="text-red-500" /> : <Play size={16} className="text-red-500" />}
                       </Button>
                       {isCurrent && (
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={handleStop}
-                          className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           title="Parar"
                         >
-                          <X size={18} />
+                          <X size={16} />
                         </Button>
                       )}
                       <MoveTargetMenu
@@ -437,15 +421,15 @@ export default function YoutubeLibraryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => { if (isCurrent) handleStop(); deleteAudio.mutate(audio.id); }}
-                        className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         title="Remover"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </Button>
                     </div>
                   </div>
                   {isCurrent && (
-                    <div className="px-3 pb-3">
+                    <div className="px-2 pb-2">
                       <div ref={embedElRef} className="rounded-xl overflow-hidden" />
                     </div>
                   )}
@@ -455,6 +439,7 @@ export default function YoutubeLibraryPage() {
               );
             })}
           </div>
+
           </AudioDndZone>
             )}
           </>
