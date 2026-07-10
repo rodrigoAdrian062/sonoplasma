@@ -126,6 +126,20 @@ export function StageCard({
     }
   };
 
+  const handlePlayAudio = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audios[index];
+    if (!audio) return;
+    setSelectedAudioIndex(index);
+    if (isActive) {
+      handleStop();
+    }
+    if (useTimerEnabled && customTime > 0) {
+      timer.start(customTime);
+    }
+    onPlay(audio.audio_url);
+  };
+
   const handleDeleteAudio = async (audioId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
