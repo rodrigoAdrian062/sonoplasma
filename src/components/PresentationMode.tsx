@@ -421,6 +421,16 @@ export function PresentationMode({
             </Button>
           )}
 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCompact((c) => !c)}
+            title={compact ? 'Modo normal' : 'Modo compacto'}
+            className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+          >
+            {compact ? <Expand size={16} /> : <Shrink size={16} />}
+          </Button>
+
           <span className="text-xs text-muted-foreground px-1">
             {selectedStageIndex + 1}/{stages.length}
           </span>
