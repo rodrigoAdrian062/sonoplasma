@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
-  useDraggable, useDroppable, DragStartEvent, DragEndEvent, pointerWithin, MeasuringStrategy,
+  useDraggable, useDroppable, DragStartEvent, DragEndEvent, pointerWithin, rectIntersection,
+  CollisionDetection, MeasuringStrategy,
 } from '@dnd-kit/core';
 import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
