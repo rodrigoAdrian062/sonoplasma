@@ -461,12 +461,12 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           draggingUrl === item.audio_url && 'opacity-40'
                         )}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
                           <div className="rounded-md bg-secondary p-1.5 shrink-0">
                             <SourceIcon url={item.audio_url} />
                           </div>
-                          <span className="flex-1 truncate text-sm text-foreground">{item.nome}</span>
+                          <span className="flex-1 min-w-0 truncate text-sm text-foreground">{item.nome}</span>
                           <button
                             type="button"
                             onClick={() => togglePreview(item.audio_url)}
@@ -560,18 +560,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               )}
 
               {/* Add new */}
-              <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-3">
+              <div className="mt-2">
                 {!showAdd ? (
                   <button
                     type="button"
                     onClick={() => setShowAdd(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gold/40 py-2.5 text-sm font-medium text-gold transition-colors hover:bg-gold/10"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gold/40 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10"
                   >
-                    <Plus size={16} />
+                    <Plus size={14} />
                     Adicionar novo áudio
                   </button>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-3">
                     <div className="flex gap-1 rounded-lg bg-secondary p-1">
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
