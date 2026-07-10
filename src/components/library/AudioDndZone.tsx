@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
-  useDraggable, useDroppable, DragStartEvent, DragEndEvent, pointerWithin, MeasuringStrategy,
+  useDraggable, useDroppable, DragStartEvent, DragEndEvent, pointerWithin, rectIntersection,
+  CollisionDetection, MeasuringStrategy,
 } from '@dnd-kit/core';
 import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,14 @@ const ACCENTS: Record<Accent, { grip: string; overlay: string; icon: string; ove
     icon: 'text-green-500',
     over: 'border-green-500 bg-green-500/20 scale-105',
   },
+};
+
+// pointerWithin funciona bem no desktop, mas em toque/animação pode não achar o alvo.
+// Faz fallback para rectIntersection quando pointerWithin não retorna nada.
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return rectIntersection(args);
 };
 
 interface AudioDndZoneProps {
@@ -190,7 +199,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
     <RowCtx.Provider value={{ accent }}>
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={collisionDetection}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={handleStart}
         onDragEnd={handleEnd}
