@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
+import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
