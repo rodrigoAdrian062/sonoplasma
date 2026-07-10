@@ -459,6 +459,8 @@ export default function YoutubeLibraryPage() {
               );
             })}
           </div>
+            )}
+          </>
         )}
       </main>
     </div>
