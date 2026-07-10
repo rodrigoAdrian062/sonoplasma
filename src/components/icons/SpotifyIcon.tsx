@@ -9,7 +9,7 @@ export function SpotifyIcon({ size = 14, className }: SpotifyIconProps) {
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill="#1DB954"
       className={className}
       aria-hidden="true"
     >
