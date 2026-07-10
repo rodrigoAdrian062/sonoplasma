@@ -177,45 +177,111 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
         </DragOverlay>
 
         {active && (
-          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md p-3 shadow-2xl animate-in slide-in-from-bottom">
-            <p className="text-xs text-muted-foreground mb-2 text-center">
-              Solte em uma <span className="font-semibold text-foreground">etapa</span> ou{' '}
-              <span className="font-semibold text-foreground">pasta</span>
-            </p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {folders.map((f) => (
-                <DropTarget
-                  key={f.id}
-                  id={`folder:${f.id}`}
-                  label={f.nome}
-                  sub="Pasta"
-                  accent={accent}
-                  icon={<Folder size={16} className={acc.icon} />}
-                />
-              ))}
-              {stagesBySection.map(({ section, stages: ss }) =>
-                ss.map((stage) => (
-                  <DropTarget
-                    key={stage.id}
-                    id={`stage:${stage.id}`}
-                    label={stage.nome_simbolico}
-                    sub={section.nome}
-                    accent={accent}
-                    icon={<Layers size={16} className={acc.icon} />}
-                  />
-                )),
-              )}
-              {unassignedStages.map((stage) => (
-                <DropTarget
-                  key={stage.id}
-                  id={`stage:${stage.id}`}
-                  label={stage.nome_simbolico}
-                  sub="Sem seção"
-                  accent={accent}
-                  icon={<Layers size={16} className={acc.icon} />}
-                />
-              ))}
+          <div className="fixed right-0 top-0 z-40 h-full w-64 max-w-[80vw] border-l border-border bg-background/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-right flex flex-col">
+            <div className="flex items-center justify-between gap-2 border-b border-border p-3">
+              <p className="text-xs font-semibold text-foreground">Solte em uma etapa ou pasta</p>
+              <button
+                type="button"
+                onClick={() => setShowTargets((s) => !s)}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                title={showTargets ? 'Ocultar' : 'Mostrar seções'}
+              >
+                <PanelRightClose size={16} />
+              </button>
             </div>
+
+            {showTargets && (
+              <div className="flex-1 overflow-y-auto p-2 space-y-3">
+                {/* Pastas */}
+                {folders.length > 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup('__folders')}
+                      className="flex w-full items-center gap-1 px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      {collapsed['__folders'] ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                      <Folder size={13} className={acc.icon} />
+                      Pastas
+                    </button>
+                    {!collapsed['__folders'] && (
+                      <div className="space-y-1.5 pl-1 pt-1">
+                        {folders.map((f) => (
+                          <DropTarget
+                            key={f.id}
+                            id={`folder:${f.id}`}
+                            label={f.nome}
+                            sub="Pasta"
+                            accent={accent}
+                            icon={<Folder size={16} className={acc.icon} />}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Seções com etapas */}
+                {stagesBySection.map(({ section, stages: ss }) =>
+                  ss.length === 0 ? null : (
+                    <div key={section.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(section.id)}
+                        className="flex w-full items-center gap-1 px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        {collapsed[section.id] ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                        <Layers size={13} className={acc.icon} />
+                        <span className="truncate">{section.nome}</span>
+                      </button>
+                      {!collapsed[section.id] && (
+                        <div className="space-y-1.5 pl-1 pt-1">
+                          {ss.map((stage) => (
+                            <DropTarget
+                              key={stage.id}
+                              id={`stage:${stage.id}`}
+                              label={stage.nome_simbolico}
+                              sub={section.nome}
+                              accent={accent}
+                              icon={<Layers size={16} className={acc.icon} />}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ),
+                )}
+
+                {/* Etapas sem seção */}
+                {unassignedStages.length > 0 && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup('__unassigned')}
+                      className="flex w-full items-center gap-1 px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      {collapsed['__unassigned'] ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+                      <Layers size={13} className={acc.icon} />
+                      Sem seção
+                    </button>
+                    {!collapsed['__unassigned'] && (
+                      <div className="space-y-1.5 pl-1 pt-1">
+                        {unassignedStages.map((stage) => (
+                          <DropTarget
+                            key={stage.id}
+                            id={`stage:${stage.id}`}
+                            label={stage.nome_simbolico}
+                            sub="Sem seção"
+                            accent={accent}
+                            icon={<Layers size={16} className={acc.icon} />}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </DndContext>
