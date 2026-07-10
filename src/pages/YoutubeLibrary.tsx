@@ -352,7 +352,7 @@ export default function YoutubeLibraryPage() {
             onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
-          <div className="space-y-3 pb-24">
+          <div className="space-y-1.5 pb-24">
             {ytAudios.map((audio) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
