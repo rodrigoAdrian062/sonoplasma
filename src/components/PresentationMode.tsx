@@ -696,7 +696,7 @@ export function PresentationMode({
 
 
           {/* Timer Settings - compact on mobile */}
-          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className={cn('flex items-center gap-2 sm:gap-3', compact ? 'mb-3 sm:mb-4' : 'mb-4 sm:mb-6')}>
             <Clock size={16} className="text-muted-foreground shrink-0" />
             <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
               <input
@@ -731,14 +731,15 @@ export function PresentationMode({
                 disabled={audios.length === 0}
                 size="lg"
                 className={cn(
-                  'gap-2 sm:gap-3 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-xl transition-all',
+                  'gap-2 sm:gap-3 rounded-xl transition-all',
+                  compact ? 'px-5 sm:px-6 py-3 sm:py-4 text-sm sm:text-base' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg',
                   audios.length > 0
                     ? 'bg-gold hover:bg-gold-glow text-background shadow-lg hover:shadow-gold/30'
                     : 'bg-secondary text-muted-foreground cursor-not-allowed'
                 )}
               >
-                <Play size={22} className="sm:hidden" />
-                <Play size={28} className="hidden sm:block" />
+                <Play size={compact ? 18 : 22} className="sm:hidden" />
+                <Play size={compact ? 22 : 28} className="hidden sm:block" />
                 Iniciar
               </Button>
             ) : (
@@ -746,57 +747,57 @@ export function PresentationMode({
                 <Button
                   onClick={() => onSeekTo?.(0)}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Reiniciar"
                 >
-                  <RotateCcw size={20} className="sm:hidden" />
-                  <RotateCcw size={24} className="hidden sm:block" />
+                  <RotateCcw size={compact ? 18 : 20} className="sm:hidden" />
+                  <RotateCcw size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={onSeekBackward}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Retroceder 10s"
                 >
-                  <SkipBack size={20} className="sm:hidden" />
-                  <SkipBack size={24} className="hidden sm:block" />
+                  <SkipBack size={compact ? 18 : 20} className="sm:hidden" />
+                  <SkipBack size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 {isPlaying ? (
                   <Button
                     onClick={handlePause}
-                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
+                    className={cn('gap-2 sm:gap-3 rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40', compact ? 'px-4 sm:px-5 py-2 sm:py-3 text-sm sm:text-base' : 'px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg')}
                     variant="outline"
                   >
-                    <Pause size={22} className="sm:hidden" />
-                    <Pause size={28} className="hidden sm:block" />
+                    <Pause size={compact ? 18 : 22} className="sm:hidden" />
+                    <Pause size={compact ? 22 : 28} className="hidden sm:block" />
                     <span className="hidden sm:inline">Pausar</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleResume}
-                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
+                    className={cn('gap-2 sm:gap-3 rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg', compact ? 'px-4 sm:px-5 py-2 sm:py-3 text-sm sm:text-base' : 'px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg')}
                   >
-                    <Play size={22} className="sm:hidden" />
-                    <Play size={28} className="hidden sm:block" />
+                    <Play size={compact ? 18 : 22} className="sm:hidden" />
+                    <Play size={compact ? 22 : 28} className="hidden sm:block" />
                     <span className="hidden sm:inline">Continuar</span>
                   </Button>
                 )}
                 <Button
                   onClick={onSeekForward}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Avançar 10s"
                 >
-                  <SkipForward size={20} className="sm:hidden" />
-                  <SkipForward size={24} className="hidden sm:block" />
+                  <SkipForward size={compact ? 18 : 20} className="sm:hidden" />
+                  <SkipForward size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={handleStop}
                   variant="outline"
-                  className="gap-1.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
+                  className={cn('gap-1.5 sm:gap-3 rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30', compact ? 'px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base' : 'px-4 sm:px-6 py-3 sm:py-6 text-base sm:text-lg')}
                 >
-                  <Square size={20} className="sm:hidden" />
-                  <Square size={28} className="hidden sm:block" />
+                  <Square size={compact ? 18 : 20} className="sm:hidden" />
+                  <Square size={compact ? 22 : 28} className="hidden sm:block" />
                   <span className="hidden sm:inline">Parar</span>
                 </Button>
               </>
