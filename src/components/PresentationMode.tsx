@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
+import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
@@ -126,6 +128,7 @@ export function PresentationMode({
   const [compact, setCompact] = useState(shouldAutoCompact);
 
   const { formatted: clockTime } = useClock();
+  const { fadeEnabled, setFadeEnabled } = useUniversalAudioPlayer();
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
@@ -420,6 +423,16 @@ export function PresentationMode({
               <SlidersHorizontal size={16} />
             </Button>
           )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFadeEnabled(!fadeEnabled)}
+            title={fadeEnabled ? 'Fade ativado (diminui o volume ao pausar/parar)' : 'Fade desativado (para o som de imediato)'}
+            className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+          >
+            <AudioLines size={16} />
+          </Button>
 
           <Button
             variant="ghost"
