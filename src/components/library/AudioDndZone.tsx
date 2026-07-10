@@ -3,7 +3,7 @@ import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
   useDraggable, useDroppable, DragStartEvent, DragEndEvent,
 } from '@dnd-kit/core';
-import { GripVertical, Music, Folder, Layers } from 'lucide-react';
+import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
