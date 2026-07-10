@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 
 export interface DragAudio {
   id: string;
