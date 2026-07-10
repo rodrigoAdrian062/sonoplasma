@@ -199,7 +199,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
     <RowCtx.Provider value={{ accent }}>
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
+        collisionDetection={collisionDetection}
         measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={handleStart}
         onDragEnd={handleEnd}
