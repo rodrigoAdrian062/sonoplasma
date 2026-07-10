@@ -356,15 +356,21 @@ export default function SpotifyLibraryPage() {
                 <p className="text-sm mt-1">Ajuste a busca ou o filtro</p>
               </div>
             ) : (
-          <div className="space-y-3">
+          <AudioDndZone
+            accent="green"
+            onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
+            onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
+          >
+          <div className="space-y-3 pb-24">
             {spotifyAudios.map((audio) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
               const isUsed = usage.length > 0;
               return (
+                <DraggableAudioRow key={audio.id} audio={audio}>
+                  {({ handleProps }) => (
                 <div
-                  key={audio.id}
                   className={cn(
                     'rounded-lg border overflow-hidden transition-colors',
                     isCurrent
