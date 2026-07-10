@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -119,6 +119,11 @@ export function PresentationMode({
   const [showVolume, setShowVolume] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
+
+  // Modo compacto: reduz textos e botões quando há muitas etapas/músicas
+  const totalAudios = stages.reduce((n, s) => n + (audiosByStageId[s.id]?.length || 0), 0);
+  const shouldAutoCompact = stages.length > 8 || totalAudios > 12;
+  const [compact, setCompact] = useState(shouldAutoCompact);
 
   const { formatted: clockTime } = useClock();
 
@@ -416,6 +421,16 @@ export function PresentationMode({
             </Button>
           )}
 
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCompact((c) => !c)}
+            title={compact ? 'Modo normal' : 'Modo compacto'}
+            className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+          >
+            {compact ? <Expand size={16} /> : <Shrink size={16} />}
+          </Button>
+
           <span className="text-xs text-muted-foreground px-1">
             {selectedStageIndex + 1}/{stages.length}
           </span>
@@ -527,7 +542,7 @@ export function PresentationMode({
 
 
         {/* Central Card - responsive sizing */}
-        <div className="relative z-10 w-full max-w-2xl bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10 shadow-2xl shadow-black/40 flex flex-col items-center my-auto">
+        <div className={cn('relative z-10 w-full max-w-2xl bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/40 flex flex-col items-center my-auto', compact ? 'p-3 sm:p-5 md:p-6' : 'p-4 sm:p-6 md:p-10')}>
           {/* Active Glow */}
           {isActive && (
             <>
@@ -541,8 +556,9 @@ export function PresentationMode({
           {/* Stage Icon - smaller on mobile */}
           <div
             className={cn(
-              'rounded-2xl sm:rounded-3xl mb-3 sm:mb-5 transition-all duration-500 overflow-hidden ring-1',
-              (currentStage as any).icone_url ? 'p-0' : 'p-4 sm:p-6 md:p-8',
+              'rounded-2xl sm:rounded-3xl transition-all duration-500 overflow-hidden ring-1',
+              compact ? 'mb-2 sm:mb-3' : 'mb-3 sm:mb-5',
+              (currentStage as any).icone_url ? 'p-0' : compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6 md:p-8',
               isActive 
                 ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_50px_rgba(212,175,55,0.35)] ring-gold/40' 
                 : 'bg-secondary/80 text-muted-foreground ring-border/40'
@@ -551,25 +567,28 @@ export function PresentationMode({
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? 96 : 48} 
+              size={(currentStage as any).icone_url ? (compact ? 64 : 96) : (compact ? 36 : 48)} 
               className="sm:hidden"
             />
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? 128 : 64} 
+              size={(currentStage as any).icone_url ? (compact ? 80 : 128) : (compact ? 44 : 64)} 
               className="hidden sm:block"
             />
           </div>
 
           {/* Stage Name */}
-          <h1 className="font-display text-xl sm:text-2xl md:text-4xl font-bold text-center mb-1 sm:mb-2 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className={cn(
+            'font-display font-bold text-center bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent',
+            compact ? 'text-lg sm:text-xl md:text-2xl mb-1' : 'text-xl sm:text-2xl md:text-4xl mb-1 sm:mb-2'
+          )}>
             {currentStage.nome_simbolico}
           </h1>
 
 
           {/* Description */}
-          {currentStage.descricao && (
+          {currentStage.descricao && !compact && (
             <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mb-3 sm:mb-5 line-clamp-2 sm:line-clamp-none">
               {currentStage.descricao}
             </p>
@@ -650,7 +669,8 @@ export function PresentationMode({
                         }}
                         onClick={() => handleSelectAudio(index)}
                         className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border transition-all text-xs sm:text-sm whitespace-nowrap shrink-0',
+                          'flex items-center gap-1.5 rounded-full border transition-all whitespace-nowrap shrink-0',
+                          compact ? 'px-2.5 py-1 text-[11px] sm:text-xs' : 'px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm',
                           selected
                             ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
                             : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
@@ -676,7 +696,7 @@ export function PresentationMode({
 
 
           {/* Timer Settings - compact on mobile */}
-          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+          <div className={cn('flex items-center gap-2 sm:gap-3', compact ? 'mb-3 sm:mb-4' : 'mb-4 sm:mb-6')}>
             <Clock size={16} className="text-muted-foreground shrink-0" />
             <label className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
               <input
@@ -711,14 +731,15 @@ export function PresentationMode({
                 disabled={audios.length === 0}
                 size="lg"
                 className={cn(
-                  'gap-2 sm:gap-3 px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-xl transition-all',
+                  'gap-2 sm:gap-3 rounded-xl transition-all',
+                  compact ? 'px-5 sm:px-6 py-3 sm:py-4 text-sm sm:text-base' : 'px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg',
                   audios.length > 0
                     ? 'bg-gold hover:bg-gold-glow text-background shadow-lg hover:shadow-gold/30'
                     : 'bg-secondary text-muted-foreground cursor-not-allowed'
                 )}
               >
-                <Play size={22} className="sm:hidden" />
-                <Play size={28} className="hidden sm:block" />
+                <Play size={compact ? 18 : 22} className="sm:hidden" />
+                <Play size={compact ? 22 : 28} className="hidden sm:block" />
                 Iniciar
               </Button>
             ) : (
@@ -726,57 +747,57 @@ export function PresentationMode({
                 <Button
                   onClick={() => onSeekTo?.(0)}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Reiniciar"
                 >
-                  <RotateCcw size={20} className="sm:hidden" />
-                  <RotateCcw size={24} className="hidden sm:block" />
+                  <RotateCcw size={compact ? 18 : 20} className="sm:hidden" />
+                  <RotateCcw size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={onSeekBackward}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Retroceder 10s"
                 >
-                  <SkipBack size={20} className="sm:hidden" />
-                  <SkipBack size={24} className="hidden sm:block" />
+                  <SkipBack size={compact ? 18 : 20} className="sm:hidden" />
+                  <SkipBack size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 {isPlaying ? (
                   <Button
                     onClick={handlePause}
-                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40"
+                    className={cn('gap-2 sm:gap-3 rounded-xl bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40', compact ? 'px-4 sm:px-5 py-2 sm:py-3 text-sm sm:text-base' : 'px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg')}
                     variant="outline"
                   >
-                    <Pause size={22} className="sm:hidden" />
-                    <Pause size={28} className="hidden sm:block" />
+                    <Pause size={compact ? 18 : 22} className="sm:hidden" />
+                    <Pause size={compact ? 22 : 28} className="hidden sm:block" />
                     <span className="hidden sm:inline">Pausar</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleResume}
-                    className="gap-2 sm:gap-3 px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg"
+                    className={cn('gap-2 sm:gap-3 rounded-xl bg-gold hover:bg-gold-glow text-background shadow-lg', compact ? 'px-4 sm:px-5 py-2 sm:py-3 text-sm sm:text-base' : 'px-5 sm:px-8 py-3 sm:py-6 text-base sm:text-lg')}
                   >
-                    <Play size={22} className="sm:hidden" />
-                    <Play size={28} className="hidden sm:block" />
+                    <Play size={compact ? 18 : 22} className="sm:hidden" />
+                    <Play size={compact ? 22 : 28} className="hidden sm:block" />
                     <span className="hidden sm:inline">Continuar</span>
                   </Button>
                 )}
                 <Button
                   onClick={onSeekForward}
                   variant="outline"
-                  className="px-3 sm:px-4 py-3 sm:py-6 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
+                  className={cn('rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-gold border border-border hover:border-gold/30', compact ? 'px-2.5 sm:px-3 py-2 sm:py-3' : 'px-3 sm:px-4 py-3 sm:py-6')}
                   title="Avançar 10s"
                 >
-                  <SkipForward size={20} className="sm:hidden" />
-                  <SkipForward size={24} className="hidden sm:block" />
+                  <SkipForward size={compact ? 18 : 20} className="sm:hidden" />
+                  <SkipForward size={compact ? 20 : 24} className="hidden sm:block" />
                 </Button>
                 <Button
                   onClick={handleStop}
                   variant="outline"
-                  className="gap-1.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-6 text-base sm:text-lg rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30"
+                  className={cn('gap-1.5 sm:gap-3 rounded-xl bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive border border-border hover:border-destructive/30', compact ? 'px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base' : 'px-4 sm:px-6 py-3 sm:py-6 text-base sm:text-lg')}
                 >
-                  <Square size={20} className="sm:hidden" />
-                  <Square size={28} className="hidden sm:block" />
+                  <Square size={compact ? 18 : 20} className="sm:hidden" />
+                  <Square size={compact ? 22 : 28} className="hidden sm:block" />
                   <span className="hidden sm:inline">Parar</span>
                 </Button>
               </>
