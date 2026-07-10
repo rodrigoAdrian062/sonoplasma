@@ -470,6 +470,8 @@ export default function SpotifyLibraryPage() {
               );
             })}
           </div>
+            )}
+          </>
         )}
       </main>
     </div>
