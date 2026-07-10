@@ -337,7 +337,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_320px] overflow-hidden">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_380px] overflow-hidden">
           {/* Library side */}
           <div className="flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-border">
             <div className="p-3 space-y-2">
