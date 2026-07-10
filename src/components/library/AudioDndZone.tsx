@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 
 export interface DragAudio {
   id: string;
@@ -99,12 +101,14 @@ function DropTarget({
   sub,
   icon,
   accent,
+  count,
 }: {
   id: string;
   label: string;
   sub?: string;
   icon: ReactNode;
   accent: Accent;
+  count: number;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
@@ -117,9 +121,19 @@ function DropTarget({
     >
       <span className="shrink-0">{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium leading-tight truncate">{label}</p>
+        <p className={cn('text-xs font-medium leading-tight truncate', isOver && 'text-foreground')}>{label}</p>
         {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
       </div>
+      <span
+        className={cn(
+          'shrink-0 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+          count > 0 ? 'bg-secondary text-foreground' : 'bg-secondary/40 text-muted-foreground',
+        )}
+        title={`${count} música${count === 1 ? '' : 's'} nesta lista`}
+      >
+        <Music size={10} />
+        {count}
+      </span>
     </div>
   );
 }
@@ -128,7 +142,16 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
   const { stages } = useStages();
   const { sections } = useSections();
   const { folders } = useAudioFolders();
+  const { audiosByStageId } = useAllStageAudios();
+  const { audios: libraryAudios } = useAudioLibrary();
   const [active, setActive] = useState<DragAudio | null>(null);
+
+  const folderCounts = libraryAudios.reduce((acc, a) => {
+    const key = (a as { pasta_id?: string | null }).pasta_id ?? 'null';
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const stageCount = (id: string) => audiosByStageId[id]?.length ?? 0;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showTargets, setShowTargets] = useState(true);
 
@@ -214,6 +237,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                             sub="Pasta"
                             accent={accent}
                             icon={<Folder size={16} className={acc.icon} />}
+                            count={folderCounts[f.id] ?? 0}
                           />
                         ))}
                       </div>
@@ -244,6 +268,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                               sub={section.nome}
                               accent={accent}
                               icon={<Layers size={16} className={acc.icon} />}
+                              count={stageCount(stage.id)}
                             />
                           ))}
                         </div>
@@ -274,6 +299,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                             sub="Sem seção"
                             accent={accent}
                             icon={<Layers size={16} className={acc.icon} />}
+                            count={stageCount(stage.id)}
                           />
                         ))}
                       </div>
