@@ -15,20 +15,36 @@ export interface DragAudio {
   audio_url: string;
 }
 
+type Accent = 'red' | 'green';
+
+const ACCENTS: Record<Accent, { grip: string; overlay: string; icon: string; over: string }> = {
+  red: {
+    grip: 'text-red-500/70',
+    overlay: 'bg-red-500',
+    icon: 'text-red-500',
+    over: 'border-red-500 bg-red-500/20 scale-105',
+  },
+  green: {
+    grip: 'text-green-500/70',
+    overlay: 'bg-green-600',
+    icon: 'text-green-500',
+    over: 'border-green-500 bg-green-500/20 scale-105',
+  },
+};
+
 interface AudioDndZoneProps {
-  accent?: string; // tailwind color name e.g. 'red', 'green'
+  accent?: Accent;
   onSendToStage: (audio: DragAudio, stageId: string) => void;
   onMoveToFolder: (audio: DragAudio, folderId: string | null) => void;
   children: ReactNode;
 }
 
-// ---- Draggable row ----
 interface HandleProps {
   ref: (el: HTMLElement | null) => void;
   [key: string]: unknown;
 }
 
-const RowCtx = createContext<{ accent: string } | null>(null);
+const RowCtx = createContext<{ accent: Accent } | null>(null);
 
 export function DraggableAudioRow({
   audio,
@@ -57,9 +73,9 @@ export function DraggableAudioRow({
   );
 }
 
-// A ready-to-use grip handle
 export function DragHandle({ handleProps, className }: { handleProps: HandleProps; className?: string }) {
   const ctx = useContext(RowCtx);
+  const accent = ctx?.accent ?? 'red';
   return (
     <button
       type="button"
@@ -72,12 +88,11 @@ export function DragHandle({ handleProps, className }: { handleProps: HandleProp
       aria-label="Arrastar"
       onClick={(e) => e.preventDefault()}
     >
-      <GripVertical size={18} className={ctx ? `text-${ctx.accent}-500/70` : undefined} />
+      <GripVertical size={18} className={ACCENTS[accent].grip} />
     </button>
   );
 }
 
-// ---- Droppable target ----
 function DropTarget({
   id,
   label,
@@ -89,7 +104,7 @@ function DropTarget({
   label: string;
   sub?: string;
   icon: ReactNode;
-  accent: string;
+  accent: Accent;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
@@ -97,9 +112,7 @@ function DropTarget({
       ref={setNodeRef}
       className={cn(
         'shrink-0 w-32 rounded-xl border p-2 flex flex-col gap-1 transition-all',
-        isOver
-          ? `border-${accent}-500 bg-${accent}-500/20 scale-105`
-          : 'border-border/60 bg-card/70',
+        isOver ? ACCENTS[accent].over : 'border-border/60 bg-card/70',
       )}
     >
       <div className="flex items-center gap-1.5">{icon}</div>
@@ -141,6 +154,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
     stages: stages.filter((s) => s.secao_id === sec.id),
   }));
   const unassignedStages = stages.filter((s) => !s.secao_id);
+  const acc = ACCENTS[accent];
 
   return (
     <RowCtx.Provider value={{ accent }}>
@@ -149,18 +163,18 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
 
         <DragOverlay dropAnimation={null}>
           {active ? (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-${accent}-500 text-white shadow-2xl max-w-[240px]`}>
+            <div className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-white shadow-2xl max-w-[240px]', acc.overlay)}>
               <Music size={16} />
               <span className="text-sm font-medium truncate">{active.nome}</span>
             </div>
           ) : null}
         </DragOverlay>
 
-        {/* Drop panel */}
         {active && (
           <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md p-3 shadow-2xl animate-in slide-in-from-bottom">
             <p className="text-xs text-muted-foreground mb-2 text-center">
-              Solte em uma <span className="font-semibold text-foreground">etapa</span> ou <span className="font-semibold text-foreground">pasta</span>
+              Solte em uma <span className="font-semibold text-foreground">etapa</span> ou{' '}
+              <span className="font-semibold text-foreground">pasta</span>
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {folders.map((f) => (
@@ -170,7 +184,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                   label={f.nome}
                   sub="Pasta"
                   accent={accent}
-                  icon={<Folder size={16} className={`text-${accent}-500`} />}
+                  icon={<Folder size={16} className={acc.icon} />}
                 />
               ))}
               {stagesBySection.map(({ section, stages: ss }) =>
@@ -181,7 +195,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                     label={stage.nome_simbolico}
                     sub={section.nome}
                     accent={accent}
-                    icon={<Layers size={16} className={`text-${accent}-500`} />}
+                    icon={<Layers size={16} className={acc.icon} />}
                   />
                 )),
               )}
@@ -192,7 +206,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                   label={stage.nome_simbolico}
                   sub="Sem seção"
                   accent={accent}
-                  icon={<Layers size={16} className={`text-${accent}-500`} />}
+                  icon={<Layers size={16} className={acc.icon} />}
                 />
               ))}
             </div>
