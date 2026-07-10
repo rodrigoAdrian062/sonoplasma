@@ -477,9 +477,12 @@ export default function YoutubeLibraryPage() {
                     </div>
                   )}
                 </div>
+                  )}
+                </DraggableAudioRow>
               );
             })}
           </div>
+          </AudioDndZone>
             )}
           </>
         )}
