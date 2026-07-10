@@ -120,6 +120,8 @@ export type Database = {
           banner_url: string | null
           cor_tema: string | null
           created_at: string
+          faixa_manual_key: string | null
+          faixa_modo: string
           id: string
           logo_url: string | null
           nome_app: string
@@ -133,6 +135,8 @@ export type Database = {
           banner_url?: string | null
           cor_tema?: string | null
           created_at?: string
+          faixa_manual_key?: string | null
+          faixa_modo?: string
           id?: string
           logo_url?: string | null
           nome_app?: string
@@ -146,6 +150,8 @@ export type Database = {
           banner_url?: string | null
           cor_tema?: string | null
           created_at?: string
+          faixa_manual_key?: string | null
+          faixa_modo?: string
           id?: string
           logo_url?: string | null
           nome_app?: string
@@ -294,6 +300,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sonoplastia_faixas: {
+        Row: {
+          ativo: boolean
+          cor_fundo: string | null
+          cor_texto: string | null
+          created_at: string
+          faixa_key: string
+          icone: string | null
+          id: string
+          owner_id: string | null
+          texto: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor_fundo?: string | null
+          cor_texto?: string | null
+          created_at?: string
+          faixa_key: string
+          icone?: string | null
+          id?: string
+          owner_id?: string | null
+          texto?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor_fundo?: string | null
+          cor_texto?: string | null
+          created_at?: string
+          faixa_key?: string
+          icone?: string | null
+          id?: string
+          owner_id?: string | null
+          texto?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       sonoplastia_secoes: {
         Row: {
