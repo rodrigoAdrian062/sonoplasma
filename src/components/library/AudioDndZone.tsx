@@ -142,7 +142,16 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
   const { stages } = useStages();
   const { sections } = useSections();
   const { folders } = useAudioFolders();
+  const { audiosByStageId } = useAllStageAudios();
+  const { audios: libraryAudios } = useAudioLibrary();
   const [active, setActive] = useState<DragAudio | null>(null);
+
+  const folderCounts = libraryAudios.reduce((acc, a) => {
+    const key = (a as { pasta_id?: string | null }).pasta_id ?? 'null';
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const stageCount = (id: string) => audiosByStageId[id]?.length ?? 0;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showTargets, setShowTargets] = useState(true);
 
