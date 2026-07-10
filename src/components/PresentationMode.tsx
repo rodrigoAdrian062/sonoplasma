@@ -120,6 +120,11 @@ export function PresentationMode({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
 
+  // Modo compacto: reduz textos e botões quando há muitas etapas/músicas
+  const totalAudios = stages.reduce((n, s) => n + (audiosByStageId[s.id]?.length || 0), 0);
+  const shouldAutoCompact = stages.length > 8 || totalAudios > 12;
+  const [compact, setCompact] = useState(shouldAutoCompact);
+
   const { formatted: clockTime } = useClock();
 
   const currentStage = stages[selectedStageIndex];
