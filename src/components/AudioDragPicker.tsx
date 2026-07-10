@@ -560,18 +560,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               )}
 
               {/* Add new */}
-              <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-3">
+              <div className="mt-2">
                 {!showAdd ? (
                   <button
                     type="button"
                     onClick={() => setShowAdd(true)}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gold/40 py-2.5 text-sm font-medium text-gold transition-colors hover:bg-gold/10"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gold/40 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10"
                   >
-                    <Plus size={16} />
+                    <Plus size={14} />
                     Adicionar novo áudio
                   </button>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-3">
                     <div className="flex gap-1 rounded-lg bg-secondary p-1">
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
