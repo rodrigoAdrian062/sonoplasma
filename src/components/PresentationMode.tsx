@@ -556,8 +556,9 @@ export function PresentationMode({
           {/* Stage Icon - smaller on mobile */}
           <div
             className={cn(
-              'rounded-2xl sm:rounded-3xl mb-3 sm:mb-5 transition-all duration-500 overflow-hidden ring-1',
-              (currentStage as any).icone_url ? 'p-0' : 'p-4 sm:p-6 md:p-8',
+              'rounded-2xl sm:rounded-3xl transition-all duration-500 overflow-hidden ring-1',
+              compact ? 'mb-2 sm:mb-3' : 'mb-3 sm:mb-5',
+              (currentStage as any).icone_url ? 'p-0' : compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6 md:p-8',
               isActive 
                 ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_50px_rgba(212,175,55,0.35)] ring-gold/40' 
                 : 'bg-secondary/80 text-muted-foreground ring-border/40'
@@ -566,25 +567,28 @@ export function PresentationMode({
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? 96 : 48} 
+              size={(currentStage as any).icone_url ? (compact ? 64 : 96) : (compact ? 36 : 48)} 
               className="sm:hidden"
             />
             <CeremonyIcon 
               name={currentStage.icone} 
               imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? 128 : 64} 
+              size={(currentStage as any).icone_url ? (compact ? 80 : 128) : (compact ? 44 : 64)} 
               className="hidden sm:block"
             />
           </div>
 
           {/* Stage Name */}
-          <h1 className="font-display text-xl sm:text-2xl md:text-4xl font-bold text-center mb-1 sm:mb-2 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className={cn(
+            'font-display font-bold text-center bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent',
+            compact ? 'text-lg sm:text-xl md:text-2xl mb-1' : 'text-xl sm:text-2xl md:text-4xl mb-1 sm:mb-2'
+          )}>
             {currentStage.nome_simbolico}
           </h1>
 
 
           {/* Description */}
-          {currentStage.descricao && (
+          {currentStage.descricao && !compact && (
             <p className="text-sm sm:text-base text-muted-foreground text-center max-w-xl mb-3 sm:mb-5 line-clamp-2 sm:line-clamp-none">
               {currentStage.descricao}
             </p>
