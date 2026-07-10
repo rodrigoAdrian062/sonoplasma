@@ -55,6 +55,7 @@ function loadYouTubeApi(): Promise<any> {
 export default function YoutubeLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, addAudio } = useAudioLibrary();
+  const { folders, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
