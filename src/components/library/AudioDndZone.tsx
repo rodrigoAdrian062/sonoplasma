@@ -3,7 +3,7 @@ import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, useSensor, useSensors,
   useDraggable, useDroppable, DragStartEvent, DragEndEvent,
 } from '@dnd-kit/core';
-import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose } from 'lucide-react';
+import { GripVertical, Music, Folder, Layers, ChevronDown, ChevronRight, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
@@ -154,6 +154,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
   const stageCount = (id: string) => audiosByStageId[id]?.length ?? 0;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showTargets, setShowTargets] = useState(true);
+  const [pinned, setPinned] = useState(false);
 
   const toggleGroup = (key: string) => setCollapsed((c) => ({ ...c, [key]: !c[key] }));
 
@@ -199,18 +200,49 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
           ) : null}
         </DragOverlay>
 
-        {active && (
+        {/* Botão lateral para abrir o painel de seções */}
+        {!pinned && !active && (
+          <button
+            type="button"
+            onClick={() => setPinned(true)}
+            className={cn(
+              'fixed right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-lg border border-r-0 border-border bg-background/95 py-3 pl-2 pr-1.5 shadow-lg backdrop-blur-md hover:bg-muted',
+            )}
+            title="Mostrar seções para arrastar"
+          >
+            <PanelRightOpen size={16} className={acc.icon} />
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground [writing-mode:vertical-rl] rotate-180">
+              Seções
+            </span>
+          </button>
+        )}
+
+        {(active || pinned) && (
           <div className="fixed right-0 top-0 z-40 h-full w-64 max-w-[80vw] border-l border-border bg-background/95 backdrop-blur-md shadow-2xl animate-in slide-in-from-right flex flex-col">
             <div className="flex items-center justify-between gap-2 border-b border-border p-3">
-              <p className="text-xs font-semibold text-foreground">Solte em uma etapa ou pasta</p>
-              <button
-                type="button"
-                onClick={() => setShowTargets((s) => !s)}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-                title={showTargets ? 'Ocultar' : 'Mostrar seções'}
-              >
-                <PanelRightClose size={16} />
-              </button>
+              <p className="text-xs font-semibold text-foreground">
+                {active ? 'Solte em uma etapa ou pasta' : 'Arraste uma música para cá'}
+              </p>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowTargets((s) => !s)}
+                  className="text-muted-foreground hover:text-foreground"
+                  title={showTargets ? 'Ocultar' : 'Mostrar seções'}
+                >
+                  <PanelRightClose size={16} />
+                </button>
+                {!active && (
+                  <button
+                    type="button"
+                    onClick={() => setPinned(false)}
+                    className="text-muted-foreground hover:text-foreground"
+                    title="Fechar"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
             </div>
 
             {showTargets && (
