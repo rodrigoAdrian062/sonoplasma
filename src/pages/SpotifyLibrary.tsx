@@ -416,6 +416,7 @@ export default function SpotifyLibraryPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <DragHandle handleProps={handleProps} />
                       <Button
                         variant="ghost"
                         size="icon"
