@@ -488,9 +488,12 @@ export default function SpotifyLibraryPage() {
                     </div>
                   )}
                 </div>
+                  )}
+                </DraggableAudioRow>
               );
             })}
           </div>
+          </AudioDndZone>
             )}
           </>
         )}
