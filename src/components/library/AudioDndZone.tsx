@@ -129,6 +129,10 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
   const { sections } = useSections();
   const { folders } = useAudioFolders();
   const [active, setActive] = useState<DragAudio | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [showTargets, setShowTargets] = useState(true);
+
+  const toggleGroup = (key: string) => setCollapsed((c) => ({ ...c, [key]: !c[key] }));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
