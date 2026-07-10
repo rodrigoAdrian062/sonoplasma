@@ -371,6 +371,7 @@ export default function SpotifyLibraryPage() {
               const subtitle = isUsed
                 ? usage.map((u) => u.stageName).join(', ')
                 : 'Não usada';
+              const isNew = Date.now() - new Date(audio.created_at).getTime() < 3 * 24 * 60 * 60 * 1000;
               return (
                 <DraggableAudioRow key={audio.id} audio={audio}>
                   {({ handleProps }) => (
@@ -396,7 +397,14 @@ export default function SpotifyLibraryPage() {
                       <SpotifyIcon size={20} className="text-[#1DB954]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn('font-medium text-sm truncate', isCurrent && 'text-[#1DB954]')}>{audio.nome}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p className={cn('font-medium text-sm truncate', isCurrent && 'text-[#1DB954]')}>{audio.nome}</p>
+                        {isNew && (
+                          <span className="shrink-0 rounded-full bg-[#1DB954] px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-black">
+                            Nova
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100 transition-opacity">
