@@ -154,6 +154,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
   const stageCount = (id: string) => audiosByStageId[id]?.length ?? 0;
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showTargets, setShowTargets] = useState(true);
+  const [pinned, setPinned] = useState(false);
 
   const toggleGroup = (key: string) => setCollapsed((c) => ({ ...c, [key]: !c[key] }));
 
