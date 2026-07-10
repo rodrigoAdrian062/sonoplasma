@@ -352,55 +352,45 @@ export default function YoutubeLibraryPage() {
             onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
-          <div className="space-y-1.5 pb-24">
-            {ytAudios.map((audio) => {
+          <div className="pb-24">
+            {ytAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
               const isUsed = usage.length > 0;
+              const subtitle = isUsed
+                ? usage.map((u) => u.stageName).join(', ')
+                : 'Não usada';
               return (
                 <DraggableAudioRow key={audio.id} audio={audio}>
                   {({ handleProps }) => (
                 <div
                   className={cn(
-                    'rounded-md border overflow-hidden transition-colors',
-                    isCurrent
-                      ? 'border-red-500/50 bg-card/50'
-                      : isUsed
-                        ? 'border-l-2 border-l-red-500 border-y-border/50 border-r-border/50 bg-red-500/5'
-                        : 'border-border/50 bg-card/50'
+                    'group rounded-md transition-colors',
+                    isCurrent ? 'bg-red-500/10' : 'hover:bg-muted/60',
                   )}
                 >
-                  <div className="flex items-center gap-2 px-2 py-1.5">
-                    <YoutubeIcon size={16} className="shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="font-medium text-sm truncate">{audio.nome}</p>
-                        {isUsed ? (
-                          <span
-                            className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500 text-[10px] font-medium"
-                            title={usage.map((u) => `${u.sectionName} › ${u.stageName}`).join(', ')}
-                          >
-                            {usage[0].stageName}{usage.length > 1 ? ` +${usage.length - 1}` : ''}
-                          </span>
-                        ) : (
-                          <span className="shrink-0 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-medium">
-                            Não usada
-                          </span>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3 px-2 py-1.5">
+                    <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground group-hover:hidden">
+                      {isCurrent ? <span className="text-red-500">♪</span> : idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePlayPause(audio.id)}
+                      className="hidden w-5 shrink-0 items-center justify-center text-foreground group-hover:flex"
+                      title={isPlaying ? 'Pausar' : 'Tocar'}
+                    >
+                      {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current" />}
+                    </button>
+                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded bg-red-500/10 flex items-center justify-center">
+                      <YoutubeIcon size={20} />
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex-1 min-w-0">
+                      <p className={cn('font-medium text-sm truncate', isCurrent && 'text-red-500')}>{audio.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                       <DragHandle handleProps={handleProps} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handlePlayPause(audio.id)}
-                        className="h-8 w-8"
-                        title={isPlaying ? 'Pausar' : 'Tocar'}
-                      >
-                        {isPlaying ? <Pause size={16} className="text-red-500" /> : <Play size={16} className="text-red-500" />}
-                      </Button>
                       {isCurrent && (
                         <Button
                           variant="ghost"
@@ -439,6 +429,7 @@ export default function YoutubeLibraryPage() {
               );
             })}
           </div>
+
 
           </AudioDndZone>
             )}
