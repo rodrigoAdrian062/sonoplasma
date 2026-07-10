@@ -87,14 +87,28 @@ export default function SpotifyLibraryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [search, setSearch] = useState('');
+  const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
 
   const controllerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
-  const spotifyAudios = useMemo(
+  const allSpotifyAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)),
     [audios]
   );
+
+  const spotifyAudios = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allSpotifyAudios.filter((a) => {
+      if (q && !a.nome.toLowerCase().includes(q) && !a.audio_url.toLowerCase().includes(q)) return false;
+      const used = usageMap.has(a.audio_url);
+      if (usageFilter === 'unused' && used) return false;
+      if (usageFilter === 'used' && !used) return false;
+      return true;
+    });
+  }, [allSpotifyAudios, search, usageFilter, usageMap]);
 
   const destroyController = useCallback(() => {
     if (controllerRef.current) {
