@@ -561,6 +561,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     isSpotify,
     youtubeVideoId,
     eq,
+    fadeEnabled,
+    setFadeEnabled,
     play,
     pause,
     resume,
