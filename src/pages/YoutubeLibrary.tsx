@@ -371,13 +371,13 @@ export default function YoutubeLibraryPage() {
                   )}
                 >
                   <div className="flex items-center gap-3 px-2 py-1.5">
-                    <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground group-hover:hidden">
+                    <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground group-hover:hidden max-md:hidden">
                       {isCurrent ? <span className="text-red-500">♪</span> : idx + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => handlePlayPause(audio.id)}
-                      className="hidden w-5 shrink-0 items-center justify-center text-foreground group-hover:flex"
+                      className="hidden w-5 shrink-0 items-center justify-center text-foreground group-hover:flex max-md:flex"
                       title={isPlaying ? 'Pausar' : 'Tocar'}
                     >
                       {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current" />}
@@ -389,7 +389,7 @@ export default function YoutubeLibraryPage() {
                       <p className={cn('font-medium text-sm truncate', isCurrent && 'text-red-500')}>{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100 transition-opacity">
                       <DragHandle handleProps={handleProps} />
                       {isCurrent && (
                         <Button
