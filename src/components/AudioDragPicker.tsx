@@ -470,10 +470,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           <button
                             type="button"
                             onClick={() => togglePreview(item.audio_url)}
-                            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                            className="shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500 text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
                             title="Ouvir"
                           >
-                            {playingUrl === item.audio_url && !isPaused ? <Pause size={14} className="text-gold" /> : <Play size={14} />}
+                            {playingUrl === item.audio_url && !isPaused ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
                           </button>
                           {playingUrl === item.audio_url && (
                             <button
