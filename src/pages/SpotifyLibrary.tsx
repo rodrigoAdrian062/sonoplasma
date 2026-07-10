@@ -15,6 +15,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 function parseSpotify(url: string): { type: string; id: string } | null {
