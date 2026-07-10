@@ -461,52 +461,54 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           draggingUrl === item.audio_url && 'opacity-40'
                         )}
                       >
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                           {!selected && <GripVertical size={14} className="text-muted-foreground shrink-0" />}
                           <div className="rounded-md bg-secondary p-1.5 shrink-0">
                             <SourceIcon url={item.audio_url} />
                           </div>
-                          <span className="flex-1 min-w-0 truncate text-sm text-foreground">{item.nome}</span>
-                          <button
-                            type="button"
-                            onClick={() => togglePreview(item.audio_url)}
-                            className="shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500 text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
-                            title="Ouvir"
-                          >
-                            {playingUrl === item.audio_url && !isPaused ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
-                          </button>
-                          {playingUrl === item.audio_url && (
+                          <span className="flex-1 basis-32 min-w-0 truncate text-sm text-foreground">{item.nome}</span>
+                          <div className="flex items-center gap-1 shrink-0 ml-auto">
                             <button
                               type="button"
-                              onClick={() => stopPreview()}
+                              onClick={() => togglePreview(item.audio_url)}
+                              className="shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500 text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
+                              title="Ouvir"
+                            >
+                              {playingUrl === item.audio_url && !isPaused ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
+                            </button>
+                            {playingUrl === item.audio_url && (
+                              <button
+                                type="button"
+                                onClick={() => stopPreview()}
+                                className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                title="Parar"
+                              >
+                                <Square size={14} />
+                              </button>
+                            )}
+                            {selected ? (
+                              <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
+                                <Check size={14} />
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => addItem(item)}
+                                className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                                title="Adicionar"
+                              >
+                                <Plus size={14} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFromLibrary(item)}
                               className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              title="Parar"
+                              title="Excluir da biblioteca"
                             >
-                              <Square size={14} />
+                              <Trash2 size={14} />
                             </button>
-                          )}
-                          {selected ? (
-                            <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
-                              <Check size={14} />
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => addItem(item)}
-                              className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
-                              title="Adicionar"
-                            >
-                              <Plus size={14} />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteFromLibrary(item)}
-                            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            title="Excluir da biblioteca"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          </div>
                         </div>
 
 
