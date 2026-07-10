@@ -15,6 +15,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 function getYouTubeVideoId(url: string): string | null {
@@ -427,40 +428,11 @@ export default function YoutubeLibraryPage() {
                           <X size={18} />
                         </Button>
                       )}
-                      {stages.length > 0 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-red-500" title="Enviar para etapa">
-                              <Plus size={18} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
-                            {stagesBySection.map(({ section, stages: sectionStages }) => (
-                              sectionStages.length > 0 && (
-                                <div key={section.id}>
-                                  <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{section.nome}</p>
-                                  {sectionStages.map((stage) => (
-                                    <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
-                                      <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
-                                    </DropdownMenuItem>
-                                  ))}
-                                  <DropdownMenuSeparator />
-                                </div>
-                              )
-                            ))}
-                            {unassignedStages.length > 0 && (
-                              <>
-                                <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Sem seção</p>
-                                {unassignedStages.map((stage) => (
-                                  <DropdownMenuItem key={stage.id} onClick={() => handleAddToStage(audio.nome, audio.audio_url, stage.id)}>
-                                    <Plus size={14} className="mr-2" /> {stage.nome_simbolico}
-                                  </DropdownMenuItem>
-                                ))}
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      <MoveTargetMenu
+                        accentClass="border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+                        onSendToStage={(sid) => handleAddToStage(audio.nome, audio.audio_url, sid)}
+                        onMoveToFolder={(fid) => handleMoveToFolder(audio, fid)}
+                      />
                       <Button
                         variant="ghost"
                         size="icon"
