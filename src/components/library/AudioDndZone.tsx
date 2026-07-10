@@ -111,13 +111,15 @@ function DropTarget({
     <div
       ref={setNodeRef}
       className={cn(
-        'shrink-0 w-32 rounded-xl border p-2 flex flex-col gap-1 transition-all',
+        'w-full rounded-lg border p-2 flex items-center gap-2 transition-all',
         isOver ? ACCENTS[accent].over : 'border-border/60 bg-card/70',
       )}
     >
-      <div className="flex items-center gap-1.5">{icon}</div>
-      <p className="text-xs font-medium leading-tight line-clamp-2">{label}</p>
-      {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
+      <span className="shrink-0">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium leading-tight truncate">{label}</p>
+        {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
+      </div>
     </div>
   );
 }
