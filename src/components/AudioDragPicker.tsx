@@ -326,7 +326,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[calc(100vw-1.5rem)] h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-none w-screen h-[100dvh] sm:h-screen rounded-none border-0 flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 py-3 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Library className="text-gold" size={18} />
@@ -337,7 +337,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_320px] overflow-hidden">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_380px] overflow-hidden">
           {/* Library side */}
           <div className="flex flex-col overflow-hidden border-b md:border-b-0 md:border-r border-border">
             <div className="p-3 space-y-2">
@@ -470,10 +470,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           <button
                             type="button"
                             onClick={() => togglePreview(item.audio_url)}
-                            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                            className="shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-emerald-500 text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
                             title="Ouvir"
                           >
-                            {playingUrl === item.audio_url && !isPaused ? <Pause size={14} className="text-gold" /> : <Play size={14} />}
+                            {playingUrl === item.audio_url && !isPaused ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
                           </button>
                           {playingUrl === item.audio_url && (
                             <button
