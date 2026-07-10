@@ -468,6 +468,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [isYouTube, isSpotify, fadeOutThen]);
 
   const resume = useCallback(() => {
+    clearFade();
+    applyPlayerVolume(volumeRef.current);
     if (isSpotify && spotifyControllerRef.current) {
       try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
     } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
@@ -476,19 +478,26 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.play();
     }
     setStatus('playing');
-  }, [isYouTube, isSpotify]);
+  }, [isYouTube, isSpotify, clearFade, applyPlayerVolume]);
 
   const stop = useCallback(() => {
-    stopCurrentPlayback();
-    setStatus('idle');
-    setCurrentStageId(null);
-    setCurrentTime(0);
-    setIsYouTube(false);
-    setIsSpotify(false);
-    setYoutubeVideoId(null);
-    currentUrlRef.current = null;
+    const doStop = () => {
+      stopCurrentPlayback();
+      setStatus('idle');
+      setCurrentStageId(null);
+      setCurrentTime(0);
+      setIsYouTube(false);
+      setIsSpotify(false);
+      setYoutubeVideoId(null);
+      currentUrlRef.current = null;
       setCurrentUrl(null);
-  }, [stopCurrentPlayback]);
+    };
+    if (fadeEnabledRef.current && !isSpotify && status === 'playing') {
+      fadeOutThen(doStop);
+    } else {
+      doStop();
+    }
+  }, [stopCurrentPlayback, isSpotify, status, fadeOutThen]);
 
   const setVolume = useCallback((value: number) => {
     if (audioRef.current) audioRef.current.volume = value;
