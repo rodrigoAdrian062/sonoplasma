@@ -268,6 +268,7 @@ export function AudioDndZone({ accent = 'red', onSendToStage, onMoveToFolder, ch
                               sub={section.nome}
                               accent={accent}
                               icon={<Layers size={16} className={acc.icon} />}
+                              count={stageCount(stage.id)}
                             />
                           ))}
                         </div>
