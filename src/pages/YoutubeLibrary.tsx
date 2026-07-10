@@ -79,14 +79,29 @@ export default function YoutubeLibraryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [search, setSearch] = useState('');
+  const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
 
   const playerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
-  const ytAudios = useMemo(
+  const allYtAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)),
     [audios]
   );
+
+  const ytAudios = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allYtAudios.filter((a) => {
+      if (q && !a.nome.toLowerCase().includes(q) && !a.audio_url.toLowerCase().includes(q)) return false;
+      const used = usageMap.has(a.audio_url);
+      if (usageFilter === 'unused' && used) return false;
+      if (usageFilter === 'used' && !used) return false;
+      return true;
+    });
+  }, [allYtAudios, search, usageFilter, usageMap]);
+
 
   const destroyPlayer = useCallback(() => {
     if (playerRef.current) {
