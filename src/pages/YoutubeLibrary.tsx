@@ -270,18 +270,67 @@ export default function YoutubeLibraryPage() {
           )}
         </div>
 
-        {/* List */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-red-500" size={28} />
-          </div>
-        ) : ytAudios.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <YoutubeIcon size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-lg">Nenhum link do YouTube</p>
-            <p className="text-sm mt-1">Adicione vídeos do YouTube</p>
-          </div>
-        ) : (
+        {/* Toggle list button */}
+        <Button
+          variant="outline"
+          onClick={() => setShowList((v) => !v)}
+          className="w-full justify-between border-red-500/40 text-foreground hover:bg-red-500/10"
+        >
+          <span className="flex items-center gap-2">
+            <ListMusic size={16} className="text-red-500" />
+            {showList ? 'Ocultar músicas' : 'Ver músicas'}
+            <span className="text-muted-foreground text-xs">({allYtAudios.length})</span>
+          </span>
+          <ChevronDown size={16} className={cn('transition-transform', showList && 'rotate-180')} />
+        </Button>
+
+        {showList && (
+          <>
+            {/* Search + filters */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex gap-2">
+                {([
+                  { key: 'all', label: 'Todas' },
+                  { key: 'unused', label: 'Não usadas' },
+                  { key: 'used', label: 'Em uso' },
+                ] as const).map((f) => (
+                  <Button
+                    key={f.key}
+                    size="sm"
+                    variant={usageFilter === f.key ? 'default' : 'outline'}
+                    onClick={() => setUsageFilter(f.key)}
+                    className={cn(
+                      'flex-1',
+                      usageFilter === f.key && 'bg-red-500 hover:bg-red-500/90 text-white'
+                    )}
+                  >
+                    {f.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* List */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="animate-spin text-red-500" size={28} />
+              </div>
+            ) : ytAudios.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <YoutubeIcon size={48} className="mx-auto mb-3 opacity-50" />
+                <p className="text-lg">Nenhuma música encontrada</p>
+                <p className="text-sm mt-1">Ajuste a busca ou o filtro</p>
+              </div>
+            ) : (
           <div className="space-y-3">
             {ytAudios.map((audio) => {
               const isCurrent = playingId === audio.id;
