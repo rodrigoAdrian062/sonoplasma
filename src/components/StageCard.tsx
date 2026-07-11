@@ -36,6 +36,7 @@ interface StageCardProps {
 export function StageCard({
   stage,
   audios,
+  stageNumber,
   isPlaying,
   isPaused,
   currentTime: audioCurrentTime = 0,
@@ -50,6 +51,7 @@ export function StageCard({
   onSeekBackward,
   onSeekTo,
 }: StageCardProps) {
+
   const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 0;
   const [customTime, setCustomTime] = useState(defaultTime);
