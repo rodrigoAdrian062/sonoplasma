@@ -119,6 +119,28 @@ export default function SpotifyLibraryPage() {
     });
   }, [allSpotifyAudios, search, usageFilter, usageMap]);
 
+  const visibleAudios = useMemo(() => spotifyAudios.slice(0, visibleCount), [spotifyAudios, visibleCount]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, usageFilter]);
+
+  // Infinite scroll: load more when the sentinel is near the viewport
+  useEffect(() => {
+    if (!showList) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, spotifyAudios.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [showList, spotifyAudios.length, visibleCount]);
+
   const destroyController = useCallback(() => {
     if (controllerRef.current) {
       try { controllerRef.current.destroy(); } catch { /* noop */ }
