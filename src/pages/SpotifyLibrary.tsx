@@ -390,7 +390,7 @@ export default function SpotifyLibraryPage() {
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 pb-24">
-            {spotifyAudios.map((audio, idx) => {
+            {visibleAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
