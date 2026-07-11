@@ -318,6 +318,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
 
+          {/* Backup / Restauração */}
+          <BackupSection />
+
+
+
           {/* Gerenciar acessos (apenas Plenitude) */}
           {isSuperAdmin && (
             <div className="space-y-2 border-t border-border pt-5">
