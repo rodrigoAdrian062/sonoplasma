@@ -54,9 +54,9 @@ export function downloadBackup(data: BackupData) {
   URL.revokeObjectURL(url);
 }
 
-function stripMeta<T extends Record<string, any>>(row: T): Omit<T, 'id' | 'created_at' | 'updated_at' | 'owner_id' | 'user_id'> {
+function stripMeta(row: Record<string, any>): any {
   const { id, created_at, updated_at, owner_id, user_id, ...rest } = row;
-  return rest as any;
+  return rest;
 }
 
 export interface ImportResult {
