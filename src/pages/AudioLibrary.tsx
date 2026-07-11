@@ -30,7 +30,7 @@ import {
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
   const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
