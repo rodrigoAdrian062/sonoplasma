@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { PlaybackStatus } from '@/types/ceremony';
+import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB
@@ -22,6 +23,7 @@ interface AudioPlayerContextValue {
   fadeEnabled: boolean;
   setFadeEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
+  preload: (urls: (string | null | undefined)[]) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -438,15 +440,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (!audio) return;
       currentUrlRef.current = url;
       setCurrentUrl(url);
-      audio.src = url;
       audio.volume = volumeRef.current;
-      audio.play().catch(err => {
-        console.error('Audio play error:', err);
+      // Toca a partir do cache local (blob) quando disponível para
+      // início instantâneo; senão usa a URL direta e cacheia em segundo plano.
+      getPlayableAudioUrl(url).then((cachedUrl) => {
+        // Ignora se o usuário já trocou de áudio nesse meio tempo.
+        if (currentUrlRef.current !== url) return;
+        audio.src = cachedUrl || url;
+        audio.play().catch(err => {
+          console.error('Audio play error:', err);
+        });
       });
       setCurrentStageId(stageId);
       setStatus('playing');
     }
   }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
+
+  const preload = useCallback((urls: (string | null | undefined)[]) => {
+    prefetchAudios(urls);
+  }, []);
 
   const pause = useCallback(() => {
     const doPause = () => {
@@ -564,6 +576,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     fadeEnabled,
     setFadeEnabled,
     play,
+    preload,
     pause,
     resume,
     stop,

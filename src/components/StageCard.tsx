@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { prefetchAudios } from '@/lib/audioCache';
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -75,6 +76,15 @@ export function StageCard({
       setShowAudioList(true);
     }
   }, [audios.length, selectedAudioIndex]);
+
+  // Pré-carrega os áudios diretos da etapa para início instantâneo no tablet.
+  useEffect(() => {
+    if (audios.length > 0) {
+      prefetchAudios(audios.map((a) => a.audio_url));
+    }
+  }, [audios]);
+
+
 
   const handlePlayWithTimer = () => {
     if (!currentAudio) return;
