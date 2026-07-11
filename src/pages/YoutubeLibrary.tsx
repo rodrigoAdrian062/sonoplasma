@@ -91,6 +91,10 @@ export default function YoutubeLibraryPage() {
   const playerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const allYtAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)),
     [audios]
