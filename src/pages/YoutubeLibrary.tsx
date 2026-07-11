@@ -395,6 +395,11 @@ export default function YoutubeLibraryPage() {
                             Nova
                           </span>
                         )}
+                        {formatDuration(audio.duracao_segundos) && (
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {formatDuration(audio.duracao_segundos)}
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
                     </div>
