@@ -730,7 +730,14 @@ export default function AudioLibraryPage() {
                   <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
+                    {formatDuration(audio.duracao_segundos) && (
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {formatDuration(audio.duracao_segundos)}
+                      </span>
+                    )}
+                  </div>
                   {isYouTubeUrl(audio.audio_url) ? (
                     <a
                       href={audio.audio_url}
