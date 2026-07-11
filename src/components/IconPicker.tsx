@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Upload, X, Crop, Loader2, ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { ImageCropModal } from './ImageCropModal';
 import { ICON_OPTIONS } from '@/types/ceremony';
+import { MASONIC_SYMBOLS } from '@/lib/masonicSymbols';
+import { Landmark, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -50,8 +52,16 @@ export function IconPicker({
   const [isUploading, setIsUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'gallery' | 'icons' | 'upload'>('gallery');
+  const [activeTab, setActiveTab] = useState<'gallery' | 'masonic' | 'icons' | 'upload'>('masonic');
+  const [masonicSearch, setMasonicSearch] = useState('');
+  const [masonicVisible, setMasonicVisible] = useState(40);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredMasonic = useMemo(() => {
+    const q = masonicSearch.trim().toLowerCase();
+    if (!q) return MASONIC_SYMBOLS;
+    return MASONIC_SYMBOLS.filter((s) => s.label.toLowerCase().includes(q));
+  }, [masonicSearch]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -177,6 +187,19 @@ export function IconPicker({
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('masonic')}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all',
+            activeTab === 'masonic'
+              ? 'bg-gold text-background'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+          )}
+        >
+          <Landmark size={14} />
+          Maçonaria
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('icons')}
           className={cn(
             'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all',
@@ -228,6 +251,57 @@ export function IconPicker({
           ))}
         </div>
       )}
+
+      {/* Masonic Symbols Tab */}
+      {activeTab === 'masonic' && (
+        <div className="space-y-3 animate-fade-in">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={masonicSearch}
+              onChange={(e) => {
+                setMasonicSearch(e.target.value);
+                setMasonicVisible(40);
+              }}
+              placeholder="Buscar símbolo (ex: compasso, olho, sol)..."
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/50"
+            />
+          </div>
+          <div className="grid grid-cols-5 gap-2 max-h-72 overflow-y-auto pr-1">
+            {filteredMasonic.slice(0, masonicVisible).map((symbol) => (
+              <button
+                key={symbol.id}
+                type="button"
+                onClick={() => handleGallerySelect(symbol.src)}
+                className={cn(
+                  'aspect-square rounded-xl border overflow-hidden transition-all duration-200 hover:scale-105',
+                  iconUrl === symbol.src
+                    ? 'ring-2 ring-gold ring-offset-2 ring-offset-background border-gold'
+                    : 'border-border hover:border-gold/50'
+                )}
+                title={symbol.label}
+              >
+                <img src={symbol.src} alt={symbol.label} className="w-full h-full object-cover" loading="lazy" />
+              </button>
+            ))}
+          </div>
+          {filteredMasonic.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-4">Nenhum símbolo encontrado.</p>
+          )}
+          {masonicVisible < filteredMasonic.length && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMasonicVisible((v) => v + 40)}
+              className="w-full border-border text-muted-foreground hover:bg-secondary"
+            >
+              Ver mais ({filteredMasonic.length - masonicVisible} restantes)
+            </Button>
+          )}
+        </div>
+      )}
+
 
       {/* Icons Tab */}
       {activeTab === 'icons' && (
