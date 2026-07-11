@@ -99,6 +99,10 @@ export default function SpotifyLibraryPage() {
   const controllerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const allSpotifyAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)),
     [audios]
@@ -114,6 +118,28 @@ export default function SpotifyLibraryPage() {
       return true;
     });
   }, [allSpotifyAudios, search, usageFilter, usageMap]);
+
+  const visibleAudios = useMemo(() => spotifyAudios.slice(0, visibleCount), [spotifyAudios, visibleCount]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, usageFilter]);
+
+  // Infinite scroll: load more when the sentinel is near the viewport
+  useEffect(() => {
+    if (!showList) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, spotifyAudios.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [showList, spotifyAudios.length, visibleCount]);
 
   const destroyController = useCallback(() => {
     if (controllerRef.current) {
@@ -364,7 +390,7 @@ export default function SpotifyLibraryPage() {
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 pb-24">
-            {spotifyAudios.map((audio, idx) => {
+            {visibleAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
@@ -454,6 +480,19 @@ export default function SpotifyLibraryPage() {
               );
             })}
           </div>
+
+          {visibleCount < spotifyAudios.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, spotifyAudios.length))}
+                className="border-[#1DB954]/40 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                Carregar mais ({spotifyAudios.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+
 
 
           </AudioDndZone>

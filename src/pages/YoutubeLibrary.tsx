@@ -91,6 +91,10 @@ export default function YoutubeLibraryPage() {
   const playerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const allYtAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)),
     [audios]
@@ -106,6 +110,26 @@ export default function YoutubeLibraryPage() {
       return true;
     });
   }, [allYtAudios, search, usageFilter, usageMap]);
+
+  const visibleAudios = useMemo(() => ytAudios.slice(0, visibleCount), [ytAudios, visibleCount]);
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, usageFilter]);
+
+  useEffect(() => {
+    if (!showList) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, ytAudios.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [showList, ytAudios.length, visibleCount]);
 
 
   const destroyPlayer = useCallback(() => {
@@ -354,7 +378,7 @@ export default function YoutubeLibraryPage() {
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 pb-24">
-            {ytAudios.map((audio, idx) => {
+            {visibleAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
               const usage = usageMap.get(audio.audio_url) || [];
@@ -443,6 +467,19 @@ export default function YoutubeLibraryPage() {
               );
             })}
           </div>
+
+          {visibleCount < ytAudios.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, ytAudios.length))}
+                className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+              >
+                Carregar mais ({ytAudios.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+
 
 
           </AudioDndZone>
