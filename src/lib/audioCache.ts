@@ -58,6 +58,35 @@ export function prefetchAudios(urls: (string | null | undefined)[]): void {
   unique.forEach((u) => { void prefetchAudio(u); });
 }
 
+// Máximo de áudios guardados no cache (FIFO). Evita crescimento infinito.
+const MAX_CACHE_ENTRIES = 60;
+
+/** Remove os itens mais antigos quando o cache passa do limite. */
+async function trimCache(): Promise<void> {
+  if (!cacheSupported()) return;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    if (keys.length <= MAX_CACHE_ENTRIES) return;
+    const excess = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
+    await Promise.all(excess.map((req) => cache.delete(req)));
+  } catch {
+    // noop
+  }
+}
+
+/** Indica se o áudio já está pronto em cache (para UI de status). */
+export async function isAudioCached(url: string | null | undefined): Promise<boolean> {
+  if (!isCacheableAudioUrl(url) || !cacheSupported()) return false;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const res = await cache.match(url as string);
+    return !!res;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Retorna uma URL de blob local se o áudio já estiver em cache,
  * pronta para tocar de imediato. Caso contrário retorna null e
