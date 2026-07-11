@@ -52,8 +52,16 @@ export function IconPicker({
   const [isUploading, setIsUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'gallery' | 'icons' | 'upload'>('gallery');
+  const [activeTab, setActiveTab] = useState<'gallery' | 'masonic' | 'icons' | 'upload'>('masonic');
+  const [masonicSearch, setMasonicSearch] = useState('');
+  const [masonicVisible, setMasonicVisible] = useState(40);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredMasonic = useMemo(() => {
+    const q = masonicSearch.trim().toLowerCase();
+    if (!q) return MASONIC_SYMBOLS;
+    return MASONIC_SYMBOLS.filter((s) => s.label.toLowerCase().includes(q));
+  }, [masonicSearch]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
