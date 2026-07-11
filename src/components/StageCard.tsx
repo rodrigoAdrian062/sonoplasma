@@ -222,6 +222,19 @@ export function StageCard({
       <div className="relative p-3 sm:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
         <div className="flex items-center gap-3 mb-2.5">
+          {stageNumber !== undefined && (
+            <span
+              className={cn(
+                'shrink-0 flex items-center justify-center rounded-full font-bold font-display transition-all duration-300 ring-2',
+                isActive
+                  ? 'h-11 w-11 text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
+                  : 'h-7 w-7 text-xs bg-gold/15 text-gold ring-gold/20'
+              )}
+              aria-label={`Etapa número ${stageNumber}`}
+            >
+              {stageNumber}
+            </span>
+          )}
           <div
             className={cn(
               'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
@@ -231,6 +244,7 @@ export function StageCard({
           >
             <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
           </div>
+
 
           
           <div className="flex-1 min-w-0">
