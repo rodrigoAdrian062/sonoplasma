@@ -37,7 +37,10 @@ export async function prefetchAudio(url: string): Promise<void> {
       const existing = await cache.match(url);
       if (existing) return;
       const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
-      if (res.ok) await cache.put(url, res.clone());
+      if (res.ok) {
+        await cache.put(url, res.clone());
+        void trimCache();
+      }
     } catch {
       // Falha de rede/CORS não deve quebrar nada — só perde o cache.
     } finally {
