@@ -28,6 +28,7 @@ interface SortableStageCardProps {
 export function SortableStageCard({
   stage,
   audios,
+  stageNumber,
   isPlaying,
   isPaused,
   currentTime,
@@ -42,6 +43,7 @@ export function SortableStageCard({
   onSeekBackward,
   onSeekTo,
 }: SortableStageCardProps) {
+
   const {
     attributes,
     listeners,
