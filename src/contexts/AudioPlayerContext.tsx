@@ -23,6 +23,7 @@ interface AudioPlayerContextValue {
   fadeEnabled: boolean;
   setFadeEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
+  preload: (urls: (string | null | undefined)[]) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
