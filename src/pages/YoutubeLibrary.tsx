@@ -468,6 +468,19 @@ export default function YoutubeLibraryPage() {
             })}
           </div>
 
+          {visibleCount < ytAudios.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, ytAudios.length))}
+                className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+              >
+                Carregar mais ({ytAudios.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+
+
 
           </AudioDndZone>
             )}
