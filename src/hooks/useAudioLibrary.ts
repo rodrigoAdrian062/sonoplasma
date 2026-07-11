@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
+import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
 
 // Normaliza uma URL de áudio para comparação de duplicatas.
