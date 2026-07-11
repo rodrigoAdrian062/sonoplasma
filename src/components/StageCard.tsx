@@ -84,6 +84,28 @@ export function StageCard({
     }
   }, [audios]);
 
+  // Acompanha se o áudio selecionado já está pronto em cache (para indicador).
+  const [audioReady, setAudioReady] = useState(true);
+  useEffect(() => {
+    let active = true;
+    const url = currentAudio?.audio_url;
+    if (!url || !isCacheableAudioUrl(url)) {
+      setAudioReady(true);
+      return;
+    }
+    setAudioReady(false);
+    const check = async () => {
+      const ready = await isAudioCached(url);
+      if (!active) return;
+      if (ready) { setAudioReady(true); return; }
+      setTimeout(check, 800);
+    };
+    check();
+    return () => { active = false; };
+  }, [currentAudio?.audio_url]);
+
+
+
 
 
   const handlePlayWithTimer = () => {
