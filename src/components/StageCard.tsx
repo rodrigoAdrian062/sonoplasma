@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { prefetchAudios } from '@/lib/audioCache';
+import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 
 interface StageCardProps {
   stage: CeremonyStage;
