@@ -85,6 +85,33 @@ export default function AudioLibraryPage() {
   const isSpotifyUrl = (url: string) =>
     url.includes('open.spotify.com') || url.startsWith('spotify:');
 
+  const { setDuration } = useAudioLibrary();
+  // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
+  useEffect(() => {
+    const pending = audios.filter(
+      (a) => a.duracao_segundos == null && !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url),
+    );
+    if (pending.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      for (const a of pending.slice(0, 8)) {
+        if (cancelled) return;
+        try {
+          const { probeAudioDuration } = await import('@/lib/audioDuration');
+          const secs = await probeAudioDuration(a.audio_url);
+          if (!cancelled) setDuration.mutate({ id: a.id, seconds: secs });
+        } catch {
+          /* ignora faixas que não conseguimos medir */
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audios]);
+
+
   // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
   const filteredAudios = audios.filter(a => {
     if (a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)) return false;
