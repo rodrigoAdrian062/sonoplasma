@@ -76,6 +76,15 @@ export function StageCard({
     }
   }, [audios.length, selectedAudioIndex]);
 
+  // Pré-carrega os áudios diretos da etapa para início instantâneo no tablet.
+  useEffect(() => {
+    if (audios.length > 0) {
+      prefetchAudios(audios.map((a) => a.audio_url));
+    }
+  }, [audios]);
+
+
+
   const handlePlayWithTimer = () => {
     if (!currentAudio) return;
     
