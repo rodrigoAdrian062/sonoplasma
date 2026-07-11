@@ -187,6 +187,19 @@ export function IconPicker({
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('masonic')}
+          className={cn(
+            'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all',
+            activeTab === 'masonic'
+              ? 'bg-gold text-background'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+          )}
+        >
+          <Landmark size={14} />
+          Maçonaria
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('icons')}
           className={cn(
             'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all',
