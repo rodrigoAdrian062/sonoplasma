@@ -146,6 +146,22 @@ const SectionDetail = () => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
 
+  // Determina a próxima etapa: a seguinte à ativa, ou a primeira se nada estiver tocando.
+  const nextStageInfo = useMemo(() => {
+    if (sectionStages.length === 0) return null;
+    const activeIndex = sectionStages.findIndex(s => s.id === currentStageId);
+    const nextIndex = activeIndex >= 0 ? activeIndex + 1 : 0;
+    if (nextIndex >= sectionStages.length) return null;
+    return { stage: sectionStages[nextIndex], number: nextIndex + 1 };
+  }, [sectionStages, currentStageId]);
+
+  const startNextStage = () => {
+    if (!nextStageInfo) return;
+    const firstAudio = (audiosByStageId[nextStageInfo.stage.id] || [])[0];
+    if (firstAudio) play(nextStageInfo.stage.id, firstAudio.audio_url);
+  };
+
+
   // Update page title with section name
   useEffect(() => {
     if (section) {
