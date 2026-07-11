@@ -16,6 +16,7 @@ import { ColorPicker } from '@/components/ColorPicker';
 import { resizeImage, formatFileSize } from '@/lib/imageUtils';
 import { Loader2, ImagePlus, X, Upload, CheckCircle2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { BackupSection } from '@/components/BackupSection';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -316,6 +317,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Label>Cor do Tema</Label>
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
+
+          {/* Backup / Restauração */}
+          <BackupSection />
+
+
 
           {/* Gerenciar acessos (apenas Plenitude) */}
           {isSuperAdmin && (
