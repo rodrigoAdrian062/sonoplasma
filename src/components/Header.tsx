@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
+import { InstallPWA } from '@/components/InstallPWA';
 
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,6 +62,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <InstallPWA compact />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -161,6 +163,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             </div>
             
             <div className="flex items-center gap-2">
+              <InstallPWA />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

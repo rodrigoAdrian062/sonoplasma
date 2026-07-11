@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -32,6 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -117,6 +123,7 @@ export function PresentationMode({
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -432,6 +439,16 @@ export function PresentationMode({
             className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
           >
             <AudioLines size={16} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowShortcuts(true)}
+            title="Ajuda e atalhos"
+            className="h-8 w-8 text-muted-foreground hover:text-gold"
+          >
+            <HelpCircle size={16} />
           </Button>
 
           <Button
@@ -934,6 +951,44 @@ export function PresentationMode({
           <span className="text-[10px] text-muted-foreground">sair</span>
         </div>
       </div>
+
+      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <DialogContent className="bg-card border-gold/20 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gold">
+              <Keyboard size={18} />
+              Atalhos e ajuda
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            {[
+              { keys: ['Espaço'], desc: 'Tocar / pausar o áudio' },
+              { keys: ['←', '→'], desc: 'Etapa anterior / próxima' },
+              { keys: ['↑', '↓'], desc: 'Aumentar / diminuir volume' },
+              { keys: ['M'], desc: 'Mudo / ativar som' },
+              { keys: ['F'], desc: 'Tela cheia' },
+              { keys: ['ESC'], desc: 'Sair da apresentação' },
+            ].map((row) => (
+              <div key={row.desc} className="flex items-center justify-between gap-3 py-1 border-b border-border/50 last:border-0">
+                <span className="text-muted-foreground">{row.desc}</span>
+                <span className="flex items-center gap-1">
+                  {row.keys.map((k) => (
+                    <kbd key={k} className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground border border-border">
+                      {k}
+                    </kbd>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground pt-2 border-t border-border/50 space-y-1">
+            <p>• Toque em uma faixa para tocá-la; toque de novo para pausar.</p>
+            <p>• O ícone de ondas ativa/desativa o <strong>fade</strong> (volume diminui suave ao pausar/parar).</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent className="bg-card border-gold/20">

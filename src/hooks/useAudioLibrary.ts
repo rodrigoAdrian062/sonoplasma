@@ -3,6 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
 import { toast } from '@/hooks/use-toast';
 
+// Normaliza uma URL de áudio para comparação de duplicatas.
+// Reduz YouTube/Spotify ao seu ID único; para o resto, compara a URL limpa.
+function normalizeAudioUrl(url: string): string {
+  const u = (url || '').trim().toLowerCase();
+  const yt = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-z0-9_-]{11})/i);
+  if (yt) return `yt:${yt[1]}`;
+  const sp = u.match(/(?:spotify[:/])+(track|album|playlist|episode|show)[:/]([a-z0-9]+)/i);
+  if (sp) return `sp:${sp[1]}:${sp[2]}`;
+  return u.replace(/[?#].*$/, '').replace(/\/+$/, '');
+}
+
 export function useAudioLibrary() {
   const queryClient = useQueryClient();
 
@@ -21,6 +32,16 @@ export function useAudioLibrary() {
 
   const addAudio = useMutation({
     mutationFn: async (audio: AudioLibraryInsert) => {
+      // Detecta duplicata pela URL (ignorando faixas já enviadas por arquivo).
+      if (audio.audio_url) {
+        const existing = (queryClient.getQueryData(['audioLibrary']) as AudioLibraryItem[] | undefined) || [];
+        const target = normalizeAudioUrl(audio.audio_url);
+        const dup = existing.find((a) => a.audio_url && normalizeAudioUrl(a.audio_url) === target);
+        if (dup) {
+          throw new Error(`Esta música já está na biblioteca: "${dup.nome}"`);
+        }
+      }
+
       const { data, error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .insert(audio)
@@ -35,7 +56,7 @@ export function useAudioLibrary() {
       toast({ title: 'Áudio adicionado à biblioteca' });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao adicionar áudio', description: error.message, variant: 'destructive' });
+      toast({ title: 'Não foi possível adicionar', description: error.message, variant: 'destructive' });
     },
   });
 
