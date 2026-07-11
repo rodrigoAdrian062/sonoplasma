@@ -73,6 +73,8 @@ export function SortableStageCard({
       <StageCard
         stage={stage}
         audios={audios}
+        stageNumber={stageNumber}
+
         isPlaying={isPlaying}
         isPaused={isPaused}
         currentTime={currentTime}
