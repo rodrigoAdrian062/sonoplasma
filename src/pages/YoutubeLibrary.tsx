@@ -111,6 +111,26 @@ export default function YoutubeLibraryPage() {
     });
   }, [allYtAudios, search, usageFilter, usageMap]);
 
+  const visibleAudios = useMemo(() => ytAudios.slice(0, visibleCount), [ytAudios, visibleCount]);
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, usageFilter]);
+
+  useEffect(() => {
+    if (!showList) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, ytAudios.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [showList, ytAudios.length, visibleCount]);
+
 
   const destroyPlayer = useCallback(() => {
     if (playerRef.current) {
