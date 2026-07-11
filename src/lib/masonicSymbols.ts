@@ -12,9 +12,10 @@ const MOTIFS: Motif[] = [
   {
     id: 'esquadro-compasso',
     label: 'Esquadro e Compasso',
-    svg: `<path d="M22 74 L50 26 L78 74" fill="none" stroke="{C}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M20 70 L50 38 L80 70 L72 78 L50 52 L28 78 Z" fill="{C}" opacity="0.9"/>
-          <circle cx="50" cy="30" r="4" fill="{C}"/>`,
+    svg: `<path d="M50 22 L30 72 M50 22 L70 72" fill="none" stroke="{C}" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="50" cy="22" r="4" fill="{C}"/>
+          <path d="M26 54 L50 76 L74 54" fill="none" stroke="{C}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="50" y="60" font-size="16" font-family="Georgia, serif" fill="{C}" text-anchor="middle">G</text>`,
   },
   {
     id: 'olho-providencia',
