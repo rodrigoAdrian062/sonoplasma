@@ -440,15 +440,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (!audio) return;
       currentUrlRef.current = url;
       setCurrentUrl(url);
-      audio.src = url;
       audio.volume = volumeRef.current;
-      audio.play().catch(err => {
-        console.error('Audio play error:', err);
+      // Toca a partir do cache local (blob) quando disponível para
+      // início instantâneo; senão usa a URL direta e cacheia em segundo plano.
+      getPlayableAudioUrl(url).then((cachedUrl) => {
+        // Ignora se o usuário já trocou de áudio nesse meio tempo.
+        if (currentUrlRef.current !== url) return;
+        audio.src = cachedUrl || url;
+        audio.play().catch(err => {
+          console.error('Audio play error:', err);
+        });
       });
       setCurrentStageId(stageId);
       setStatus('playing');
     }
   }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
+
+  const preload = useCallback((urls: (string | null | undefined)[]) => {
+    prefetchAudios(urls);
+  }, []);
 
   const pause = useCallback(() => {
     const doPause = () => {
