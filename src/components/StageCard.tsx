@@ -16,6 +16,7 @@ import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioC
 interface StageCardProps {
   stage: CeremonyStage;
   audios: StageAudio[];
+  stageNumber?: number;
   isPlaying: boolean;
   isPaused: boolean;
   currentTime?: number;
@@ -30,6 +31,7 @@ interface StageCardProps {
   onSeekBackward?: () => void;
   onSeekTo?: (seconds: number) => void;
 }
+
 
 export function StageCard({
   stage,
