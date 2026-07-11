@@ -235,6 +235,28 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Destrava o AudioContext no primeiro gesto do usuário (toque/clique),
+  // evitando atraso/travamento ao iniciar a primeira música no tablet.
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => { /* noop */ });
+      }
+    };
+    const opts = { passive: true } as AddEventListenerOptions;
+    window.addEventListener('touchstart', unlock, opts);
+    window.addEventListener('pointerdown', unlock, opts);
+    window.addEventListener('keydown', unlock);
+    return () => {
+      window.removeEventListener('touchstart', unlock);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+
+
   // Initialize YouTube IFrame API
   useEffect(() => {
     if (!(window as any).YT) {
