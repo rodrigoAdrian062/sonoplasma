@@ -396,8 +396,12 @@ export function StageCard({
                   : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
             >
-              <Play size={18} fill="currentColor" />
-              Iniciar
+              {hasAudios && !audioReady ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Play size={18} fill="currentColor" />
+              )}
+              {hasAudios && !audioReady ? 'Carregando…' : 'Iniciar'}
             </Button>
           ) : (
             <>
