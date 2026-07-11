@@ -371,6 +371,8 @@ const SectionDetail = () => {
                     <SortableStageCard
                       stage={stage}
                       audios={audiosByStageId[stage.id] || []}
+                      stageNumber={index + 1}
+
                       isPlaying={currentStageId === stage.id && status === 'playing'}
                       isPaused={currentStageId === stage.id && status === 'paused'}
                       currentTime={currentStageId === stage.id ? currentTime : 0}
