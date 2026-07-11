@@ -37,7 +37,10 @@ export async function prefetchAudio(url: string): Promise<void> {
       const existing = await cache.match(url);
       if (existing) return;
       const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
-      if (res.ok) await cache.put(url, res.clone());
+      if (res.ok) {
+        await cache.put(url, res.clone());
+        void trimCache();
+      }
     } catch {
       // Falha de rede/CORS não deve quebrar nada — só perde o cache.
     } finally {
@@ -53,6 +56,35 @@ export async function prefetchAudio(url: string): Promise<void> {
 export function prefetchAudios(urls: (string | null | undefined)[]): void {
   const unique = Array.from(new Set(urls.filter(isCacheableAudioUrl) as string[]));
   unique.forEach((u) => { void prefetchAudio(u); });
+}
+
+// Máximo de áudios guardados no cache (FIFO). Evita crescimento infinito.
+const MAX_CACHE_ENTRIES = 60;
+
+/** Remove os itens mais antigos quando o cache passa do limite. */
+async function trimCache(): Promise<void> {
+  if (!cacheSupported()) return;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    if (keys.length <= MAX_CACHE_ENTRIES) return;
+    const excess = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
+    await Promise.all(excess.map((req) => cache.delete(req)));
+  } catch {
+    // noop
+  }
+}
+
+/** Indica se o áudio já está pronto em cache (para UI de status). */
+export async function isAudioCached(url: string | null | undefined): Promise<boolean> {
+  if (!isCacheableAudioUrl(url) || !cacheSupported()) return false;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const res = await cache.match(url as string);
+    return !!res;
+  } catch {
+    return false;
+  }
 }
 
 /**

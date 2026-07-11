@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2 } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { prefetchAudios } from '@/lib/audioCache';
+import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -83,6 +83,28 @@ export function StageCard({
       prefetchAudios(audios.map((a) => a.audio_url));
     }
   }, [audios]);
+
+  // Acompanha se o áudio selecionado já está pronto em cache (para indicador).
+  const [audioReady, setAudioReady] = useState(true);
+  useEffect(() => {
+    let active = true;
+    const url = currentAudio?.audio_url;
+    if (!url || !isCacheableAudioUrl(url)) {
+      setAudioReady(true);
+      return;
+    }
+    setAudioReady(false);
+    const check = async () => {
+      const ready = await isAudioCached(url);
+      if (!active) return;
+      if (ready) { setAudioReady(true); return; }
+      setTimeout(check, 800);
+    };
+    check();
+    return () => { active = false; };
+  }, [currentAudio?.audio_url]);
+
+
 
 
 
@@ -374,8 +396,12 @@ export function StageCard({
                   : 'bg-secondary text-muted-foreground border-border cursor-not-allowed shadow-none'
               )}
             >
-              <Play size={18} fill="currentColor" />
-              Iniciar
+              {hasAudios && !audioReady ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Play size={18} fill="currentColor" />
+              )}
+              {hasAudios && !audioReady ? 'Carregando…' : 'Iniciar'}
             </Button>
           ) : (
             <>
