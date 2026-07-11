@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { formatDuration } from '@/types/audioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
