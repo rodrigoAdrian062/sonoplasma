@@ -444,6 +444,16 @@ export function PresentationMode({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowShortcuts(true)}
+            title="Ajuda e atalhos"
+            className="h-8 w-8 text-muted-foreground hover:text-gold"
+          >
+            <HelpCircle size={16} />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setCompact((c) => !c)}
             title={compact ? 'Modo normal' : 'Modo compacto'}
             className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
