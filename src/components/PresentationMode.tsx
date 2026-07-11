@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -32,6 +32,12 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
