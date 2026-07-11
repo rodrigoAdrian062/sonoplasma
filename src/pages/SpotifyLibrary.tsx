@@ -99,6 +99,10 @@ export default function SpotifyLibraryPage() {
   const controllerRef = useRef<any>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
   const allSpotifyAudios = useMemo(
     () => audios.filter((a) => a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)),
     [audios]
