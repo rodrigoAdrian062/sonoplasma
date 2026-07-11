@@ -252,6 +252,57 @@ export function IconPicker({
         </div>
       )}
 
+      {/* Masonic Symbols Tab */}
+      {activeTab === 'masonic' && (
+        <div className="space-y-3 animate-fade-in">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={masonicSearch}
+              onChange={(e) => {
+                setMasonicSearch(e.target.value);
+                setMasonicVisible(40);
+              }}
+              placeholder="Buscar símbolo (ex: compasso, olho, sol)..."
+              className="w-full pl-9 pr-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold/50"
+            />
+          </div>
+          <div className="grid grid-cols-5 gap-2 max-h-72 overflow-y-auto pr-1">
+            {filteredMasonic.slice(0, masonicVisible).map((symbol) => (
+              <button
+                key={symbol.id}
+                type="button"
+                onClick={() => handleGallerySelect(symbol.src)}
+                className={cn(
+                  'aspect-square rounded-xl border overflow-hidden transition-all duration-200 hover:scale-105',
+                  iconUrl === symbol.src
+                    ? 'ring-2 ring-gold ring-offset-2 ring-offset-background border-gold'
+                    : 'border-border hover:border-gold/50'
+                )}
+                title={symbol.label}
+              >
+                <img src={symbol.src} alt={symbol.label} className="w-full h-full object-cover" loading="lazy" />
+              </button>
+            ))}
+          </div>
+          {filteredMasonic.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-4">Nenhum símbolo encontrado.</p>
+          )}
+          {masonicVisible < filteredMasonic.length && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMasonicVisible((v) => v + 40)}
+              className="w-full border-border text-muted-foreground hover:bg-secondary"
+            >
+              Ver mais ({filteredMasonic.length - masonicVisible} restantes)
+            </Button>
+          )}
+        </div>
+      )}
+
+
       {/* Icons Tab */}
       {activeTab === 'icons' && (
         <div className="grid grid-cols-5 gap-2 animate-fade-in">
