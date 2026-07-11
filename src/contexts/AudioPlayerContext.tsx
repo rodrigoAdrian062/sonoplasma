@@ -173,6 +173,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const audio = new Audio();
     audio.volume = volumeRef.current;
     audio.crossOrigin = 'anonymous';
+    // Pré-carrega o máximo possível assim que a src é definida.
+    audio.preload = 'auto';
     audioRef.current = audio;
 
     const ctx = new AudioContext();
