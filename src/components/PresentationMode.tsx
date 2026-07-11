@@ -952,6 +952,44 @@ export function PresentationMode({
         </div>
       </div>
 
+      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
+        <DialogContent className="bg-card border-gold/20 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gold">
+              <Keyboard size={18} />
+              Atalhos e ajuda
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            {[
+              { keys: ['Espaço'], desc: 'Tocar / pausar o áudio' },
+              { keys: ['←', '→'], desc: 'Etapa anterior / próxima' },
+              { keys: ['↑', '↓'], desc: 'Aumentar / diminuir volume' },
+              { keys: ['M'], desc: 'Mudo / ativar som' },
+              { keys: ['F'], desc: 'Tela cheia' },
+              { keys: ['ESC'], desc: 'Sair da apresentação' },
+            ].map((row) => (
+              <div key={row.desc} className="flex items-center justify-between gap-3 py-1 border-b border-border/50 last:border-0">
+                <span className="text-muted-foreground">{row.desc}</span>
+                <span className="flex items-center gap-1">
+                  {row.keys.map((k) => (
+                    <kbd key={k} className="px-2 py-0.5 bg-secondary rounded text-xs text-foreground border border-border">
+                      {k}
+                    </kbd>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground pt-2 border-t border-border/50 space-y-1">
+            <p>• Toque em uma faixa para tocá-la; toque de novo para pausar.</p>
+            <p>• O ícone de ondas ativa/desativa o <strong>fade</strong> (volume diminui suave ao pausar/parar).</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent className="bg-card border-gold/20">
           <AlertDialogHeader>
