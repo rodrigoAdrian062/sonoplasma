@@ -354,30 +354,7 @@ const SectionDetail = () => {
           </div>
         </div>
 
-        {/* Banner "Próxima etapa" */}
-        {nextStageInfo && (
-          <div className="mb-5 flex items-center gap-3 rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 to-transparent p-3 sm:p-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-base font-bold font-display text-background shadow-[0_0_16px_-2px_hsl(var(--gold)/0.5)]">
-              {nextStageInfo.number}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] uppercase tracking-wide text-gold/80 font-semibold">
-                Próxima etapa
-              </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground truncate">
-                {nextStageInfo.number} — {nextStageInfo.stage.nome_simbolico}
-              </p>
-            </div>
-            <Button
-              onClick={startNextStage}
-              disabled={(audiosByStageId[nextStageInfo.stage.id] || []).length === 0}
-              className="gap-1.5 shrink-0 bg-gold hover:bg-gold/90 text-background font-semibold"
-            >
-              <Play size={16} fill="currentColor" />
-              <span className="hidden sm:inline">Iniciar</span>
-            </Button>
-          </div>
-        )}
+
 
 
 
