@@ -481,6 +481,19 @@ export default function SpotifyLibraryPage() {
             })}
           </div>
 
+          {visibleCount < spotifyAudios.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <Button
+                variant="outline"
+                onClick={() => setVisibleCount((c) => Math.min(c + PAGE_SIZE, spotifyAudios.length))}
+                className="border-[#1DB954]/40 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                Carregar mais ({spotifyAudios.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
+
+
 
           </AudioDndZone>
             )}
