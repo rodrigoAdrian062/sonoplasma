@@ -85,7 +85,6 @@ export default function AudioLibraryPage() {
   const isSpotifyUrl = (url: string) =>
     url.includes('open.spotify.com') || url.startsWith('spotify:');
 
-  const { setDuration } = useAudioLibrary();
   // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
   useEffect(() => {
     const pending = audios.filter(
