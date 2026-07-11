@@ -32,6 +32,16 @@ export function useAudioLibrary() {
 
   const addAudio = useMutation({
     mutationFn: async (audio: AudioLibraryInsert) => {
+      // Detecta duplicata pela URL (ignorando faixas já enviadas por arquivo).
+      if (audio.audio_url) {
+        const existing = (queryClient.getQueryData(['audioLibrary']) as AudioLibraryItem[] | undefined) || [];
+        const target = normalizeAudioUrl(audio.audio_url);
+        const dup = existing.find((a) => a.audio_url && normalizeAudioUrl(a.audio_url) === target);
+        if (dup) {
+          throw new Error(`Esta música já está na biblioteca: "${dup.nome}"`);
+        }
+      }
+
       const { data, error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .insert(audio)
@@ -46,7 +56,7 @@ export function useAudioLibrary() {
       toast({ title: 'Áudio adicionado à biblioteca' });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao adicionar áudio', description: error.message, variant: 'destructive' });
+      toast({ title: 'Não foi possível adicionar', description: error.message, variant: 'destructive' });
     },
   });
 
