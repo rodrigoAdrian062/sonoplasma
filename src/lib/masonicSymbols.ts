@@ -258,7 +258,7 @@ const FRAMES: { name: string; svg: string }[] = [
 ];
 
 function buildSvg(motif: Motif, pal: (typeof PALETTES)[number], frame: (typeof FRAMES)[number]): string {
-  const inner = (motif.svg + frame.svg).replaceAll('{C}', pal.c).replaceAll('{A}', pal.a);
+  const inner = (motif.svg + frame.svg).split('{C}').join(pal.c).split('{A}').join(pal.a);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" rx="16" fill="${pal.bg}"/>${inner}</svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
