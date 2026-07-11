@@ -114,13 +114,7 @@ const Index = () => {
                     <span className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gold/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
 
                     <div className="flex items-start gap-4">
-                      <div className="relative shrink-0 p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl ring-1 ring-gold/10 group-hover:ring-gold/30 transition-all duration-300">
-                        <span
-                          className="absolute -top-2 -left-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-gold text-[0.7rem] font-bold text-background shadow-md shadow-gold/30 ring-2 ring-background"
-                          aria-label={`Ordem ${index + 1}`}
-                        >
-                          {index + 1}
-                        </span>
+                      <div className="shrink-0 p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl ring-1 ring-gold/10 group-hover:ring-gold/30 transition-all duration-300">
                         {section.icone_url ? (
                           <img src={section.icone_url} alt="" className="w-7 h-7 object-cover rounded" />
                         ) : (
@@ -132,6 +126,7 @@ const Index = () => {
                           />
                         )}
                       </div>
+
 
                       <div className="flex-1 min-w-0">
                         <h3 className="font-display text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">

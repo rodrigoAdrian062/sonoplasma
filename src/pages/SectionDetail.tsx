@@ -146,6 +146,22 @@ const SectionDetail = () => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
 
+  // Determina a próxima etapa: a seguinte à ativa, ou a primeira se nada estiver tocando.
+  const nextStageInfo = useMemo(() => {
+    if (sectionStages.length === 0) return null;
+    const activeIndex = sectionStages.findIndex(s => s.id === currentStageId);
+    const nextIndex = activeIndex >= 0 ? activeIndex + 1 : 0;
+    if (nextIndex >= sectionStages.length) return null;
+    return { stage: sectionStages[nextIndex], number: nextIndex + 1 };
+  }, [sectionStages, currentStageId]);
+
+  const startNextStage = () => {
+    if (!nextStageInfo) return;
+    const firstAudio = (audiosByStageId[nextStageInfo.stage.id] || [])[0];
+    if (firstAudio) play(nextStageInfo.stage.id, firstAudio.audio_url);
+  };
+
+
   // Update page title with section name
   useEffect(() => {
     if (section) {
@@ -351,6 +367,33 @@ const SectionDetail = () => {
           </div>
         </div>
 
+        {/* Banner "Próxima etapa" */}
+        {nextStageInfo && (
+          <div className="mb-5 flex items-center gap-3 rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 to-transparent p-3 sm:p-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-base font-bold font-display text-background shadow-[0_0_16px_-2px_hsl(var(--gold)/0.5)]">
+              {nextStageInfo.number}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] uppercase tracking-wide text-gold/80 font-semibold">
+                Próxima etapa
+              </p>
+              <p className="text-sm sm:text-base font-semibold text-foreground truncate">
+                {nextStageInfo.number} — {nextStageInfo.stage.nome_simbolico}
+              </p>
+            </div>
+            <Button
+              onClick={startNextStage}
+              disabled={(audiosByStageId[nextStageInfo.stage.id] || []).length === 0}
+              className="gap-1.5 shrink-0 bg-gold hover:bg-gold/90 text-background font-semibold"
+            >
+              <Play size={16} fill="currentColor" />
+              <span className="hidden sm:inline">Iniciar</span>
+            </Button>
+          </div>
+        )}
+
+
+
         {sectionStages.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">Nenhuma etapa nesta seção</p>
@@ -371,6 +414,8 @@ const SectionDetail = () => {
                     <SortableStageCard
                       stage={stage}
                       audios={audiosByStageId[stage.id] || []}
+                      stageNumber={index + 1}
+
                       isPlaying={currentStageId === stage.id && status === 'playing'}
                       isPaused={currentStageId === stage.id && status === 'paused'}
                       currentTime={currentStageId === stage.id ? currentTime : 0}

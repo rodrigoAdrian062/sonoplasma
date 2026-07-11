@@ -8,6 +8,7 @@ import { StageAudio } from '@/types/stageAudio';
 interface SortableStageCardProps {
   stage: CeremonyStage;
   audios: StageAudio[];
+  stageNumber?: number;
   isPlaying: boolean;
   isPaused: boolean;
   currentTime?: number;
@@ -23,9 +24,11 @@ interface SortableStageCardProps {
   onSeekTo?: (seconds: number) => void;
 }
 
+
 export function SortableStageCard({
   stage,
   audios,
+  stageNumber,
   isPlaying,
   isPaused,
   currentTime,
@@ -40,6 +43,7 @@ export function SortableStageCard({
   onSeekBackward,
   onSeekTo,
 }: SortableStageCardProps) {
+
   const {
     attributes,
     listeners,
@@ -69,6 +73,8 @@ export function SortableStageCard({
       <StageCard
         stage={stage}
         audios={audios}
+        stageNumber={stageNumber}
+
         isPlaying={isPlaying}
         isPaused={isPaused}
         currentTime={currentTime}

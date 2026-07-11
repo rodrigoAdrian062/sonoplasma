@@ -16,6 +16,7 @@ import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioC
 interface StageCardProps {
   stage: CeremonyStage;
   audios: StageAudio[];
+  stageNumber?: number;
   isPlaying: boolean;
   isPaused: boolean;
   currentTime?: number;
@@ -31,9 +32,11 @@ interface StageCardProps {
   onSeekTo?: (seconds: number) => void;
 }
 
+
 export function StageCard({
   stage,
   audios,
+  stageNumber,
   isPlaying,
   isPaused,
   currentTime: audioCurrentTime = 0,
@@ -48,6 +51,7 @@ export function StageCard({
   onSeekBackward,
   onSeekTo,
 }: StageCardProps) {
+
   const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 0;
   const [customTime, setCustomTime] = useState(defaultTime);
@@ -195,10 +199,11 @@ export function StageCard({
       className={cn(
         'group relative rounded-2xl border transition-all duration-300 overflow-hidden backdrop-blur-sm',
         isActive
-          ? 'bg-gradient-to-br from-gold/10 to-card/40 border-gold/40 shadow-[0_0_28px_-6px_hsl(var(--gold)/0.25)]'
+          ? 'bg-gradient-to-br from-gold/10 to-card/40 border-gold/40 ring-1 ring-gold/40 shadow-[0_0_28px_-6px_hsl(var(--gold)/0.25)]'
           : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10'
       )}
     >
+
       {/* Barra dourada lateral */}
       <span
         className={cn(
@@ -218,6 +223,19 @@ export function StageCard({
       <div className="relative p-3 sm:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
         <div className="flex items-center gap-3 mb-2.5">
+          {stageNumber !== undefined && (
+            <span
+              className={cn(
+                'shrink-0 flex items-center justify-center rounded-full font-bold font-display transition-all duration-300 ring-2',
+                isActive
+                  ? 'h-11 w-11 text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
+                  : 'h-7 w-7 text-xs bg-gold/15 text-gold ring-gold/20'
+              )}
+              aria-label={`Etapa número ${stageNumber}`}
+            >
+              {stageNumber}
+            </span>
+          )}
           <div
             className={cn(
               'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
@@ -227,6 +245,7 @@ export function StageCard({
           >
             <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
           </div>
+
 
           
           <div className="flex-1 min-w-0">
