@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
+import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
 
 // Normaliza uma URL de áudio para comparação de duplicatas.
@@ -94,9 +95,23 @@ export function useAudioLibrary() {
     },
   });
 
+  const setDuration = useMutation({
+    mutationFn: async ({ id, seconds }: { id: string; seconds: number }) => {
+      const { error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .update({ duracao_segundos: Math.round(seconds) })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+    },
+  });
+
   const uploadAndAddAudio = async (file: File, name: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Não autenticado');
+    const duracao = await probeAudioDuration(URL.createObjectURL(file)).catch(() => null);
     const fileName = `${user.id}/library-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -117,6 +132,7 @@ export function useAudioLibrary() {
       audio_url: publicUrl,
       tamanho_bytes: file.size,
       tipo: file.type,
+      duracao_segundos: duracao ? Math.round(duracao) : null,
     });
   };
 
@@ -127,5 +143,6 @@ export function useAudioLibrary() {
     addAudio,
     deleteAudio,
     uploadAndAddAudio,
+    setDuration,
   };
 }

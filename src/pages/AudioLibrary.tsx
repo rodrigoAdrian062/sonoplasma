@@ -1,9 +1,10 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { formatDuration } from '@/types/audioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
@@ -29,7 +30,7 @@ import {
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
   const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
@@ -83,6 +84,32 @@ export default function AudioLibraryPage() {
 
   const isSpotifyUrl = (url: string) =>
     url.includes('open.spotify.com') || url.startsWith('spotify:');
+
+  // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
+  useEffect(() => {
+    const pending = audios.filter(
+      (a) => a.duracao_segundos == null && !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url),
+    );
+    if (pending.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      for (const a of pending.slice(0, 8)) {
+        if (cancelled) return;
+        try {
+          const { probeAudioDuration } = await import('@/lib/audioDuration');
+          const secs = await probeAudioDuration(a.audio_url);
+          if (!cancelled) setDuration.mutate({ id: a.id, seconds: secs });
+        } catch {
+          /* ignora faixas que não conseguimos medir */
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audios]);
+
 
   // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
   const filteredAudios = audios.filter(a => {
@@ -730,7 +757,14 @@ export default function AudioLibraryPage() {
                   <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
+                    {formatDuration(audio.duracao_segundos) && (
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {formatDuration(audio.duracao_segundos)}
+                      </span>
+                    )}
+                  </div>
                   {isYouTubeUrl(audio.audio_url) ? (
                     <a
                       href={audio.audio_url}

@@ -10,6 +10,7 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause, Search, ListMusic, ChevronDown } from 'lucide-react';
+import { formatDuration } from '@/types/audioLibrary';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
@@ -392,6 +393,11 @@ export default function YoutubeLibraryPage() {
                         {isNew && (
                           <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-white">
                             Nova
+                          </span>
+                        )}
+                        {formatDuration(audio.duracao_segundos) && (
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {formatDuration(audio.duracao_segundos)}
                           </span>
                         )}
                       </div>

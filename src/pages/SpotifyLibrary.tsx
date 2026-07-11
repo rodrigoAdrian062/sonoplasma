@@ -10,6 +10,7 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause, Search, ListMusic, ChevronDown } from 'lucide-react';
+import { formatDuration } from '@/types/audioLibrary';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
@@ -402,6 +403,11 @@ export default function SpotifyLibraryPage() {
                         {isNew && (
                           <span className="shrink-0 rounded-full bg-[#1DB954] px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-black">
                             Nova
+                          </span>
+                        )}
+                        {formatDuration(audio.duracao_segundos) && (
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {formatDuration(audio.duracao_segundos)}
                           </span>
                         )}
                       </div>
