@@ -94,6 +94,19 @@ export function useAudioLibrary() {
     },
   });
 
+  const setDuration = useMutation({
+    mutationFn: async ({ id, seconds }: { id: string; seconds: number }) => {
+      const { error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .update({ duracao_segundos: Math.round(seconds) })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+    },
+  });
+
   const uploadAndAddAudio = async (file: File, name: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Não autenticado');
