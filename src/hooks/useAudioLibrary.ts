@@ -132,6 +132,7 @@ export function useAudioLibrary() {
       audio_url: publicUrl,
       tamanho_bytes: file.size,
       tipo: file.type,
+      duracao_segundos: duracao ? Math.round(duracao) : null,
     });
   };
 
@@ -142,5 +143,6 @@ export function useAudioLibrary() {
     addAudio,
     deleteAudio,
     uploadAndAddAudio,
+    setDuration,
   };
 }
