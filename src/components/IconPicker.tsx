@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { CeremonyIcon } from './icons/CeremonyIcon';
 import { ImageCropModal } from './ImageCropModal';
 import { ICON_OPTIONS } from '@/types/ceremony';
+import { MASONIC_SYMBOLS } from '@/lib/masonicSymbols';
+import { Landmark, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
