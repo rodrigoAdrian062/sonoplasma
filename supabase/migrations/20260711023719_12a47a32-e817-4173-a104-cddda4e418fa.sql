@@ -1,0 +1,1 @@
+ALTER TABLE public.sonoplastia_audios_biblioteca ADD COLUMN IF NOT EXISTS duracao_segundos integer;
