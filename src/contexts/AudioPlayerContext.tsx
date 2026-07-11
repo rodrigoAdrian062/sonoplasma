@@ -576,6 +576,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     fadeEnabled,
     setFadeEnabled,
     play,
+    preload,
     pause,
     resume,
     stop,
