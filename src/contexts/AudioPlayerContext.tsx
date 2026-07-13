@@ -209,6 +209,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => {
+      const endedStage = currentStageId;
+      const endedUrl = currentUrlRef.current;
+      if (onTrackEndedRef.current && endedStage && endedUrl) {
+        const handled = onTrackEndedRef.current(endedStage, endedUrl);
+        if (handled) return;
+      }
       setStatus('idle');
       setCurrentStageId(null);
       setCurrentTime(0);
