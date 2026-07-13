@@ -32,6 +32,7 @@ interface AudioPlayerContextValue {
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
   setEQ: (settings: Partial<EQSettings>) => void;
+  setOnTrackEnded: (cb: ((stageId: string, url: string) => boolean) | null) => void;
 }
 
 function isYouTubeUrl(url: string): boolean {
