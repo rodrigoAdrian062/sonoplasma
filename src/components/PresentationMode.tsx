@@ -16,6 +16,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
