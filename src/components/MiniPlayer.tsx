@@ -23,7 +23,8 @@ export function MiniPlayer() {
   const { sections } = useSections();
   const { audiosByStageId } = useAllStageAudios();
   const location = useLocation();
-  const isMainSection = location.pathname === '/' || location.pathname.startsWith('/secao');
+  const isPresentation = useIsPresentationActive();
+  const isMainSection = (location.pathname === '/' || location.pathname.startsWith('/secao')) && !isPresentation;
   const {
     currentStageId,
     currentUrl,
