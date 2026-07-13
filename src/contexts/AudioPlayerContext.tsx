@@ -120,6 +120,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
+  const currentStageIdRef = useRef<string | null>(null);
+
 
   useEffect(() => {
     volumeRef.current = volume;
