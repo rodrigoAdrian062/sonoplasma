@@ -32,6 +32,7 @@ interface AudioPlayerContextValue {
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
   setEQ: (settings: Partial<EQSettings>) => void;
+  setOnTrackEnded: (cb: ((stageId: string, url: string) => boolean) | null) => void;
 }
 
 function isYouTubeUrl(url: string): boolean {
@@ -118,10 +119,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const volumeRef = useRef(volume);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
+  const currentStageIdRef = useRef<string | null>(null);
+
 
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  useEffect(() => {
+    currentStageIdRef.current = currentStageId;
+  }, [currentStageId]);
 
   useEffect(() => {
     fadeEnabledRef.current = fadeEnabled;
@@ -207,6 +215,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => {
+      const endedStage = currentStageIdRef.current;
+      const endedUrl = currentUrlRef.current;
+      if (onTrackEndedRef.current && endedStage && endedUrl) {
+        const handled = onTrackEndedRef.current(endedStage, endedUrl);
+        if (handled) return;
+      }
       setStatus('idle');
       setCurrentStageId(null);
       setCurrentTime(0);
@@ -384,6 +398,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           onStateChange: (event: any) => {
             const YT = (window as any).YT;
             if (event.data === YT.PlayerState.ENDED) {
+              const endedStage = currentStageIdRef.current;
+              const endedUrl = currentUrlRef.current;
+              if (onTrackEndedRef.current && endedStage && endedUrl && onTrackEndedRef.current(endedStage, endedUrl)) {
+                return;
+              }
               setStatus('idle');
               setCurrentStageId(null);
               setIsYouTube(false);
@@ -609,6 +628,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     seekBackward,
     seekTo,
     setEQ,
+    setOnTrackEnded: (cb) => { onTrackEndedRef.current = cb; },
   };
 
   return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;

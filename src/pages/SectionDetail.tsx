@@ -70,6 +70,7 @@ const SectionDetail = () => {
     seekBackward,
     seekTo,
     setEQ,
+    setOnTrackEnded,
   } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
@@ -145,6 +146,37 @@ const SectionDetail = () => {
   const activeStage = useMemo(() => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);
+
+  // Fila linear de todas as músicas da seção (por ordem de etapa e de áudio)
+  const sectionQueue = useMemo(() => {
+    const queue: Array<{ stageId: string; url: string }> = [];
+    sectionStages.forEach((stage) => {
+      (audiosByStageId[stage.id] || []).forEach((audio) => {
+        queue.push({ stageId: stage.id, url: audio.audio_url });
+      });
+    });
+    return queue;
+  }, [sectionStages, audiosByStageId]);
+
+  // Reprodução contínua: ao terminar uma música, inicia a próxima da seção
+  useEffect(() => {
+    if (!section?.reproducao_continua) {
+      setOnTrackEnded(null);
+      return;
+    }
+    setOnTrackEnded((endedStageId, endedUrl) => {
+      const idx = sectionQueue.findIndex(
+        (q) => q.stageId === endedStageId && q.url === endedUrl
+      );
+      if (idx === -1 || idx + 1 >= sectionQueue.length) return false;
+      const next = sectionQueue[idx + 1];
+      play(next.stageId, next.url);
+      return true;
+    });
+    return () => setOnTrackEnded(null);
+  }, [section?.reproducao_continua, sectionQueue, play, setOnTrackEnded]);
+
+
 
 
 

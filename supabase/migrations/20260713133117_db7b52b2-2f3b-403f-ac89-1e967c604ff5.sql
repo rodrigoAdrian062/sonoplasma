@@ -1,0 +1,1 @@
+ALTER TABLE public.sonoplastia_secoes ADD COLUMN IF NOT EXISTS reproducao_continua boolean NOT NULL DEFAULT false;

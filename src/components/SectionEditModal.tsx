@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, FolderPlus, Type, FileText } from 'lucide-react';
+import { Save, FolderPlus, Type, FileText, Repeat } from 'lucide-react';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { suggestIconForName } from '@/types/ceremony';
 import { IconPicker } from './IconPicker';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ export function SectionEditModal({
     descricao: '',
     icone: 'folder',
     icone_url: null as string | null,
+    reproducao_continua: false,
   });
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function SectionEditModal({
         descricao: section.descricao || '',
         icone: section.icone || 'folder',
         icone_url: (section as any).icone_url || null,
+        reproducao_continua: (section as any).reproducao_continua || false,
       });
     } else if (isNew) {
       setFormData({
@@ -53,6 +56,7 @@ export function SectionEditModal({
         descricao: '',
         icone: 'folder',
         icone_url: null,
+        reproducao_continua: false,
       });
     }
   }, [section, isNew, isOpen]);
@@ -68,7 +72,9 @@ export function SectionEditModal({
       descricao: formData.descricao || null,
       icone: formData.icone,
       icone_url: formData.icone_url,
+      reproducao_continua: formData.reproducao_continua,
     };
+
 
     if (isNew) {
       data.ordem = existingSectionsCount + 1;
@@ -136,6 +142,24 @@ export function SectionEditModal({
             onIconChange={(icon) => setFormData({ ...formData, icone: icon })}
             onIconUrlChange={(url) => setFormData({ ...formData, icone_url: url })}
           />
+
+          {/* Reprodução contínua */}
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-secondary/50 p-3">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                <Repeat size={14} className="text-gold" />
+                Reprodução contínua
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Ao terminar uma música, a próxima da seção começa automaticamente.
+              </p>
+            </div>
+            <Switch
+              checked={formData.reproducao_continua}
+              onCheckedChange={(checked) => setFormData({ ...formData, reproducao_continua: checked })}
+            />
+          </div>
+
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
