@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, Square, Music2, GripVertical } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 
@@ -15,11 +17,15 @@ const MARGIN = 16;
 
 export function MiniPlayer() {
   const { stages } = useStages();
+  const location = useLocation();
+  const isMainSection = location.pathname === '/';
   const {
     currentStageId,
     status,
     currentTime,
     duration,
+    volume,
+    setVolume,
     pause,
     resume,
     stop,
@@ -154,6 +160,31 @@ export function MiniPlayer() {
             </Button>
           </div>
         </div>
+
+        {isMainSection && (
+          <div className="flex items-center gap-2 px-3 pb-3">
+            <button
+              onClick={() => setVolume(volume === 0 ? 0.7 : 0)}
+              className="shrink-0 text-muted-foreground hover:text-gold transition-colors"
+              aria-label={volume === 0 ? 'Ativar som' : 'Silenciar'}
+            >
+              {volume === 0 ? <VolumeX size={16} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
+            </button>
+            <Slider
+              value={[Math.round(volume * 100)]}
+              onValueChange={(values) => setVolume(values[0] / 100)}
+              max={100}
+              step={1}
+              className="flex-1"
+              aria-label="Volume"
+            />
+            <span className="text-[11px] text-muted-foreground w-8 text-right tabular-nums">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+        )}
+
+
 
         <div className="h-1 w-full bg-secondary">
           <div
