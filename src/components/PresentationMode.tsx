@@ -125,6 +125,7 @@ export function PresentationMode({
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
+  const [pinKeyboardHints, setPinKeyboardHints] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
