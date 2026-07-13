@@ -512,7 +512,7 @@ export function PresentationMode({
             }}
             title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
             className={cn(
-              'h-8 w-8 hover:text-gold',
+              'h-8 w-8 hover:text-gold hidden sm:inline-flex',
               pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
             )}
           >
