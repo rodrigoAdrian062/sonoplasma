@@ -541,59 +541,74 @@ export function PresentationMode({
 
 
 
+          {/* Modo Foco: mantém apenas o essencial na tela */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setFadeEnabled(!fadeEnabled)}
-            title={fadeEnabled ? 'Fade ativado (diminui o volume ao pausar/parar)' : 'Fade desativado (para o som de imediato)'}
-            className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+            onClick={() => setFocusMode((f) => !f)}
+            title={focusMode ? 'Sair do modo foco' : 'Ativar modo foco (oculta controles extras)'}
+            className={`h-8 w-8 ${focusMode ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
           >
-            <AudioLines size={16} />
+            <Focus size={16} />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setPinKeyboardHints((prev) => {
-                const next = !prev;
-                setShowKeyboardHints(next);
-                return next;
-              });
-            }}
-            title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
-            className={cn(
-              'h-8 w-8 hover:text-gold hidden sm:inline-flex',
-              pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
-            )}
-          >
-            <Keyboard size={16} />
-          </Button>
+          {!focusMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFadeEnabled(!fadeEnabled)}
+                title={fadeEnabled ? 'Fade ativado (diminui o volume ao pausar/parar)' : 'Fade desativado (para o som de imediato)'}
+                className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                <AudioLines size={16} />
+              </Button>
 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setPinKeyboardHints((prev) => {
+                    const next = !prev;
+                    setShowKeyboardHints(next);
+                    return next;
+                  });
+                }}
+                title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
+                className={cn(
+                  'h-8 w-8 hover:text-gold hidden sm:inline-flex',
+                  pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
+                )}
+              >
+                <Keyboard size={16} />
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowShortcuts(true)}
-            title="Ajuda e atalhos"
-            className="h-8 w-8 text-muted-foreground hover:text-gold"
-          >
-            <HelpCircle size={16} />
-          </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowShortcuts(true)}
+                title="Ajuda e atalhos"
+                className="h-8 w-8 text-muted-foreground hover:text-gold"
+              >
+                <HelpCircle size={16} />
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCompact((c) => !c)}
-            title={compact ? 'Modo normal' : 'Modo compacto'}
-            className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-          >
-            {compact ? <Expand size={16} /> : <Shrink size={16} />}
-          </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCompact((c) => !c)}
+                title={compact ? 'Modo normal' : 'Modo compacto'}
+                className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                {compact ? <Expand size={16} /> : <Shrink size={16} />}
+              </Button>
+            </>
+          )}
 
           <span className="text-xs text-muted-foreground px-1">
             {selectedStageIndex + 1}/{stages.length}
           </span>
+
 
           <Button
             variant="ghost"
