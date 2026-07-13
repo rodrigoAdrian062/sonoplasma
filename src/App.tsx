@@ -87,6 +87,8 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
+          <FocusModeToggle />
+          </FocusModeProvider>
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
