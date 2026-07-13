@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Focus } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -129,6 +129,7 @@ export function PresentationMode({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [focusMode, setFocusMode] = useState(true);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
@@ -192,6 +193,56 @@ export function PresentationMode({
     setPresentationActive(true);
     return () => setPresentationActive(false);
   }, []);
+
+  // Modo foco: mantém a tela ativa (Wake Lock) e reivindica a sessão de mídia
+  // para reduzir interrupções de sons/alertas de outros apps durante a apresentação.
+  useEffect(() => {
+    if (!focusMode) return;
+    let wakeLock: any = null;
+    let released = false;
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch {
+        /* ignora se não suportado */
+      }
+    };
+    requestWakeLock();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && !released) requestWakeLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Media Session: informa ao sistema que este app está reproduzindo áudio
+    if ('mediaSession' in navigator) {
+      try {
+        (navigator as any).mediaSession.metadata = new (window as any).MediaMetadata({
+          title: 'Apresentação em andamento',
+          artist: 'Sonoplastia',
+        });
+        (navigator as any).mediaSession.playbackState = 'playing';
+      } catch {
+        /* ignora */
+      }
+    }
+
+    return () => {
+      released = true;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (wakeLock) {
+        try { wakeLock.release(); } catch { /* ignora */ }
+      }
+      if ('mediaSession' in navigator) {
+        try { (navigator as any).mediaSession.playbackState = 'none'; } catch { /* ignora */ }
+      }
+    };
+  }, [focusMode]);
+
+
 
   useEffect(() => {
     if (pinKeyboardHints) return;
@@ -490,59 +541,74 @@ export function PresentationMode({
 
 
 
+          {/* Modo Foco: mantém apenas o essencial na tela */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setFadeEnabled(!fadeEnabled)}
-            title={fadeEnabled ? 'Fade ativado (diminui o volume ao pausar/parar)' : 'Fade desativado (para o som de imediato)'}
-            className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+            onClick={() => setFocusMode((f) => !f)}
+            title={focusMode ? 'Sair do modo foco' : 'Ativar modo foco (oculta controles extras)'}
+            className={`h-8 w-8 ${focusMode ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
           >
-            <AudioLines size={16} />
+            <Focus size={16} />
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setPinKeyboardHints((prev) => {
-                const next = !prev;
-                setShowKeyboardHints(next);
-                return next;
-              });
-            }}
-            title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
-            className={cn(
-              'h-8 w-8 hover:text-gold hidden sm:inline-flex',
-              pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
-            )}
-          >
-            <Keyboard size={16} />
-          </Button>
+          {!focusMode && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFadeEnabled(!fadeEnabled)}
+                title={fadeEnabled ? 'Fade ativado (diminui o volume ao pausar/parar)' : 'Fade desativado (para o som de imediato)'}
+                className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                <AudioLines size={16} />
+              </Button>
 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setPinKeyboardHints((prev) => {
+                    const next = !prev;
+                    setShowKeyboardHints(next);
+                    return next;
+                  });
+                }}
+                title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
+                className={cn(
+                  'h-8 w-8 hover:text-gold hidden sm:inline-flex',
+                  pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
+                )}
+              >
+                <Keyboard size={16} />
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowShortcuts(true)}
-            title="Ajuda e atalhos"
-            className="h-8 w-8 text-muted-foreground hover:text-gold"
-          >
-            <HelpCircle size={16} />
-          </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowShortcuts(true)}
+                title="Ajuda e atalhos"
+                className="h-8 w-8 text-muted-foreground hover:text-gold"
+              >
+                <HelpCircle size={16} />
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCompact((c) => !c)}
-            title={compact ? 'Modo normal' : 'Modo compacto'}
-            className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-          >
-            {compact ? <Expand size={16} /> : <Shrink size={16} />}
-          </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCompact((c) => !c)}
+                title={compact ? 'Modo normal' : 'Modo compacto'}
+                className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                {compact ? <Expand size={16} /> : <Shrink size={16} />}
+              </Button>
+            </>
+          )}
 
           <span className="text-xs text-muted-foreground px-1">
             {selectedStageIndex + 1}/{stages.length}
           </span>
+
 
           <Button
             variant="ghost"
@@ -1059,7 +1125,7 @@ export function PresentationMode({
       <div 
         className={cn(
           'absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 hidden sm:block',
-          showKeyboardHints ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          showKeyboardHints && !focusMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         )}
       >
         <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
