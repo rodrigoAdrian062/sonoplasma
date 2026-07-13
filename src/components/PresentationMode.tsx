@@ -194,11 +194,12 @@ export function PresentationMode({
   }, []);
 
   useEffect(() => {
+    if (pinKeyboardHints) return;
     const timeout = setTimeout(() => {
       setShowKeyboardHints(false);
     }, 5000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [pinKeyboardHints]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
