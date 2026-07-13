@@ -7,6 +7,7 @@ import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useIsPresentationActive } from '@/lib/presentationState';
 
 function formatTime(seconds: number) {
   if (!seconds || !isFinite(seconds)) return '0:00';
