@@ -172,6 +172,17 @@ export function MiniPlayer() {
             <Button
               variant="ghost"
               size="icon"
+              className={`h-10 w-10 ${loopEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              onClick={() => setLoopEnabled(!loopEnabled)}
+              aria-label={loopEnabled ? 'Desativar repetição' : 'Repetir música'}
+              aria-pressed={loopEnabled}
+              title={loopEnabled ? 'Repetição ativada' : 'Repetir música'}
+            >
+              {loopEnabled ? <Repeat1 size={18} aria-hidden="true" /> : <Repeat size={18} aria-hidden="true" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-10 w-10 text-foreground hover:text-gold"
               onClick={() => (status === 'playing' ? pause() : resume())}
               aria-label={status === 'playing' ? 'Pausar' : 'Retomar'}
