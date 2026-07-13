@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
 
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
@@ -17,8 +18,9 @@ const LINKS = [
 export function QuickNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentStageId, status } = useUniversalAudioPlayer();
+  const { currentStageId, currentUrl, status } = useUniversalAudioPlayer();
   const { stages } = useStages();
+  const { audiosByStageId } = useAllStageAudios();
 
   // Hide on the auth page
   if (location.pathname === '/auth') return null;
@@ -26,8 +28,13 @@ export function QuickNav() {
   const links = LINKS;
 
   const isPlaying = status === 'playing' || status === 'paused';
+  const currentAudio = (audiosByStageId[currentStageId ?? ''] || []).find(
+    (a) => a.audio_url === currentUrl
+  );
   const currentName = isPlaying
-    ? stages.find((s) => s.id === currentStageId)?.nome_simbolico || 'Reproduzindo'
+    ? currentAudio?.nome ||
+      stages.find((s) => s.id === currentStageId)?.nome_simbolico ||
+      'Reproduzindo'
     : null;
 
   return (
