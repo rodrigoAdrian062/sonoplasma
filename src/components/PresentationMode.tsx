@@ -529,13 +529,27 @@ export function PresentationMode({
         {/* Mobile volume slider - expandable */}
         {showVolume && (
           <div className="w-full flex items-center gap-2 px-1 py-1 sm:hidden animate-fade-in">
+            <button
+              onClick={handleVolumeFineDown}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary text-gold shrink-0"
+              title="Diminuir aos poucos"
+            >
+              <Minus size={16} />
+            </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
-              step={5}
+              step={1}
               className="flex-1"
             />
+            <button
+              onClick={handleVolumeFineUp}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary text-gold shrink-0"
+              title="Aumentar aos poucos"
+            >
+              <Plus size={16} />
+            </button>
             <span className="text-[10px] text-muted-foreground w-8 text-right">
               {Math.round(volume * 100)}%
             </span>
