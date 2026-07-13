@@ -17,6 +17,8 @@ import NotFound from "./pages/NotFound";
 import UserManagement from "./pages/UserManagement";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
+import { FocusModeProvider } from "@/contexts/FocusModeContext";
+import { FocusModeToggle } from "@/components/FocusModeToggle";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AudioPlayerProvider>
+          <FocusModeProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
@@ -84,6 +87,8 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
+          <FocusModeToggle />
+          </FocusModeProvider>
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
