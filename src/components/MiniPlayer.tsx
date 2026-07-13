@@ -19,10 +19,13 @@ const MARGIN = 16;
 
 export function MiniPlayer() {
   const { stages } = useStages();
+  const { sections } = useSections();
+  const { audiosByStageId } = useAllStageAudios();
   const location = useLocation();
   const isMainSection = location.pathname === '/' || location.pathname.startsWith('/secao');
   const {
     currentStageId,
+    currentUrl,
     status,
     currentTime,
     duration,
