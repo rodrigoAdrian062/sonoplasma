@@ -507,6 +507,26 @@ export function PresentationMode({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => {
+              setPinKeyboardHints((prev) => {
+                const next = !prev;
+                setShowKeyboardHints(next);
+                return next;
+              });
+            }}
+            title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
+            className={cn(
+              'h-8 w-8 hover:text-gold',
+              pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
+            )}
+          >
+            <Keyboard size={16} />
+          </Button>
+
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowShortcuts(true)}
             title="Ajuda e atalhos"
             className="h-8 w-8 text-muted-foreground hover:text-gold"
