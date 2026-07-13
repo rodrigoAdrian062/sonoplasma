@@ -611,6 +611,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     seekBackward,
     seekTo,
     setEQ,
+    setOnTrackEnded: (cb) => { onTrackEndedRef.current = cb; },
   };
 
   return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;
