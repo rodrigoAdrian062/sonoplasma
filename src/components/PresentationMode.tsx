@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useClock } from '@/hooks/useClock';
-import { useFocusMode } from '@/contexts/FocusModeContext';
+
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus } from 'lucide-react';
@@ -130,7 +130,7 @@ export function PresentationMode({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  const { focusMode } = useFocusMode();
+  const focusMode = false;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
