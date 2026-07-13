@@ -188,6 +188,11 @@ export function PresentationMode({
   }, [isActive]);
 
   useEffect(() => {
+    setPresentationActive(true);
+    return () => setPresentationActive(false);
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
       setShowKeyboardHints(false);
     }, 5000);
