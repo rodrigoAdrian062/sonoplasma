@@ -139,8 +139,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     fadeEnabledRef.current = fadeEnabled;
   }, [fadeEnabled]);
 
+  useEffect(() => {
+    loopEnabledRef.current = loopEnabled;
+  }, [loopEnabled]);
+
   const setFadeEnabled = useCallback((value: boolean) => {
     setFadeEnabledState(value);
+  }, []);
+
+  const setLoopEnabled = useCallback((value: boolean) => {
+    setLoopEnabledState(value);
   }, []);
 
   const clearFade = useCallback(() => {
