@@ -125,6 +125,7 @@ export function PresentationMode({
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
+  const [pinKeyboardHints, setPinKeyboardHints] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
@@ -193,11 +194,12 @@ export function PresentationMode({
   }, []);
 
   useEffect(() => {
+    if (pinKeyboardHints) return;
     const timeout = setTimeout(() => {
       setShowKeyboardHints(false);
     }, 5000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [pinKeyboardHints]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -305,11 +307,11 @@ export function PresentationMode({
           toggleFullscreen();
           break;
       }
-      setTimeout(() => setShowKeyboardHints(false), 3000);
+      if (!pinKeyboardHints) setTimeout(() => setShowKeyboardHints(false), 3000);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume]);
+  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume, pinKeyboardHints]);
 
   // Rolagem do mouse em qualquer lugar da apresentação ajusta o volume
   useEffect(() => {
@@ -501,6 +503,26 @@ export function PresentationMode({
           >
             <AudioLines size={16} />
           </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setPinKeyboardHints((prev) => {
+                const next = !prev;
+                setShowKeyboardHints(next);
+                return next;
+              });
+            }}
+            title={pinKeyboardHints ? 'Ocultar atalhos do teclado' : 'Manter atalhos do teclado visíveis'}
+            className={cn(
+              'h-8 w-8 hover:text-gold',
+              pinKeyboardHints ? 'text-gold' : 'text-muted-foreground'
+            )}
+          >
+            <Keyboard size={16} />
+          </Button>
+
 
           <Button
             variant="ghost"
