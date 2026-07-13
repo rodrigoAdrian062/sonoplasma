@@ -434,8 +434,10 @@ export function PresentationMode({
           <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate hidden sm:block">
             {settings?.nome_app || 'Apresentação'}
           </span>
-          <SessionStopwatch />
-          <ElegantClock size="sm" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 shrink-0">
+            <SessionStopwatch />
+            <ElegantClock size="sm" />
+          </div>
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
