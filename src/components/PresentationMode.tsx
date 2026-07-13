@@ -1125,7 +1125,7 @@ export function PresentationMode({
       <div 
         className={cn(
           'absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 hidden sm:block',
-          showKeyboardHints ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          showKeyboardHints && !focusMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         )}
       >
         <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
