@@ -17,8 +17,6 @@ import NotFound from "./pages/NotFound";
 import UserManagement from "./pages/UserManagement";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
-import { FocusModeProvider } from "@/contexts/FocusModeContext";
-import { FocusModeToggle } from "@/components/FocusModeToggle";
 
 const queryClient = new QueryClient();
 
