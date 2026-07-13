@@ -215,7 +215,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => {
-      const endedStage = currentStageId;
+      const endedStage = currentStageIdRef.current;
       const endedUrl = currentUrlRef.current;
       if (onTrackEndedRef.current && endedStage && endedUrl) {
         const handled = onTrackEndedRef.current(endedStage, endedUrl);
