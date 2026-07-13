@@ -143,6 +143,24 @@ export function SectionEditModal({
             onIconUrlChange={(url) => setFormData({ ...formData, icone_url: url })}
           />
 
+          {/* Reprodução contínua */}
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-secondary/50 p-3">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                <Repeat size={14} className="text-gold" />
+                Reprodução contínua
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Ao terminar uma música, a próxima da seção começa automaticamente.
+              </p>
+            </div>
+            <Switch
+              checked={formData.reproducao_continua}
+              onCheckedChange={(checked) => setFormData({ ...formData, reproducao_continua: checked })}
+            />
+          </div>
+
+
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
