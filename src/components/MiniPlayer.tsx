@@ -105,10 +105,10 @@ export function MiniPlayer() {
     const sectionStages = stages
       .filter((s) => s.secao_id === section.id)
       .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-    const queue: Array<{ stageId: string; url: string }> = [];
+    const queue: Array<{ stageId: string; url: string; nome: string }> = [];
     sectionStages.forEach((stg) => {
       (audiosByStageId[stg.id] || []).forEach((audio) => {
-        queue.push({ stageId: stg.id, url: audio.audio_url });
+        queue.push({ stageId: stg.id, url: audio.audio_url, nome: audio.nome });
       });
     });
     const idx = queue.findIndex(
@@ -117,7 +117,7 @@ export function MiniPlayer() {
     if (idx === -1 || idx + 1 >= queue.length) return null;
     const next = queue[idx + 1];
     const nextStage = stages.find((s) => s.id === next.stageId);
-    return nextStage?.nome_simbolico || 'Próxima música';
+    return next.nome || nextStage?.nome_simbolico || 'Próxima música';
   }, [stages, sections, audiosByStageId, currentStageId, currentUrl]);
 
   const isActive = status === 'playing' || status === 'paused';
