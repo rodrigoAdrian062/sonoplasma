@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useClock } from '@/hooks/useClock';
+import { useFocusMode } from '@/contexts/FocusModeContext';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Focus } from 'lucide-react';
@@ -129,7 +130,7 @@ export function PresentationMode({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  const [focusMode, setFocusMode] = useState(true);
+  const { focusMode } = useFocusMode();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
@@ -540,17 +541,6 @@ export function PresentationMode({
 
 
 
-
-          {/* Modo Foco: mantém apenas o essencial na tela */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setFocusMode((f) => !f)}
-            title={focusMode ? 'Sair do modo foco' : 'Ativar modo foco (oculta controles extras)'}
-            className={`h-8 w-8 ${focusMode ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-          >
-            <Focus size={16} />
-          </Button>
 
           {!focusMode && (
             <>
