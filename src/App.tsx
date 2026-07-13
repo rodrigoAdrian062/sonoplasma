@@ -30,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AudioPlayerProvider>
+          <FocusModeProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
