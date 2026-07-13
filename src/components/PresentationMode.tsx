@@ -487,16 +487,8 @@ export function PresentationMode({
             </span>
           </div>
 
-          {eq && onEQChange && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowEQ(!showEQ)}
-              className={`h-8 w-8 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-            >
-              <SlidersHorizontal size={16} />
-            </Button>
-          )}
+
+
 
           <Button
             variant="ghost"
@@ -625,13 +617,6 @@ export function PresentationMode({
             <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono w-8 sm:w-10">
               {formatTime(audioDuration)}
             </span>
-          </div>
-        )}
-
-        {/* EQ Panel */}
-        {showEQ && eq && onEQChange && (
-          <div className="w-full mt-2 animate-fade-in">
-            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
           </div>
         )}
       </header>

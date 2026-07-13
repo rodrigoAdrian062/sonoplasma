@@ -48,28 +48,11 @@ export function ControlBar({
             stageName={activeStage?.symbolicName || null}
             isPlaying={isPlaying} />
 
-          {eq && onEQChange &&
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowEQ(!showEQ)}
-            className={`h-9 w-9 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-            title="Equalizador">
-
-              <SlidersHorizontal size={18} />
-            </Button>
-          }
           <div className="ml-auto flex items-center gap-2 shrink-0 max-w-full overflow-hidden">
             <SessionStopwatch />
             <ElegantClock size="sm" />
           </div>
         </div>
-        {/* EQ Panel */}
-        {showEQ && eq && onEQChange &&
-        <div className="mt-2 animate-fade-in">
-            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
-          </div>
-        }
         {/* Progress bar */}
         {activeStage && duration > 0 &&
         <div className="flex items-center gap-2 mt-2">
