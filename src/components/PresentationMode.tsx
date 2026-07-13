@@ -194,6 +194,56 @@ export function PresentationMode({
     return () => setPresentationActive(false);
   }, []);
 
+  // Modo foco: mantém a tela ativa (Wake Lock) e reivindica a sessão de mídia
+  // para reduzir interrupções de sons/alertas de outros apps durante a apresentação.
+  useEffect(() => {
+    if (!focusMode) return;
+    let wakeLock: any = null;
+    let released = false;
+
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch {
+        /* ignora se não suportado */
+      }
+    };
+    requestWakeLock();
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && !released) requestWakeLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Media Session: informa ao sistema que este app está reproduzindo áudio
+    if ('mediaSession' in navigator) {
+      try {
+        (navigator as any).mediaSession.metadata = new (window as any).MediaMetadata({
+          title: 'Apresentação em andamento',
+          artist: 'Sonoplastia',
+        });
+        (navigator as any).mediaSession.playbackState = 'playing';
+      } catch {
+        /* ignora */
+      }
+    }
+
+    return () => {
+      released = true;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (wakeLock) {
+        try { wakeLock.release(); } catch { /* ignora */ }
+      }
+      if ('mediaSession' in navigator) {
+        try { (navigator as any).mediaSession.playbackState = 'none'; } catch { /* ignora */ }
+      }
+    };
+  }, [focusMode]);
+
+
+
   useEffect(() => {
     if (pinKeyboardHints) return;
     const timeout = setTimeout(() => {
