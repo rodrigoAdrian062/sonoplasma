@@ -307,11 +307,11 @@ export function PresentationMode({
           toggleFullscreen();
           break;
       }
-      setTimeout(() => setShowKeyboardHints(false), 3000);
+      if (!pinKeyboardHints) setTimeout(() => setShowKeyboardHints(false), 3000);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume]);
+  }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume, pinKeyboardHints]);
 
   // Rolagem do mouse em qualquer lugar da apresentação ajusta o volume
   useEffect(() => {
