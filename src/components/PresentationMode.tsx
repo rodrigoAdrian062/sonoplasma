@@ -704,31 +704,52 @@ export function PresentationMode({
                   {filteredAudios.map(({ audio, index }) => {
                     const selected = index === selectedAudioIndex;
                     return (
-                      <button
+                      <div
                         key={audio.id}
-                        data-selected={selected}
-                        ref={(el) => {
-                          if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
-                        }}
-                        onClick={() => handleSelectAudio(index)}
                         className={cn(
-                          'flex items-center gap-1.5 rounded-full border transition-all whitespace-nowrap shrink-0',
-                          compact ? 'px-2.5 py-1 text-[11px] sm:text-xs' : 'px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm',
+                          'group/pill flex items-center rounded-full border transition-all whitespace-nowrap shrink-0',
+                          compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm',
                           selected
                             ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
                             : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
                         )}
                       >
-                        {selected ? (
-                          <Check size={14} className="shrink-0" />
-                        ) : (
-                          <>
-                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
-                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
-                          </>
-                        )}
-                        {audio.nome || `Áudio ${index + 1}`}
-                      </button>
+                        <button
+                          data-selected={selected}
+                          ref={(el) => {
+                            if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
+                          }}
+                          onClick={() => handleSelectAudio(index)}
+                          className={cn(
+                            'flex items-center gap-1.5',
+                            compact ? 'pl-2.5 pr-1 py-1' : 'pl-3 pr-1 py-1.5 sm:pl-4 sm:py-2'
+                          )}
+                        >
+                          {selected ? (
+                            <Check size={14} className="shrink-0" />
+                          ) : (
+                            <>
+                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
+                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
+                            </>
+                          )}
+                          {audio.nome || `Áudio ${index + 1}`}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAudioToDelete(audio);
+                          }}
+                          title="Excluir música"
+                          aria-label={`Excluir ${audio.nome || 'música'}`}
+                          className={cn(
+                            'flex items-center justify-center rounded-full mr-1 transition-colors text-muted-foreground/70 hover:text-destructive hover:bg-destructive/15',
+                            compact ? 'p-0.5' : 'p-1'
+                          )}
+                        >
+                          <Trash2 size={compact ? 12 : 14} />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
