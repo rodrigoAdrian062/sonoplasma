@@ -1052,6 +1052,28 @@ export function PresentationMode({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!audioToDelete} onOpenChange={(open) => { if (!open) setAudioToDelete(null); }}>
+        <AlertDialogContent className="bg-card border-destructive/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 size={18} />
+              Excluir música
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong className="text-foreground">{audioToDelete?.nome || 'esta música'}</strong> desta etapa? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setAudioToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteAudio}>
+              <Trash2 size={16} className="mr-1" /> Excluir
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
