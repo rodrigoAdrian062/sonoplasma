@@ -124,7 +124,10 @@ export function MiniPlayer() {
   if (!isActive) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
-  const name = stage?.nome_simbolico || 'Reproduzindo';
+  const currentAudio = (audiosByStageId[currentStageId ?? ''] || []).find(
+    (a) => a.audio_url === currentUrl
+  );
+  const name = currentAudio?.nome || stage?.nome_simbolico || 'Reproduzindo';
 
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
