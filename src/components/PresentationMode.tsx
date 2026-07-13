@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2 } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -247,6 +247,22 @@ export function PresentationMode({
     onVolumeChange(Math.max(0, volume - 0.1));
   };
 
+  // Ajuste fino do volume (aos poucos)
+  const handleVolumeFineUp = () => {
+    onVolumeChange(Math.min(1, Math.round((volume + 0.02) * 100) / 100));
+  };
+
+  const handleVolumeFineDown = () => {
+    onVolumeChange(Math.max(0, Math.round((volume - 0.02) * 100) / 100));
+  };
+
+  // Rolagem do mouse sobre o controle de volume
+  const handleVolumeWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.02 : -0.02;
+    onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setShowKeyboardHints(true);
@@ -414,20 +430,34 @@ export function PresentationMode({
           </Button>
 
           {/* Desktop volume */}
-          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary rounded-lg">
+          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary rounded-lg" onWheel={handleVolumeWheel} title="Role o mouse para ajustar aos poucos">
             <button
               onClick={handleToggleMute}
               className="text-muted-foreground hover:text-gold transition-colors"
             >
               {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
+            <button
+              onClick={handleVolumeFineDown}
+              className="text-muted-foreground hover:text-gold transition-colors"
+              title="Diminuir aos poucos"
+            >
+              <Minus size={14} />
+            </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
-              step={5}
+              step={1}
               className="w-16"
             />
+            <button
+              onClick={handleVolumeFineUp}
+              className="text-muted-foreground hover:text-gold transition-colors"
+              title="Aumentar aos poucos"
+            >
+              <Plus size={14} />
+            </button>
             <span className="text-[10px] text-muted-foreground w-7 text-right">
               {Math.round(volume * 100)}%
             </span>
@@ -499,13 +529,27 @@ export function PresentationMode({
         {/* Mobile volume slider - expandable */}
         {showVolume && (
           <div className="w-full flex items-center gap-2 px-1 py-1 sm:hidden animate-fade-in">
+            <button
+              onClick={handleVolumeFineDown}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary text-gold shrink-0"
+              title="Diminuir aos poucos"
+            >
+              <Minus size={16} />
+            </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
-              step={5}
+              step={1}
               className="flex-1"
             />
+            <button
+              onClick={handleVolumeFineUp}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary text-gold shrink-0"
+              title="Aumentar aos poucos"
+            >
+              <Plus size={16} />
+            </button>
             <span className="text-[10px] text-muted-foreground w-8 text-right">
               {Math.round(volume * 100)}%
             </span>
@@ -560,24 +604,44 @@ export function PresentationMode({
 
         {/* Large Vertical Volume Control - desktop side */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center">
-          <div className="flex flex-col items-center gap-5 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-8 shadow-2xl shadow-black/40">
+          <div
+            className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-6 shadow-2xl shadow-black/40"
+            onWheel={handleVolumeWheel}
+            title="Role o mouse para ajustar o volume aos poucos"
+          >
             <span className="text-base font-mono text-gold font-bold">
               {Math.round(volume * 100)}%
             </span>
+            {/* Ajuste fino: aumentar aos poucos */}
+            <button
+              onClick={handleVolumeFineUp}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gold/10 hover:bg-gold/25 text-gold border border-gold/30 transition-colors"
+              title="Aumentar volume aos poucos (+2%)"
+            >
+              <Plus size={20} />
+            </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
-              step={5}
+              step={1}
               orientation="vertical"
-              className="h-64"
+              className="h-56"
             />
+            {/* Ajuste fino: diminuir aos poucos */}
+            <button
+              onClick={handleVolumeFineDown}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gold/10 hover:bg-gold/25 text-gold border border-gold/30 transition-colors"
+              title="Diminuir volume aos poucos (-2%)"
+            >
+              <Minus size={20} />
+            </button>
             <button
               onClick={handleToggleMute}
               className="text-gold hover:text-gold-glow transition-colors"
               title={isMuted ? 'Reativar som' : 'Silenciar'}
             >
-              {isMuted ? <VolumeX size={32} /> : <Volume2 size={32} />}
+              {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
             </button>
           </div>
         </div>
