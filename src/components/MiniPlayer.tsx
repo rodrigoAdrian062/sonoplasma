@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX, Repeat, ArrowRight } from 'lucide-react';
+import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX, Repeat, Repeat1, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
@@ -34,6 +34,8 @@ export function MiniPlayer() {
     pause,
     resume,
     stop,
+    loopEnabled,
+    setLoopEnabled,
   } = useUniversalAudioPlayer();
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -167,6 +169,17 @@ export function MiniPlayer() {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-10 w-10 ${loopEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              onClick={() => setLoopEnabled(!loopEnabled)}
+              aria-label={loopEnabled ? 'Desativar repetição' : 'Repetir música'}
+              aria-pressed={loopEnabled}
+              title={loopEnabled ? 'Repetição ativada' : 'Repetir música'}
+            >
+              {loopEnabled ? <Repeat1 size={18} aria-hidden="true" /> : <Repeat size={18} aria-hidden="true" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"

@@ -22,6 +22,8 @@ interface AudioPlayerContextValue {
   eq: EQSettings;
   fadeEnabled: boolean;
   setFadeEnabled: (value: boolean) => void;
+  loopEnabled: boolean;
+  setLoopEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
   preload: (urls: (string | null | undefined)[]) => void;
   pause: () => void;
@@ -103,6 +105,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
   const [fadeEnabled, setFadeEnabledState] = useState(true);
+  const [loopEnabled, setLoopEnabledState] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -120,6 +123,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
+  const loopEnabledRef = useRef(loopEnabled);
   const currentStageIdRef = useRef<string | null>(null);
 
 
@@ -135,8 +139,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     fadeEnabledRef.current = fadeEnabled;
   }, [fadeEnabled]);
 
+  useEffect(() => {
+    loopEnabledRef.current = loopEnabled;
+  }, [loopEnabled]);
+
   const setFadeEnabled = useCallback((value: boolean) => {
     setFadeEnabledState(value);
+  }, []);
+
+  const setLoopEnabled = useCallback((value: boolean) => {
+    setLoopEnabledState(value);
   }, []);
 
   const clearFade = useCallback(() => {
@@ -215,6 +227,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
     const handleEnded = () => {
+      if (loopEnabledRef.current && audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        return;
+      }
       const endedStage = currentStageIdRef.current;
       const endedUrl = currentUrlRef.current;
       if (onTrackEndedRef.current && endedStage && endedUrl) {
@@ -398,6 +415,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           onStateChange: (event: any) => {
             const YT = (window as any).YT;
             if (event.data === YT.PlayerState.ENDED) {
+              if (loopEnabledRef.current && ytPlayerRef.current) {
+                try { ytPlayerRef.current.seekTo(0); ytPlayerRef.current.playVideo(); } catch {}
+                return;
+              }
               const endedStage = currentStageIdRef.current;
               const endedUrl = currentUrlRef.current;
               if (onTrackEndedRef.current && endedStage && endedUrl && onTrackEndedRef.current(endedStage, endedUrl)) {
@@ -618,6 +639,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     eq,
     fadeEnabled,
     setFadeEnabled,
+    loopEnabled,
+    setLoopEnabled,
     play,
     preload,
     pause,
