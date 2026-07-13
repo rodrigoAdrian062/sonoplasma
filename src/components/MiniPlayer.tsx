@@ -18,7 +18,7 @@ const MARGIN = 16;
 export function MiniPlayer() {
   const { stages } = useStages();
   const location = useLocation();
-  const isMainSection = location.pathname === '/';
+  const isMainSection = location.pathname === '/' || location.pathname.startsWith('/secao');
   const {
     currentStageId,
     status,
