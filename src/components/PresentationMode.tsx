@@ -487,16 +487,8 @@ export function PresentationMode({
             </span>
           </div>
 
-          {eq && onEQChange && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowEQ(!showEQ)}
-              className={`h-8 w-8 ${showEQ ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-            >
-              <SlidersHorizontal size={16} />
-            </Button>
-          )}
+
+
 
           <Button
             variant="ghost"
