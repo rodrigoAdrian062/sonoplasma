@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX, Repeat, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
 
 function formatTime(seconds: number) {
   if (!seconds || !isFinite(seconds)) return '0:00';
@@ -17,10 +19,13 @@ const MARGIN = 16;
 
 export function MiniPlayer() {
   const { stages } = useStages();
+  const { sections } = useSections();
+  const { audiosByStageId } = useAllStageAudios();
   const location = useLocation();
   const isMainSection = location.pathname === '/' || location.pathname.startsWith('/secao');
   const {
     currentStageId,
+    currentUrl,
     status,
     currentTime,
     duration,
@@ -88,11 +93,37 @@ export function MiniPlayer() {
     };
   }, [onPointerMove, onPointerUp]);
 
+  // Próxima música quando reprodução contínua está ativa na seção atual
+  const nextTrackName = useMemo(() => {
+    const currentStage = stages.find((s) => s.id === currentStageId);
+    if (!currentStage) return null;
+    const section = sections.find((s) => s.id === currentStage.secao_id);
+    if (!section || !(section as any).reproducao_continua) return null;
+
+    const sectionStages = stages
+      .filter((s) => s.secao_id === section.id)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+    const queue: Array<{ stageId: string; url: string }> = [];
+    sectionStages.forEach((stg) => {
+      (audiosByStageId[stg.id] || []).forEach((audio) => {
+        queue.push({ stageId: stg.id, url: audio.audio_url });
+      });
+    });
+    const idx = queue.findIndex(
+      (q) => q.stageId === currentStageId && q.url === currentUrl
+    );
+    if (idx === -1 || idx + 1 >= queue.length) return null;
+    const next = queue[idx + 1];
+    const nextStage = stages.find((s) => s.id === next.stageId);
+    return nextStage?.nome_simbolico || 'Próxima música';
+  }, [stages, sections, audiosByStageId, currentStageId, currentUrl]);
+
   const isActive = status === 'playing' || status === 'paused';
   if (!isActive) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
   const name = stage?.nome_simbolico || 'Reproduzindo';
+
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   const positionStyle: React.CSSProperties = pos
@@ -160,6 +191,21 @@ export function MiniPlayer() {
             </Button>
           </div>
         </div>
+
+        {nextTrackName && (
+          <div className="flex items-center gap-1.5 px-3 pb-2 -mt-1">
+            <Repeat size={12} className="shrink-0 text-gold" aria-hidden="true" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">
+              A seguir
+            </span>
+            <ArrowRight size={12} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="text-[11px] font-medium text-foreground truncate">
+              {nextTrackName}
+            </span>
+          </div>
+        )}
+
+
 
         {isMainSection && (
           <div className="flex items-center gap-2 px-3 pb-3">
