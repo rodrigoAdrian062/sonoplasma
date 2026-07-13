@@ -93,11 +93,37 @@ export function MiniPlayer() {
     };
   }, [onPointerMove, onPointerUp]);
 
+  // Próxima música quando reprodução contínua está ativa na seção atual
+  const nextTrackName = useMemo(() => {
+    const currentStage = stages.find((s) => s.id === currentStageId);
+    if (!currentStage) return null;
+    const section = sections.find((s) => s.id === currentStage.secao_id);
+    if (!section || !(section as any).reproducao_continua) return null;
+
+    const sectionStages = stages
+      .filter((s) => s.secao_id === section.id)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+    const queue: Array<{ stageId: string; url: string }> = [];
+    sectionStages.forEach((stg) => {
+      (audiosByStageId[stg.id] || []).forEach((audio) => {
+        queue.push({ stageId: stg.id, url: audio.audio_url });
+      });
+    });
+    const idx = queue.findIndex(
+      (q) => q.stageId === currentStageId && q.url === currentUrl
+    );
+    if (idx === -1 || idx + 1 >= queue.length) return null;
+    const next = queue[idx + 1];
+    const nextStage = stages.find((s) => s.id === next.stageId);
+    return nextStage?.nome_simbolico || 'Próxima música';
+  }, [stages, sections, audiosByStageId, currentStageId, currentUrl]);
+
   const isActive = status === 'playing' || status === 'paused';
   if (!isActive) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
   const name = stage?.nome_simbolico || 'Reproduzindo';
+
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   const positionStyle: React.CSSProperties = pos
