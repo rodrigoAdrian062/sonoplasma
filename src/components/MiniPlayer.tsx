@@ -17,11 +17,15 @@ const MARGIN = 16;
 
 export function MiniPlayer() {
   const { stages } = useStages();
+  const location = useLocation();
+  const isMainSection = location.pathname === '/';
   const {
     currentStageId,
     status,
     currentTime,
     duration,
+    volume,
+    setVolume,
     pause,
     resume,
     stop,
