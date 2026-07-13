@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, FolderPlus, Type, FileText } from 'lucide-react';
+import { Save, FolderPlus, Type, FileText, Repeat } from 'lucide-react';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { suggestIconForName } from '@/types/ceremony';
 import { IconPicker } from './IconPicker';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
