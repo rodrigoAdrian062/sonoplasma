@@ -354,6 +354,7 @@ export type Database = {
           nome: string
           ordem: number
           owner_id: string | null
+          reproducao_continua: boolean
           updated_at: string
         }
         Insert: {
@@ -366,6 +367,7 @@ export type Database = {
           nome: string
           ordem?: number
           owner_id?: string | null
+          reproducao_continua?: boolean
           updated_at?: string
         }
         Update: {
@@ -378,6 +380,7 @@ export type Database = {
           nome?: string
           ordem?: number
           owner_id?: string | null
+          reproducao_continua?: boolean
           updated_at?: string
         }
         Relationships: []
