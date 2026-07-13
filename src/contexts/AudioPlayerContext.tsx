@@ -22,6 +22,8 @@ interface AudioPlayerContextValue {
   eq: EQSettings;
   fadeEnabled: boolean;
   setFadeEnabled: (value: boolean) => void;
+  loopEnabled: boolean;
+  setLoopEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
   preload: (urls: (string | null | undefined)[]) => void;
   pause: () => void;
