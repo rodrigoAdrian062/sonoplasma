@@ -415,6 +415,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           onStateChange: (event: any) => {
             const YT = (window as any).YT;
             if (event.data === YT.PlayerState.ENDED) {
+              if (loopEnabledRef.current && ytPlayerRef.current) {
+                try { ytPlayerRef.current.seekTo(0); ytPlayerRef.current.playVideo(); } catch {}
+                return;
+              }
               const endedStage = currentStageIdRef.current;
               const endedUrl = currentUrlRef.current;
               if (onTrackEndedRef.current && endedStage && endedUrl && onTrackEndedRef.current(endedStage, endedUrl)) {
