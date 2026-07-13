@@ -247,6 +247,22 @@ export function PresentationMode({
     onVolumeChange(Math.max(0, volume - 0.1));
   };
 
+  // Ajuste fino do volume (aos poucos)
+  const handleVolumeFineUp = () => {
+    onVolumeChange(Math.min(1, Math.round((volume + 0.02) * 100) / 100));
+  };
+
+  const handleVolumeFineDown = () => {
+    onVolumeChange(Math.max(0, Math.round((volume - 0.02) * 100) / 100));
+  };
+
+  // Rolagem do mouse sobre o controle de volume
+  const handleVolumeWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.02 : -0.02;
+    onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setShowKeyboardHints(true);
