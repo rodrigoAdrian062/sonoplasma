@@ -398,6 +398,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           onStateChange: (event: any) => {
             const YT = (window as any).YT;
             if (event.data === YT.PlayerState.ENDED) {
+              const endedStage = currentStageIdRef.current;
+              const endedUrl = currentUrlRef.current;
+              if (onTrackEndedRef.current && endedStage && endedUrl && onTrackEndedRef.current(endedStage, endedUrl)) {
+                return;
+              }
               setStatus('idle');
               setCurrentStageId(null);
               setIsYouTube(false);
