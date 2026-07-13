@@ -130,7 +130,6 @@ export function PresentationMode({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const focusMode = false;
-  const { focusMode } = useFocusMode();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
