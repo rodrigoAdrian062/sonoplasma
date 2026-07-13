@@ -1,14 +1,10 @@
 import { Focus } from 'lucide-react';
 import { useFocusMode } from '@/contexts/FocusModeContext';
-import { useIsPresentationActive } from '@/lib/presentationState';
 import { cn } from '@/lib/utils';
 
 export function FocusModeToggle() {
   const { focusMode, toggleFocusMode } = useFocusMode();
-  const isPresentation = useIsPresentationActive();
 
-  // Durante a apresentação, o próprio modo apresentação já controla o foco
-  if (isPresentation) return null;
 
   return (
     <button
