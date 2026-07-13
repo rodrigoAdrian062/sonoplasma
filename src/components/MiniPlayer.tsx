@@ -34,6 +34,8 @@ export function MiniPlayer() {
     pause,
     resume,
     stop,
+    loopEnabled,
+    setLoopEnabled,
   } = useUniversalAudioPlayer();
 
   const cardRef = useRef<HTMLDivElement>(null);
