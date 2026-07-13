@@ -13,6 +13,7 @@ import { EqualizerPanel } from './EqualizerPanel';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { setPresentationActive } from '@/lib/presentationState';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
@@ -185,6 +186,11 @@ export function PresentationMode({
       timer.reset();
     }
   }, [isActive]);
+
+  useEffect(() => {
+    setPresentationActive(true);
+    return () => setPresentationActive(false);
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
