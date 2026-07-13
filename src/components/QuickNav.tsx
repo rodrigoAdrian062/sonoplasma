@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useIsPresentationActive } from '@/lib/presentationState';
 
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
@@ -21,9 +22,10 @@ export function QuickNav() {
   const { currentStageId, currentUrl, status } = useUniversalAudioPlayer();
   const { stages } = useStages();
   const { audiosByStageId } = useAllStageAudios();
+  const isPresentation = useIsPresentationActive();
 
-  // Hide on the auth page
-  if (location.pathname === '/auth') return null;
+  // Hide on the auth page or during presentation mode
+  if (location.pathname === '/auth' || isPresentation) return null;
 
   const links = LINKS;
 

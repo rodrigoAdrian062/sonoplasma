@@ -123,7 +123,7 @@ export function MiniPlayer() {
   }, [stages, sections, audiosByStageId, currentStageId, currentUrl]);
 
   const isActive = status === 'playing' || status === 'paused';
-  if (!isActive) return null;
+  if (!isActive || isPresentation) return null;
 
   const stage = stages.find((s) => s.id === currentStageId);
   const currentAudio = (audiosByStageId[currentStageId ?? ''] || []).find(
