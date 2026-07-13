@@ -38,6 +38,7 @@ export function SectionEditModal({
     descricao: '',
     icone: 'folder',
     icone_url: null as string | null,
+    reproducao_continua: false,
   });
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export function SectionEditModal({
         descricao: section.descricao || '',
         icone: section.icone || 'folder',
         icone_url: (section as any).icone_url || null,
+        reproducao_continua: (section as any).reproducao_continua || false,
       });
     } else if (isNew) {
       setFormData({
@@ -54,6 +56,7 @@ export function SectionEditModal({
         descricao: '',
         icone: 'folder',
         icone_url: null,
+        reproducao_continua: false,
       });
     }
   }, [section, isNew, isOpen]);
@@ -69,7 +72,9 @@ export function SectionEditModal({
       descricao: formData.descricao || null,
       icone: formData.icone,
       icone_url: formData.icone_url,
+      reproducao_continua: formData.reproducao_continua,
     };
+
 
     if (isNew) {
       data.ordem = existingSectionsCount + 1;
