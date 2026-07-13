@@ -128,6 +128,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [volume]);
 
   useEffect(() => {
+    currentStageIdRef.current = currentStageId;
+  }, [currentStageId]);
+
+  useEffect(() => {
     fadeEnabledRef.current = fadeEnabled;
   }, [fadeEnabled]);
 
