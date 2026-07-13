@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library } from 'lucide-react';
+import { Home, Library, Music2 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useStages } from '@/hooks/useStages';
 
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
@@ -15,12 +17,18 @@ const LINKS = [
 export function QuickNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentStageId, status } = useUniversalAudioPlayer();
+  const { stages } = useStages();
 
   // Hide on the auth page
   if (location.pathname === '/auth') return null;
 
   const links = LINKS;
 
+  const isPlaying = status === 'playing' || status === 'paused';
+  const currentName = isPlaying
+    ? stages.find((s) => s.id === currentStageId)?.nome_simbolico || 'Reproduzindo'
+    : null;
 
   return (
     <nav
@@ -50,6 +58,20 @@ export function QuickNav() {
           </Tooltip>
         );
       })}
+
+      {currentName && (
+        <div
+          className="flex items-center gap-1.5 max-w-[9rem] rounded-full bg-gold/15 border border-gold/30 pl-2 pr-3 py-1 ml-0.5"
+          aria-label={`Tocando: ${currentName}`}
+        >
+          <Music2
+            size={14}
+            className={cn('shrink-0 text-gold', status === 'playing' && 'animate-pulse')}
+            aria-hidden="true"
+          />
+          <span className="text-[11px] font-medium text-gold truncate">{currentName}</span>
+        </div>
+      )}
     </nav>
   );
 }
