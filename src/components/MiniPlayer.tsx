@@ -192,6 +192,21 @@ export function MiniPlayer() {
           </div>
         </div>
 
+        {nextTrackName && (
+          <div className="flex items-center gap-1.5 px-3 pb-2 -mt-1">
+            <Repeat size={12} className="shrink-0 text-gold" aria-hidden="true" />
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">
+              A seguir
+            </span>
+            <ArrowRight size={12} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="text-[11px] font-medium text-foreground truncate">
+              {nextTrackName}
+            </span>
+          </div>
+        )}
+
+
+
         {isMainSection && (
           <div className="flex items-center gap-2 px-3 pb-3">
             <button
