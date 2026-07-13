@@ -311,6 +311,18 @@ export function PresentationMode({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedStageIndex, stages.length, isPlaying, isPaused, currentAudio, volume]);
 
+  // Rolagem do mouse em qualquer lugar da apresentação ajusta o volume
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.02 : -0.02;
+      onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
+    };
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [volume, onVolumeChange]);
+
+
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
     if (useTimerEnabled && customTime > 0) timer.start(customTime);
