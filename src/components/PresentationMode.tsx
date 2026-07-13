@@ -129,7 +129,7 @@ export function PresentationMode({
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
-  const [showVolume, setShowVolume] = useState(false);
+  const focusMode = false;
   const { focusMode } = useFocusMode();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
