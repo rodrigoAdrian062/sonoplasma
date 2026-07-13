@@ -281,11 +281,11 @@ export function PresentationMode({
           break;
         case 'ArrowUp':
           e.preventDefault();
-          handleVolumeUp();
+          handleVolumeFineUp();
           break;
         case 'ArrowDown':
           e.preventDefault();
-          handleVolumeDown();
+          handleVolumeFineDown();
           break;
         case ' ' :
           e.preventDefault();
