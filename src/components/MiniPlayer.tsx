@@ -161,6 +161,31 @@ export function MiniPlayer() {
           </div>
         </div>
 
+        {isMainSection && (
+          <div className="flex items-center gap-2 px-3 pb-3">
+            <button
+              onClick={() => setVolume(volume === 0 ? 0.7 : 0)}
+              className="shrink-0 text-muted-foreground hover:text-gold transition-colors"
+              aria-label={volume === 0 ? 'Ativar som' : 'Silenciar'}
+            >
+              {volume === 0 ? <VolumeX size={16} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
+            </button>
+            <Slider
+              value={[Math.round(volume * 100)]}
+              onValueChange={(values) => setVolume(values[0] / 100)}
+              max={100}
+              step={1}
+              className="flex-1"
+              aria-label="Volume"
+            />
+            <span className="text-[11px] text-muted-foreground w-8 text-right tabular-nums">
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+        )}
+
+
+
         <div className="h-1 w-full bg-secondary">
           <div
             className="h-full bg-gold transition-all duration-300"
