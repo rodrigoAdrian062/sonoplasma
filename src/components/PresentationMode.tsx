@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2 } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -16,6 +16,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
@@ -128,6 +129,18 @@ export function PresentationMode({
   const [showVolume, setShowVolume] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
+  const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
+  const { deleteAudio } = useStageAudios();
+
+  const handleConfirmDeleteAudio = () => {
+    if (!audioToDelete) return;
+    if (currentStageId === audioToDelete.etapa_id && currentUrl === audioToDelete.audio_url) {
+      onStop();
+    }
+    deleteAudio.mutate({ id: audioToDelete.id, etapa_id: audioToDelete.etapa_id });
+    setSelectedAudioIndex(0);
+    setAudioToDelete(null);
+  };
 
   // Modo compacto: reduz textos e botões quando há muitas etapas/músicas
   const totalAudios = stages.reduce((n, s) => n + (audiosByStageId[s.id]?.length || 0), 0);
@@ -691,31 +704,52 @@ export function PresentationMode({
                   {filteredAudios.map(({ audio, index }) => {
                     const selected = index === selectedAudioIndex;
                     return (
-                      <button
+                      <div
                         key={audio.id}
-                        data-selected={selected}
-                        ref={(el) => {
-                          if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
-                        }}
-                        onClick={() => handleSelectAudio(index)}
                         className={cn(
-                          'flex items-center gap-1.5 rounded-full border transition-all whitespace-nowrap shrink-0',
-                          compact ? 'px-2.5 py-1 text-[11px] sm:text-xs' : 'px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm',
+                          'group/pill flex items-center rounded-full border transition-all whitespace-nowrap shrink-0',
+                          compact ? 'text-[11px] sm:text-xs' : 'text-xs sm:text-sm',
                           selected
                             ? 'bg-gold/25 border-gold text-gold font-semibold ring-2 ring-gold/40 shadow-[0_0_16px_-2px_hsl(var(--gold)/0.4)] scale-[1.03]'
                             : 'bg-secondary border-border text-muted-foreground hover:border-gold/30 hover:text-foreground'
                         )}
                       >
-                        {selected ? (
-                          <Check size={14} className="shrink-0" />
-                        ) : (
-                          <>
-                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
-                            <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
-                          </>
-                        )}
-                        {audio.nome || `Áudio ${index + 1}`}
-                      </button>
+                        <button
+                          data-selected={selected}
+                          ref={(el) => {
+                            if (selected && el) el.scrollIntoView({ block: 'nearest', inline: 'center' });
+                          }}
+                          onClick={() => handleSelectAudio(index)}
+                          className={cn(
+                            'flex items-center gap-1.5',
+                            compact ? 'pl-2.5 pr-1 py-1' : 'pl-3 pr-1 py-1.5 sm:pl-4 sm:py-2'
+                          )}
+                        >
+                          {selected ? (
+                            <Check size={14} className="shrink-0" />
+                          ) : (
+                            <>
+                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
+                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
+                            </>
+                          )}
+                          {audio.nome || `Áudio ${index + 1}`}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAudioToDelete(audio);
+                          }}
+                          title="Excluir música"
+                          aria-label={`Excluir ${audio.nome || 'música'}`}
+                          className={cn(
+                            'flex items-center justify-center rounded-full mr-1 transition-colors text-muted-foreground/70 hover:text-destructive hover:bg-destructive/15',
+                            compact ? 'p-0.5' : 'p-1'
+                          )}
+                        >
+                          <Trash2 size={compact ? 12 : 14} />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1014,6 +1048,28 @@ export function PresentationMode({
             </Button>
             <Button className="bg-gold text-background hover:bg-gold/90" onClick={handleKeepPlaying}>
               <Play size={16} className="mr-1" /> Continuar ouvindo
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!audioToDelete} onOpenChange={(open) => { if (!open) setAudioToDelete(null); }}>
+        <AlertDialogContent className="bg-card border-destructive/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 size={18} />
+              Excluir música
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong className="text-foreground">{audioToDelete?.nome || 'esta música'}</strong> desta etapa? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setAudioToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteAudio}>
+              <Trash2 size={16} className="mr-1" /> Excluir
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
