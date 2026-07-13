@@ -70,6 +70,7 @@ const SectionDetail = () => {
     seekBackward,
     seekTo,
     setEQ,
+    setOnTrackEnded,
   } = useUniversalAudioPlayer();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
