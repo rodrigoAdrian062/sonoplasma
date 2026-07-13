@@ -576,24 +576,44 @@ export function PresentationMode({
 
         {/* Large Vertical Volume Control - desktop side */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center">
-          <div className="flex flex-col items-center gap-5 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-8 shadow-2xl shadow-black/40">
+          <div
+            className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-6 py-6 shadow-2xl shadow-black/40"
+            onWheel={handleVolumeWheel}
+            title="Role o mouse para ajustar o volume aos poucos"
+          >
             <span className="text-base font-mono text-gold font-bold">
               {Math.round(volume * 100)}%
             </span>
+            {/* Ajuste fino: aumentar aos poucos */}
+            <button
+              onClick={handleVolumeFineUp}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gold/10 hover:bg-gold/25 text-gold border border-gold/30 transition-colors"
+              title="Aumentar volume aos poucos (+2%)"
+            >
+              <Plus size={20} />
+            </button>
             <Slider
               value={[volume * 100]}
               onValueChange={(values) => onVolumeChange(values[0] / 100)}
               max={100}
-              step={5}
+              step={1}
               orientation="vertical"
-              className="h-64"
+              className="h-56"
             />
+            {/* Ajuste fino: diminuir aos poucos */}
+            <button
+              onClick={handleVolumeFineDown}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gold/10 hover:bg-gold/25 text-gold border border-gold/30 transition-colors"
+              title="Diminuir volume aos poucos (-2%)"
+            >
+              <Minus size={20} />
+            </button>
             <button
               onClick={handleToggleMute}
               className="text-gold hover:text-gold-glow transition-colors"
               title={isMuted ? 'Reativar som' : 'Silenciar'}
             >
-              {isMuted ? <VolumeX size={32} /> : <Volume2 size={32} />}
+              {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
             </button>
           </div>
         </div>
