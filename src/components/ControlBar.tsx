@@ -53,12 +53,6 @@ export function ControlBar({
             <ElegantClock size="sm" />
           </div>
         </div>
-        {/* EQ Panel */}
-        {showEQ && eq && onEQChange &&
-        <div className="mt-2 animate-fade-in">
-            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
-          </div>
-        }
         {/* Progress bar */}
         {activeStage && duration > 0 &&
         <div className="flex items-center gap-2 mt-2">
