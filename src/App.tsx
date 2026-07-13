@@ -28,7 +28,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AudioPlayerProvider>
-          <FocusModeProvider>
+          
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
@@ -85,8 +85,6 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
-          <FocusModeToggle />
-          </FocusModeProvider>
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
