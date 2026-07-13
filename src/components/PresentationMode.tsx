@@ -619,13 +619,6 @@ export function PresentationMode({
             </span>
           </div>
         )}
-
-        {/* EQ Panel */}
-        {showEQ && eq && onEQChange && (
-          <div className="w-full mt-2 animate-fade-in">
-            <EqualizerPanel eq={eq} onEQChange={onEQChange} />
-          </div>
-        )}
       </header>
 
       {/* Main Content - scrollable on mobile */}
