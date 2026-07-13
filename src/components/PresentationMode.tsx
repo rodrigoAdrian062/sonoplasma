@@ -129,6 +129,18 @@ export function PresentationMode({
   const [showVolume, setShowVolume] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
+  const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
+  const { deleteAudio } = useStageAudios();
+
+  const handleConfirmDeleteAudio = () => {
+    if (!audioToDelete) return;
+    if (currentStageId === audioToDelete.etapa_id && currentUrl === audioToDelete.audio_url) {
+      onStop();
+    }
+    deleteAudio.mutate({ id: audioToDelete.id, etapa_id: audioToDelete.etapa_id });
+    setSelectedAudioIndex(0);
+    setAudioToDelete(null);
+  };
 
   // Modo compacto: reduz textos e botões quando há muitas etapas/músicas
   const totalAudios = stages.reduce((n, s) => n + (audiosByStageId[s.id]?.length || 0), 0);
