@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX, Repeat, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
 
 function formatTime(seconds: number) {
   if (!seconds || !isFinite(seconds)) return '0:00';
