@@ -30,6 +30,7 @@ interface StageCardProps {
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
   onSeekTo?: (seconds: number) => void;
+  continuousPlayback?: boolean;
 }
 
 
