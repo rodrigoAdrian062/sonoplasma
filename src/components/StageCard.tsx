@@ -12,6 +12,7 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
+import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -59,6 +60,18 @@ export function StageCard({
   const [customTime, setCustomTime] = useState(defaultTime);
   const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
   const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
+  const { currentUrl } = useUniversalAudioPlayer();
+
+  // Sincroniza o índice destacado com o áudio que está realmente tocando
+  // (necessário para reprodução contínua quando avança automaticamente).
+  useEffect(() => {
+    if (!currentUrl) return;
+    const idx = audios.findIndex((a) => a.audio_url === currentUrl);
+    if (idx >= 0 && idx !== selectedAudioIndex) {
+      setSelectedAudioIndex(idx);
+    }
+  }, [currentUrl, audios, selectedAudioIndex]);
+
   const [showAudioList, setShowAudioList] = useState(audios.length >= 5);
   
   const timer = useTimer(() => {
