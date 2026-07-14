@@ -51,6 +51,7 @@ export function StageCard({
   onSeekForward,
   onSeekBackward,
   onSeekTo,
+  continuousPlayback = false,
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
