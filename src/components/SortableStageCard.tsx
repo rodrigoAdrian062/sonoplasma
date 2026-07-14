@@ -43,6 +43,7 @@ export function SortableStageCard({
   onSeekForward,
   onSeekBackward,
   onSeekTo,
+  continuousPlayback,
 }: SortableStageCardProps) {
 
   const {
@@ -89,6 +90,7 @@ export function SortableStageCard({
         onSeekForward={onSeekForward}
         onSeekBackward={onSeekBackward}
         onSeekTo={onSeekTo}
+        continuousPlayback={continuousPlayback}
       />
     </div>
   );
