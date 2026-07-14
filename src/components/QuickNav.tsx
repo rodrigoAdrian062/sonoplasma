@@ -68,19 +68,6 @@ export function QuickNav() {
         );
       })}
 
-      {currentName && (
-        <div
-          className="flex items-center gap-1.5 max-w-[9rem] rounded-full bg-gold/15 border border-gold/30 pl-2 pr-3 py-1 ml-0.5"
-          aria-label={`Tocando: ${currentName}`}
-        >
-          <Music2
-            size={14}
-            className={cn('shrink-0 text-gold', status === 'playing' && 'animate-pulse')}
-            aria-hidden="true"
-          />
-          <span className="text-[11px] font-medium text-gold truncate">{currentName}</span>
-        </div>
-      )}
     </nav>
   );
 }
