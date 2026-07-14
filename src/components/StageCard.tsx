@@ -297,8 +297,14 @@ export function StageCard({
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
                 </p>
                 {audios.length > 1 && (
-                  <p className="text-[10px] text-muted-foreground/70">
-                    {selectedAudioIndex + 1} de {audios.length} áudios
+                  <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                    <span>{selectedAudioIndex + 1} de {audios.length} áudios</span>
+                    {continuousPlayback && (
+                      <span className="inline-flex items-center gap-0.5 text-gold/90">
+                        <Repeat size={9} aria-hidden="true" />
+                        <span>contínuo</span>
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
