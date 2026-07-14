@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2 } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -30,6 +30,7 @@ interface StageCardProps {
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
   onSeekTo?: (seconds: number) => void;
+  continuousPlayback?: boolean;
 }
 
 
@@ -50,6 +51,7 @@ export function StageCard({
   onSeekForward,
   onSeekBackward,
   onSeekTo,
+  continuousPlayback = false,
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
@@ -295,8 +297,14 @@ export function StageCard({
                   {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
                 </p>
                 {audios.length > 1 && (
-                  <p className="text-[10px] text-muted-foreground/70">
-                    {selectedAudioIndex + 1} de {audios.length} áudios
+                  <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                    <span>{selectedAudioIndex + 1} de {audios.length} áudios</span>
+                    {continuousPlayback && (
+                      <span className="inline-flex items-center gap-0.5 text-gold/90">
+                        <Repeat size={9} aria-hidden="true" />
+                        <span>contínuo</span>
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -309,41 +317,52 @@ export function StageCard({
             {showAudioList && (
               <div className="mt-1.5 rounded-md border border-border/40 bg-secondary/30 overflow-hidden max-h-48 overflow-y-auto w-full">
                 {audios.map((audio, index) => (
-                  <div
-                    key={audio.id}
-                    onClick={() => handleSelectAudio(index)}
-                    className={cn(
-                      'w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer overflow-hidden',
-                      index === selectedAudioIndex
-                        ? 'bg-gold/10 text-gold'
-                        : 'hover:bg-secondary/60 text-foreground'
-                    )}
-                  >
-                    <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
-                    <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
-                    <button
-                      onClick={(e) => handlePlayAudio(index, e)}
+                  <div key={audio.id}>
+                    <div
+                      onClick={() => handleSelectAudio(index)}
                       className={cn(
-                        'p-1 rounded transition-colors shrink-0',
-                        isPlaying && index === selectedAudioIndex
-                          ? 'text-gold bg-gold/15'
-                          : 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'
+                        'w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors cursor-pointer overflow-hidden',
+                        index === selectedAudioIndex
+                          ? 'bg-gold/10 text-gold'
+                          : 'hover:bg-secondary/60 text-foreground'
                       )}
-                      title="Tocar áudio"
                     >
-                      {isPlaying && index === selectedAudioIndex ? (
-                        <Pause size={13} fill="currentColor" />
-                      ) : (
-                        <Play size={13} fill="currentColor" />
+                      <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
+                      <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
+                      {continuousPlayback && isPlaying && index === selectedAudioIndex && index < audios.length - 1 && (
+                        <span className="text-[9px] uppercase tracking-wider text-gold/80 shrink-0">
+                          a seguir ↓
+                        </span>
                       )}
-                    </button>
-                    <button
-                      onClick={(e) => handleDeleteAudio(audio.id, e)}
-                      className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10 shrink-0"
-                      title="Remover áudio"
-                    >
-                      <X size={12} />
-                    </button>
+                      <button
+                        onClick={(e) => handlePlayAudio(index, e)}
+                        className={cn(
+                          'p-1 rounded transition-colors shrink-0',
+                          isPlaying && index === selectedAudioIndex
+                            ? 'text-gold bg-gold/15'
+                            : 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'
+                        )}
+                        title="Tocar áudio"
+                      >
+                        {isPlaying && index === selectedAudioIndex ? (
+                          <Pause size={13} fill="currentColor" />
+                        ) : (
+                          <Play size={13} fill="currentColor" />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteAudio(audio.id, e)}
+                        className="p-0.5 text-muted-foreground/40 hover:text-destructive transition-colors rounded hover:bg-destructive/10 shrink-0"
+                        title="Remover áudio"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                    {continuousPlayback && index < audios.length - 1 && (
+                      <div className="flex items-center justify-center py-0.5 text-gold/60" aria-hidden="true">
+                        <ArrowDown size={10} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

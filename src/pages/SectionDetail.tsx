@@ -425,6 +425,7 @@ const SectionDetail = () => {
                       onSeekForward={() => seekForward()}
                       onSeekBackward={() => seekBackward()}
                       onSeekTo={seekTo}
+                      continuousPlayback={!!(section as any)?.reproducao_continua}
                     />
                   </div>
                 ))}
