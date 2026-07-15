@@ -74,6 +74,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const wasAutoPausedRef = useRef(false);
   const isDuckingRef = useRef(false);
   const fadeRafRef = useRef<number | null>(null);
+  const playlistRef = useRef<BackgroundTrack[]>(playlist);
+  const currentIndexRef = useRef(currentIndex);
+  useEffect(() => { playlistRef.current = playlist; }, [playlist]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
@@ -84,13 +88,19 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     a.volume = volume;
     audioRef.current = a;
     const handleEnded = () => {
-      if (playlist.length === 0) return;
-      if (playlist.length === 1) {
-        // Loop infinito da mesma faixa
+      const pl = playlistRef.current;
+      if (pl.length === 0) return;
+      if (pl.length === 1) {
         try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
         return;
       }
-      setCurrentIndex((idx) => (idx + 1) % playlist.length);
+      const nextIdx = (currentIndexRef.current + 1) % pl.length;
+      setCurrentIndex(nextIdx);
+      const track = pl[nextIdx];
+      if (track) {
+        a.src = track.audio_url;
+        a.play().catch(() => {});
+      }
     };
     a.addEventListener('ended', handleEnded);
     return () => {
