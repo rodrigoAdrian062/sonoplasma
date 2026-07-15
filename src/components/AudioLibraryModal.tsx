@@ -239,7 +239,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-2xl h-[85vh] max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Library className="text-gold" size={20} />
@@ -399,19 +399,19 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
           {/* Search + folder chips (selection mode) */}
           {selectionMode && (
-            <div className="space-y-2">
+            <div className="space-y-2 shrink-0">
               <Input
                 placeholder="Buscar áudio pelo nome..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {folders.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
                   <button
                     type="button"
                     onClick={() => setFolderFilter('all')}
                     className={cn(
-                      'text-xs px-2.5 py-1 rounded-full border transition-colors',
+                      'shrink-0 text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap',
                       folderFilter === 'all'
                         ? 'bg-gold/20 border-gold/50 text-gold'
                         : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
@@ -423,7 +423,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     type="button"
                     onClick={() => setFolderFilter('none')}
                     className={cn(
-                      'text-xs px-2.5 py-1 rounded-full border transition-colors',
+                      'shrink-0 text-xs px-2.5 py-1 rounded-full border transition-colors whitespace-nowrap',
                       folderFilter === 'none'
                         ? 'bg-gold/20 border-gold/50 text-gold'
                         : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
@@ -437,7 +437,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       type="button"
                       onClick={() => setFolderFilter(f.id)}
                       className={cn(
-                        'text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1',
+                        'shrink-0 text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 whitespace-nowrap',
                         folderFilter === f.id
                           ? 'bg-gold/20 border-gold/50 text-gold'
                           : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
@@ -451,6 +451,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
               )}
             </div>
           )}
+
 
           {/* Audio List */}
           <ScrollArea className="flex-1 min-h-0">
