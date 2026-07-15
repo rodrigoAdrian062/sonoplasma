@@ -84,7 +84,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     a.volume = volume;
     audioRef.current = a;
     const handleEnded = () => {
-      setCurrentIndex((idx) => (playlist.length > 0 ? (idx + 1) % playlist.length : 0));
+      if (playlist.length === 0) return;
+      if (playlist.length === 1) {
+        // Loop infinito da mesma faixa
+        try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
+        return;
+      }
+      setCurrentIndex((idx) => (idx + 1) % playlist.length);
     };
     a.addEventListener('ended', handleEnded);
     return () => {
