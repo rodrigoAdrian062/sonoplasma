@@ -85,11 +85,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const fadeRafRef = useRef<number | null>(null);
   const playlistRef = useRef<BackgroundTrack[]>(playlist);
   const currentIndexRef = useRef(currentIndex);
-  const isPlayingRef = useRef(isPlaying);
   const playRequestRef = useRef(0);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
