@@ -395,9 +395,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     const initPlayer = () => {
       if (!(window as any).YT || !(window as any).YT.Player) {
-        setTimeout(initPlayer, 100);
+        ytInitTimeoutRef.current = window.setTimeout(initPlayer, 100);
         return;
       }
+      ytInitTimeoutRef.current = null;
       ytPlayerRef.current = new (window as any).YT.Player('yt-player', {
         height: '1',
         width: '1',
