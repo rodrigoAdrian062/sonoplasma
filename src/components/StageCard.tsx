@@ -59,6 +59,9 @@ export function StageCard({
   const defaultTime = stage.tempo_padrao || 0;
   const [customTime, setCustomTime] = useState(defaultTime);
   const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
+  const [loopUntilTimer, setLoopUntilTimer] = useState(false);
+  const loopUntilTimerRef = useRef(loopUntilTimer);
+  useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
   const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
   const { currentUrl } = useUniversalAudioPlayer();
 
