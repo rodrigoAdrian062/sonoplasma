@@ -123,7 +123,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
   useEffect(() => { localStorage.setItem(FADE_KEY, String(fadeMs)); }, [fadeMs]);
 
-  // Load current track src
+  // Load current track src when track changes (does NOT touch playback state)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -131,12 +131,14 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     if (!track) {
       a.pause();
       a.removeAttribute('src');
-      setIsPlaying(false);
       return;
     }
-    if (a.src !== track.audio_url) a.src = track.audio_url;
-    if (isPlaying) a.play().catch(() => setIsPlaying(false));
-  }, [currentIndex, playlist, isPlaying]);
+    if (a.src !== track.audio_url) {
+      a.src = track.audio_url;
+      a.load();
+    }
+  }, [currentIndex, playlist]);
+
 
   // Fade helper
   const fadeTo = useCallback((target: number, duration: number, onDone?: () => void) => {
