@@ -23,6 +23,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,10 +39,25 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentFolder = folders.find(f => f.id === currentFolderId);
-  const filteredAudios = useMemo(() => 
-    audios.filter(a => (a as any).pasta_id === currentFolderId),
-    [audios, currentFolderId]
-  );
+  const filteredAudios = useMemo(() => {
+    if (selectionMode) {
+      // Em modo seleção mostramos TUDO com filtro por pasta + busca (sem navegação em pastas)
+      const term = searchTerm.trim().toLowerCase();
+      return audios.filter((a) => {
+        if (folderFilter === 'all') {
+          // ok
+        } else if (folderFilter === 'none') {
+          if ((a as any).pasta_id) return false;
+        } else if ((a as any).pasta_id !== folderFilter) {
+          return false;
+        }
+        if (!term) return true;
+        return a.nome.toLowerCase().includes(term);
+      });
+    }
+    return audios.filter(a => (a as any).pasta_id === currentFolderId);
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter]);
+
 
   const isYouTubeUrl = (url: string) => {
     return url.includes('youtube.com') || url.includes('youtu.be');
