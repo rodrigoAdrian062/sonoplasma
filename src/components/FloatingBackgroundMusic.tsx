@@ -148,15 +148,16 @@ export function FloatingBackgroundMusic() {
             aria-label="Expandir player de música de fundo"
             title="Música de fundo"
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md shadow-lg transition-all hover:scale-110',
+              'flex h-10 w-10 items-center justify-center rounded-full border-2 backdrop-blur-xl shadow-lg shadow-black/40 ring-1 ring-gold/20 transition-all hover:scale-110',
               isPresentation
-                ? 'bg-black/50 border-gold/30 text-white'
-                : 'bg-secondary/80 border-border/50 text-foreground',
-              isPlaying && 'text-gold border-gold/50'
+                ? 'bg-black/70 border-gold/60 text-white'
+                : 'bg-background/85 border-gold/50 text-foreground',
+              isPlaying && 'text-gold border-gold shadow-gold/30'
             )}
           >
-            <Music2 size={15} className={cn(isPlaying && 'animate-pulse')} />
+            <Music2 size={16} className={cn(isPlaying && 'animate-pulse')} />
           </button>
+
         ) : (
           <div className="flex items-center gap-1 animate-scale-in">
             <BackgroundMusicPlayer variant={isPresentation ? 'presentation' : 'header'} compact />
