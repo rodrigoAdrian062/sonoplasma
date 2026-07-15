@@ -114,6 +114,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const midFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleFilterRef = useRef<BiquadFilterNode | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  const ytInitTimeoutRef = useRef<number | null>(null);
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
@@ -320,6 +321,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [isYouTube, status]);
 
   const stopCurrentPlayback = useCallback(() => {
+    if (ytInitTimeoutRef.current !== null) {
+      clearTimeout(ytInitTimeoutRef.current);
+      ytInitTimeoutRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -390,9 +395,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     const initPlayer = () => {
       if (!(window as any).YT || !(window as any).YT.Player) {
-        setTimeout(initPlayer, 100);
+        ytInitTimeoutRef.current = window.setTimeout(initPlayer, 100);
         return;
       }
+      ytInitTimeoutRef.current = null;
       ytPlayerRef.current = new (window as any).YT.Player('yt-player', {
         height: '1',
         width: '1',
