@@ -29,6 +29,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AudioPlayerProvider>
+          <BackgroundMusicProvider>
+          
           
           <Routes>
             <Route path="/auth" element={<Auth />} />
