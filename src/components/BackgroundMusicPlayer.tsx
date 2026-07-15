@@ -22,6 +22,10 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     volume,
     autoPauseEnabled,
     wasAutoPaused,
+    autoMode,
+    duckVolume,
+    fadeMs,
+    isDucking,
     addTrack,
     removeTrack,
     play,
@@ -30,6 +34,9 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     prev,
     setVolume,
     setAutoPauseEnabled,
+    setAutoMode,
+    setDuckVolume,
+    setFadeMs,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
