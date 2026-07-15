@@ -422,6 +422,21 @@ export function StageCard({
                   className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
                 />
                 <span className="text-xs text-muted-foreground/60">min</span>
+                <button
+                  type="button"
+                  onClick={() => setLoopUntilTimer((v) => !v)}
+                  className={cn(
+                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border',
+                    loopUntilTimer
+                      ? 'bg-gold/15 border-gold/40 text-gold'
+                      : 'bg-secondary/40 border-border/40 text-muted-foreground/70 hover:text-foreground hover:border-gold/30'
+                  )}
+                  title="Repete a música em loop até o tempo do cronômetro acabar"
+                  aria-pressed={loopUntilTimer}
+                >
+                  <Repeat size={10} aria-hidden="true" />
+                  Repetir até o tempo
+                </button>
               </>
             )}
             {(timer.isRunning || timer.isPaused) && (
