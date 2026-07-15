@@ -48,14 +48,16 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     <>
       <div
         className={cn(
-          'flex items-center gap-1 rounded-full border backdrop-blur-md transition-colors',
+          'flex items-center gap-1 rounded-full border-2 backdrop-blur-xl transition-colors shadow-lg shadow-black/40 ring-1 ring-gold/20',
           isPresentation
-            ? 'bg-black/50 border-gold/30 text-white px-2 py-1'
-            : 'bg-secondary/60 border-border/50 text-foreground px-1.5 py-0.5',
+            ? 'bg-black/70 border-gold/60 text-white px-2 py-1'
+            : 'bg-background/85 border-gold/50 text-foreground px-1.5 py-0.5',
+          isPlaying && 'border-gold shadow-gold/20',
           compact && 'scale-90'
         )}
         title="Música de fundo"
       >
+
         <Popover open={expanded} onOpenChange={setExpanded}>
           <PopoverTrigger asChild>
             <button
