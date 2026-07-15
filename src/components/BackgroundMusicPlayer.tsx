@@ -141,19 +141,76 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </span>
             </div>
 
-            {/* Auto-pause toggle */}
-            <label className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-muted-foreground">
-                Pausar ao iniciar etapa
-                {wasAutoPaused && (
-                  <span className="ml-1 text-gold/80">(pausado)</span>
-                )}
-              </span>
-              <Switch
-                checked={autoPauseEnabled}
-                onCheckedChange={setAutoPauseEnabled}
-              />
-            </label>
+            {/* Auto behavior */}
+            <div className="space-y-2 pt-2 border-t border-border/40">
+              <label className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-muted-foreground">
+                  Ao iniciar etapa
+                  {wasAutoPaused && <span className="ml-1 text-gold/80">(pausado)</span>}
+                  {isDucking && <span className="ml-1 text-gold/80">(abaixado)</span>}
+                </span>
+                <Switch checked={autoPauseEnabled} onCheckedChange={setAutoPauseEnabled} />
+              </label>
+
+              {autoPauseEnabled && (
+                <>
+                  {/* Mode selector */}
+                  <div className="flex gap-1 p-0.5 rounded-md bg-secondary/50">
+                    <button
+                      onClick={() => setAutoMode('pause')}
+                      className={cn(
+                        'flex-1 text-[10px] py-1 px-2 rounded transition-colors',
+                        autoMode === 'pause' ? 'bg-gold/20 text-gold' : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      Pausar
+                    </button>
+                    <button
+                      onClick={() => setAutoMode('duck')}
+                      className={cn(
+                        'flex-1 text-[10px] py-1 px-2 rounded transition-colors',
+                        autoMode === 'duck' ? 'bg-gold/20 text-gold' : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      Abaixar volume
+                    </button>
+                  </div>
+
+                  {/* Duck volume — only in duck mode */}
+                  {autoMode === 'duck' && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Volume abaixado</span>
+                        <span className="font-mono">{Math.round(duckVolume * 100)}%</span>
+                      </div>
+                      <Slider
+                        value={[Math.round(duckVolume * 100)]}
+                        min={0}
+                        max={80}
+                        step={1}
+                        onValueChange={([v]) => setDuckVolume(v / 100)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Fade duration */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>Tempo de fade</span>
+                      <span className="font-mono">{(fadeMs / 1000).toFixed(1)}s</span>
+                    </div>
+                    <Slider
+                      value={[fadeMs]}
+                      min={0}
+                      max={3000}
+                      step={100}
+                      onValueChange={([v]) => setFadeMs(v)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
           </PopoverContent>
         </Popover>
 
