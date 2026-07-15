@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import UserManagement from "./pages/UserManagement";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
+import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
+          <FloatingBackgroundMusic />
           </BackgroundMusicProvider>
           </AudioPlayerProvider>
         </AuthProvider>
