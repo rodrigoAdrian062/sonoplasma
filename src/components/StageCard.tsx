@@ -160,8 +160,14 @@ export function StageCard({
 
   const prevActiveRef = useRef(false);
   useEffect(() => {
-    // Only reset timer when transitioning from active to idle (not on initial mount)
+    // Only handle transitions from active to idle (not on initial mount)
     if (prevActiveRef.current && !isPlaying && !isPaused && timer.isRunning) {
+      // Repetir a música até o tempo do cronômetro terminar
+      if (loopUntilTimerRef.current && currentAudio) {
+        onPlay(currentAudio.audio_url);
+        prevActiveRef.current = true;
+        return;
+      }
       timer.reset();
     }
     prevActiveRef.current = isPlaying || isPaused;
