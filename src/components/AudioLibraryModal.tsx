@@ -17,9 +17,15 @@ interface AudioLibraryModalProps {
   onClose: () => void;
   onSelectAudio?: (audio: { nome: string; audio_url: string }) => void;
   selectionMode?: boolean;
+  audioFilter?: (audio: { nome: string; audio_url: string; tipo?: string | null }) => boolean;
+  emptySelectionMessage?: string;
 }
 
-export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false }: AudioLibraryModalProps) {
+function getAudioFolderId(audio: { pasta_id?: string | null }) {
+  return audio.pasta_id ?? null;
+}
+
+export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -47,16 +53,17 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
         if (folderFilter === 'all') {
           // ok
         } else if (folderFilter === 'none') {
-          if ((a as any).pasta_id) return false;
-        } else if ((a as any).pasta_id !== folderFilter) {
+          if (getAudioFolderId(a)) return false;
+        } else if (getAudioFolderId(a) !== folderFilter) {
           return false;
         }
+        if (audioFilter && !audioFilter(a)) return false;
         if (!term) return true;
         return a.nome.toLowerCase().includes(term);
       });
     }
-    return audios.filter(a => (a as any).pasta_id === currentFolderId);
-  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter]);
+    return audios.filter(a => getAudioFolderId(a) === currentFolderId && (!audioFilter || audioFilter(a)));
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, audioFilter]);
 
 
   const isYouTubeUrl = (url: string) => {
@@ -429,7 +436,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    Sem pasta ({audios.filter(a => !(a as any).pasta_id).length})
+                    Sem pasta ({audios.filter(a => !getAudioFolderId(a)).length})
                   </button>
                   {folders.map((f) => (
                     <button
@@ -444,7 +451,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       )}
                     >
                       <Folder size={11} />
-                      {f.nome} ({audios.filter(a => (a as any).pasta_id === f.id).length})
+                      {f.nome} ({audios.filter(a => getAudioFolderId(a) === f.id).length})
                     </button>
                   ))}
                 </div>
@@ -462,7 +469,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             ) : filteredAudios.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Music size={40} className="mx-auto mb-2 opacity-50" />
-                <p>{selectionMode ? 'Nenhum áudio encontrado' : (currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca')}</p>
+                <p>{selectionMode ? (emptySelectionMessage || 'Nenhum áudio encontrado') : (currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca')}</p>
                 <p className="text-xs mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
               </div>
 

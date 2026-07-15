@@ -13,6 +13,19 @@ interface BackgroundMusicPlayerProps {
   compact?: boolean;
 }
 
+function isPlayableBackgroundAudio(audio: { audio_url: string; tipo?: string | null }) {
+  const url = (audio.audio_url || '').toLowerCase();
+  const type = (audio.tipo || '').toLowerCase();
+  return !(
+    type === 'youtube' ||
+    type === 'spotify' ||
+    url.includes('youtube.com') ||
+    url.includes('youtu.be') ||
+    url.includes('open.spotify.com') ||
+    url.startsWith('spotify:')
+  );
+}
+
 export function BackgroundMusicPlayer({ variant = 'header', compact = false }: BackgroundMusicPlayerProps) {
   const {
     playlist,
@@ -239,6 +252,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
         isOpen={libOpen}
         onClose={() => setLibOpen(false)}
         selectionMode
+        audioFilter={isPlayableBackgroundAudio}
+        emptySelectionMessage="Nenhum arquivo de áudio encontrado. Envie um MP3/áudio na biblioteca para usar como música de fundo."
         onSelectAudio={(audio) => {
           addTrack({
             id: crypto.randomUUID(),
