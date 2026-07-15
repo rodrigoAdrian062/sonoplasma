@@ -114,6 +114,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const midFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleFilterRef = useRef<BiquadFilterNode | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  const ytInitTimeoutRef = useRef<number | null>(null);
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
