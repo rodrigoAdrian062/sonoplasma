@@ -56,7 +56,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as BackgroundTrack[];
       return Array.isArray(saved) ? saved.filter((track) => track?.audio_url && !isStreamingUrl(track.audio_url)) : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
