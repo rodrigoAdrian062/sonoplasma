@@ -17,9 +17,11 @@ interface AudioLibraryModalProps {
   onClose: () => void;
   onSelectAudio?: (audio: { nome: string; audio_url: string }) => void;
   selectionMode?: boolean;
+  audioFilter?: (audio: { nome: string; audio_url: string; tipo?: string | null }) => boolean;
+  emptySelectionMessage?: string;
 }
 
-export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false }: AudioLibraryModalProps) {
+export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -51,12 +53,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
         } else if ((a as any).pasta_id !== folderFilter) {
           return false;
         }
+        if (audioFilter && !audioFilter(a)) return false;
         if (!term) return true;
         return a.nome.toLowerCase().includes(term);
       });
     }
-    return audios.filter(a => (a as any).pasta_id === currentFolderId);
-  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter]);
+    return audios.filter(a => (a as any).pasta_id === currentFolderId && (!audioFilter || audioFilter(a)));
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, audioFilter]);
 
 
   const isYouTubeUrl = (url: string) => {
@@ -462,7 +465,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             ) : filteredAudios.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Music size={40} className="mx-auto mb-2 opacity-50" />
-                <p>{selectionMode ? 'Nenhum áudio encontrado' : (currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca')}</p>
+                <p>{selectionMode ? (emptySelectionMessage || 'Nenhum áudio encontrado') : (currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca')}</p>
                 <p className="text-xs mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
               </div>
 
