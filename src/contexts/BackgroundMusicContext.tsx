@@ -103,7 +103,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       const pl = playlistRef.current;
       if (pl.length === 0) return;
       if (pl.length === 1) {
-        try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
+        try {
+          a.currentTime = 0;
+          a.play().catch(() => undefined);
+        } catch {
+          setIsPlaying(false);
+        }
         return;
       }
       const nextIdx = (currentIndexRef.current + 1) % pl.length;
@@ -112,7 +117,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       const track = pl[nextIdx];
       if (track) {
         a.src = track.audio_url;
-        a.play().catch(() => {});
+        a.play().catch(() => undefined);
       }
     };
     const handlePlay = () => setIsPlaying(true);
@@ -338,7 +343,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         setCurrentIndex(existingIndex);
         return prev;
       }
-      return [...prev, t];
+      const next = [...prev, t];
+      currentIndexRef.current = next.length - 1;
+      setCurrentIndex(next.length - 1);
+      return next;
     });
   }, []);
 
