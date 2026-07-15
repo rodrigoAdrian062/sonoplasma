@@ -7,6 +7,8 @@ export interface BackgroundTrack {
   audio_url: string;
 }
 
+export type AutoDuckMode = 'pause' | 'duck';
+
 interface BackgroundMusicContextValue {
   playlist: BackgroundTrack[];
   currentIndex: number;
@@ -15,6 +17,10 @@ interface BackgroundMusicContextValue {
   volume: number;
   autoPauseEnabled: boolean;
   wasAutoPaused: boolean;
+  autoMode: AutoDuckMode;
+  duckVolume: number; // 0..1 target volume when ducking
+  fadeMs: number;    // fade duration in ms
+  isDucking: boolean;
   addTrack: (t: BackgroundTrack) => void;
   removeTrack: (id: string) => void;
   clearPlaylist: () => void;
@@ -25,11 +31,17 @@ interface BackgroundMusicContextValue {
   prev: () => void;
   setVolume: (v: number) => void;
   setAutoPauseEnabled: (v: boolean) => void;
+  setAutoMode: (m: AutoDuckMode) => void;
+  setDuckVolume: (v: number) => void;
+  setFadeMs: (v: number) => void;
 }
 
 const STORAGE_KEY = 'bg-music-playlist-v1';
 const VOLUME_KEY = 'bg-music-volume-v1';
 const AUTO_KEY = 'bg-music-auto-pause-v1';
+const MODE_KEY = 'bg-music-auto-mode-v1';
+const DUCK_KEY = 'bg-music-duck-volume-v1';
+const FADE_KEY = 'bg-music-fade-ms-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
@@ -46,10 +58,25 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [autoPauseEnabled, setAutoPauseEnabledState] = useState<boolean>(() => {
     return localStorage.getItem(AUTO_KEY) !== 'false';
   });
+  const [autoMode, setAutoModeState] = useState<AutoDuckMode>(() => {
+    const m = localStorage.getItem(MODE_KEY);
+    return m === 'duck' ? 'duck' : 'pause';
+  });
+  const [duckVolume, setDuckVolumeState] = useState<number>(() => {
+    const v = parseFloat(localStorage.getItem(DUCK_KEY) || '0.08');
+    return isNaN(v) ? 0.08 : v;
+  });
+  const [fadeMs, setFadeMsState] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem(FADE_KEY) || '800', 10);
+    return isNaN(v) ? 800 : v;
+  });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
+  const [isDucking, setIsDucking] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wasAutoPausedRef = useRef(false);
+  const isDuckingRef = useRef(false);
+  const fadeRafRef = useRef<number | null>(null);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
@@ -60,33 +87,30 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     a.volume = volume;
     audioRef.current = a;
     const handleEnded = () => {
-      // Next track (loop playlist)
-      setCurrentIndex((idx) => {
-        const next = playlist.length > 0 ? (idx + 1) % playlist.length : 0;
-        return next;
-      });
+      setCurrentIndex((idx) => (playlist.length > 0 ? (idx + 1) % playlist.length : 0));
     };
     a.addEventListener('ended', handleEnded);
     return () => {
       a.removeEventListener('ended', handleEnded);
       a.pause();
+      if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist));
-  }, [playlist]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist)); }, [playlist]);
   useEffect(() => {
     localStorage.setItem(VOLUME_KEY, String(volume));
-    if (audioRef.current) audioRef.current.volume = volume;
+    // If not ducking, sync element volume directly
+    if (audioRef.current && !isDuckingRef.current) audioRef.current.volume = volume;
   }, [volume]);
-  useEffect(() => {
-    localStorage.setItem(AUTO_KEY, String(autoPauseEnabled));
-  }, [autoPauseEnabled]);
+  useEffect(() => { localStorage.setItem(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
+  useEffect(() => { localStorage.setItem(MODE_KEY, autoMode); }, [autoMode]);
+  useEffect(() => { localStorage.setItem(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
+  useEffect(() => { localStorage.setItem(FADE_KEY, String(fadeMs)); }, [fadeMs]);
 
-  // Load current track src when index/playlist changes
+  // Load current track src
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -97,34 +121,81 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       return;
     }
-    if (a.src !== track.audio_url) {
-      a.src = track.audio_url;
-    }
-    if (isPlaying) {
-      a.play().catch(() => setIsPlaying(false));
-    }
+    if (a.src !== track.audio_url) a.src = track.audio_url;
+    if (isPlaying) a.play().catch(() => setIsPlaying(false));
   }, [currentIndex, playlist, isPlaying]);
 
-  // Auto-pause when main player starts; resume when main goes idle
+  // Fade helper
+  const fadeTo = useCallback((target: number, duration: number, onDone?: () => void) => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+    if (duration <= 0) {
+      a.volume = Math.max(0, Math.min(1, target));
+      onDone?.();
+      return;
+    }
+    const start = a.volume;
+    const delta = target - start;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / duration);
+      a.volume = Math.max(0, Math.min(1, start + delta * p));
+      if (p < 1) {
+        fadeRafRef.current = requestAnimationFrame(step);
+      } else {
+        fadeRafRef.current = null;
+        onDone?.();
+      }
+    };
+    fadeRafRef.current = requestAnimationFrame(step);
+  }, []);
+
+  // Auto pause/duck on main player status
   useEffect(() => {
     if (!autoPauseEnabled) return;
     const a = audioRef.current;
     if (!a) return;
+
     if (mainStatus === 'playing') {
-      if (isPlaying) {
-        a.pause();
-        setIsPlaying(false);
-        wasAutoPausedRef.current = true;
-        setWasAutoPaused(true);
+      if (autoMode === 'duck') {
+        if (isPlaying && !isDuckingRef.current) {
+          isDuckingRef.current = true;
+          setIsDucking(true);
+          fadeTo(duckVolume, fadeMs);
+        }
+      } else {
+        // pause mode: fade out then pause
+        if (isPlaying) {
+          fadeTo(0, fadeMs, () => {
+            a.pause();
+            setIsPlaying(false);
+            wasAutoPausedRef.current = true;
+            setWasAutoPaused(true);
+            a.volume = volume; // restore for later
+          });
+        }
       }
     } else if (mainStatus === 'idle') {
-      if (wasAutoPausedRef.current && playlist.length > 0) {
-        wasAutoPausedRef.current = false;
-        setWasAutoPaused(false);
-        a.play().then(() => setIsPlaying(true)).catch(() => {});
+      if (autoMode === 'duck') {
+        if (isDuckingRef.current) {
+          isDuckingRef.current = false;
+          setIsDucking(false);
+          fadeTo(volume, fadeMs);
+        }
+      } else {
+        if (wasAutoPausedRef.current && playlist.length > 0) {
+          wasAutoPausedRef.current = false;
+          setWasAutoPaused(false);
+          a.volume = 0;
+          a.play().then(() => {
+            setIsPlaying(true);
+            fadeTo(volume, fadeMs);
+          }).catch(() => {});
+        }
       }
     }
-  }, [mainStatus, autoPauseEnabled, isPlaying, playlist.length]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, fadeTo]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
@@ -134,7 +205,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const track = playlist[targetIdx];
     if (!track) return;
     if (a.src !== track.audio_url) a.src = track.audio_url;
-    a.volume = volume;
+    a.volume = isDuckingRef.current ? duckVolume : volume;
     a.play().then(() => {
       setIsPlaying(true);
       wasAutoPausedRef.current = false;
@@ -143,7 +214,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       console.warn('BG music play failed:', err);
       setIsPlaying(false);
     });
-  }, [playlist, currentIndex, volume]);
+  }, [playlist, currentIndex, volume, duckVolume]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -152,10 +223,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setWasAutoPaused(false);
   }, []);
 
-  const toggle = useCallback(() => {
-    if (isPlaying) pause();
-    else play();
-  }, [isPlaying, pause, play]);
+  const toggle = useCallback(() => { if (isPlaying) pause(); else play(); }, [isPlaying, pause, play]);
 
   const next = useCallback(() => {
     if (playlist.length === 0) return;
@@ -201,13 +269,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setVolume = useCallback((v: number) => {
-    const clamped = Math.max(0, Math.min(1, v));
-    setVolumeState(clamped);
+    setVolumeState(Math.max(0, Math.min(1, v)));
   }, []);
-
-  const setAutoPauseEnabled = useCallback((v: boolean) => {
-    setAutoPauseEnabledState(v);
-  }, []);
+  const setAutoPauseEnabled = useCallback((v: boolean) => setAutoPauseEnabledState(v), []);
+  const setAutoMode = useCallback((m: AutoDuckMode) => setAutoModeState(m), []);
+  const setDuckVolume = useCallback((v: number) => setDuckVolumeState(Math.max(0, Math.min(1, v))), []);
+  const setFadeMs = useCallback((v: number) => setFadeMsState(Math.max(0, Math.min(5000, Math.round(v)))), []);
 
   const value: BackgroundMusicContextValue = {
     playlist,
@@ -217,6 +284,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     volume,
     autoPauseEnabled,
     wasAutoPaused,
+    autoMode,
+    duckVolume,
+    fadeMs,
+    isDucking,
     addTrack,
     removeTrack,
     clearPlaylist,
@@ -227,6 +298,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     prev,
     setVolume,
     setAutoPauseEnabled,
+    setAutoMode,
+    setDuckVolume,
+    setFadeMs,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
