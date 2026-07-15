@@ -107,6 +107,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         return;
       }
       const nextIdx = (currentIndexRef.current + 1) % pl.length;
+      currentIndexRef.current = nextIdx;
       setCurrentIndex(nextIdx);
       const track = pl[nextIdx];
       if (track) {
@@ -267,6 +268,17 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       a.load();
     }
     a.volume = isDuckingRef.current ? duckVolume : volume;
+    if (mainStatus === 'playing' && autoPauseEnabled && autoMode === 'pause') {
+      a.pause();
+      wasAutoPausedRef.current = true;
+      setWasAutoPaused(true);
+      setIsPlaying(false);
+      toast({
+        title: 'Música de fundo pausada',
+        description: 'Ela volta automaticamente quando a música da etapa parar.',
+      });
+      return;
+    }
     a.play().then(() => {
       if (requestId !== playRequestRef.current) return;
       setIsPlaying(true);
@@ -282,7 +294,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         variant: 'destructive',
       });
     });
-  }, [playlist, currentIndex, volume, duckVolume]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode]);
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
@@ -320,7 +332,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       return;
     }
     setPlaylist((prev) => {
-      if (prev.some((x) => x.audio_url === t.audio_url)) return prev;
+      const existingIndex = prev.findIndex((x) => x.audio_url === t.audio_url);
+      if (existingIndex >= 0) {
+        currentIndexRef.current = existingIndex;
+        setCurrentIndex(existingIndex);
+        return prev;
+      }
       return [...prev, t];
     });
   }, []);
