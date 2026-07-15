@@ -88,6 +88,7 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
+          </BackgroundMusicProvider>
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
