@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { toast } from '@/hooks/use-toast';
 
 export interface BackgroundTrack {
   id: string;
@@ -45,6 +46,11 @@ const FADE_KEY = 'bg-music-fade-ms-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
+function isStreamingUrl(url: string): boolean {
+  const u = (url || '').toLowerCase();
+  return u.includes('youtube.com') || u.includes('youtu.be') || u.includes('open.spotify.com') || u.startsWith('spotify:');
+}
+
 export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [playlist, setPlaylist] = useState<BackgroundTrack[]>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
@@ -76,8 +82,11 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const fadeRafRef = useRef<number | null>(null);
   const playlistRef = useRef<BackgroundTrack[]>(playlist);
   const currentIndexRef = useRef(currentIndex);
+  const isPlayingRef = useRef(isPlaying);
+  const playRequestRef = useRef(0);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
@@ -104,14 +113,24 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     };
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleError = () => {
+      setIsPlaying(false);
+      toast({
+        title: 'Não foi possível tocar a música de fundo',
+        description: 'Use um arquivo de áudio da biblioteca. Links do YouTube ou Spotify não tocam neste player.',
+        variant: 'destructive',
+      });
+    };
     a.addEventListener('ended', handleEnded);
     a.addEventListener('play', handlePlay);
     a.addEventListener('pause', handlePause);
+    a.addEventListener('error', handleError);
 
     return () => {
       a.removeEventListener('ended', handleEnded);
       a.removeEventListener('play', handlePlay);
       a.removeEventListener('pause', handlePause);
+      a.removeEventListener('error', handleError);
       a.pause();
       if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
     };
@@ -224,22 +243,46 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const a = audioRef.current;
     if (!a || playlist.length === 0) return;
     const targetIdx = index !== undefined ? index : currentIndex;
-    if (index !== undefined) setCurrentIndex(index);
+    if (index !== undefined) {
+      currentIndexRef.current = index;
+      setCurrentIndex(index);
+    }
     const track = playlist[targetIdx];
     if (!track) return;
-    if (a.src !== track.audio_url) a.src = track.audio_url;
+    if (isStreamingUrl(track.audio_url)) {
+      toast({
+        title: 'Música incompatível com o player de fundo',
+        description: 'Escolha um arquivo de áudio enviado à biblioteca. YouTube e Spotify não funcionam como fundo.',
+        variant: 'destructive',
+      });
+      setIsPlaying(false);
+      return;
+    }
+    const requestId = ++playRequestRef.current;
+    if (a.src !== track.audio_url) {
+      a.src = track.audio_url;
+      a.load();
+    }
     a.volume = isDuckingRef.current ? duckVolume : volume;
     a.play().then(() => {
+      if (requestId !== playRequestRef.current) return;
       setIsPlaying(true);
       wasAutoPausedRef.current = false;
       setWasAutoPaused(false);
     }).catch((err) => {
       console.warn('BG music play failed:', err);
+      if (requestId !== playRequestRef.current) return;
       setIsPlaying(false);
+      toast({
+        title: 'O player de fundo não conseguiu iniciar',
+        description: 'Toque novamente após escolher um arquivo de áudio válido da biblioteca.',
+        variant: 'destructive',
+      });
     });
   }, [playlist, currentIndex, volume, duckVolume]);
 
   const pause = useCallback(() => {
+    playRequestRef.current += 1;
     audioRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
@@ -251,6 +294,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const next = useCallback(() => {
     if (playlist.length === 0) return;
     const n = (currentIndex + 1) % playlist.length;
+    currentIndexRef.current = n;
     setCurrentIndex(n);
     if (isPlaying) play(n);
   }, [currentIndex, playlist.length, isPlaying, play]);
@@ -258,11 +302,20 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const prev = useCallback(() => {
     if (playlist.length === 0) return;
     const p = (currentIndex - 1 + playlist.length) % playlist.length;
+    currentIndexRef.current = p;
     setCurrentIndex(p);
     if (isPlaying) play(p);
   }, [currentIndex, playlist.length, isPlaying, play]);
 
   const addTrack = useCallback((t: BackgroundTrack) => {
+    if (isStreamingUrl(t.audio_url)) {
+      toast({
+        title: 'Música incompatível com o player de fundo',
+        description: 'Use apenas arquivos de áudio da biblioteca para música de fundo.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setPlaylist((prev) => {
       if (prev.some((x) => x.audio_url === t.audio_url)) return prev;
       return [...prev, t];
