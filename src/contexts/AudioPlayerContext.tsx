@@ -321,6 +321,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [isYouTube, status]);
 
   const stopCurrentPlayback = useCallback(() => {
+    if (ytInitTimeoutRef.current !== null) {
+      clearTimeout(ytInitTimeoutRef.current);
+      ytInitTimeoutRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
