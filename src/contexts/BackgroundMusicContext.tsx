@@ -102,7 +102,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         a.play().catch(() => {});
       }
     };
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
     a.addEventListener('ended', handleEnded);
+    a.addEventListener('play', handlePlay);
+    a.addEventListener('pause', handlePause);
+
     return () => {
       a.removeEventListener('ended', handleEnded);
       a.pause();
