@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
+import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
@@ -28,6 +29,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AudioPlayerProvider>
+          <BackgroundMusicProvider>
+          
           
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -85,6 +88,7 @@ const App = () => (
           </Routes>
           <MiniPlayer />
           <QuickNav />
+          </BackgroundMusicProvider>
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>

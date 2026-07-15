@@ -4,6 +4,7 @@ import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Us
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { InstallPWA } from '@/components/InstallPWA';
+import { BackgroundMusicPlayer } from '@/components/BackgroundMusicPlayer';
 
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
@@ -61,7 +62,8 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <BackgroundMusicPlayer variant="header" compact />
               <InstallPWA compact />
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -163,6 +165,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             </div>
             
             <div className="flex items-center gap-2">
+              <BackgroundMusicPlayer variant="header" />
               <InstallPWA />
               <Tooltip>
                 <TooltipTrigger asChild>
