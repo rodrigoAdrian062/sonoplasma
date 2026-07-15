@@ -21,6 +21,10 @@ interface AudioLibraryModalProps {
   emptySelectionMessage?: string;
 }
 
+function getAudioFolderId(audio: { pasta_id?: string | null }) {
+  return audio.pasta_id ?? null;
+}
+
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
@@ -49,8 +53,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
         if (folderFilter === 'all') {
           // ok
         } else if (folderFilter === 'none') {
-          if ((a as any).pasta_id) return false;
-        } else if ((a as any).pasta_id !== folderFilter) {
+          if (getAudioFolderId(a)) return false;
+        } else if (getAudioFolderId(a) !== folderFilter) {
           return false;
         }
         if (audioFilter && !audioFilter(a)) return false;
@@ -58,7 +62,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
         return a.nome.toLowerCase().includes(term);
       });
     }
-    return audios.filter(a => (a as any).pasta_id === currentFolderId && (!audioFilter || audioFilter(a)));
+    return audios.filter(a => getAudioFolderId(a) === currentFolderId && (!audioFilter || audioFilter(a)));
   }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, audioFilter]);
 
 
@@ -432,7 +436,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    Sem pasta ({audios.filter(a => !(a as any).pasta_id).length})
+                    Sem pasta ({audios.filter(a => !getAudioFolderId(a)).length})
                   </button>
                   {folders.map((f) => (
                     <button
@@ -447,7 +451,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       )}
                     >
                       <Folder size={11} />
-                      {f.nome} ({audios.filter(a => (a as any).pasta_id === f.id).length})
+                      {f.nome} ({audios.filter(a => getAudioFolderId(a) === f.id).length})
                     </button>
                   ))}
                 </div>
