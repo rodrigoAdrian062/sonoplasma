@@ -110,9 +110,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
     return () => {
       a.removeEventListener('ended', handleEnded);
+      a.removeEventListener('play', handlePlay);
+      a.removeEventListener('pause', handlePause);
       a.pause();
       if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
     };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
