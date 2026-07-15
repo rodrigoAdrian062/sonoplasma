@@ -193,20 +193,6 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                     </div>
                   )}
 
-                  {/* Fade duration */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>Tempo de fade</span>
-                      <span className="font-mono">{(fadeMs / 1000).toFixed(1)}s</span>
-                    </div>
-                    <Slider
-                      value={[fadeMs]}
-                      min={0}
-                      max={3000}
-                      step={100}
-                      onValueChange={([v]) => setFadeMs(v)}
-                    />
-                  </div>
                 </>
               )}
             </div>
