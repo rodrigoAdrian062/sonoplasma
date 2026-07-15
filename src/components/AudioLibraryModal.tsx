@@ -23,6 +23,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -37,10 +39,25 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentFolder = folders.find(f => f.id === currentFolderId);
-  const filteredAudios = useMemo(() => 
-    audios.filter(a => (a as any).pasta_id === currentFolderId),
-    [audios, currentFolderId]
-  );
+  const filteredAudios = useMemo(() => {
+    if (selectionMode) {
+      // Em modo seleção mostramos TUDO com filtro por pasta + busca (sem navegação em pastas)
+      const term = searchTerm.trim().toLowerCase();
+      return audios.filter((a) => {
+        if (folderFilter === 'all') {
+          // ok
+        } else if (folderFilter === 'none') {
+          if ((a as any).pasta_id) return false;
+        } else if ((a as any).pasta_id !== folderFilter) {
+          return false;
+        }
+        if (!term) return true;
+        return a.nome.toLowerCase().includes(term);
+      });
+    }
+    return audios.filter(a => (a as any).pasta_id === currentFolderId);
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter]);
+
 
   const isYouTubeUrl = (url: string) => {
     return url.includes('youtube.com') || url.includes('youtu.be');
@@ -380,40 +397,59 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             </div>
           )}
 
-          {/* Folder Navigation (selection mode) */}
-          {selectionMode && !currentFolderId && folders.length > 0 && (
-            <div className="space-y-1">
-              {folders.map((folder) => (
-                <div
-                  key={folder.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer hover:border-primary/50"
-                  onClick={() => setCurrentFolderId(folder.id)}
-                >
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Folder size={18} className="text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{folder.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {audios.filter(a => (a as any).pasta_id === folder.id).length} áudio(s)
-                    </p>
-                  </div>
+          {/* Search + folder chips (selection mode) */}
+          {selectionMode && (
+            <div className="space-y-2">
+              <Input
+                placeholder="Buscar áudio pelo nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {folders.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFolderFilter('all')}
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-full border transition-colors',
+                      folderFilter === 'all'
+                        ? 'bg-gold/20 border-gold/50 text-gold'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Todas ({audios.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFolderFilter('none')}
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-full border transition-colors',
+                      folderFilter === 'none'
+                        ? 'bg-gold/20 border-gold/50 text-gold'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    Sem pasta ({audios.filter(a => !(a as any).pasta_id).length})
+                  </button>
+                  {folders.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFolderFilter(f.id)}
+                      className={cn(
+                        'text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1',
+                        folderFilter === f.id
+                          ? 'bg-gold/20 border-gold/50 text-gold'
+                          : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Folder size={11} />
+                      {f.nome} ({audios.filter(a => (a as any).pasta_id === f.id).length})
+                    </button>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-
-          {/* Back button for folder navigation */}
-          {selectionMode && currentFolderId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCurrentFolderId(null)}
-              className="mb-1"
-            >
-              <ChevronLeft size={14} className="mr-1" />
-              {currentFolder?.nome || 'Voltar'}
-            </Button>
           )}
 
           {/* Audio List */}
@@ -422,12 +458,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="animate-spin text-primary" size={24} />
               </div>
-            ) : filteredAudios.length === 0 && (selectionMode ? currentFolderId !== null : true) ? (
+            ) : filteredAudios.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Music size={40} className="mx-auto mb-2 opacity-50" />
-                <p>{currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}</p>
+                <p>{selectionMode ? 'Nenhum áudio encontrado' : (currentFolderId ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca')}</p>
                 <p className="text-xs mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
               </div>
+
             ) : (
               <div className="space-y-2">
                 {filteredAudios.map((audio) => (
