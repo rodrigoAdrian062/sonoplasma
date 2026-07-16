@@ -252,8 +252,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
         isOpen={libOpen}
         onClose={() => setLibOpen(false)}
         selectionMode
-        audioFilter={isPlayableBackgroundAudio}
-        emptySelectionMessage="Nenhum arquivo de áudio encontrado. Envie um MP3/áudio na biblioteca para usar como música de fundo."
+        emptySelectionMessage="Nenhum áudio na biblioteca ainda."
         onSelectAudio={(audio) => {
           addTrack({
             id: crypto.randomUUID(),
