@@ -91,6 +91,7 @@ export default function SpotifyLibraryPage() {
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showList, setShowList] = useState(false);
