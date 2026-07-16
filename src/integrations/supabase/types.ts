@@ -90,6 +90,7 @@ export type Database = {
       }
       sonoplastia_audios_pastas: {
         Row: {
+          cor: string | null
           created_at: string
           icone: string | null
           id: string
@@ -99,6 +100,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cor?: string | null
           created_at?: string
           icone?: string | null
           id?: string
@@ -108,6 +110,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cor?: string | null
           created_at?: string
           icone?: string | null
           id?: string
