@@ -499,6 +499,14 @@ export default function YoutubeLibraryPage() {
           </>
         )}
       </main>
+      <BulkAddLinksDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        platform="youtube"
+        isValidUrl={isYouTubeUrl}
+        existingUrls={audios.map((a) => a.audio_url)}
+        addAudio={(input) => addAudio.mutateAsync(input)}
+      />
     </div>
   );
 }
