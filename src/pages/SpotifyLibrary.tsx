@@ -288,14 +288,24 @@ export default function SpotifyLibraryPage() {
         {/* Add form */}
         <div className="border border-border rounded-lg p-3">
           {!showAddForm ? (
-            <Button
-              variant="outline"
-              onClick={() => setShowAddForm(true)}
-              className="w-full border-dashed border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
-            >
-              <Plus size={16} className="mr-2" />
-              Adicionar link do Spotify
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddForm(true)}
+                className="flex-1 border-dashed border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                <Plus size={16} className="mr-2" />
+                Adicionar 1 link
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setBulkOpen(true)}
+                className="flex-1 border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                <Plus size={16} className="mr-2" />
+                Colar vários links
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               <Input
