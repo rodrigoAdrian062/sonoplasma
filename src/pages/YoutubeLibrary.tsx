@@ -317,27 +317,32 @@ export default function YoutubeLibraryPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <Input
-                placeholder="Nome (ex: Música de entrada)"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
               <div className="flex gap-2">
                 <Input
                   placeholder="Cole o link do YouTube"
                   value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
+                  onChange={(e) => { setNewUrl(e.target.value); if (!e.target.value.trim()) setNameEdited(false); }}
                   className="flex-1"
+                  autoFocus
                 />
                 <Button
                   onClick={handleAdd}
-                  disabled={!newUrl.trim() || !newName.trim() || addAudio.isPending}
+                  disabled={!newUrl.trim() || addAudio.isPending || fetchingTitle}
                   className="bg-red-500 hover:bg-red-500/90 text-white"
                 >
                   {addAudio.isPending ? <Loader2 className="animate-spin" size={16} /> : 'Adicionar'}
                 </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => { setShowAddForm(false); setNewName(''); setNewUrl(''); }} className="w-full">
+              <div className="relative">
+                <Input
+                  placeholder={fetchingTitle ? 'Buscando título…' : 'Nome (sugerido automaticamente ao colar o link)'}
+                  value={newName}
+                  onChange={(e) => { setNewName(e.target.value); setNameEdited(true); }}
+                  className={fetchingTitle ? 'pr-9' : ''}
+                />
+                {fetchingTitle && <Loader2 size={14} className="animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => { setShowAddForm(false); setNewName(''); setNewUrl(''); setNameEdited(false); }} className="w-full">
                 Cancelar
               </Button>
             </div>
