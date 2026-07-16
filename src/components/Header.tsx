@@ -4,6 +4,7 @@ import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Us
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { InstallPWA } from '@/components/InstallPWA';
+import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
 
 
 import { useSettings } from '@/hooks/useSettings';
@@ -65,6 +66,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             <div className="flex items-center gap-2 flex-wrap justify-center">
               
               <InstallPWA compact />
+              <HeaderAudioOutputButton compact />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -167,6 +169,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             <div className="flex items-center gap-2">
               
               <InstallPWA />
+              <HeaderAudioOutputButton />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
