@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { toast } from '@/hooks/use-toast';
+import { registerAudioElement } from '@/lib/audioOutput';
 
 export interface BackgroundTrack {
   id: string;
@@ -99,6 +100,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     a.preload = 'auto';
     a.volume = volume;
     audioRef.current = a;
+    registerAudioElement(a);
     const handleEnded = () => {
       const pl = playlistRef.current;
       if (pl.length === 0) return;

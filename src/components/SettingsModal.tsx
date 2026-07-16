@@ -17,6 +17,7 @@ import { resizeImage, formatFileSize } from '@/lib/imageUtils';
 import { Loader2, ImagePlus, X, Upload, CheckCircle2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { BackupSection } from '@/components/BackupSection';
+import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -318,8 +319,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
 
+          {/* Saída de áudio */}
+          <AudioOutputSelector />
+
           {/* Backup / Restauração */}
           <BackupSection />
+
 
 
 
