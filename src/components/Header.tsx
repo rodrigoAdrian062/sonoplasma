@@ -4,6 +4,7 @@ import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Us
 import { Button } from '@/components/ui/button';
 import { SettingsModal } from '@/components/SettingsModal';
 import { InstallPWA } from '@/components/InstallPWA';
+import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
 
 
 import { useSettings } from '@/hooks/useSettings';
