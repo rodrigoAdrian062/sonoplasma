@@ -512,6 +512,14 @@ export default function SpotifyLibraryPage() {
           </>
         )}
       </main>
+      <BulkAddLinksDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        platform="spotify"
+        isValidUrl={isSpotifyUrl}
+        existingUrls={audios.map((a) => a.audio_url)}
+        addAudio={(input) => addAudio.mutateAsync(input)}
+      />
     </div>
   );
 }
