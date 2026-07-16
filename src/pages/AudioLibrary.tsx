@@ -14,8 +14,9 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter
-
+  SkipBack, SkipForward, Filter, Palette,
+  Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
+  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
 } from 'lucide-react';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
@@ -27,11 +28,29 @@ import { toast } from '@/hooks/use-toast';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+const FOLDER_COLORS = [
+  '#D4AF37', '#EF4444', '#F97316', '#EAB308', '#22C55E',
+  '#14B8A6', '#3B82F6', '#6366F1', '#A855F7', '#EC4899',
+  '#8B5CF6', '#0EA5E9', '#84CC16', '#F59E0B', '#64748B',
+];
+
+const FOLDER_ICONS: Record<string, React.ComponentType<any>> = {
+  Folder, Music, Headphones, Radio, Mic, Star, Heart, Flame,
+  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass,
+};
+
+function FolderIcon({ name, size = 20, className = '' }: { name?: string | null; size?: number; className?: string }) {
+  const Cmp = (name && FOLDER_ICONS[name]) || Folder;
+  return <Cmp size={size} className={className} />;
+}
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
-  const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
