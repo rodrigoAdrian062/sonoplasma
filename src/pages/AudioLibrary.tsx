@@ -113,9 +113,12 @@ export default function AudioLibraryPage() {
 
   // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
   const filteredAudios = audios.filter(a => {
-    if (a.tipo === 'youtube' || isYouTubeUrl(a.audio_url)) return false;
-    if (a.tipo === 'spotify' || isSpotifyUrl(a.audio_url)) return false;
+    const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
+    const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = (a as any).pasta_id;
+    // Fora de pastas (raiz): esconde YouTube/Spotify — eles têm abas próprias.
+    // Dentro de uma pasta: mostra tudo que estiver ali, incluindo YouTube/Spotify.
+    if (!currentFolderId && (isYt || isSp)) return false;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
