@@ -82,6 +82,8 @@ export default function YoutubeLibraryPage() {
 
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
+  const [nameEdited, setNameEdited] = useState(false);
+  const [fetchingTitle, setFetchingTitle] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -197,16 +199,35 @@ export default function YoutubeLibraryPage() {
     setIsPaused(false);
   };
 
+  // Auto-sugere o título ao colar um link válido (se o usuário não digitou nome manual).
+  useEffect(() => {
+    const url = newUrl.trim();
+    if (!url || !isYouTubeUrl(url) || nameEdited) return;
+    let cancelled = false;
+    setFetchingTitle(true);
+    const t = setTimeout(async () => {
+      const { fetchLinkTitle } = await import('@/lib/fetchLinkTitle');
+      const title = await fetchLinkTitle(url);
+      if (!cancelled && title && !nameEdited) setNewName(title);
+      if (!cancelled) setFetchingTitle(false);
+    }, 400);
+    return () => { cancelled = true; clearTimeout(t); setFetchingTitle(false); };
+  }, [newUrl, nameEdited]);
+
   const handleAdd = async () => {
-    if (!newName.trim() || !newUrl.trim()) return;
+    if (!newUrl.trim()) return;
     if (!isYouTubeUrl(newUrl)) {
       toast({ title: 'Link do YouTube inválido', description: 'Cole um link de vídeo do YouTube.', variant: 'destructive' });
       return;
     }
+    let finalName = newName.trim();
+    if (!finalName) {
+      const { fetchLinkTitle } = await import('@/lib/fetchLinkTitle');
+      finalName = (await fetchLinkTitle(newUrl.trim())) || 'Vídeo do YouTube';
+    }
     try {
-      await addAudio.mutateAsync({ nome: newName.trim(), audio_url: newUrl.trim(), tipo: 'youtube' });
-      setNewName('');
-      setNewUrl('');
+      await addAudio.mutateAsync({ nome: finalName, audio_url: newUrl.trim(), tipo: 'youtube' });
+      setNewName(''); setNewUrl(''); setNameEdited(false);
       setShowAddForm(false);
     } catch { /* handled by hook */ }
   };
