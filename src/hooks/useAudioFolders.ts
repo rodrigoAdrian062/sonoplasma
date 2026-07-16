@@ -64,6 +64,23 @@ export function useAudioFolders() {
     },
   });
 
+  const updateFolder = useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; nome?: string; cor?: string | null; icone?: string | null }) => {
+      const { error } = await supabase
+        .from('sonoplastia_audios_pastas')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao atualizar pasta', description: error.message, variant: 'destructive' });
+    },
+  });
+
+
   const deleteFolder = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
