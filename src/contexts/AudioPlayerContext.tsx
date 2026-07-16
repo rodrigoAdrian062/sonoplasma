@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
+import { registerAudioElement } from '@/lib/audioOutput';
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB

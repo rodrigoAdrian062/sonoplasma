@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { toast } from '@/hooks/use-toast';
+import { registerAudioElement } from '@/lib/audioOutput';
 
 export interface BackgroundTrack {
   id: string;
