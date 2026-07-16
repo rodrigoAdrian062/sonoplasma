@@ -169,6 +169,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             <div className="flex items-center gap-2">
               
               <InstallPWA />
+              <HeaderAudioOutputButton />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
