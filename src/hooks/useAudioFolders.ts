@@ -112,5 +112,5 @@ export function useAudioFolders() {
     },
   });
 
-  return { folders, isLoading, addFolder, renameFolder, deleteFolder, moveAudioToFolder };
+  return { folders, isLoading, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder };
 }
