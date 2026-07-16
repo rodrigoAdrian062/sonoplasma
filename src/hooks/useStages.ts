@@ -103,6 +103,66 @@ export function useStages() {
     },
   });
 
+  const copyStageToSection = useMutation({
+    mutationFn: async ({ stageId, targetSectionId }: { stageId: string; targetSectionId: string }) => {
+      const { data: origin, error: readErr } = await supabase
+        .from('sonoplastia_etapas')
+        .select('*')
+        .eq('id', stageId)
+        .single();
+      if (readErr || !origin) throw readErr ?? new Error('Etapa não encontrada');
+
+      const { data: last } = await supabase
+        .from('sonoplastia_etapas')
+        .select('ordem')
+        .eq('secao_id', targetSectionId)
+        .order('ordem', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextOrdem = (last?.ordem ?? 0) + 1;
+
+      const { data: newStage, error: insErr } = await supabase
+        .from('sonoplastia_etapas')
+        .insert({
+          nome_simbolico: `${origin.nome_simbolico} (cópia)`,
+          descricao: origin.descricao,
+          tempo_padrao: origin.tempo_padrao,
+          icone: origin.icone,
+          icone_url: (origin as any).icone_url ?? null,
+          ordem: nextOrdem,
+          ativo: true,
+          secao_id: targetSectionId,
+        })
+        .select()
+        .single();
+      if (insErr || !newStage) throw insErr ?? new Error('Erro ao criar cópia');
+
+      const { data: audios } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .select('*')
+        .eq('etapa_id', stageId);
+      if (audios && audios.length > 0) {
+        const toInsert = audios.map((a) => ({
+          etapa_id: newStage.id,
+          nome: a.nome,
+          audio_url: a.audio_url,
+          ordem: a.ordem,
+        }));
+        const { error: audioErr } = await supabase.from('sonoplastia_etapa_audios').insert(toInsert);
+        if (audioErr) throw audioErr;
+      }
+      return newStage;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+      queryClient.invalidateQueries({ queryKey: ['all-stage-audios'] });
+      toast({ title: 'Etapa copiada com sucesso' });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao copiar etapa', description: error.message, variant: 'destructive' });
+    },
+  });
+
   return {
     stages,
     isLoading,
@@ -111,5 +171,6 @@ export function useStages() {
     updateStage,
     deleteStage,
     reorderStages,
+    copyStageToSection,
   };
 }

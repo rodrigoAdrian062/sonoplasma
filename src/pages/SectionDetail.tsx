@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
 import { SortableStageCard } from '@/components/SortableStageCard';
+import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
 import { PresentationMode } from '@/components/PresentationMode';
 import { StageEditModal } from '@/components/StageEditModal';
@@ -48,7 +49,7 @@ const SectionDetail = () => {
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
 
-  const { stages, isLoading: stagesLoading, createStage, updateStage, deleteStage, reorderStages } = useStages();
+  const { stages, isLoading: stagesLoading, createStage, updateStage, deleteStage, reorderStages, copyStageToSection } = useStages();
   const { sections, isLoading: sectionsLoading } = useSections();
   const { saveAudios } = useStageAudios();
   const { audiosByStageId } = useAllStageAudios();
@@ -236,14 +237,32 @@ const SectionDetail = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
+    if (!over) return;
+    const overId = String(over.id);
+    // Drop em outra seção → copiar etapa
+    if (overId.startsWith('copysection:')) {
+      const targetSectionId = overId.slice('copysection:'.length);
+      copyStageToSection.mutate({ stageId: String(active.id), targetSectionId });
+      return;
+    }
+    // Reordenar dentro da seção
+    if (active.id !== over.id) {
       const oldIndex = sectionStages.findIndex((s) => s.id === active.id);
       const newIndex = sectionStages.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
       const reordered = arrayMove(sectionStages, oldIndex, newIndex);
       const orderedIds = reordered.map((s) => s.id);
       reorderStages.mutate(orderedIds);
     }
   };
+
+  const stageCountsBySection = useMemo(() => {
+    const counts: Record<string, number> = {};
+    stages.forEach((s) => {
+      if (s.secao_id) counts[s.secao_id] = (counts[s.secao_id] ?? 0) + 1;
+    });
+    return counts;
+  }, [stages]);
 
   const isLoading = stagesLoading || sectionsLoading;
 
@@ -426,11 +445,21 @@ const SectionDetail = () => {
                       onSeekBackward={() => seekBackward()}
                       onSeekTo={seekTo}
                       continuousPlayback={!!(section as any)?.reproducao_continua}
+                      sections={sections}
+                      currentSectionId={section.id}
+                      onCopyToSection={(targetSectionId) =>
+                        copyStageToSection.mutate({ stageId: stage.id, targetSectionId })
+                      }
                     />
                   </div>
                 ))}
               </div>
             </SortableContext>
+            <CrossSectionDropSidebar
+              sections={sections}
+              currentSectionId={section.id}
+              stageCounts={stageCountsBySection}
+            />
           </DndContext>
         )}
 
