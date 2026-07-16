@@ -445,11 +445,21 @@ const SectionDetail = () => {
                       onSeekBackward={() => seekBackward()}
                       onSeekTo={seekTo}
                       continuousPlayback={!!(section as any)?.reproducao_continua}
+                      sections={sections}
+                      currentSectionId={section.id}
+                      onCopyToSection={(targetSectionId) =>
+                        copyStageToSection.mutate({ stageId: stage.id, targetSectionId })
+                      }
                     />
                   </div>
                 ))}
               </div>
             </SortableContext>
+            <CrossSectionDropSidebar
+              sections={sections}
+              currentSectionId={section.id}
+              stageCounts={stageCountsBySection}
+            />
           </DndContext>
         )}
 
