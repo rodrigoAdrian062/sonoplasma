@@ -6,10 +6,12 @@ export interface AudioFolder {
   id: string;
   nome: string;
   icone: string | null;
+  cor: string | null;
   ordem: number;
   created_at: string;
   updated_at: string;
 }
+
 
 export function useAudioFolders() {
   const queryClient = useQueryClient();
