@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
 import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
+import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 function parseSpotify(url: string): { type: string; id: string } | null {
@@ -90,6 +91,7 @@ export default function SpotifyLibraryPage() {
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showList, setShowList] = useState(false);
@@ -286,14 +288,24 @@ export default function SpotifyLibraryPage() {
         {/* Add form */}
         <div className="border border-border rounded-lg p-3">
           {!showAddForm ? (
-            <Button
-              variant="outline"
-              onClick={() => setShowAddForm(true)}
-              className="w-full border-dashed border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
-            >
-              <Plus size={16} className="mr-2" />
-              Adicionar link do Spotify
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddForm(true)}
+                className="flex-1 border-dashed border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                <Plus size={16} className="mr-2" />
+                Adicionar 1 link
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setBulkOpen(true)}
+                className="flex-1 border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10"
+              >
+                <Plus size={16} className="mr-2" />
+                Colar vários links
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               <Input
@@ -500,6 +512,14 @@ export default function SpotifyLibraryPage() {
           </>
         )}
       </main>
+      <BulkAddLinksDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        platform="spotify"
+        isValidUrl={isSpotifyUrl}
+        existingUrls={audios.map((a) => a.audio_url)}
+        addAudio={(input) => addAudio.mutateAsync(input)}
+      />
     </div>
   );
 }
