@@ -1,0 +1,1 @@
+ALTER TABLE public.sonoplastia_audios_pastas ADD COLUMN IF NOT EXISTS cor TEXT;

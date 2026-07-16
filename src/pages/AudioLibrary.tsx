@@ -14,8 +14,9 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter
-
+  SkipBack, SkipForward, Filter, Palette,
+  Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
+  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
 } from 'lucide-react';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
@@ -27,11 +28,29 @@ import { toast } from '@/hooks/use-toast';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+const FOLDER_COLORS = [
+  '#D4AF37', '#EF4444', '#F97316', '#EAB308', '#22C55E',
+  '#14B8A6', '#3B82F6', '#6366F1', '#A855F7', '#EC4899',
+  '#8B5CF6', '#0EA5E9', '#84CC16', '#F59E0B', '#64748B',
+];
+
+const FOLDER_ICONS: Record<string, React.ComponentType<any>> = {
+  Folder, Music, Headphones, Radio, Mic, Star, Heart, Flame,
+  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass,
+};
+
+function FolderIcon({ name, size = 20, className = '' }: { name?: string | null; size?: number; className?: string }) {
+  const Cmp = (name && FOLDER_ICONS[name]) || Folder;
+  return <Cmp size={size} className={className} />;
+}
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
-  const { folders, addFolder, renameFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+
   const { stages } = useStages();
   const { sections } = useSections();
   const { saveAudios } = useStageAudios();
@@ -573,10 +592,16 @@ export default function AudioLibraryPage() {
             {/* Folder list */}
             {folders.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {folders.map((folder) => (
+                {folders.map((folder) => {
+                  const color = folder.cor || 'hsl(var(--gold))';
+                  return (
                   <div
                     key={folder.id}
-                    className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer group"
+                    className="relative flex items-center gap-2 p-3 rounded-lg border cursor-pointer group transition-all overflow-hidden"
+                    style={{
+                      borderColor: `${color}55`,
+                      background: `linear-gradient(135deg, ${color}22, ${color}0a)`,
+                    }}
                     onClick={() => {
                       if (editingFolderId !== folder.id) {
                         setCurrentFolderId(folder.id);
@@ -585,7 +610,12 @@ export default function AudioLibraryPage() {
                       }
                     }}
                   >
-                    <Folder size={20} className="text-gold shrink-0" />
+                    <div
+                      className="shrink-0 flex items-center justify-center rounded-md h-8 w-8"
+                      style={{ background: `${color}33`, color }}
+                    >
+                      <FolderIcon name={folder.icone} size={18} />
+                    </div>
                     {editingFolderId === folder.id ? (
                       <Input
                         value={editingFolderName}
@@ -598,7 +628,7 @@ export default function AudioLibraryPage() {
                       />
                     ) : (
                       <>
-                        <span className="text-sm font-medium truncate flex-1">{folder.nome}</span>
+                        <span className="text-sm font-medium truncate flex-1" style={{ color }}>{folder.nome}</span>
                         <span className="text-xs text-muted-foreground">
                           {audios.filter(a => (a as any).pasta_id === folder.id).length}
                         </span>
@@ -608,10 +638,42 @@ export default function AudioLibraryPage() {
                               <Edit2 size={12} />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-64">
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.nome); }}>
                               <Edit2 size={14} className="mr-2" /> Renomear
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <div className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                              <div className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1"><Palette size={12}/> Cor</div>
+                              <div className="grid grid-cols-5 gap-1.5 mb-2">
+                                {FOLDER_COLORS.map((c) => (
+                                  <button
+                                    key={c}
+                                    onClick={() => updateFolder.mutate({ id: folder.id, cor: c })}
+                                    className={cn("h-6 w-6 rounded-md border-2 transition-transform hover:scale-110", folder.cor === c ? "border-foreground" : "border-transparent")}
+                                    style={{ background: c }}
+                                    aria-label={`Cor ${c}`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="text-xs text-muted-foreground mb-1.5">Ícone</div>
+                              <div className="grid grid-cols-6 gap-1">
+                                {Object.keys(FOLDER_ICONS).map((iconName) => {
+                                  const Cmp = FOLDER_ICONS[iconName];
+                                  const active = (folder.icone || 'Folder') === iconName;
+                                  return (
+                                    <button
+                                      key={iconName}
+                                      onClick={() => updateFolder.mutate({ id: folder.id, icone: iconName })}
+                                      className={cn("h-7 w-7 rounded-md flex items-center justify-center border transition-colors", active ? "border-foreground bg-accent" : "border-transparent hover:bg-accent")}
+                                      aria-label={iconName}
+                                    >
+                                      <Cmp size={14} />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteFolder.mutate(folder.id); }}>
                               <Trash2 size={14} className="mr-2" /> Excluir
@@ -621,7 +683,9 @@ export default function AudioLibraryPage() {
                       </>
                     )}
                   </div>
-                ))}
+                  );
+                })}
+
               </div>
             )}
 
