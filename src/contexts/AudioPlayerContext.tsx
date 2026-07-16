@@ -197,6 +197,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     // Pré-carrega o máximo possível assim que a src é definida.
     audio.preload = 'auto';
     audioRef.current = audio;
+    registerAudioElement(audio);
 
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
