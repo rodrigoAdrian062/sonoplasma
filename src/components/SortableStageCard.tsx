@@ -2,8 +2,10 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
 import { StageCard } from './StageCard';
+import { CopyStageMenu } from './CopyStageMenu';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
+import { CeremonySection } from '@/types/section';
 
 interface SortableStageCardProps {
   stage: CeremonyStage;
@@ -23,6 +25,9 @@ interface SortableStageCardProps {
   onSeekBackward?: () => void;
   onSeekTo?: (seconds: number) => void;
   continuousPlayback?: boolean;
+  sections?: CeremonySection[];
+  currentSectionId?: string;
+  onCopyToSection?: (targetSectionId: string) => void;
 }
 
 
@@ -44,6 +49,9 @@ export function SortableStageCard({
   onSeekBackward,
   onSeekTo,
   continuousPlayback,
+  sections,
+  currentSectionId,
+  onCopyToSection,
 }: SortableStageCardProps) {
 
   const {
@@ -72,6 +80,15 @@ export function SortableStageCard({
           <GripVertical size={20} />
         </div>
       </div>
+      {sections && currentSectionId && onCopyToSection && (
+        <div className="absolute right-2 top-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+          <CopyStageMenu
+            sections={sections}
+            currentSectionId={currentSectionId}
+            onCopy={onCopyToSection}
+          />
+        </div>
+      )}
       <StageCard
         stage={stage}
         audios={audios}
@@ -95,3 +112,4 @@ export function SortableStageCard({
     </div>
   );
 }
+
