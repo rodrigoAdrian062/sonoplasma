@@ -29,7 +29,7 @@ import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
-import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { useUniversalAudioPlayer, useAudioProgress } from '@/hooks/useUniversalAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
