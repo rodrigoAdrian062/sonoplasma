@@ -52,6 +52,34 @@ const getSpotifyEmbedUrl = (url: string): string | null => {
   return `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`;
 };
 
+// Ready-made preview hints. Common presets always shown; theme-specific ones
+// appear first when the stage title matches related keywords.
+type HintPreset = { label: string; text: string; keywords?: string[] };
+const HINT_PRESETS: HintPreset[] = [
+  { label: 'Abertura solene', text: 'Momento de abertura solene e reverente. Música sacra/instrumental, sem letra, ritmo lento, atmosfera de recolhimento e respeito.', keywords: ['abertura', 'iniciar', 'início'] },
+  { label: 'Livro da Lei / Bíblia', text: 'Abertura do Livro da Lei — música sacra, delicada, de adoração e conexão com o Grande Arquiteto. Instrumental suave (piano/cordas), sem letra.', keywords: ['livro da lei', 'bíblia', 'biblia', 'volume da lei'] },
+  { label: 'Entrada de dignitários', text: 'Entrada solene de dignitários/autoridades. Música majestosa, marcial, instrumental orquestral, digna e imponente.', keywords: ['entrada', 'dignitário', 'autoridade', 'venerável'] },
+  { label: 'Cadeia de União', text: 'Cadeia de União — música fraternal, emotiva, que remeta a irmandade e comunhão. Melodia envolvente, pode ter coro suave.', keywords: ['cadeia', 'união', 'fraternidade'] },
+  { label: 'Iniciação / Elevação', text: 'Momento iniciático — música misteriosa, introspectiva, com tensão suave. Instrumental, tons graves, evolução gradual até luz.', keywords: ['iniciação', 'iniciacao', 'elevação', 'elevacao', 'exaltação', 'exaltacao', 'aprendiz', 'companheiro', 'mestre'] },
+  { label: 'Reflexão / Meditação', text: 'Momento de reflexão e meditação. Música instrumental muito calma, ambiente, sem picos, para introspecção.', keywords: ['reflexão', 'reflexao', 'meditação', 'meditacao', 'silêncio', 'silencio'] },
+  { label: 'Luto / Fúnebre', text: 'Homenagem fúnebre — música solene, reflexiva, adágio, cordas graves. Respeitosa e emocionante, sem excesso dramático.', keywords: ['luto', 'fúnebre', 'funebre', 'necrológio', 'necrologio', 'memória', 'memoria', 'homenagem póstuma'] },
+  { label: 'Votação / Escrutínio', text: 'Momento de votação/escrutínio — música neutra e discreta de fundo, instrumental leve, sem distrair.', keywords: ['votação', 'votacao', 'escrutínio', 'escrutinio', 'bolas'] },
+  { label: 'Encerramento', text: 'Encerramento dos trabalhos — música serena e conclusiva, sensação de dever cumprido, instrumental esperançoso.', keywords: ['encerramento', 'fechamento', 'final', 'saída', 'saida'] },
+  { label: 'Hino / Cívico', text: 'Hino ou momento cívico — versão instrumental respeitosa, ritmo firme e digno.', keywords: ['hino', 'cívico', 'civico', 'bandeira', 'pátria', 'patria'] },
+  { label: 'Ágape / Confraternização', text: 'Ágape/confraternização — música leve e alegre, ambiente agradável, pode ter voz suave, sem euforia.', keywords: ['ágape', 'agape', 'confraterniza', 'jantar', 'brinde'] },
+];
+
+function getHintPresets(stageTitle: string): HintPreset[] {
+  const t = (stageTitle || '').toLowerCase();
+  const matches: HintPreset[] = [];
+  const rest: HintPreset[] = [];
+  for (const p of HINT_PRESETS) {
+    if (p.keywords?.some((k) => t.includes(k))) matches.push(p);
+    else rest.push(p);
+  }
+  return [...matches, ...rest];
+}
+
 
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
@@ -428,6 +456,30 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               <Wand2 size={12} />
               Descreva a etapa para a IA (opcional — quanto mais detalhe, melhor a sugestão)
             </label>
+
+            {/* Preset chips — click to load a ready-made hint, then edit if needed */}
+            <div className="flex flex-wrap gap-1.5">
+              {getHintPresets(stageTitle).map((p) => {
+                const active = aiHintDraft.trim() === p.text.trim();
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setAiHintDraft(p.text)}
+                    title={p.text}
+                    className={cn(
+                      'text-[11px] rounded-full border px-2.5 py-1 transition-all',
+                      active
+                        ? 'border-gold/60 bg-gold/15 text-gold'
+                        : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <textarea
               value={aiHintDraft}
               onChange={(e) => setAiHintDraft(e.target.value)}
@@ -437,7 +489,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] text-muted-foreground">
-                {aiHint ? 'Prévia aplicada — a IA reordena as sugestões.' : 'Sem prévia, a IA usa apenas o título/descrição da etapa.'}
+                {aiHint ? 'Prévia aplicada — a IA reordena as sugestões.' : 'Escolha um exemplo acima ou escreva a sua prévia.'}
               </span>
               <div className="flex items-center gap-2">
                 {aiHint && (
