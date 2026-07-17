@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const stageTitle = String(body.stageTitle ?? '').trim();
     const stageDescription = String(body.stageDescription ?? '').trim();
+    const userHint = String(body.userHint ?? '').trim().slice(0, 800);
     const limit = Math.min(Number(body.limit ?? 20), 50);
     const library: Array<{ id?: string; nome: string; audio_url: string }> = Array.isArray(body.library) ? body.library : [];
 
@@ -27,9 +28,9 @@ Deno.serve(async (req) => {
     const trimmed = library.slice(0, MAX_ITEMS);
     const listText = trimmed.map((a, i) => `${i}. ${a.nome}`).join('\n');
 
-    const system = `Você é um especialista em ritualística maçônica e música cerimonial. Sua tarefa: dada uma etapa de cerimônia (título + descrição), escolher da biblioteca as músicas MAIS adequadas ao momento — considerando tema, solenidade, tradição maçônica, referências bíblicas/espirituais e clima emocional apropriado. Ex: "Abertura do Livro da Lei" combina com música sacra/solene/adoração; "Cadeia de União" com música fraternal; "Luto/Mestre" com música fúnebre/reflexiva. Responda SOMENTE JSON.`;
+    const system = `Você é um especialista em ritualística maçônica e música cerimonial. Sua tarefa: dada uma etapa de cerimônia (título + descrição + prévia opcional do usuário), escolher da biblioteca as músicas MAIS adequadas ao momento — considerando tema, solenidade, tradição maçônica, referências bíblicas/espirituais e clima emocional apropriado. Se o usuário fornecer uma PRÉVIA, ela é a orientação PRINCIPAL e sobrepõe interpretações genéricas do título. Ex: "Abertura do Livro da Lei" combina com música sacra/solene/adoração; "Cadeia de União" com música fraternal; "Luto/Mestre" com música fúnebre/reflexiva. Responda SOMENTE JSON.`;
 
-    const user = `ETAPA: ${stageTitle}${stageDescription ? `\nDESCRIÇÃO: ${stageDescription}` : ''}
+    const user = `ETAPA: ${stageTitle}${stageDescription ? `\nDESCRIÇÃO: ${stageDescription}` : ''}${userHint ? `\nPRÉVIA DO USUÁRIO (prioridade máxima): ${userHint}` : ''}
 
 BIBLIOTECA (índice. nome):
 ${listText}
