@@ -167,6 +167,32 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem(MODE_KEY, autoMode); }, [autoMode]);
   useEffect(() => { localStorage.setItem(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
   useEffect(() => { localStorage.setItem(FADE_KEY, String(fadeMs)); }, [fadeMs]);
+  useEffect(() => { localStorage.setItem(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
+
+  // Enforce max duration cutoff (loops or advances)
+  const maxDurationRef = useRef(maxDurationSec);
+  useEffect(() => { maxDurationRef.current = maxDurationSec; }, [maxDurationSec]);
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onTimeUpdate = () => {
+      const limit = maxDurationRef.current;
+      if (limit > 0 && a.currentTime >= limit) {
+        const pl = playlistRef.current;
+        if (pl.length <= 1) {
+          try { a.currentTime = 0; a.play().catch(() => undefined); } catch { /* noop */ }
+        } else {
+          const nextIdx = (currentIndexRef.current + 1) % pl.length;
+          currentIndexRef.current = nextIdx;
+          setCurrentIndex(nextIdx);
+          const track = pl[nextIdx];
+          if (track) { a.src = track.audio_url; a.play().catch(() => undefined); }
+        }
+      }
+    };
+    a.addEventListener('timeupdate', onTimeUpdate);
+    return () => a.removeEventListener('timeupdate', onTimeUpdate);
+  }, []);
 
   // Load current track src when track changes (does NOT touch playback state)
   useEffect(() => {
