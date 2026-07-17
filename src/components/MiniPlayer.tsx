@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Play, Pause, Square, Music2, GripVertical, Volume2, VolumeX, Repeat, Repeat1, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useUniversalAudioPlayer, useAudioProgress } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
@@ -29,8 +29,6 @@ export function MiniPlayer() {
     currentStageId,
     currentUrl,
     status,
-    currentTime,
-    duration,
     volume,
     setVolume,
     pause,
@@ -39,6 +37,7 @@ export function MiniPlayer() {
     loopEnabled,
     setLoopEnabled,
   } = useUniversalAudioPlayer();
+  const { currentTime, duration } = useAudioProgress();
 
   const cardRef = useRef<HTMLDivElement>(null);
   // null = not yet positioned (defaults to bottom-right via CSS)

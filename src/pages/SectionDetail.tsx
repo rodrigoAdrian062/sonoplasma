@@ -66,8 +66,6 @@ const SectionDetail = () => {
 
     status,
     volume,
-    currentTime,
-    duration,
     eq,
     play,
     pause,
@@ -80,6 +78,7 @@ const SectionDetail = () => {
     setEQ,
     setOnTrackEnded,
   } = useUniversalAudioPlayer();
+  const { currentTime, duration } = useAudioProgress();
 
   const [editingStage, setEditingStage] = useState<CeremonyStage | null>(null);
   const [isNewStageModal, setIsNewStageModal] = useState(false);
