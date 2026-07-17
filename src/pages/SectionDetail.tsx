@@ -17,9 +17,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { useAutoSuggestAudios } from '@/hooks/useAutoSuggestAudios';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
