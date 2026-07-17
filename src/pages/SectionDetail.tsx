@@ -17,7 +17,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen } from 'lucide-react';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
@@ -352,6 +352,16 @@ const SectionDetail = () => {
                 </p>
               )}
             </div>
+            <Button
+              onClick={() => navigate(`/roteiro/${sectionId}`)}
+              size="sm"
+              className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+              variant="outline"
+              title="Roteiro / Leitura do ritual"
+            >
+              <BookOpen size={16} />
+              <span className="hidden sm:inline">Roteiro</span>
+            </Button>
             {sectionStages.length > 0 && (
               <Button
                 onClick={() => setIsPresentationMode(true)}
@@ -363,6 +373,7 @@ const SectionDetail = () => {
                 <span className="hidden sm:inline">Apresentar</span>
               </Button>
             )}
+
             <Button
               onClick={() => setIsNewStageModal(true)}
               size="sm"
