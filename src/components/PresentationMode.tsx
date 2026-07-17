@@ -160,6 +160,8 @@ export function PresentationMode({
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
 
   const fireRoteiroCue = (block: { type: 'cue'; etapaId: string } | { type: 'track'; audioId: string }) => {
+    const key = block.type === 'cue' ? `cue:${block.etapaId}` : `track:${block.audioId}`;
+    setActiveCueKey(key);
     if (block.type === 'cue') {
       const stage = stagesById.get(block.etapaId);
       if (!stage) { toast.error('Etapa não encontrada'); return; }
