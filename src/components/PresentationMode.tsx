@@ -58,6 +58,8 @@ interface PresentationModeProps {
   audiosByStageId: Record<string, StageAudio[]>;
   currentStageId: string | null;
   currentUrl?: string | null;
+  secaoId?: string;
+  secaoNome?: string;
 
   status: 'idle' | 'playing' | 'paused';
   volume: number;
