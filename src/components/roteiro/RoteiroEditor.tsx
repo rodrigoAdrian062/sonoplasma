@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2,
 } from 'lucide-react';
 
 import { CeremonyStage } from '@/types/ceremony';
@@ -32,7 +32,7 @@ const DND_MIME = 'application/x-roteiro-item';
 
 export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps) {
   const { data: roteiro } = useRoteiroBySection(secaoId);
-  const { upsertRoteiro, roteiros } = useRoteiros();
+  const { upsertRoteiro, deleteRoteiro, roteiros } = useRoteiros();
   const templates = roteiros.filter((r) => r.is_template);
   const { audiosByStageId } = useAllStageAudios();
   const { audios: library } = useAudioLibrary();
@@ -224,10 +224,23 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </div>
               <ScrollArea className="max-h-64">
                 {templates.map((t) => (
-                  <button key={t.id} onClick={() => loadTemplate(t)}
-                    className="w-full text-left px-2 py-1.5 rounded hover:bg-white/5 text-sm truncate">
-                    {t.titulo}
-                  </button>
+                  <div key={t.id} className="group flex items-center gap-1 rounded hover:bg-white/5">
+                    <button onClick={() => loadTemplate(t)}
+                      className="flex-1 text-left px-2 py-1.5 text-sm truncate">
+                      {t.titulo}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Excluir template "${t.titulo}"?`)) {
+                          deleteRoteiro.mutate(t.id);
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 h-7 w-7 rounded flex items-center justify-center text-red-400 hover:bg-red-500/20 shrink-0"
+                      title="Excluir template"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))}
               </ScrollArea>
             </PopoverContent>
