@@ -412,8 +412,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 )}
                 title={`Sugere músicas conforme "${stageTitle}"`}
               >
-                <Wand2 size={12} />
-                {suggestMode ? 'Sugestões ativas' : 'Sugerir músicas'}
+                {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
               </button>
             )}
           </DialogTitle>
