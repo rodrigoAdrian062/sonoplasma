@@ -345,12 +345,28 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-none w-screen h-[100dvh] sm:h-screen rounded-none border-0 flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 py-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-2 text-base flex-wrap">
             <Library className="text-gold" size={18} />
             Escolher áudios
             <span className="ml-1 text-xs font-normal text-muted-foreground hidden sm:flex items-center gap-1">
               <GripVertical size={12} /> arraste da biblioteca para a lista
             </span>
+            {stageTitle && (
+              <button
+                type="button"
+                onClick={() => setSuggestMode((v) => !v)}
+                className={cn(
+                  'ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                  suggestMode
+                    ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
+                    : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                )}
+                title={`Sugere músicas conforme "${stageTitle}"`}
+              >
+                <Wand2 size={12} />
+                {suggestMode ? 'Sugestões ativas' : 'Sugerir músicas'}
+              </button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
