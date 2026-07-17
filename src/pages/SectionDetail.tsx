@@ -23,7 +23,6 @@ import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
 import { lazy, Suspense } from 'react';
-const PresentationMode = lazy(() => import('@/components/PresentationMode').then(m => ({ default: m.PresentationMode })));
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
