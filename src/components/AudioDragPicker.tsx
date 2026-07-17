@@ -129,6 +129,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
         const payload = {
           stageTitle,
           stageDescription: stageDescription || '',
+          userHint: aiHint || '',
           limit: 30,
           library: library.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
         };
@@ -154,7 +155,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestMode, stageTitle, stageDescription]);
+  }, [suggestMode, stageTitle, stageDescription, aiHint]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
