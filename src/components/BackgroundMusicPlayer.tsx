@@ -50,6 +50,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     setAutoMode,
     setDuckVolume,
     setFadeMs,
+    maxDurationSec,
+    setMaxDurationSec,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
