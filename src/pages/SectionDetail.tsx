@@ -55,7 +55,6 @@ const SectionDetail = () => {
   const { saveAudios } = useStageAudios();
   const { audiosByStageId } = useAllStageAudios();
   const { audios: libraryAudios } = useAudioLibrary();
-  const { run: runAutoSuggest, isRunning: isSuggesting } = useAutoSuggestAudios();
   const {
     currentStageId,
     currentUrl,
