@@ -214,6 +214,10 @@ export default function AudioLibraryPage() {
     audioElement?.pause();
     setAudioElement(null);
     stopYtTimePolling();
+    if (ytInitTimeoutRef.current) {
+      clearTimeout(ytInitTimeoutRef.current);
+      ytInitTimeoutRef.current = null;
+    }
     if (ytPlayerRef.current) {
       try {
         if (destroy) {
