@@ -32,7 +32,7 @@ const DND_MIME = 'application/x-roteiro-item';
 
 export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps) {
   const { data: roteiro } = useRoteiroBySection(secaoId);
-  const { upsertRoteiro, roteiros } = useRoteiros();
+  const { upsertRoteiro, deleteRoteiro, roteiros } = useRoteiros();
   const templates = roteiros.filter((r) => r.is_template);
   const { audiosByStageId } = useAllStageAudios();
   const { audios: library } = useAudioLibrary();
