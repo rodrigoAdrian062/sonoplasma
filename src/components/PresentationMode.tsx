@@ -401,6 +401,9 @@ export function PresentationMode({
   // Rolagem do mouse em qualquer lugar da apresentação ajusta o volume
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Permitir rolagem normal dentro do painel do roteiro
+      if (target && target.closest('[data-roteiro-scroll]')) return;
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.02 : -0.02;
       onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
