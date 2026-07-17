@@ -23,7 +23,7 @@ export function useTimer(onComplete?: () => void): UseTimerReturn {
   }, [onComplete]);
 
   useEffect(() => {
-    if (isRunning && !isPaused && timeRemaining > 0) {
+    if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
@@ -39,9 +39,10 @@ export function useTimer(onComplete?: () => void): UseTimerReturn {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [isRunning, isPaused, timeRemaining]);
+  }, [isRunning, isPaused]);
 
   const start = useCallback((seconds: number) => {
     setTimeRemaining(seconds);

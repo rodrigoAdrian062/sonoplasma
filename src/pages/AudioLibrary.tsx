@@ -283,7 +283,7 @@ export default function AudioLibraryPage() {
 
       const initPlayer = () => {
         if (!(window as any).YT || !(window as any).YT.Player) {
-          setTimeout(initPlayer, 100);
+          ytInitTimeoutRef.current = setTimeout(initPlayer, 100);
           return;
         }
         ytPlayerRef.current = new (window as any).YT.Player('yt-library-player', {

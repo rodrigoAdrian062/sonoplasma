@@ -66,7 +66,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
     // Se é o mesmo áudio pausado, apenas continua
     if (currentStageId === stageId && status === 'paused') {
-      audio.play();
+      audio.play().catch(() => setStatus('paused'));
       setStatus('playing');
       return;
     }
@@ -74,7 +74,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     // Novo áudio
     audio.src = url;
     audio.volume = volume;
-    audio.play();
+    audio.play().catch(() => setStatus('idle'));
     setCurrentStageId(stageId);
     setStatus('playing');
   }, [currentStageId, status, volume]);

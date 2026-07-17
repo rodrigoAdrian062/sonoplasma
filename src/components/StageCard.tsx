@@ -90,14 +90,29 @@ export function StageCard({
     setUseTimerEnabled(defaultTime > 0);
   }, [defaultTime]);
 
+  // Mantém a faixa selecionada mesmo quando a lista é reordenada/editada,
+  // localizando o mesmo id/url na nova lista. Só reseta se não existir mais.
+  const selectedAudioIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (selectedAudioIndex >= audios.length) {
-      setSelectedAudioIndex(0);
+    const current = audios[selectedAudioIndex];
+    if (current) {
+      selectedAudioIdRef.current = current.id ?? current.audio_url;
+    }
+  }, [selectedAudioIndex, audios]);
+  useEffect(() => {
+    if (audios.length === 0) {
+      if (selectedAudioIndex !== 0) setSelectedAudioIndex(0);
+    } else if (selectedAudioIndex >= audios.length) {
+      const prevId = selectedAudioIdRef.current;
+      const idx = prevId
+        ? audios.findIndex((a) => (a.id ?? a.audio_url) === prevId)
+        : -1;
+      setSelectedAudioIndex(idx >= 0 ? idx : 0);
     }
     if (audios.length >= 5) {
       setShowAudioList(true);
     }
-  }, [audios.length, selectedAudioIndex]);
+  }, [audios, selectedAudioIndex]);
 
   // Pré-carrega os áudios diretos da etapa para início instantâneo no tablet.
   useEffect(() => {
