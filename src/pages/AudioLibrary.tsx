@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -811,10 +812,109 @@ export default function AudioLibraryPage() {
             <p className="text-sm mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filteredAudios.map((audio) => (
+          <VirtualAudioList
+            audios={filteredAudios}
+            bulkDeleteMode={bulkDeleteMode}
+            selectedIds={selectedIds}
+            toggleSelectId={toggleSelectId}
+            playingId={playingId}
+            isPaused={isPaused}
+            audioCurrentTime={audioCurrentTime}
+            audioDuration={audioDuration}
+            handlePauseResume={handlePauseResume}
+            handleSeek={handleSeek}
+            handleSeekTo={handleSeekTo}
+            stopCurrentPlayback={stopCurrentPlayback}
+            deleteAudio={deleteAudio}
+            stages={stages}
+            folders={folders}
+            currentFolderId={currentFolderId}
+            moveAudioToFolder={moveAudioToFolder}
+            handleAddToStage={handleAddToStage}
+            stagesBySection={stagesBySection}
+            unassignedStages={unassignedStages}
+            isYouTubeUrl={isYouTubeUrl}
+            formatFileSize={formatFileSize}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+interface VirtualAudioListProps {
+  audios: any[];
+  bulkDeleteMode: boolean;
+  selectedIds: Set<string>;
+  toggleSelectId: (id: string) => void;
+  playingId: string | null;
+  isPaused: boolean;
+  audioCurrentTime: number;
+  audioDuration: number;
+  handlePauseResume: (audio: { id: string; audio_url: string }) => void;
+  handleSeek: (seconds: number) => void;
+  handleSeekTo: (time: number) => void;
+  stopCurrentPlayback: (destroy?: boolean) => void;
+  deleteAudio: any;
+  stages: any[];
+  folders: any[];
+  currentFolderId: string | null;
+  moveAudioToFolder: any;
+  handleAddToStage: (audioNome: string, audioUrl: string, etapaId: string) => void;
+  stagesBySection: Array<{ section: any; stages: any[] }>;
+  unassignedStages: any[];
+  isYouTubeUrl: (url: string) => boolean;
+  formatFileSize: (bytes: number | null) => string;
+}
+
+function VirtualAudioList(props: VirtualAudioListProps) {
+  const {
+    audios, bulkDeleteMode, selectedIds, toggleSelectId,
+    playingId, isPaused, audioCurrentTime, audioDuration,
+    handlePauseResume, handleSeek, handleSeekTo, stopCurrentPlayback,
+    deleteAudio, stages, folders, currentFolderId, moveAudioToFolder,
+    handleAddToStage, stagesBySection, unassignedStages,
+    isYouTubeUrl, formatFileSize,
+  } = props;
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  useEffect(() => {
+    if (parentRef.current) {
+      setScrollMargin(parentRef.current.getBoundingClientRect().top + window.scrollY);
+    }
+  }, [audios.length]);
+
+  const virtualizer = useWindowVirtualizer({
+    count: audios.length,
+    estimateSize: () => 84,
+    overscan: 6,
+    scrollMargin,
+  });
+
+  const items = virtualizer.getVirtualItems();
+
+  return (
+    <div ref={parentRef} className="relative">
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {items.map((virtualRow) => {
+          const audio = audios[virtualRow.index];
+          return (
+            <div
+              key={audio.id}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
+                paddingBottom: 8,
+              }}
+            >
               <div
-                key={audio.id}
                 className={cn(
                   'flex items-center gap-3 p-3 sm:p-4 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
                   bulkDeleteMode && 'cursor-pointer',
@@ -856,12 +956,10 @@ export default function AudioLibraryPage() {
                     <p className="text-xs text-muted-foreground truncate">
                       {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                     </p>
-
                   )}
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
-                    {/* Seek backward when playing */}
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(-10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Retroceder 10s">
                         <SkipBack size={14} />
@@ -870,19 +968,16 @@ export default function AudioLibraryPage() {
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePauseResume(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
                       {playingId === audio.id && !isPaused ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
                     </Button>
-                    {/* Seek forward when playing */}
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Avançar 10s">
                         <SkipForward size={14} />
                       </Button>
                     )}
-                    {/* Stop button when playing */}
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); stopCurrentPlayback(); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
                         <X size={16} />
                       </Button>
                     )}
-                    {/* Add to stage */}
                     {stages.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -917,7 +1012,6 @@ export default function AudioLibraryPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                    {/* Move to folder */}
                     {folders.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -944,7 +1038,6 @@ export default function AudioLibraryPage() {
                     </Button>
                   </div>
                 )}
-                {/* Progress bar */}
                 {playingId === audio.id && audioDuration > 0 && (
                   <div className="w-full flex items-center gap-2 mt-2 px-1">
                     <span className="text-[10px] text-muted-foreground font-mono w-10 text-right">
@@ -972,13 +1065,14 @@ export default function AudioLibraryPage() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-      </main>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
 
 function formatLibTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
