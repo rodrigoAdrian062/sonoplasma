@@ -770,15 +770,17 @@ export function PresentationMode({
                     >
                       {para.map((b, i) => {
                         if (b.type === 'text') return <span key={i}>{b.text}</span>;
+                        if (b.type === 'page') return null;
                         const key = b.type === 'cue' ? `cue:${b.etapaId}` : `track:${b.audioId}`;
                         const label = b.type === 'cue'
                           ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
                           : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
                         const active = activeCueKey === key;
+                        const cueBlock = b;
                         return (
                           <button
                             key={i}
-                            onClick={() => fireRoteiroCue(b)}
+                            onClick={() => fireRoteiroCue(cueBlock)}
                             className={[
                               'inline-flex items-center gap-1.5 my-1 mx-0.5 px-2.5 py-1 rounded-md text-xs font-semibold align-middle transition-all',
                               active
