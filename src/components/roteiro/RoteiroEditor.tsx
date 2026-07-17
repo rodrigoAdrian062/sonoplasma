@@ -227,19 +227,21 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </div>
               <ScrollArea className="max-h-64">
                 {templates.map((t) => (
-                  <div key={t.id} className="group flex items-center gap-1 rounded hover:bg-white/5">
+                  <div key={t.id} className="flex items-center gap-1 rounded hover:bg-white/5 pr-1">
                     <button onClick={() => loadTemplate(t)}
-                      className="flex-1 text-left px-2 py-1.5 text-sm truncate">
+                      className="flex-1 text-left px-2 py-1.5 text-sm truncate min-w-0">
                       {t.titulo}
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm(`Excluir template "${t.titulo}"?`)) {
                           deleteRoteiro.mutate(t.id);
                         }
                       }}
-                      className="h-7 w-7 rounded flex items-center justify-center text-red-400 hover:bg-red-500/20 shrink-0"
+                      className="h-7 w-7 rounded flex items-center justify-center text-red-400 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 shrink-0"
                       title="Excluir template"
+                      aria-label="Excluir template"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
