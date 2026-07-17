@@ -422,7 +422,7 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               <ScrollArea className="max-h-[200px]">
                 <div className="space-y-1">
                   {parsed.map((b, i) => ({ b, i }))
-                    .filter(({ b }) => b.type === 'cue' || b.type === 'track')
+                    .filter(({ b }) => b.type !== 'text')
                     .map(({ b, i }, idx) => {
                       let label = '';
                       let onPlay: (() => void) | null = null;
@@ -432,7 +432,7 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
                         if (stage && (audiosByStageId[stage.id] || []).length > 0) {
                           onPlay = () => playStage(stage.id, stage.nome_simbolico);
                         }
-                      } else {
+                      } else if (b.type === 'track') {
                         const tr = libraryById.get(b.audioId);
                         label = tr?.nome ?? 'faixa removida';
                         if (tr) onPlay = () => playTrack(tr.id, tr.nome, tr.audio_url);
