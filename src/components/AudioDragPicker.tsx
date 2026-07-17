@@ -30,6 +30,8 @@ interface AudioDragPickerProps {
   audios: AudioItem[];
   onChange: (audios: AudioItem[]) => void;
   maxAudios?: number;
+  stageTitle?: string;
+  stageDescription?: string;
 }
 
 type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
