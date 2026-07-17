@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
-  X, Play, Pause, Square, Music, Type as TypeIcon, ChevronsUp, ChevronsDown, Keyboard,
+  X, Play, Pause, Square, Music, Type as TypeIcon, Keyboard,
 } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { parseRoteiro } from '@/lib/roteiroFormat';
 import { toast } from 'sonner';
 
