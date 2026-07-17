@@ -145,10 +145,15 @@ export function PresentationMode({
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
   const [showRoteiro, setShowRoteiro] = useState(false);
+  const [roteiroPage, setRoteiroPage] = useState(0);
+  const [roteiroGoto, setRoteiroGoto] = useState('');
   const { deleteAudio } = useStageAudios();
   const { data: roteiro } = useRoteiroBySection(secaoId);
   const { audios: libraryAudios } = useAudioLibrary();
   const roteiroBlocks = roteiro ? parseRoteiro(roteiro.conteudo) : [];
+  const roteiroPages = roteiro ? paginateBlocks(roteiroBlocks, 900) : [];
+  const roteiroTotalPages = Math.max(1, roteiroPages.length);
+  const roteiroCurrentPage = roteiroPages[Math.min(roteiroPage, roteiroTotalPages - 1)] || [];
   const stagesById = new Map(stages.map((s) => [s.id, s] as const));
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
 
