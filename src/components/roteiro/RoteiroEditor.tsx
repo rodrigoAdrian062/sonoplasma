@@ -126,17 +126,19 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   };
 
   const cursorFromEvent = (e: React.DragEvent<HTMLTextAreaElement>): number => {
-    // Some browsers expose caretPositionFromPoint / caretRangeFromPoint
-    const anyDoc = document as any;
     const el = textareaRef.current;
     if (!el) return conteudo.length;
+    // Durante o dragover o browser move o caret do textarea para o ponto do mouse.
+    // Focar + ler selectionStart é o método mais confiável cross-browser.
+    try { el.focus({ preventScroll: true } as any); } catch { el.focus(); }
+    const anyDoc = document as any;
     try {
       if (anyDoc.caretPositionFromPoint) {
         const pos = anyDoc.caretPositionFromPoint(e.clientX, e.clientY);
-        if (pos && pos.offsetNode) return pos.offset;
+        if (pos && typeof pos.offset === 'number' && pos.offset > 0) return pos.offset;
       } else if (anyDoc.caretRangeFromPoint) {
         const r = anyDoc.caretRangeFromPoint(e.clientX, e.clientY);
-        if (r) return r.startOffset;
+        if (r && r.startOffset > 0) return r.startOffset;
       }
     } catch { /* noop */ }
     return el.selectionStart ?? conteudo.length;
@@ -153,10 +155,11 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     const raw = e.dataTransfer.getData(DND_MIME);
     if (!raw) return;
     e.preventDefault();
+    e.stopPropagation();
+    const pos = cursorFromEvent(e);
     setDropCursor(null);
     try {
       const p = JSON.parse(raw) as DragPayload;
-      const pos = cursorFromEvent(e);
       if (p.kind === 'stage') insertCue(p.id, pos);
       else insertTrack(p.id, pos);
       toast.success(`Cue inserido: ${p.name}`);
