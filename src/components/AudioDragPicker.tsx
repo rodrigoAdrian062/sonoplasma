@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AudioItem {
   nome: string;
@@ -66,6 +67,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'upload' | 'youtube' | 'spotify'>('all');
   const [suggestMode, setSuggestMode] = useState(false);
+  const [aiSuggested, setAiSuggested] = useState<AudioItem[] | null>(null);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -96,6 +99,15 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
   const suggested = useMemo(() => {
     if (!suggestMode || !stageTitle) return null;
+    if (aiSuggested && aiSuggested.length > 0) {
+      // preserve order returned by AI; intersect with current library
+      const byUrl = new Map(library.map((a) => [a.audio_url, a] as const));
+      const ordered = aiSuggested
+        .map((a) => byUrl.get(a.audio_url))
+        .filter((a): a is typeof library[number] => Boolean(a));
+      if (ordered.length > 0) return ordered;
+    }
+    // fallback local matcher while AI loads or if AI returned nothing
     const fakeStage = {
       id: 'sug',
       nome_simbolico: stageTitle,
@@ -103,7 +115,44 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     } as unknown as CeremonyStage;
     const results = matchAudiosForStage(fakeStage, library, 50);
     return results.map((r) => r.audio);
-  }, [suggestMode, stageTitle, stageDescription, library]);
+  }, [suggestMode, stageTitle, stageDescription, library, aiSuggested]);
+
+  // Trigger AI suggestion when entering suggest mode
+  useEffect(() => {
+    if (!suggestMode || !stageTitle || library.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      setIsSuggesting(true);
+      try {
+        const payload = {
+          stageTitle,
+          stageDescription: stageDescription || '',
+          limit: 30,
+          library: library.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+        };
+        const { data, error } = await supabase.functions.invoke('suggest-audios', { body: payload });
+        if (cancelled) return;
+        if (error) {
+          toast.error('IA indisponível — usando sugestão local');
+          setAiSuggested(null);
+          return;
+        }
+        const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+        const picked = indices
+          .map((i) => library[i])
+          .filter(Boolean)
+          .map((a) => ({ nome: a.nome, audio_url: a.audio_url }));
+        setAiSuggested(picked);
+        if (picked.length === 0) toast.info('IA não encontrou músicas ideais — mostrando por semelhança de título');
+      } catch {
+        if (!cancelled) toast.error('Erro ao consultar IA');
+      } finally {
+        if (!cancelled) setIsSuggesting(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestMode, stageTitle, stageDescription]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -363,8 +412,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 )}
                 title={`Sugere músicas conforme "${stageTitle}"`}
               >
-                <Wand2 size={12} />
-                {suggestMode ? 'Sugestões ativas' : 'Sugerir músicas'}
+                {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
               </button>
             )}
           </DialogTitle>
