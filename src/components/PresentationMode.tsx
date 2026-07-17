@@ -147,6 +147,8 @@ export function PresentationMode({
   const [showRoteiro, setShowRoteiro] = useState(false);
   const [roteiroPage, setRoteiroPage] = useState(0);
   const [roteiroGoto, setRoteiroGoto] = useState('');
+  const [activeCueKey, setActiveCueKey] = useState<string | null>(null);
+  const [hoverLineIdx, setHoverLineIdx] = useState<number | null>(null);
   const { deleteAudio } = useStageAudios();
   const { data: roteiro } = useRoteiroBySection(secaoId);
   const { audios: libraryAudios } = useAudioLibrary();
@@ -158,6 +160,8 @@ export function PresentationMode({
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
 
   const fireRoteiroCue = (block: { type: 'cue'; etapaId: string } | { type: 'track'; audioId: string }) => {
+    const key = block.type === 'cue' ? `cue:${block.etapaId}` : `track:${block.audioId}`;
+    setActiveCueKey(key);
     if (block.type === 'cue') {
       const stage = stagesById.get(block.etapaId);
       if (!stage) { toast.error('Etapa não encontrada'); return; }
@@ -204,6 +208,10 @@ export function PresentationMode({
   const timer = useTimer(() => {
     onStop();
   });
+
+  useEffect(() => {
+    if (status === 'idle') setActiveCueKey(null);
+  }, [status]);
 
   useEffect(() => {
     if (currentStage) {
@@ -699,7 +707,7 @@ export function PresentationMode({
 
         {/* Roteiro Side Panel */}
         {showRoteiro && roteiro && (
-          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[380px] md:w-[420px] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[560px] md:w-[680px] lg:w-[780px] xl:w-[880px] max-w-[95vw] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10 shrink-0">
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-widest text-gold/70">Roteiro</div>
@@ -715,30 +723,80 @@ export function PresentationMode({
                 <PanelLeftClose size={16} />
               </Button>
             </div>
-            <div data-roteiro-scroll className="flex-1 overflow-y-auto px-4 py-4 font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+            <div data-roteiro-scroll className="flex-1 overflow-y-auto px-6 py-5 font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
               {roteiroBlocks.length === 0 && (
                 <div className="text-muted-foreground italic">Roteiro vazio.</div>
               )}
               <div className="text-[10px] font-mono text-muted-foreground/60 mb-2 text-right">
                 pág. {Math.min(roteiroPage, roteiroTotalPages - 1) + 1} / {roteiroTotalPages}
               </div>
-              {roteiroCurrentPage.map((b, i) => {
-                if (b.type === 'text') return <span key={i}>{b.text}</span>;
-                if (b.type === 'page') return null;
-                const label = b.type === 'cue'
-                  ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
-                  : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
-                return (
-                  <button
-                    key={i}
-                    onClick={() => fireRoteiroCue(b)}
-                    className="inline-flex items-center gap-1.5 my-1.5 mx-0.5 px-2.5 py-1 rounded-md border border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 text-xs font-semibold align-middle"
-                  >
-                    <Play size={12} />
-                    <span className="truncate max-w-[220px]">{label}</span>
-                  </button>
-                );
-              })}
+              {(() => {
+                // Agrupar blocos da página em parágrafos (linhas de leitura)
+                const paragraphs: RoteiroBlock[][] = [];
+                let cur: RoteiroBlock[] = [];
+                roteiroCurrentPage.forEach((b) => {
+                  if (b.type === 'page') return;
+                  if (b.type === 'text') {
+                    const parts = b.text.split(/\n\s*\n/);
+                    parts.forEach((p, i) => {
+                      if (i > 0) { if (cur.length) paragraphs.push(cur); cur = []; }
+                      if (p) cur.push({ type: 'text', text: p } as RoteiroBlock);
+                    });
+                  } else {
+                    cur.push(b);
+                  }
+                });
+                if (cur.length) paragraphs.push(cur);
+
+                return paragraphs.map((para, pIdx) => {
+                  const paraKeys = para
+                    .map((b) => b.type === 'cue' ? `cue:${b.etapaId}` : b.type === 'track' ? `track:${b.audioId}` : null)
+                    .filter(Boolean) as string[];
+                  const hasActive = activeCueKey && paraKeys.includes(activeCueKey);
+                  const isHover = hoverLineIdx === pIdx;
+                  return (
+                    <div
+                      key={pIdx}
+                      onMouseEnter={() => setHoverLineIdx(pIdx)}
+                      onMouseLeave={() => setHoverLineIdx((v) => (v === pIdx ? null : v))}
+                      className={[
+                        'transition-all duration-200 rounded-lg px-3 py-2 my-1 border border-transparent',
+                        hasActive
+                          ? 'bg-gold/15 border-gold/60 shadow-[0_0_24px_rgba(212,175,55,0.25)] ring-1 ring-gold/40'
+                          : isHover
+                            ? 'bg-gold/5 border-gold/20'
+                            : '',
+                      ].join(' ')}
+                    >
+                      {para.map((b, i) => {
+                        if (b.type === 'text') return <span key={i}>{b.text}</span>;
+                        if (b.type === 'page') return null;
+                        const key = b.type === 'cue' ? `cue:${b.etapaId}` : `track:${b.audioId}`;
+                        const label = b.type === 'cue'
+                          ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
+                          : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
+                        const active = activeCueKey === key;
+                        const cueBlock = b;
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => fireRoteiroCue(cueBlock)}
+                            className={[
+                              'inline-flex items-center gap-1.5 my-1 mx-0.5 px-2.5 py-1 rounded-md text-xs font-semibold align-middle transition-all',
+                              active
+                                ? 'border border-gold bg-gold text-background shadow-[0_0_16px_rgba(212,175,55,0.6)] animate-pulse'
+                                : 'border border-gold/40 bg-gold/10 text-gold hover:bg-gold/25',
+                            ].join(' ')}
+                          >
+                            <Play size={12} />
+                            <span className="truncate max-w-[260px]">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
             {/* Navegação de páginas */}
