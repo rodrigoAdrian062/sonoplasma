@@ -346,6 +346,47 @@ export type Database = {
         }
         Relationships: []
       }
+      sonoplastia_roteiros: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          is_template: boolean
+          owner_id: string
+          secao_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          is_template?: boolean
+          owner_id?: string
+          secao_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          is_template?: boolean
+          owner_id?: string
+          secao_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonoplastia_roteiros_secao_id_fkey"
+            columns: ["secao_id"]
+            isOneToOne: false
+            referencedRelation: "sonoplastia_secoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sonoplastia_secoes: {
         Row: {
           ativo: boolean
