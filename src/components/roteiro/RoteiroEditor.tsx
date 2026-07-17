@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Save, Upload, FileText, Loader2, Plus, Sparkles,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Plus, Sparkles, Square,
 } from 'lucide-react';
+
 import { supabase } from '@/integrations/supabase/client';
 import { CeremonyStage } from '@/types/ceremony';
 import { useRoteiros, useRoteiroBySection, Roteiro } from '@/hooks/useRoteiros';
@@ -16,7 +17,7 @@ import { RoteiroImportDialog } from './RoteiroImportDialog';
 import { RoteiroReader } from './RoteiroReader';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
-import { Square } from 'lucide-react';
+
 
 
 interface RoteiroEditorProps {
