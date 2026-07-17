@@ -290,6 +290,9 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </ScrollArea>
             </PopoverContent>
           </Popover>
+          <Button size="sm" variant="outline" onClick={insertPageBreak} title="Inserir quebra de página onde o cursor está">
+            <FileStack className="w-4 h-4 mr-1" /> Nova página
+          </Button>
           <Button size="sm" variant="outline" onClick={saveAsTemplate}>
             <Sparkles className="w-4 h-4 mr-1" /> Salvar como template
           </Button>
