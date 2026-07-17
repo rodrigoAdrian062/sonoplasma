@@ -668,8 +668,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     status,
     volume,
-    currentTime,
-    duration,
     isYouTube,
     isSpotify,
     youtubeVideoId,
@@ -691,7 +689,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setOnTrackEnded: (cb) => { onTrackEndedRef.current = cb; },
   };
 
-  return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;
+  return (
+    <AudioPlayerContext.Provider value={value}>
+      <AudioProgressContext.Provider value={{ currentTime, duration }}>
+        {children}
+      </AudioProgressContext.Provider>
+    </AudioPlayerContext.Provider>
+  );
 }
 
 export function useUniversalAudioPlayer(): AudioPlayerContextValue {
