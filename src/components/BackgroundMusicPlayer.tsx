@@ -26,6 +26,13 @@ function isPlayableBackgroundAudio(audio: { audio_url: string; tipo?: string | n
   );
 }
 
+function formatTime(sec: number): string {
+  if (!isFinite(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function BackgroundMusicPlayer({ variant = 'header', compact = false }: BackgroundMusicPlayerProps) {
   const {
     playlist,
@@ -52,6 +59,9 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    currentTime,
+    duration,
+    seek,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
@@ -141,6 +151,24 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                 ))}
               </div>
             )}
+
+            {/* Progress / time */}
+            {currentTrack && (
+              <div className="space-y-1">
+                <Slider
+                  value={[Math.min(currentTime, duration || 0)]}
+                  min={0}
+                  max={Math.max(1, duration || 0)}
+                  step={0.1}
+                  onValueChange={([v]) => seek(v)}
+                />
+                <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
+                </div>
+              </div>
+            )}
+
 
             {/* Volume */}
             <div className="flex items-center gap-2">

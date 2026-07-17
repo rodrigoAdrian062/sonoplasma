@@ -38,6 +38,9 @@ interface BackgroundMusicContextValue {
   setFadeMs: (v: number) => void;
   maxDurationSec: number; // 0 = sem limite
   setMaxDurationSec: (v: number) => void;
+  currentTime: number;
+  duration: number;
+  seek: (sec: number) => void;
 }
 
 const STORAGE_KEY = 'bg-music-playlist-v1';
@@ -88,6 +91,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wasAutoPausedRef = useRef(false);
@@ -176,6 +181,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const a = audioRef.current;
     if (!a) return;
     const onTimeUpdate = () => {
+      setCurrentTime(a.currentTime || 0);
       const limit = maxDurationRef.current;
       if (limit > 0 && a.currentTime >= limit) {
         const pl = playlistRef.current;
@@ -190,8 +196,21 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         }
       }
     };
+    const onLoaded = () => setDuration(isFinite(a.duration) ? a.duration : 0);
     a.addEventListener('timeupdate', onTimeUpdate);
-    return () => a.removeEventListener('timeupdate', onTimeUpdate);
+    a.addEventListener('loadedmetadata', onLoaded);
+    a.addEventListener('durationchange', onLoaded);
+    return () => {
+      a.removeEventListener('timeupdate', onTimeUpdate);
+      a.removeEventListener('loadedmetadata', onLoaded);
+      a.removeEventListener('durationchange', onLoaded);
+    };
+  }, []);
+
+  const seek = useCallback((sec: number) => {
+    const a = audioRef.current;
+    if (!a) return;
+    try { a.currentTime = Math.max(0, sec); setCurrentTime(a.currentTime); } catch { /* noop */ }
   }, []);
 
   // Load current track src when track changes (does NOT touch playback state)
@@ -443,6 +462,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    currentTime,
+    duration,
+    seek,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
