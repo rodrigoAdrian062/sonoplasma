@@ -428,6 +428,30 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               <Wand2 size={12} />
               Descreva a etapa para a IA (opcional — quanto mais detalhe, melhor a sugestão)
             </label>
+
+            {/* Preset chips — click to load a ready-made hint, then edit if needed */}
+            <div className="flex flex-wrap gap-1.5">
+              {getHintPresets(stageTitle).map((p) => {
+                const active = aiHintDraft.trim() === p.text.trim();
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => setAiHintDraft(p.text)}
+                    title={p.text}
+                    className={cn(
+                      'text-[11px] rounded-full border px-2.5 py-1 transition-all',
+                      active
+                        ? 'border-gold/60 bg-gold/15 text-gold'
+                        : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <textarea
               value={aiHintDraft}
               onChange={(e) => setAiHintDraft(e.target.value)}
@@ -437,7 +461,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] text-muted-foreground">
-                {aiHint ? 'Prévia aplicada — a IA reordena as sugestões.' : 'Sem prévia, a IA usa apenas o título/descrição da etapa.'}
+                {aiHint ? 'Prévia aplicada — a IA reordena as sugestões.' : 'Escolha um exemplo acima ou escreva a sua prévia.'}
               </span>
               <div className="flex items-center gap-2">
                 {aiHint && (
