@@ -134,6 +134,14 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     setConteudo(text); setDirty(true); focusAt(nextCursor);
   };
 
+  const insertPageBreak = () => {
+    const el = textareaRef.current;
+    const cursor = el?.selectionStart ?? conteudo.length;
+    const { text, nextCursor } = insertPageBreakAtCursor(conteudo, cursor);
+    setConteudo(text); setDirty(true); focusAt(nextCursor);
+    toast.success('Quebra de página inserida');
+  };
+
   // Drag & drop --------------------------------------------------------------
   const handleDragStart = (e: React.DragEvent, payload: DragPayload) => {
     e.dataTransfer.setData(DND_MIME, JSON.stringify(payload));
