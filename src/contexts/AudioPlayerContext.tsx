@@ -15,8 +15,6 @@ interface AudioPlayerContextValue {
 
   status: PlaybackStatus;
   volume: number;
-  currentTime: number;
-  duration: number;
   isYouTube: boolean;
   isSpotify: boolean;
   youtubeVideoId: string | null;
@@ -36,6 +34,21 @@ interface AudioPlayerContextValue {
   seekTo: (seconds: number) => void;
   setEQ: (settings: Partial<EQSettings>) => void;
   setOnTrackEnded: (cb: ((stageId: string, url: string) => boolean) | null) => void;
+}
+
+// Contexto separado apenas para currentTime/duration.
+// Isola o re-render de "tick" (4x/seg) dos componentes que só consomem
+// controles estáveis (play/pause/status/track).
+interface AudioProgressContextValue {
+  currentTime: number;
+  duration: number;
+}
+const AudioProgressContext = createContext<AudioProgressContextValue>({
+  currentTime: 0,
+  duration: 0,
+});
+export function useAudioProgress(): AudioProgressContextValue {
+  return useContext(AudioProgressContext);
 }
 
 function isYouTubeUrl(url: string): boolean {
