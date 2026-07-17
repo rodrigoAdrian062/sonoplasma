@@ -147,6 +147,8 @@ export function PresentationMode({
   const [showRoteiro, setShowRoteiro] = useState(false);
   const [roteiroPage, setRoteiroPage] = useState(0);
   const [roteiroGoto, setRoteiroGoto] = useState('');
+  const [activeCueKey, setActiveCueKey] = useState<string | null>(null);
+  const [hoverLineIdx, setHoverLineIdx] = useState<number | null>(null);
   const { deleteAudio } = useStageAudios();
   const { data: roteiro } = useRoteiroBySection(secaoId);
   const { audios: libraryAudios } = useAudioLibrary();
