@@ -6,12 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2, FileStack,
 } from 'lucide-react';
 
 import { CeremonyStage } from '@/types/ceremony';
 import { useRoteiros, useRoteiroBySection, Roteiro } from '@/hooks/useRoteiros';
-import { insertCueAtCursor, insertTrackAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
+import { insertCueAtCursor, insertTrackAtCursor, insertPageBreakAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
 import { RoteiroImportDialog } from './RoteiroImportDialog';
 import { RoteiroReader } from './RoteiroReader';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
@@ -132,6 +132,14 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     const cursor = atCursor ?? el?.selectionStart ?? conteudo.length;
     const { text, nextCursor } = insertTrackAtCursor(conteudo, cursor, audioId);
     setConteudo(text); setDirty(true); focusAt(nextCursor);
+  };
+
+  const insertPageBreak = () => {
+    const el = textareaRef.current;
+    const cursor = el?.selectionStart ?? conteudo.length;
+    const { text, nextCursor } = insertPageBreakAtCursor(conteudo, cursor);
+    setConteudo(text); setDirty(true); focusAt(nextCursor);
+    toast.success('Quebra de página inserida');
   };
 
   // Drag & drop --------------------------------------------------------------
@@ -282,6 +290,9 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </ScrollArea>
             </PopoverContent>
           </Popover>
+          <Button size="sm" variant="outline" onClick={insertPageBreak} title="Inserir quebra de página onde o cursor está">
+            <FileStack className="w-4 h-4 mr-1" /> Nova página
+          </Button>
           <Button size="sm" variant="outline" onClick={saveAsTemplate}>
             <Sparkles className="w-4 h-4 mr-1" /> Salvar como template
           </Button>
