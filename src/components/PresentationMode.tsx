@@ -28,6 +28,7 @@ import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 
 
 import presentationBanner from '@/assets/presentation-banner.png';
+import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
 import {
   AlertDialog,
   AlertDialogContent,
