@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
-  X, Play, Pause, Square, Music, Type as TypeIcon, ChevronsUp, ChevronsDown, Keyboard,
+  X, Play, Pause, Square, Music, Type as TypeIcon, Keyboard,
 } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { parseRoteiro } from '@/lib/roteiroFormat';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ interface RoteiroReaderProps {
 
 export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: RoteiroReaderProps) {
   const { audiosByStageId } = useAllStageAudios();
+  const { audios: library } = useAudioLibrary();
   const { currentStageId, status, play, pause, resume, stop } = useUniversalAudioPlayer();
 
   const [fontSize, setFontSize] = useState(28);
@@ -34,31 +36,49 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
     return m;
   }, [stages]);
 
+  const libraryById = useMemo(() => {
+    const m = new Map<string, typeof library[number]>();
+    library.forEach((a) => m.set(a.id, a));
+    return m;
+  }, [library]);
+
   const blocks = useMemo(() => parseRoteiro(conteudo), [conteudo]);
   const cueBlocks = useMemo(
-    () => blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.type === 'cue'),
+    () => blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.type === 'cue' || b.type === 'track'),
     [blocks],
   );
 
-  // Determine the "active" cue = first not yet fired
   const activeCueIdx = useMemo(() => {
     for (const { i } of cueBlocks) if (!firedCues.has(i)) return i;
     return -1;
   }, [cueBlocks, firedCues]);
 
-  const fireCue = useCallback((blockIndex: number) => {
+  const resolveCue = useCallback((blockIndex: number): { id: string; url: string; name: string } | null => {
     const block = blocks[blockIndex];
-    if (!block || block.type !== 'cue') return;
-    const stage = stagesById.get(block.etapaId);
-    if (!stage) { toast.error('Etapa não encontrada — foi excluída?'); return; }
-    const audios = audiosByStageId[stage.id] || [];
-    if (audios.length === 0) { toast.error(`"${stage.nome_simbolico}" não tem áudio`); return; }
-    play(stage.id, audios[0].audio_url);
-    setFiredCues((s) => new Set(s).add(blockIndex));
-    toast.success(`▶ ${stage.nome_simbolico}`);
-  }, [blocks, stagesById, audiosByStageId, play]);
+    if (!block) return null;
+    if (block.type === 'cue') {
+      const stage = stagesById.get(block.etapaId);
+      if (!stage) { toast.error('Etapa não encontrada — foi excluída?'); return null; }
+      const audios = audiosByStageId[stage.id] || [];
+      if (audios.length === 0) { toast.error(`"${stage.nome_simbolico}" não tem áudio`); return null; }
+      return { id: stage.id, url: audios[0].audio_url, name: stage.nome_simbolico };
+    }
+    if (block.type === 'track') {
+      const tr = libraryById.get(block.audioId);
+      if (!tr) { toast.error('Faixa não encontrada — foi excluída?'); return null; }
+      return { id: `track:${tr.id}`, url: tr.audio_url, name: tr.nome };
+    }
+    return null;
+  }, [blocks, stagesById, libraryById, audiosByStageId]);
 
-  // Keyboard shortcuts
+  const fireCue = useCallback((blockIndex: number) => {
+    const resolved = resolveCue(blockIndex);
+    if (!resolved) return;
+    play(resolved.id, resolved.url);
+    setFiredCues((s) => new Set(s).add(blockIndex));
+    toast.success(`▶ ${resolved.name}`);
+  }, [resolveCue, play]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
@@ -75,27 +95,33 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
       if (e.key === 's' || e.key === 'S') { stop(); return; }
       if (e.key === '+' || e.key === '=') { setFontSize((v) => Math.min(60, v + 2)); return; }
       if (e.key === '-' || e.key === '_') { setFontSize((v) => Math.max(16, v - 2)); return; }
-      if (e.key === 'ArrowDown') {
-        scrollRef.current?.scrollBy({ top: 100, behavior: 'smooth' });
-      }
-      if (e.key === 'ArrowUp') {
-        scrollRef.current?.scrollBy({ top: -100, behavior: 'smooth' });
-      }
+      if (e.key === 'ArrowDown') scrollRef.current?.scrollBy({ top: 100, behavior: 'smooth' });
+      if (e.key === 'ArrowUp') scrollRef.current?.scrollBy({ top: -100, behavior: 'smooth' });
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [activeCueIdx, fireCue, onClose, pause, resume, stop, status]);
 
-  // Auto-scroll to keep active cue near center
   useEffect(() => {
     if (activeCueIdx < 0) return;
     const el = cueRefs.current[activeCueIdx];
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [activeCueIdx]);
 
-  const currentPlayingStage = currentStageId ? stagesById.get(currentStageId) : null;
-  const nextCue = cueBlocks.find(({ i }) => !firedCues.has(i));
-  const nextStage = nextCue ? stagesById.get((blocks[nextCue.i] as any).etapaId) : null;
+  const currentPlayingName = currentStageId
+    ? (stagesById.get(currentStageId)?.nome_simbolico
+        ?? (currentStageId.startsWith('track:') ? libraryById.get(currentStageId.slice(6))?.nome : null))
+    : null;
+  const nextCueEntry = cueBlocks.find(({ i }) => !firedCues.has(i));
+  const nextCueName = nextCueEntry
+    ? (() => {
+        const b = blocks[nextCueEntry.i];
+        if (b.type === 'cue') return stagesById.get(b.etapaId)?.nome_simbolico ?? null;
+        if (b.type === 'track') return libraryById.get(b.audioId)?.nome ?? null;
+        return null;
+      })()
+    : null;
+
 
   return (
     <div className="fixed inset-0 z-[100] bg-[#0a0a12] flex flex-col">
@@ -142,7 +168,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
             )}
             {blocks.map((b, i) => {
               if (b.type === 'text') return <span key={i}>{b.text}</span>;
-              const stage = stagesById.get(b.etapaId);
+              const isTrack = b.type === 'track';
+              const label = b.type === 'cue'
+                ? (stagesById.get(b.etapaId)?.nome_simbolico ?? null)
+                : (libraryById.get(b.audioId)?.nome ?? null);
               const fired = firedCues.has(i);
               const isActive = i === activeCueIdx;
               return (
@@ -162,7 +191,7 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
                 >
                   <Music className="w-4 h-4 shrink-0" />
                   <span className="font-semibold">
-                    {stage ? `▶ ${stage.nome_simbolico}` : '⚠ etapa removida'}
+                    {label ? `▶ ${label}` : (isTrack ? '⚠ faixa removida' : '⚠ etapa removida')}
                   </span>
                   {isActive && !fired && <span className="text-xs opacity-70">(ESPAÇO)</span>}
                 </button>
@@ -175,10 +204,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
         <div className="w-72 border-l border-white/10 bg-black/40 p-4 hidden md:flex flex-col gap-4">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Tocando agora</div>
-            {currentPlayingStage ? (
+            {currentPlayingName ? (
               <div className="rounded-lg bg-emerald-500/10 border border-emerald-400/30 px-3 py-2">
                 <div className="text-sm font-semibold text-emerald-200 truncate">
-                  {currentPlayingStage.nome_simbolico}
+                  {currentPlayingName}
                 </div>
                 <div className="text-xs text-emerald-300/70">{status}</div>
               </div>
@@ -189,10 +218,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
 
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">A seguir</div>
-            {nextStage ? (
+            {nextCueName ? (
               <div className="rounded-lg bg-[hsl(var(--gold))]/10 border border-[hsl(var(--gold))]/30 px-3 py-2">
                 <div className="text-sm font-semibold text-[hsl(var(--gold))] truncate">
-                  {nextStage.nome_simbolico}
+                  {nextCueName}
                 </div>
                 <div className="text-xs text-[hsl(var(--gold))]/70">
                   {firedCues.size}/{cueBlocks.length} cues disparados
