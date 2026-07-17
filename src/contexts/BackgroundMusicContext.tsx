@@ -82,6 +82,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     return isNaN(v) ? 0.08 : v;
   });
   const [fadeMs, setFadeMsState] = useState<number>(0);
+  const [maxDurationSec, setMaxDurationSecState] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem(MAX_DUR_KEY) || '0', 10);
+    return isNaN(v) ? 0 : v;
+  });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
 
