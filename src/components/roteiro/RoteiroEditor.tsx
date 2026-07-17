@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2,
 } from 'lucide-react';
 
 import { CeremonyStage } from '@/types/ceremony';
