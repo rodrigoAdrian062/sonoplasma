@@ -158,7 +158,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
           stageTitle,
           stageDescription: stageDescription || '',
           userHint: aiHint || '',
-          limit: 30,
+          limit: 50,
           library: library.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
         };
         const { data, error } = await supabase.functions.invoke('suggest-audios', { body: payload });
