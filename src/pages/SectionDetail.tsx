@@ -44,6 +44,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Music, Play, Square } from 'lucide-react';
 
+const PresentationMode = lazy(() =>
+  import('@/components/PresentationMode').then((m) => ({ default: m.PresentationMode }))
+);
+
+
 const SectionDetail = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
   const navigate = useNavigate();
