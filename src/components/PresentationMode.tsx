@@ -696,7 +696,7 @@ export function PresentationMode({
       </header>
 
       {/* Main Content - scrollable on mobile */}
-      <main className={`flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 relative overflow-y-auto transition-[padding] duration-200 ${showRoteiro && roteiro ? 'sm:pl-[400px] md:pl-[460px] lg:pl-[520px]' : ''}`}>
+      <main className={`flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 relative overflow-y-auto transition-[padding] duration-200 ${showRoteiro && roteiro ? 'sm:pl-[480px] md:pl-[560px] lg:pl-[640px]' : ''}`}>
         {/* Background Banner */}
         <img 
           src={presentationBanner} 
