@@ -204,10 +204,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
         <div className="w-72 border-l border-white/10 bg-black/40 p-4 hidden md:flex flex-col gap-4">
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Tocando agora</div>
-            {currentPlayingStage ? (
+            {currentPlayingName ? (
               <div className="rounded-lg bg-emerald-500/10 border border-emerald-400/30 px-3 py-2">
                 <div className="text-sm font-semibold text-emerald-200 truncate">
-                  {currentPlayingStage.nome_simbolico}
+                  {currentPlayingName}
                 </div>
                 <div className="text-xs text-emerald-300/70">{status}</div>
               </div>
@@ -218,10 +218,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
 
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">A seguir</div>
-            {nextStage ? (
+            {nextCueName ? (
               <div className="rounded-lg bg-[hsl(var(--gold))]/10 border border-[hsl(var(--gold))]/30 px-3 py-2">
                 <div className="text-sm font-semibold text-[hsl(var(--gold))] truncate">
-                  {nextStage.nome_simbolico}
+                  {nextCueName}
                 </div>
                 <div className="text-xs text-[hsl(var(--gold))]/70">
                   {firedCues.size}/{cueBlocks.length} cues disparados
