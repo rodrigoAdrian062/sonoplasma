@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library, Music2 } from 'lucide-react';
+import { Home, Library, Music2, BookOpen } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
@@ -12,9 +12,11 @@ import { useIsPresentationActive } from '@/lib/presentationState';
 const LINKS = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
   { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40' },
+  { to: '/roteiros', label: 'Roteiros', icon: BookOpen, activeClass: 'bg-gold/20 text-gold border-gold/40' },
   { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40' },
   { to: '/spotify', label: 'Spotify', icon: SpotifyIcon, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40' },
 ];
+
 
 export function QuickNav() {
   const navigate = useNavigate();
