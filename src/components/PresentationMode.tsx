@@ -525,13 +525,6 @@ export function PresentationMode({
             >
               <Minus size={14} />
             </button>
-            <Slider
-              value={[volume * 100]}
-              onValueChange={(values) => onVolumeChange(values[0] / 100)}
-              max={100}
-              step={1}
-              className="w-16"
-            />
             <button
               onClick={handleVolumeFineUp}
               className="text-muted-foreground hover:text-gold transition-colors"
@@ -588,15 +581,6 @@ export function PresentationMode({
                 <HelpCircle size={16} />
               </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setCompact((c) => !c)}
-                title={compact ? 'Modo normal' : 'Modo compacto'}
-                className={`h-8 w-8 ${compact ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
-              >
-                {compact ? <Expand size={16} /> : <Shrink size={16} />}
-              </Button>
             </>
           )}
 
