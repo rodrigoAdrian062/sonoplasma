@@ -87,6 +87,8 @@ export function PresentationMode({
   audiosByStageId,
   currentStageId,
   currentUrl,
+  secaoId,
+  secaoNome,
 
   status,
   volume,
