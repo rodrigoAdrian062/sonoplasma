@@ -6,7 +6,10 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, ScrollText, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useRoteiroBySection } from '@/hooks/useRoteiros';
+import { parseRoteiro } from '@/lib/roteiroFormat';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -55,6 +58,8 @@ interface PresentationModeProps {
   audiosByStageId: Record<string, StageAudio[]>;
   currentStageId: string | null;
   currentUrl?: string | null;
+  secaoId?: string;
+  secaoNome?: string;
 
   status: 'idle' | 'playing' | 'paused';
   volume: number;
@@ -82,6 +87,8 @@ export function PresentationMode({
   audiosByStageId,
   currentStageId,
   currentUrl,
+  secaoId,
+  secaoNome,
 
   status,
   volume,
@@ -136,7 +143,31 @@ export function PresentationMode({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
+  const [showRoteiro, setShowRoteiro] = useState(false);
   const { deleteAudio } = useStageAudios();
+  const { data: roteiro } = useRoteiroBySection(secaoId);
+  const { audios: libraryAudios } = useAudioLibrary();
+  const roteiroBlocks = roteiro ? parseRoteiro(roteiro.conteudo) : [];
+  const stagesById = new Map(stages.map((s) => [s.id, s] as const));
+  const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
+
+  const fireRoteiroCue = (block: { type: 'cue'; etapaId: string } | { type: 'track'; audioId: string }) => {
+    if (block.type === 'cue') {
+      const stage = stagesById.get(block.etapaId);
+      if (!stage) { toast.error('Etapa não encontrada'); return; }
+      const list = audiosByStageId[stage.id] || [];
+      if (!list.length) { toast.error(`"${stage.nome_simbolico}" sem áudio`); return; }
+      const idx = stages.findIndex((s) => s.id === stage.id);
+      if (idx >= 0) setSelectedStageIndex(idx);
+      onPlay(stage.id, list[0].audio_url);
+      toast.success(`▶ ${stage.nome_simbolico}`);
+    } else {
+      const tr = libraryById.get(block.audioId);
+      if (!tr) { toast.error('Faixa não encontrada'); return; }
+      onPlay(`track:${tr.id}`, tr.audio_url);
+      toast.success(`▶ ${tr.nome}`);
+    }
+  };
 
   const handleConfirmDeleteAudio = () => {
     if (!audioToDelete) return;
@@ -496,6 +527,22 @@ export function PresentationMode({
             
           </div>
           <PresentationHeaderBgMusic />
+          {roteiro && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRoteiro((v) => !v)}
+              title={showRoteiro ? 'Ocultar roteiro' : 'Mostrar roteiro'}
+              className={cn(
+                'h-8 gap-1.5 px-2 border border-gold/20',
+                showRoteiro ? 'text-gold bg-gold/10' : 'text-muted-foreground hover:text-gold'
+              )}
+            >
+              {showRoteiro ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
+              <ScrollText size={14} />
+              <span className="hidden sm:inline text-xs">Roteiro</span>
+            </Button>
+          )}
         </div>
 
         
@@ -640,6 +687,49 @@ export function PresentationMode({
           className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
+
+        {/* Roteiro Side Panel */}
+        {showRoteiro && roteiro && (
+          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[380px] md:w-[420px] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10 shrink-0">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-gold/70">Roteiro</div>
+                <div className="text-sm font-semibold truncate">{roteiro.titulo}</div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowRoteiro(false)}
+                className="h-8 w-8 text-muted-foreground hover:text-gold shrink-0"
+                title="Ocultar"
+              >
+                <PanelLeftClose size={16} />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+              {roteiroBlocks.length === 0 && (
+                <div className="text-muted-foreground italic">Roteiro vazio.</div>
+              )}
+              {roteiroBlocks.map((b, i) => {
+                if (b.type === 'text') return <span key={i}>{b.text}</span>;
+                const label = b.type === 'cue'
+                  ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
+                  : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
+                return (
+                  <button
+                    key={i}
+                    onClick={() => fireRoteiroCue(b)}
+                    className="inline-flex items-center gap-1.5 my-1.5 mx-0.5 px-2.5 py-1 rounded-md border border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 text-xs font-semibold align-middle"
+                  >
+                    <Play size={12} />
+                    <span className="truncate max-w-[220px]">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
 
         {/* Large Vertical Volume Control - desktop side */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center">

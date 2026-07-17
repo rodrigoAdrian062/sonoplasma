@@ -308,6 +308,8 @@ const SectionDetail = () => {
           audiosByStageId={audiosByStageId}
           currentStageId={currentStageId}
           currentUrl={currentUrl}
+          secaoId={section?.id}
+          secaoNome={section?.nome}
 
           status={status}
           volume={volume}
