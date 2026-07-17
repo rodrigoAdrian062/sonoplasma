@@ -14,12 +14,10 @@ export function FloatingBackgroundMusic() {
   const [collapsed, setCollapsed] = useState<boolean>(true);
 
   if (location.pathname === '/auth') return null;
+  // No modo apresentação, o player é renderizado dentro do header.
+  if (isPresentation) return null;
 
-  // Posição fixa: no modo apresentação vai para o topo direito (header),
-  // caso contrário fica no canto inferior direito.
-  const positionClass = isPresentation
-    ? 'fixed top-2 right-2 sm:top-3 sm:right-3'
-    : 'fixed bottom-3 right-3 sm:bottom-4 sm:right-4';
+  const positionClass = 'fixed bottom-3 right-3 sm:bottom-4 sm:right-4';
 
   return (
     <div
