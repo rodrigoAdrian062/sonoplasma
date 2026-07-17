@@ -688,6 +688,49 @@ export function PresentationMode({
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
 
+        {/* Roteiro Side Panel */}
+        {showRoteiro && roteiro && (
+          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[380px] md:w-[420px] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10 shrink-0">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-widest text-gold/70">Roteiro</div>
+                <div className="text-sm font-semibold truncate">{roteiro.titulo}</div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowRoteiro(false)}
+                className="h-8 w-8 text-muted-foreground hover:text-gold shrink-0"
+                title="Ocultar"
+              >
+                <PanelLeftClose size={16} />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+              {roteiroBlocks.length === 0 && (
+                <div className="text-muted-foreground italic">Roteiro vazio.</div>
+              )}
+              {roteiroBlocks.map((b, i) => {
+                if (b.type === 'text') return <span key={i}>{b.text}</span>;
+                const label = b.type === 'cue'
+                  ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
+                  : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
+                return (
+                  <button
+                    key={i}
+                    onClick={() => fireRoteiroCue(b)}
+                    className="inline-flex items-center gap-1.5 my-1.5 mx-0.5 px-2.5 py-1 rounded-md border border-gold/40 bg-gold/10 text-gold hover:bg-gold/25 text-xs font-semibold align-middle"
+                  >
+                    <Play size={12} />
+                    <span className="truncate max-w-[220px]">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+        )}
+
+
         {/* Large Vertical Volume Control - desktop side */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center">
           <div
