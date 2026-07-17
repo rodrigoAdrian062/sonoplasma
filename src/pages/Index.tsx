@@ -29,9 +29,8 @@ const Index = () => {
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
   const [isNewSectionModal, setIsNewSectionModal] = useState(false);
   const [deleteSectionData, setDeleteSectionData] = useState<CeremonySection | null>(null);
-  const { audios: libraryAudios } = useAudioLibrary();
-  const { audiosByStageId } = useAllStageAudios();
-  const { run: runAutoSuggest, isRunning: isSuggesting } = useAutoSuggestAudios();
+
+
   
 
   const handleSaveSection = (data: CeremonySectionInsert | CeremonySectionUpdate) => {
