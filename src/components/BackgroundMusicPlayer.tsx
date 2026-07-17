@@ -158,6 +158,28 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </span>
             </div>
 
+            {/* Max duration cutoff */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Cortar em (min)</span>
+                <span className="text-[10px] text-muted-foreground/70">
+                  {maxDurationSec > 0 ? `Reinicia após ${(maxDurationSec / 60).toFixed(1)} min` : 'Sem corte (loop completo)'}
+                </span>
+              </div>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={maxDurationSec > 0 ? +(maxDurationSec / 60).toFixed(2) : ''}
+                placeholder="0"
+                onChange={(e) => {
+                  const min = parseFloat(e.target.value);
+                  setMaxDurationSec(isNaN(min) || min <= 0 ? 0 : Math.round(min * 60));
+                }}
+                className="w-16 h-7 rounded-md border border-border/60 bg-background/60 px-2 text-xs text-right"
+              />
+            </div>
+
             {/* Auto behavior */}
             <div className="space-y-2 pt-2 border-t border-border/40">
               <label className="flex items-center justify-between gap-2 text-xs">
