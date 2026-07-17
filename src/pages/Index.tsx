@@ -76,28 +76,6 @@ const Index = () => {
         {/* Banner principal editável */}
         <EditableBanner />
 
-        {sections.length > 0 && stages.length > 0 && (
-          <div className="mb-4 flex justify-end">
-            <Button
-              onClick={() =>
-                runAutoSuggest({
-                  stages,
-                  library: libraryAudios,
-                  existingByStageId: audiosByStageId,
-                  perStage: 5,
-                })
-              }
-              disabled={isSuggesting}
-              variant="outline"
-              size="sm"
-              className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-              title="Sugere até 5 músicas da biblioteca por etapa de todas as seções"
-            >
-              {isSuggesting ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-              Sugerir músicas para todas as etapas
-            </Button>
-          </div>
-        )}
 
         {sections.length === 0 ? (
           <div className="text-center py-12">
