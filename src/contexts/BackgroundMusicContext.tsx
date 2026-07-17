@@ -91,6 +91,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wasAutoPausedRef = useRef(false);
