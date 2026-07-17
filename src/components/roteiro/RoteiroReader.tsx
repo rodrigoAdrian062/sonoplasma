@@ -168,7 +168,10 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
             )}
             {blocks.map((b, i) => {
               if (b.type === 'text') return <span key={i}>{b.text}</span>;
-              const stage = stagesById.get(b.etapaId);
+              const isTrack = b.type === 'track';
+              const label = b.type === 'cue'
+                ? (stagesById.get(b.etapaId)?.nome_simbolico ?? null)
+                : (libraryById.get(b.audioId)?.nome ?? null);
               const fired = firedCues.has(i);
               const isActive = i === activeCueIdx;
               return (
@@ -188,7 +191,7 @@ export function RoteiroReader({ titulo, conteudo, stages, secaoNome, onClose }: 
                 >
                   <Music className="w-4 h-4 shrink-0" />
                   <span className="font-semibold">
-                    {stage ? `▶ ${stage.nome_simbolico}` : '⚠ etapa removida'}
+                    {label ? `▶ ${label}` : (isTrack ? '⚠ faixa removida' : '⚠ etapa removida')}
                   </span>
                   {isActive && !fired && <span className="text-xs opacity-70">(ESPAÇO)</span>}
                 </button>
