@@ -719,8 +719,12 @@ export function PresentationMode({
               {roteiroBlocks.length === 0 && (
                 <div className="text-muted-foreground italic">Roteiro vazio.</div>
               )}
-              {roteiroBlocks.map((b, i) => {
+              <div className="text-[10px] font-mono text-muted-foreground/60 mb-2 text-right">
+                pág. {Math.min(roteiroPage, roteiroTotalPages - 1) + 1} / {roteiroTotalPages}
+              </div>
+              {roteiroCurrentPage.map((b, i) => {
                 if (b.type === 'text') return <span key={i}>{b.text}</span>;
+                if (b.type === 'page') return null;
                 const label = b.type === 'cue'
                   ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
                   : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
@@ -736,8 +740,52 @@ export function PresentationMode({
                 );
               })}
             </div>
+
+            {/* Navegação de páginas */}
+            {roteiro && (
+              <div className="border-t border-gold/10 px-3 py-2 flex items-center gap-2 shrink-0 bg-black/30">
+                <Button
+                  size="icon" variant="ghost"
+                  onClick={() => setRoteiroPage((p) => Math.max(0, p - 1))}
+                  disabled={roteiroPage === 0}
+                  className="h-8 w-8 text-muted-foreground hover:text-gold"
+                  title="Página anterior (←)"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                <span className="text-xs font-mono text-muted-foreground flex-1 text-center">
+                  {Math.min(roteiroPage, roteiroTotalPages - 1) + 1} / {roteiroTotalPages}
+                </span>
+                <Button
+                  size="icon" variant="ghost"
+                  onClick={() => setRoteiroPage((p) => Math.min(roteiroTotalPages - 1, p + 1))}
+                  disabled={roteiroPage >= roteiroTotalPages - 1}
+                  className="h-8 w-8 text-muted-foreground hover:text-gold"
+                  title="Próxima página (→)"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+                <form
+                  className="flex items-center gap-1"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const n = parseInt(roteiroGoto, 10);
+                    if (!Number.isNaN(n)) setRoteiroPage(Math.max(0, Math.min(roteiroTotalPages - 1, n - 1)));
+                    setRoteiroGoto('');
+                  }}
+                >
+                  <Input
+                    value={roteiroGoto}
+                    onChange={(e) => setRoteiroGoto(e.target.value.replace(/\D/g, ''))}
+                    placeholder="pág."
+                    className="h-8 w-14 text-xs"
+                  />
+                </form>
+              </div>
+            )}
           </aside>
         )}
+
 
 
         {/* Large Vertical Volume Control - desktop side */}
