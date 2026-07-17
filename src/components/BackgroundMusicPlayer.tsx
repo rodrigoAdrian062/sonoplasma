@@ -52,6 +52,9 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    currentTime,
+    duration,
+    seek,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
