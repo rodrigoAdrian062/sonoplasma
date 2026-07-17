@@ -36,6 +36,8 @@ interface BackgroundMusicContextValue {
   setAutoMode: (m: AutoDuckMode) => void;
   setDuckVolume: (v: number) => void;
   setFadeMs: (v: number) => void;
+  maxDurationSec: number; // 0 = sem limite
+  setMaxDurationSec: (v: number) => void;
 }
 
 const STORAGE_KEY = 'bg-music-playlist-v1';
@@ -44,6 +46,7 @@ const AUTO_KEY = 'bg-music-auto-pause-v1';
 const MODE_KEY = 'bg-music-auto-mode-v1';
 const DUCK_KEY = 'bg-music-duck-volume-v1';
 const FADE_KEY = 'bg-music-fade-ms-v1';
+const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
@@ -79,6 +82,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     return isNaN(v) ? 0.08 : v;
   });
   const [fadeMs, setFadeMsState] = useState<number>(0);
+  const [maxDurationSec, setMaxDurationSecState] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem(MAX_DUR_KEY) || '0', 10);
+    return isNaN(v) ? 0 : v;
+  });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
 
@@ -160,6 +167,32 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem(MODE_KEY, autoMode); }, [autoMode]);
   useEffect(() => { localStorage.setItem(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
   useEffect(() => { localStorage.setItem(FADE_KEY, String(fadeMs)); }, [fadeMs]);
+  useEffect(() => { localStorage.setItem(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
+
+  // Enforce max duration cutoff (loops or advances)
+  const maxDurationRef = useRef(maxDurationSec);
+  useEffect(() => { maxDurationRef.current = maxDurationSec; }, [maxDurationSec]);
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onTimeUpdate = () => {
+      const limit = maxDurationRef.current;
+      if (limit > 0 && a.currentTime >= limit) {
+        const pl = playlistRef.current;
+        if (pl.length <= 1) {
+          try { a.currentTime = 0; a.play().catch(() => undefined); } catch { /* noop */ }
+        } else {
+          const nextIdx = (currentIndexRef.current + 1) % pl.length;
+          currentIndexRef.current = nextIdx;
+          setCurrentIndex(nextIdx);
+          const track = pl[nextIdx];
+          if (track) { a.src = track.audio_url; a.play().catch(() => undefined); }
+        }
+      }
+    };
+    a.addEventListener('timeupdate', onTimeUpdate);
+    return () => a.removeEventListener('timeupdate', onTimeUpdate);
+  }, []);
 
   // Load current track src when track changes (does NOT touch playback state)
   useEffect(() => {
@@ -381,6 +414,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const setAutoMode = useCallback((m: AutoDuckMode) => setAutoModeState(m), []);
   const setDuckVolume = useCallback((v: number) => setDuckVolumeState(Math.max(0, Math.min(1, v))), []);
   const setFadeMs = useCallback((v: number) => setFadeMsState(Math.max(0, Math.min(5000, Math.round(v)))), []);
+  const setMaxDurationSec = useCallback((v: number) => setMaxDurationSecState(Math.max(0, Math.round(v))), []);
 
   const value: BackgroundMusicContextValue = {
     playlist,
@@ -407,6 +441,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setAutoMode,
     setDuckVolume,
     setFadeMs,
+    maxDurationSec,
+    setMaxDurationSec,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
