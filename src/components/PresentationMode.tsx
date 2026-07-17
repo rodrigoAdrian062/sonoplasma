@@ -401,6 +401,9 @@ export function PresentationMode({
   // Rolagem do mouse em qualquer lugar da apresentação ajusta o volume
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Permitir rolagem normal dentro do painel do roteiro
+      if (target && target.closest('[data-roteiro-scroll]')) return;
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.02 : -0.02;
       onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
@@ -706,7 +709,7 @@ export function PresentationMode({
                 <PanelLeftClose size={16} />
               </Button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4 font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+            <div data-roteiro-scroll className="flex-1 overflow-y-auto px-4 py-4 font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
               {roteiroBlocks.length === 0 && (
                 <div className="text-muted-foreground italic">Roteiro vazio.</div>
               )}
