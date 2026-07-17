@@ -210,6 +210,10 @@ export function PresentationMode({
   });
 
   useEffect(() => {
+    if (status === 'idle') setActiveCueKey(null);
+  }, [status]);
+
+  useEffect(() => {
     if (currentStage) {
       const defaultTime = currentStage.tempo_padrao || 0;
       setCustomTime(defaultTime);
