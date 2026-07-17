@@ -235,7 +235,7 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
                           deleteRoteiro.mutate(t.id);
                         }
                       }}
-                      className="opacity-0 group-hover:opacity-100 h-7 w-7 rounded flex items-center justify-center text-red-400 hover:bg-red-500/20 shrink-0"
+                      className="h-7 w-7 rounded flex items-center justify-center text-red-400 hover:bg-red-500/20 shrink-0"
                       title="Excluir template"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
