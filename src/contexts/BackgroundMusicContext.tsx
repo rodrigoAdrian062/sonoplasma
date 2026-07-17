@@ -462,6 +462,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    currentTime,
+    duration,
+    seek,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
