@@ -143,7 +143,31 @@ export function PresentationMode({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
+  const [showRoteiro, setShowRoteiro] = useState(false);
   const { deleteAudio } = useStageAudios();
+  const { data: roteiro } = useRoteiroBySection(secaoId);
+  const { audios: libraryAudios } = useAudioLibrary();
+  const roteiroBlocks = roteiro ? parseRoteiro(roteiro.conteudo) : [];
+  const stagesById = new Map(stages.map((s) => [s.id, s] as const));
+  const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
+
+  const fireRoteiroCue = (block: { type: 'cue'; etapaId: string } | { type: 'track'; audioId: string }) => {
+    if (block.type === 'cue') {
+      const stage = stagesById.get(block.etapaId);
+      if (!stage) { toast.error('Etapa não encontrada'); return; }
+      const list = audiosByStageId[stage.id] || [];
+      if (!list.length) { toast.error(`"${stage.nome_simbolico}" sem áudio`); return; }
+      const idx = stages.findIndex((s) => s.id === stage.id);
+      if (idx >= 0) setSelectedStageIndex(idx);
+      onPlay(stage.id, list[0].audio_url);
+      toast.success(`▶ ${stage.nome_simbolico}`);
+    } else {
+      const tr = libraryById.get(block.audioId);
+      if (!tr) { toast.error('Faixa não encontrada'); return; }
+      onPlay(`track:${tr.id}`, tr.audio_url);
+      toast.success(`▶ ${tr.nome}`);
+    }
+  };
 
   const handleConfirmDeleteAudio = () => {
     if (!audioToDelete) return;
