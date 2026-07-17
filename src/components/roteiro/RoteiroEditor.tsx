@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,19 +6,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Plus, Sparkles, Square,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library,
 } from 'lucide-react';
 
-import { supabase } from '@/integrations/supabase/client';
 import { CeremonyStage } from '@/types/ceremony';
 import { useRoteiros, useRoteiroBySection, Roteiro } from '@/hooks/useRoteiros';
-import { insertCueAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
+import { insertCueAtCursor, insertTrackAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
 import { RoteiroImportDialog } from './RoteiroImportDialog';
 import { RoteiroReader } from './RoteiroReader';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
-
-
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 
 interface RoteiroEditorProps {
   secaoId: string;
@@ -26,11 +24,18 @@ interface RoteiroEditorProps {
   stages: CeremonyStage[];
 }
 
+type DragPayload =
+  | { kind: 'stage'; id: string; name: string }
+  | { kind: 'track'; id: string; name: string; url: string };
+
+const DND_MIME = 'application/x-roteiro-item';
+
 export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps) {
   const { data: roteiro } = useRoteiroBySection(secaoId);
   const { upsertRoteiro, roteiros } = useRoteiros();
   const templates = roteiros.filter((r) => r.is_template);
   const { audiosByStageId } = useAllStageAudios();
+  const { audios: library } = useAudioLibrary();
   const { play, pause, resume, stop, status, currentStageId } = useUniversalAudioPlayer();
 
   const [titulo, setTitulo] = useState('Roteiro da Seção');
@@ -39,8 +44,10 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   const [showReader, setShowReader] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [tab, setTab] = useState<'stages' | 'library'>('stages');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [dropCursor, setDropCursor] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const cursorRef = useRef(0);
 
   const playStage = (stageId: string, stageName: string) => {
     const audios = audiosByStageId[stageId] || [];
@@ -52,6 +59,10 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     toast.success(`▶ ${stageName}`);
   };
 
+  const playTrack = (id: string, name: string, url: string) => {
+    play(`track:${id}`, url);
+    toast.success(`▶ ${name}`);
+  };
 
   useEffect(() => {
     if (roteiro) {
@@ -61,7 +72,6 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     }
   }, [roteiro?.id]);
 
-  // Auto-save debounced
   useEffect(() => {
     if (!dirty) return;
     const t = setTimeout(() => handleSave(true), 1200);
@@ -69,10 +79,7 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conteudo, titulo, dirty]);
 
-  const handleChange = (v: string) => {
-    setConteudo(v);
-    setDirty(true);
-  };
+  const handleChange = (v: string) => { setConteudo(v); setDirty(true); };
 
   const handleSave = async (silent = false) => {
     setSaving(true);
@@ -86,22 +93,74 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
       });
       setDirty(false);
       if (!silent) toast.success('Roteiro salvo');
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
-  const insertCue = (etapaId: string) => {
-    const el = textareaRef.current;
-    const cursor = el?.selectionStart ?? conteudo.length;
-    const { text, nextCursor } = insertCueAtCursor(conteudo, cursor, etapaId);
-    setConteudo(text);
-    setDirty(true);
-    cursorRef.current = nextCursor;
+  const focusAt = (pos: number) => {
     requestAnimationFrame(() => {
+      const el = textareaRef.current;
       el?.focus();
-      el?.setSelectionRange(nextCursor, nextCursor);
+      el?.setSelectionRange(pos, pos);
     });
+  };
+
+  const insertCue = (etapaId: string, atCursor?: number) => {
+    const el = textareaRef.current;
+    const cursor = atCursor ?? el?.selectionStart ?? conteudo.length;
+    const { text, nextCursor } = insertCueAtCursor(conteudo, cursor, etapaId);
+    setConteudo(text); setDirty(true); focusAt(nextCursor);
+  };
+
+  const insertTrack = (audioId: string, atCursor?: number) => {
+    const el = textareaRef.current;
+    const cursor = atCursor ?? el?.selectionStart ?? conteudo.length;
+    const { text, nextCursor } = insertTrackAtCursor(conteudo, cursor, audioId);
+    setConteudo(text); setDirty(true); focusAt(nextCursor);
+  };
+
+  // Drag & drop --------------------------------------------------------------
+  const handleDragStart = (e: React.DragEvent, payload: DragPayload) => {
+    e.dataTransfer.setData(DND_MIME, JSON.stringify(payload));
+    e.dataTransfer.setData('text/plain', payload.name);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const cursorFromEvent = (e: React.DragEvent<HTMLTextAreaElement>): number => {
+    // Some browsers expose caretPositionFromPoint / caretRangeFromPoint
+    const anyDoc = document as any;
+    const el = textareaRef.current;
+    if (!el) return conteudo.length;
+    try {
+      if (anyDoc.caretPositionFromPoint) {
+        const pos = anyDoc.caretPositionFromPoint(e.clientX, e.clientY);
+        if (pos && pos.offsetNode) return pos.offset;
+      } else if (anyDoc.caretRangeFromPoint) {
+        const r = anyDoc.caretRangeFromPoint(e.clientX, e.clientY);
+        if (r) return r.startOffset;
+      }
+    } catch { /* noop */ }
+    return el.selectionStart ?? conteudo.length;
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    if (!e.dataTransfer.types.includes(DND_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDropCursor(cursorFromEvent(e));
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    const raw = e.dataTransfer.getData(DND_MIME);
+    if (!raw) return;
+    e.preventDefault();
+    setDropCursor(null);
+    try {
+      const p = JSON.parse(raw) as DragPayload;
+      const pos = cursorFromEvent(e);
+      if (p.kind === 'stage') insertCue(p.id, pos);
+      else insertTrack(p.id, pos);
+      toast.success(`Cue inserido: ${p.name}`);
+    } catch { /* noop */ }
   };
 
   const importText = (text: string, replace: boolean) => {
@@ -110,15 +169,9 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   };
 
   const saveAsTemplate = async () => {
-    if (!conteudo.trim()) {
-      toast.error('Nada para salvar como template');
-      return;
-    }
+    if (!conteudo.trim()) { toast.error('Nada para salvar como template'); return; }
     await upsertRoteiro.mutateAsync({
-      titulo: `${titulo} (template)`,
-      conteudo,
-      is_template: true,
-      secao_id: null,
+      titulo: `${titulo} (template)`, conteudo, is_template: true, secao_id: null,
     });
     toast.success('Salvo como template na biblioteca');
   };
@@ -130,11 +183,22 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   };
 
   const parsed = parseRoteiro(conteudo);
-  const cueCount = parsed.filter((b) => b.type === 'cue').length;
+  const cueCount = parsed.filter((b) => b.type === 'cue' || b.type === 'track').length;
+
+  const filteredLibrary = useMemo(() => {
+    const q = librarySearch.trim().toLowerCase();
+    const list = q ? library.filter((a) => a.nome.toLowerCase().includes(q)) : library;
+    return list.slice(0, 200);
+  }, [library, librarySearch]);
+
+  const libraryById = useMemo(() => {
+    const m = new Map<string, typeof library[number]>();
+    library.forEach((a) => m.set(a.id, a));
+    return m;
+  }, [library]);
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <BookOpen className="w-5 h-5 text-[hsl(var(--gold))]" />
@@ -160,11 +224,8 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </div>
               <ScrollArea className="max-h-64">
                 {templates.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => loadTemplate(t)}
-                    className="w-full text-left px-2 py-1.5 rounded hover:bg-white/5 text-sm truncate"
-                  >
+                  <button key={t.id} onClick={() => loadTemplate(t)}
+                    className="w-full text-left px-2 py-1.5 rounded hover:bg-white/5 text-sm truncate">
                     {t.titulo}
                   </button>
                 ))}
@@ -178,26 +239,35 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
             {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
             {dirty ? 'Salvar' : 'Salvo'}
           </Button>
-          <Button
-            size="sm"
-            onClick={() => setShowReader(true)}
-            className="bg-[hsl(var(--gold))]/20 border border-[hsl(var(--gold))]/40 text-[hsl(var(--gold))] hover:bg-[hsl(var(--gold))]/30"
-          >
+          <Button size="sm" onClick={() => setShowReader(true)}
+            className="bg-[hsl(var(--gold))]/20 border border-[hsl(var(--gold))]/40 text-[hsl(var(--gold))] hover:bg-[hsl(var(--gold))]/30">
             <Play className="w-4 h-4 mr-1" /> Iniciar Leitura
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-4">
-        {/* Editor */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-4">
         <div className="space-y-2">
-          <Textarea
-            ref={textareaRef}
-            value={conteudo}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={`Cole aqui o texto do ritual. Use "Inserir cue" para marcar o momento exato em que cada música deve tocar.\n\nExemplo:\n\n"O Venerável Mestre declara abertos os trabalhos..."\n\n[[CUE:etapa-de-abertura]]\n\n"Prossegue com a leitura da ata..."`}
-            className="min-h-[500px] font-serif text-base leading-relaxed bg-black/20 border-white/10 focus-visible:ring-[hsl(var(--gold))]/40"
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={conteudo}
+              onChange={(e) => handleChange(e.target.value)}
+              onDragOver={handleDragOver}
+              onDragLeave={() => setDropCursor(null)}
+              onDrop={handleDrop}
+              placeholder={`Cole aqui o texto do ritual. Arraste etapas ou faixas da lateral para o ponto exato em que devem tocar.\n\nExemplo:\n\n"O Venerável Mestre declara abertos os trabalhos..."\n\n[[CUE:etapa-de-abertura]]`}
+              className={[
+                'min-h-[500px] font-serif text-base leading-relaxed bg-black/20 border-white/10 focus-visible:ring-[hsl(var(--gold))]/40 transition-shadow',
+                dropCursor !== null ? 'ring-2 ring-[hsl(var(--gold))]/60 shadow-[0_0_0_4px_hsl(var(--gold)/0.15)]' : '',
+              ].join(' ')}
+            />
+            {dropCursor !== null && (
+              <div className="absolute top-2 right-2 text-[10px] uppercase tracking-widest text-[hsl(var(--gold))] bg-black/70 px-2 py-1 rounded">
+                soltar para inserir cue
+              </div>
+            )}
+          </div>
           <div className="text-xs text-white/50 flex items-center gap-4">
             <span>{conteudo.length} caracteres</span>
             <span>•</span>
@@ -206,16 +276,14 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
           </div>
         </div>
 
-        {/* Sidebar: etapas para inserir cue */}
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3 md:sticky md:top-4 h-fit space-y-4">
-          {/* Mini player global */}
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3 md:sticky md:top-4 h-fit space-y-3">
           {(status === 'playing' || status === 'paused') && (
             <div className="rounded-md border border-emerald-400/30 bg-emerald-500/10 px-2 py-2">
-              <div className="text-[10px] uppercase tracking-widest text-emerald-300/70 mb-1">
-                Tocando agora
-              </div>
+              <div className="text-[10px] uppercase tracking-widest text-emerald-300/70 mb-1">Tocando agora</div>
               <div className="text-xs text-emerald-200 truncate mb-2">
-                {stages.find((s) => s.id === currentStageId)?.nome_simbolico || 'Áudio ativo'}
+                {stages.find((s) => s.id === currentStageId)?.nome_simbolico
+                  || (currentStageId?.startsWith('track:') && libraryById.get(currentStageId.slice(6))?.nome)
+                  || 'Áudio ativo'}
               </div>
               <div className="flex gap-1">
                 {status === 'playing' ? (
@@ -234,15 +302,25 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
             </div>
           )}
 
-          <div>
-            <div className="text-xs uppercase tracking-wider text-white/60 mb-2 flex items-center gap-1">
-              <Music className="w-3 h-3" /> Etapas da seção
-            </div>
-            <div className="text-xs text-white/50 mb-3">
-              <span className="text-[hsl(var(--gold))]">Clique no nome</span> → inserir cue no texto.
-              <br />
-              <span className="text-emerald-400">Play ▶</span> → testar a música.
-            </div>
+          {/* Tabs */}
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-md bg-black/40 border border-white/10">
+            <button
+              onClick={() => setTab('stages')}
+              className={`text-xs py-1.5 rounded flex items-center justify-center gap-1 ${tab === 'stages' ? 'bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))]' : 'text-white/60 hover:text-white/90'}`}>
+              <Music className="w-3 h-3" /> Etapas ({stages.length})
+            </button>
+            <button
+              onClick={() => setTab('library')}
+              className={`text-xs py-1.5 rounded flex items-center justify-center gap-1 ${tab === 'library' ? 'bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))]' : 'text-white/60 hover:text-white/90'}`}>
+              <Library className="w-3 h-3" /> Biblioteca ({library.length})
+            </button>
+          </div>
+
+          <div className="text-[11px] text-white/50">
+            <span className="text-[hsl(var(--gold))]">Arraste</span> para o texto · clique no nome para inserir no cursor · <span className="text-emerald-400">▶</span> testa o áudio.
+          </div>
+
+          {tab === 'stages' ? (
             <ScrollArea className="max-h-[420px]">
               <div className="space-y-1">
                 {stages.length === 0 && (
@@ -254,34 +332,31 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
                   return (
                     <div
                       key={s.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, { kind: 'stage', id: s.id, name: s.nome_simbolico })}
                       className={[
-                        'flex items-center gap-1 rounded border transition-all text-sm',
+                        'group flex items-center gap-1 rounded border transition-all text-sm cursor-grab active:cursor-grabbing',
                         isPlayingThis
                           ? 'border-emerald-400/50 bg-emerald-500/10'
                           : 'border-transparent hover:border-[hsl(var(--gold))]/40 hover:bg-[hsl(var(--gold))]/10',
                       ].join(' ')}
                     >
-                      <button
-                        onClick={() => insertCue(s.id)}
-                        className="flex-1 flex items-center gap-2 text-left px-2 py-2 min-w-0"
-                        title="Inserir cue no texto"
-                      >
+                      <GripVertical className="w-3 h-3 text-white/30 group-hover:text-[hsl(var(--gold))] shrink-0 ml-1" />
+                      <button onClick={() => insertCue(s.id)}
+                        className="flex-1 flex items-center gap-2 text-left px-1 py-2 min-w-0"
+                        title="Inserir cue no texto">
                         <span className="w-6 h-6 rounded-full bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] flex items-center justify-center text-xs font-bold shrink-0">
                           {i + 1}
                         </span>
                         <span className="truncate">{s.nome_simbolico}</span>
                       </button>
-                      <button
-                        onClick={() => playStage(s.id, s.nome_simbolico)}
+                      <button onClick={() => playStage(s.id, s.nome_simbolico)}
                         disabled={!hasAudio}
                         className={[
                           'h-8 w-8 rounded flex items-center justify-center shrink-0 transition-colors',
-                          hasAudio
-                            ? 'text-emerald-400 hover:bg-emerald-500/20'
-                            : 'text-white/20 cursor-not-allowed',
+                          hasAudio ? 'text-emerald-400 hover:bg-emerald-500/20' : 'text-white/20 cursor-not-allowed',
                         ].join(' ')}
-                        title={hasAudio ? 'Tocar áudio da etapa' : 'Sem áudio configurado'}
-                      >
+                        title={hasAudio ? 'Tocar áudio da etapa' : 'Sem áudio configurado'}>
                         <Play className="w-4 h-4" fill="currentColor" />
                       </button>
                     </div>
@@ -289,48 +364,91 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
                 })}
               </div>
             </ScrollArea>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-white/40" />
+                <Input
+                  value={librarySearch}
+                  onChange={(e) => setLibrarySearch(e.target.value)}
+                  placeholder="Buscar música..."
+                  className="h-8 pl-7 text-xs bg-black/30 border-white/10"
+                />
+              </div>
+              <ScrollArea className="max-h-[380px]">
+                <div className="space-y-1">
+                  {filteredLibrary.length === 0 && (
+                    <div className="text-xs text-white/40 italic px-1 py-2">
+                      {library.length === 0 ? 'Biblioteca vazia.' : 'Nenhum resultado.'}
+                    </div>
+                  )}
+                  {filteredLibrary.map((a) => {
+                    const isPlayingThis = currentStageId === `track:${a.id}` && (status === 'playing' || status === 'paused');
+                    return (
+                      <div key={a.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, { kind: 'track', id: a.id, name: a.nome, url: a.audio_url })}
+                        className={[
+                          'group flex items-center gap-1 rounded border transition-all text-sm cursor-grab active:cursor-grabbing',
+                          isPlayingThis
+                            ? 'border-emerald-400/50 bg-emerald-500/10'
+                            : 'border-transparent hover:border-[hsl(var(--gold))]/40 hover:bg-[hsl(var(--gold))]/10',
+                        ].join(' ')}
+                      >
+                        <GripVertical className="w-3 h-3 text-white/30 group-hover:text-[hsl(var(--gold))] shrink-0 ml-1" />
+                        <button onClick={() => insertTrack(a.id)}
+                          className="flex-1 text-left px-1 py-2 min-w-0 truncate"
+                          title="Inserir cue de faixa no cursor">
+                          <span className="truncate">{a.nome}</span>
+                        </button>
+                        <button onClick={() => playTrack(a.id, a.nome, a.audio_url)}
+                          className="h-8 w-8 rounded flex items-center justify-center shrink-0 text-emerald-400 hover:bg-emerald-500/20"
+                          title="Tocar faixa">
+                          <Play className="w-4 h-4" fill="currentColor" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
 
-          {/* Cues já no roteiro */}
           {cueCount > 0 && (
-            <div>
+            <div className="pt-2 border-t border-white/10">
               <div className="text-xs uppercase tracking-wider text-white/60 mb-2 flex items-center gap-1">
                 <Play className="w-3 h-3" /> Cues no roteiro ({cueCount})
               </div>
-              <ScrollArea className="max-h-[240px]">
+              <ScrollArea className="max-h-[200px]">
                 <div className="space-y-1">
-                  {parsed
-                    .map((b, i) => ({ b, i }))
-                    .filter(({ b }) => b.type === 'cue')
+                  {parsed.map((b, i) => ({ b, i }))
+                    .filter(({ b }) => b.type === 'cue' || b.type === 'track')
                     .map(({ b, i }, idx) => {
-                      if (b.type !== 'cue') return null;
-                      const stage = stages.find((s) => s.id === b.etapaId);
-                      const hasAudio = stage ? (audiosByStageId[stage.id] || []).length > 0 : false;
+                      let label = '';
+                      let onPlay: (() => void) | null = null;
+                      if (b.type === 'cue') {
+                        const stage = stages.find((s) => s.id === b.etapaId);
+                        label = stage?.nome_simbolico ?? 'etapa removida';
+                        if (stage && (audiosByStageId[stage.id] || []).length > 0) {
+                          onPlay = () => playStage(stage.id, stage.nome_simbolico);
+                        }
+                      } else {
+                        const tr = libraryById.get(b.audioId);
+                        label = tr?.nome ?? 'faixa removida';
+                        if (tr) onPlay = () => playTrack(tr.id, tr.nome, tr.audio_url);
+                      }
                       return (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded bg-black/30 border border-white/5 text-xs"
-                        >
+                        <div key={i} className="flex items-center gap-1 px-2 py-1.5 rounded bg-black/30 border border-white/5 text-xs">
                           <span className="w-5 h-5 rounded-full bg-[hsl(var(--gold))]/20 text-[hsl(var(--gold))] flex items-center justify-center text-[10px] font-bold shrink-0">
                             {idx + 1}
                           </span>
                           <span className="truncate flex-1">
-                            {stage ? stage.nome_simbolico : (
-                              <span className="text-red-400 italic">etapa removida</span>
-                            )}
+                            {onPlay ? label : <span className="text-red-400 italic">{label}</span>}
                           </span>
-                          {stage && (
-                            <button
-                              onClick={() => playStage(stage.id, stage.nome_simbolico)}
-                              disabled={!hasAudio}
-                              className={[
-                                'h-6 w-6 rounded flex items-center justify-center shrink-0',
-                                hasAudio
-                                  ? 'text-emerald-400 hover:bg-emerald-500/20'
-                                  : 'text-white/20 cursor-not-allowed',
-                              ].join(' ')}
-                              title={hasAudio ? 'Tocar' : 'Sem áudio'}
-                            >
+                          {onPlay && (
+                            <button onClick={onPlay}
+                              className="h-6 w-6 rounded flex items-center justify-center shrink-0 text-emerald-400 hover:bg-emerald-500/20"
+                              title="Tocar">
                               <Play className="w-3 h-3" fill="currentColor" />
                             </button>
                           )}
@@ -341,7 +459,6 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
               </ScrollArea>
             </div>
           )}
-
         </div>
       </div>
 
