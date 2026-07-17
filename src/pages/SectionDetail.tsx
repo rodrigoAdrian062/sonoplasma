@@ -17,7 +17,9 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, Wand2 } from 'lucide-react';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useAutoSuggestAudios } from '@/hooks/useAutoSuggestAudios';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
@@ -53,6 +55,8 @@ const SectionDetail = () => {
   const { sections, isLoading: sectionsLoading } = useSections();
   const { saveAudios } = useStageAudios();
   const { audiosByStageId } = useAllStageAudios();
+  const { audios: libraryAudios } = useAudioLibrary();
+  const { run: runAutoSuggest, isRunning: isSuggesting } = useAutoSuggestAudios();
   const {
     currentStageId,
     currentUrl,
@@ -351,15 +355,35 @@ const SectionDetail = () => {
               )}
             </div>
             {sectionStages.length > 0 && (
-              <Button
-                onClick={() => setIsPresentationMode(true)}
-                size="sm"
-                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
-                variant="outline"
-              >
-                <Presentation size={16} />
-                <span className="hidden sm:inline">Apresentar</span>
-              </Button>
+              <>
+                <Button
+                  onClick={() =>
+                    runAutoSuggest({
+                      stages: sectionStages,
+                      library: libraryAudios,
+                      existingByStageId: audiosByStageId,
+                      perStage: 5,
+                    })
+                  }
+                  disabled={isSuggesting}
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                  title="Sugere até 5 músicas da biblioteca por etapa, com base no título"
+                >
+                  {isSuggesting ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                  <span className="hidden sm:inline">Sugerir músicas</span>
+                </Button>
+                <Button
+                  onClick={() => setIsPresentationMode(true)}
+                  size="sm"
+                  className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                  variant="outline"
+                >
+                  <Presentation size={16} />
+                  <span className="hidden sm:inline">Apresentar</span>
+                </Button>
+              </>
             )}
             <Button
               onClick={() => setIsNewStageModal(true)}
