@@ -69,6 +69,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [suggestMode, setSuggestMode] = useState(false);
   const [aiSuggested, setAiSuggested] = useState<AudioItem[] | null>(null);
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const [aiHint, setAiHint] = useState('');
+  const [aiHintDraft, setAiHintDraft] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -127,6 +129,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
         const payload = {
           stageTitle,
           stageDescription: stageDescription || '',
+          userHint: aiHint || '',
           limit: 30,
           library: library.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
         };
@@ -152,7 +155,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestMode, stageTitle, stageDescription]);
+  }, [suggestMode, stageTitle, stageDescription, aiHint]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -418,6 +421,48 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             )}
           </DialogTitle>
         </DialogHeader>
+
+        {suggestMode && stageTitle && (
+          <div className="px-4 py-3 border-b border-border bg-gold/5 space-y-2">
+            <label className="text-xs font-medium text-gold flex items-center gap-1.5">
+              <Wand2 size={12} />
+              Descreva a etapa para a IA (opcional — quanto mais detalhe, melhor a sugestão)
+            </label>
+            <textarea
+              value={aiHintDraft}
+              onChange={(e) => setAiHintDraft(e.target.value)}
+              placeholder={`Ex: "${stageTitle}" — momento solene de abertura, música sacra/adoração, sem letra, ritmo lento...`}
+              rows={2}
+              className="w-full resize-none rounded-md border border-border bg-background/60 px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-gold"
+            />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] text-muted-foreground">
+                {aiHint ? 'Prévia aplicada — a IA reordena as sugestões.' : 'Sem prévia, a IA usa apenas o título/descrição da etapa.'}
+              </span>
+              <div className="flex items-center gap-2">
+                {aiHint && (
+                  <button
+                    type="button"
+                    onClick={() => { setAiHint(''); setAiHintDraft(''); }}
+                    className="text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    Limpar
+                  </button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setAiHint(aiHintDraft.trim())}
+                  disabled={isSuggesting || aiHintDraft.trim() === aiHint}
+                  className="h-7 bg-gold hover:bg-gold/90 text-background text-xs gap-1.5"
+                >
+                  {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  Aplicar prévia
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_380px] overflow-hidden">
           {/* Library side */}
