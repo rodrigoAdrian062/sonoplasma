@@ -14,6 +14,10 @@ import { useRoteiros, useRoteiroBySection, Roteiro } from '@/hooks/useRoteiros';
 import { insertCueAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
 import { RoteiroImportDialog } from './RoteiroImportDialog';
 import { RoteiroReader } from './RoteiroReader';
+import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
+import { useAllStageAudios } from '@/hooks/useStageAudios';
+import { Square } from 'lucide-react';
+
 
 interface RoteiroEditorProps {
   secaoId: string;
@@ -25,6 +29,8 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   const { data: roteiro } = useRoteiroBySection(secaoId);
   const { upsertRoteiro, roteiros } = useRoteiros();
   const templates = roteiros.filter((r) => r.is_template);
+  const { audiosByStageId } = useAllStageAudios();
+  const { play, pause, resume, stop, status, currentStageId } = useUniversalAudioPlayer();
 
   const [titulo, setTitulo] = useState('Roteiro da Seção');
   const [conteudo, setConteudo] = useState('');
@@ -34,6 +40,17 @@ export function RoteiroEditor({ secaoId, secaoNome, stages }: RoteiroEditorProps
   const [dirty, setDirty] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorRef = useRef(0);
+
+  const playStage = (stageId: string, stageName: string) => {
+    const audios = audiosByStageId[stageId] || [];
+    if (audios.length === 0) {
+      toast.error(`"${stageName}" não tem áudio`);
+      return;
+    }
+    play(stageId, audios[0].audio_url);
+    toast.success(`▶ ${stageName}`);
+  };
+
 
   useEffect(() => {
     if (roteiro) {
