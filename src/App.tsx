@@ -16,6 +16,9 @@ import SpotifyLibrary from "./pages/SpotifyLibrary";
 import YoutubeLibrary from "./pages/YoutubeLibrary";
 import NotFound from "./pages/NotFound";
 import UserManagement from "./pages/UserManagement";
+import RoteiroPage from "./pages/RoteiroPage";
+import RoteirosLibrary from "./pages/RoteirosLibrary";
+
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
@@ -84,6 +87,23 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route
+              path="/roteiro/:sectionId"
+              element={
+                <ProtectedRoute>
+                  <RoteiroPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/roteiros"
+              element={
+                <ProtectedRoute>
+                  <RoteirosLibrary />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
