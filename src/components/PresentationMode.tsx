@@ -527,6 +527,22 @@ export function PresentationMode({
             
           </div>
           <PresentationHeaderBgMusic />
+          {roteiro && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRoteiro((v) => !v)}
+              title={showRoteiro ? 'Ocultar roteiro' : 'Mostrar roteiro'}
+              className={cn(
+                'h-8 gap-1.5 px-2 border border-gold/20',
+                showRoteiro ? 'text-gold bg-gold/10' : 'text-muted-foreground hover:text-gold'
+              )}
+            >
+              {showRoteiro ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
+              <ScrollText size={14} />
+              <span className="hidden sm:inline text-xs">Roteiro</span>
+            </Button>
+          )}
         </div>
 
         
