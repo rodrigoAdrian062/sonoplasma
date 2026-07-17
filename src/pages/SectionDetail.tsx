@@ -22,7 +22,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
-import { PresentationMode } from '@/components/PresentationMode';
+import { lazy, Suspense } from 'react';
 import { StageEditModal } from '@/components/StageEditModal';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
@@ -43,6 +43,11 @@ import {
   AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 import { Music, Play, Square } from 'lucide-react';
+
+const PresentationMode = lazy(() =>
+  import('@/components/PresentationMode').then((m) => ({ default: m.PresentationMode }))
+);
+
 
 const SectionDetail = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -298,29 +303,31 @@ const SectionDetail = () => {
 
   if (isPresentationMode) {
     return (
-      <PresentationMode
-        stages={sectionStages}
-        audiosByStageId={audiosByStageId}
-        currentStageId={currentStageId}
-        currentUrl={currentUrl}
+      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <PresentationMode
+          stages={sectionStages}
+          audiosByStageId={audiosByStageId}
+          currentStageId={currentStageId}
+          currentUrl={currentUrl}
 
-        status={status}
-        volume={volume}
-        currentTime={currentTime}
-        duration={duration}
-        onVolumeChange={setVolume}
-        onPlay={handlePresentationPlay}
-        onPause={pause}
-        onResume={resume}
-        onStop={stop}
-        onClose={() => setIsPresentationMode(false)}
-        onSeekForward={() => seekForward()}
-        onSeekBackward={() => seekBackward()}
-        onSeekTo={seekTo}
-        settings={settings}
-        eq={eq}
-        onEQChange={setEQ}
-      />
+          status={status}
+          volume={volume}
+          currentTime={currentTime}
+          duration={duration}
+          onVolumeChange={setVolume}
+          onPlay={handlePresentationPlay}
+          onPause={pause}
+          onResume={resume}
+          onStop={stop}
+          onClose={() => setIsPresentationMode(false)}
+          onSeekForward={() => seekForward()}
+          onSeekBackward={() => seekBackward()}
+          onSeekTo={seekTo}
+          settings={settings}
+          eq={eq}
+          onEQChange={setEQ}
+        />
+      </Suspense>
     );
   }
 

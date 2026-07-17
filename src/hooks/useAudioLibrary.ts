@@ -29,6 +29,7 @@ export function useAudioLibrary() {
       if (error) throw error;
       return data as AudioLibraryItem[];
     },
+    staleTime: 60_000,
   });
 
   const addAudio = useMutation({

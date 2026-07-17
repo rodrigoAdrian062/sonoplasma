@@ -22,8 +22,8 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { cn } from '@/lib/utils';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+// JSZip e file-saver são pesados (~90 KB) e só rodam no "baixar tudo".
+// Carregados dinamicamente dentro de handleDownloadAll.
 import { toast } from '@/hooks/use-toast';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
@@ -395,6 +395,10 @@ export default function AudioLibraryPage() {
     }
     setIsDownloadingAll(true);
     try {
+      const [{ default: JSZip }, { saveAs }] = await Promise.all([
+        import('jszip'),
+        import('file-saver'),
+      ]);
       const zip = new JSZip();
       let count = 0;
       for (const audio of downloadableAudios) {

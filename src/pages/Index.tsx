@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -47,9 +47,16 @@ const Index = () => {
     }
   };
 
-  const getStageCount = (sectionId: string) => {
-    return stages.filter(s => s.secao_id === sectionId).length;
-  };
+  // Conta etapas por seção em uma única passada, evitando O(N×M) por render.
+  const stageCountBySection = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const s of stages) {
+      if (!s.secao_id) continue;
+      map[s.secao_id] = (map[s.secao_id] || 0) + 1;
+    }
+    return map;
+  }, [stages]);
+  const getStageCount = (sectionId: string) => stageCountBySection[sectionId] || 0;
 
   const isLoading = stagesLoading || sectionsLoading;
 

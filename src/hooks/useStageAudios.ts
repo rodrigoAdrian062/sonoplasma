@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StageAudio, StageAudioInsert, StageAudioUpdate } from '@/types/stageAudio';
@@ -144,14 +145,15 @@ export function useAllStageAudios() {
     },
   });
 
-  // Group audios by stage id
-  const audiosByStageId = allAudios.reduce((acc, audio) => {
-    if (!acc[audio.etapa_id]) {
-      acc[audio.etapa_id] = [];
-    }
-    acc[audio.etapa_id].push(audio);
-    return acc;
-  }, {} as Record<string, StageAudio[]>);
+  // Group audios by stage id — memoizado para preservar identidade entre renders
+  // e evitar re-execução de effects/memos que dependem deste objeto.
+  const audiosByStageId = useMemo(() => {
+    return allAudios.reduce((acc, audio) => {
+      if (!acc[audio.etapa_id]) acc[audio.etapa_id] = [];
+      acc[audio.etapa_id].push(audio);
+      return acc;
+    }, {} as Record<string, StageAudio[]>);
+  }, [allAudios]);
 
   return {
     allAudios,
