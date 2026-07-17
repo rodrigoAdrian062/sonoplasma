@@ -1,13 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { ArrowLeft, BookOpen, Trash2, Copy, Loader2, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, Trash2, Copy, Loader2, Pencil, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useRoteiros } from '@/hooks/useRoteiros';
+import { useRoteiros, Roteiro } from '@/hooks/useRoteiros';
 import { useSections } from '@/hooks/useSections';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { parseRoteiro } from '@/lib/roteiroFormat';
 import { MasonicFooter } from '@/components/MasonicFooter';
 
@@ -16,14 +24,38 @@ export default function RoteirosLibrary() {
   const { roteiros, isLoading, deleteRoteiro, upsertRoteiro } = useRoteiros();
   const { sections } = useSections();
   const [applyingTo, setApplyingTo] = useState<{ conteudo: string; titulo: string } | null>(null);
+  const [editing, setEditing] = useState<Roteiro | null>(null);
+  const [editTitulo, setEditTitulo] = useState('');
+  const [editConteudo, setEditConteudo] = useState('');
 
   const templates = roteiros.filter((r) => r.is_template);
   const sectionRoteiros = roteiros.filter((r) => !r.is_template);
 
+  const openEdit = (r: Roteiro) => {
+    setEditing(r);
+    setEditTitulo(r.titulo);
+    setEditConteudo(r.conteudo);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    try {
+      await upsertRoteiro.mutateAsync({
+        id: editing.id,
+        titulo: editTitulo.trim() || 'Sem título',
+        conteudo: editConteudo,
+        is_template: editing.is_template,
+      });
+      toast.success('Roteiro atualizado');
+      setEditing(null);
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao salvar');
+    }
+  };
+
   const applyToSection = async (secaoId: string) => {
     if (!applyingTo) return;
     try {
-      // check if already has one for this section
       const { data: existing } = await supabase
         .from('sonoplastia_roteiros' as any)
         .select('*')
@@ -80,22 +112,25 @@ export default function RoteirosLibrary() {
             {templates.map((t) => {
               const cues = parseRoteiro(t.conteudo).filter((b) => b.type === 'cue').length;
               return (
-                <Card key={t.id} className="p-4 bg-black/30 border-white/10">
+                <Card key={t.id} className="p-4 bg-black/30 border-white/10 flex flex-col">
                   <div className="font-semibold truncate">{t.titulo}</div>
                   <div className="text-xs text-white/50 mt-1">
                     {t.conteudo.length} caracteres · {cues} cue{cues === 1 ? '' : 's'}
                   </div>
-                  <p className="text-xs text-white/60 mt-2 line-clamp-3 font-serif">
+                  <p className="text-xs text-white/60 mt-2 line-clamp-3 font-serif flex-1">
                     {t.conteudo.replace(/\[\[CUE:[^\]]+\]\]/g, '▶').slice(0, 200)}
                   </p>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-1 mt-3">
                     <Button
                       size="sm"
                       variant="outline"
                       className="flex-1"
                       onClick={() => setApplyingTo({ conteudo: t.conteudo, titulo: t.titulo })}
                     >
-                      <Copy className="w-3 h-3 mr-1" /> Usar em seção
+                      <Copy className="w-3 h-3 mr-1" /> Usar
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(t)} title="Editar">
+                      <Pencil className="w-4 h-4 text-[hsl(var(--gold))]" />
                     </Button>
                     <Button
                       size="sm"
@@ -103,6 +138,7 @@ export default function RoteirosLibrary() {
                       onClick={() => {
                         if (window.confirm(`Excluir template "${t.titulo}"?`)) deleteRoteiro.mutate(t.id);
                       }}
+                      title="Excluir"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
@@ -124,12 +160,17 @@ export default function RoteirosLibrary() {
               const sec = sections.find((s) => s.id === r.secao_id);
               const cues = parseRoteiro(r.conteudo).filter((b) => b.type === 'cue').length;
               return (
-                <Card key={r.id} className="p-4 bg-black/30 border-white/10">
+                <Card key={r.id} className="p-4 bg-black/30 border-white/10 flex flex-col">
                   <div className="font-semibold truncate">{r.titulo}</div>
                   <div className="text-xs text-white/50 mt-1">
                     {sec?.nome || 'Seção removida'} · {cues} cue{cues === 1 ? '' : 's'}
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <p className="text-xs text-white/60 mt-2 line-clamp-3 font-serif flex-1">
+                    {r.conteudo.replace(/\[\[CUE:[^\]]+\]\]/g, '▶').slice(0, 200) || (
+                      <span className="italic text-white/40">Roteiro vazio</span>
+                    )}
+                  </p>
+                  <div className="flex gap-1 mt-3">
                     {sec && (
                       <Button
                         size="sm"
@@ -140,12 +181,16 @@ export default function RoteirosLibrary() {
                         Abrir
                       </Button>
                     )}
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(r)} title="Editar rápido">
+                      <Pencil className="w-4 h-4 text-[hsl(var(--gold))]" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => {
                         if (window.confirm(`Excluir roteiro "${r.titulo}"?`)) deleteRoteiro.mutate(r.id);
                       }}
+                      title="Excluir"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
@@ -157,6 +202,7 @@ export default function RoteirosLibrary() {
         </section>
       </div>
 
+      {/* Aplicar template em seção */}
       <Dialog open={!!applyingTo} onOpenChange={(v) => !v && setApplyingTo(null)}>
         <DialogContent>
           <DialogHeader>
@@ -176,6 +222,55 @@ export default function RoteirosLibrary() {
               <div className="text-sm text-white/50 italic">Nenhuma seção criada ainda.</div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editor de roteiro */}
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editing?.is_template ? 'Editar template' : 'Editar roteiro'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-white/60 mb-1 block">Título</label>
+              <Input
+                value={editTitulo}
+                onChange={(e) => setEditTitulo(e.target.value)}
+                placeholder="Título do roteiro"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-white/60 mb-1 block">
+                Conteúdo (use <code className="text-[hsl(var(--gold))]">[[CUE:id-da-etapa]]</code> para marcar pontos de música)
+              </label>
+              <Textarea
+                value={editConteudo}
+                onChange={(e) => setEditConteudo(e.target.value)}
+                rows={18}
+                className="font-mono text-sm"
+              />
+              <div className="text-xs text-white/40 mt-1">
+                {editConteudo.length} caracteres ·{' '}
+                {parseRoteiro(editConteudo).filter((b) => b.type === 'cue').length} cues
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={saveEdit} disabled={upsertRoteiro.isPending}>
+              {upsertRoteiro.isPending ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              Salvar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
