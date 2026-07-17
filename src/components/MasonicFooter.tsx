@@ -30,9 +30,10 @@ export function MasonicFooter() {
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
+    let fadeTimeout: ReturnType<typeof setTimeout> | null = null;
     const interval = setInterval(() => {
       setFade(false);
-      setTimeout(() => {
+      fadeTimeout = setTimeout(() => {
         setQuoteIndex((prev) => {
           let next: number;
           do {
@@ -44,7 +45,10 @@ export function MasonicFooter() {
       }, 500);
     }, 12000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (fadeTimeout) clearTimeout(fadeTimeout);
+    };
   }, []);
 
   return (

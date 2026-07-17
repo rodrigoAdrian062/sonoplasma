@@ -9,10 +9,12 @@ export function useUserRole() {
     queryKey: ['user-role', user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
+      const uid = user?.id;
+      if (!uid) return false;
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user!.id)
+        .eq('user_id', uid)
         .eq('role', 'super_admin')
         .maybeSingle();
       if (error) throw error;

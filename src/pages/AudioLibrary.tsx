@@ -76,6 +76,7 @@ export default function AudioLibraryPage() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const ytPlayerRef = useRef<any>(null);
+  const ytInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -213,6 +214,10 @@ export default function AudioLibraryPage() {
     audioElement?.pause();
     setAudioElement(null);
     stopYtTimePolling();
+    if (ytInitTimeoutRef.current) {
+      clearTimeout(ytInitTimeoutRef.current);
+      ytInitTimeoutRef.current = null;
+    }
     if (ytPlayerRef.current) {
       try {
         if (destroy) {
@@ -283,7 +288,7 @@ export default function AudioLibraryPage() {
 
       const initPlayer = () => {
         if (!(window as any).YT || !(window as any).YT.Player) {
-          setTimeout(initPlayer, 100);
+          ytInitTimeoutRef.current = setTimeout(initPlayer, 100);
           return;
         }
         ytPlayerRef.current = new (window as any).YT.Player('yt-library-player', {
