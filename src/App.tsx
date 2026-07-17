@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,23 +8,42 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
 import Auth from "./pages/Auth";
 
-import AudioLibrary from "./pages/AudioLibrary";
-import SpotifyLibrary from "./pages/SpotifyLibrary";
-import YoutubeLibrary from "./pages/YoutubeLibrary";
-import NotFound from "./pages/NotFound";
-import UserManagement from "./pages/UserManagement";
-import RoteiroPage from "./pages/RoteiroPage";
-import RoteirosLibrary from "./pages/RoteirosLibrary";
+// Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
+const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
+const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
+const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const RoteiroPage = lazy(() => import("./pages/RoteiroPage"));
+const RoteirosLibrary = lazy(() => import("./pages/RoteirosLibrary"));
 
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
 
-const queryClient = new QueryClient();
+// Dados de cerimônia/áudio são majoritariamente estáticos entre navegações.
+// Evita refetch em cada mount / focus da aba.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+const RouteFallback = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <Loader2 className="w-8 h-8 text-gold animate-spin" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -36,6 +56,7 @@ const App = () => (
           <BackgroundMusicProvider>
           
           
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
@@ -107,6 +128,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />

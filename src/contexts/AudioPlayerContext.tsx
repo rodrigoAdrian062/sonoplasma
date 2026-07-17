@@ -304,10 +304,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Poll YouTube player for time updates
+  // Poll YouTube player for time updates — pausa quando a aba está oculta
+  // para economizar CPU/bateria (tablets, apresentação em segundo plano).
   useEffect(() => {
     if (!isYouTube || status === 'idle') return;
-    const interval = setInterval(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const tick = () => {
       if (ytPlayerRef.current && ytPlayerReadyRef.current) {
         try {
           const current = ytPlayerRef.current.getCurrentTime();
@@ -318,8 +320,22 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           // Player may not be ready yet
         }
       }
-    }, 500);
-    return () => clearInterval(interval);
+    };
+    const start = () => {
+      if (interval == null) interval = setInterval(tick, 500);
+    };
+    const stop = () => {
+      if (interval != null) { clearInterval(interval); interval = null; }
+    };
+    const onVisibility = () => {
+      if (document.hidden) stop(); else start();
+    };
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      stop();
+    };
   }, [isYouTube, status]);
 
   const stopCurrentPlayback = useCallback(() => {
