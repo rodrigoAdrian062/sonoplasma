@@ -707,7 +707,7 @@ export function PresentationMode({
 
         {/* Roteiro Side Panel */}
         {showRoteiro && roteiro && (
-          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[380px] md:w-[440px] lg:w-[500px] max-w-[92vw] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[460px] md:w-[540px] lg:w-[620px] max-w-[92vw] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10 shrink-0">
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-widest text-gold/70">Roteiro</div>
