@@ -500,42 +500,7 @@ export function PresentationMode({
 
         
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Volume toggle for mobile */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowVolume(!showVolume)}
-            className="h-8 w-8 text-muted-foreground hover:text-gold sm:hidden"
-          >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </Button>
 
-          {/* Desktop volume */}
-          <div className="hidden sm:flex items-center gap-2 px-2 py-1 bg-secondary rounded-lg" onWheel={handleVolumeWheel} title="Role o mouse para ajustar aos poucos">
-            <button
-              onClick={handleToggleMute}
-              className="text-muted-foreground hover:text-gold transition-colors"
-            >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <button
-              onClick={handleVolumeFineDown}
-              className="text-muted-foreground hover:text-gold transition-colors"
-              title="Diminuir aos poucos"
-            >
-              <Minus size={14} />
-            </button>
-            <button
-              onClick={handleVolumeFineUp}
-              className="text-muted-foreground hover:text-gold transition-colors"
-              title="Aumentar aos poucos"
-            >
-              <Plus size={14} />
-            </button>
-            <span className="text-[10px] text-muted-foreground w-7 text-right">
-              {Math.round(volume * 100)}%
-            </span>
-          </div>
 
 
 
