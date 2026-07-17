@@ -94,15 +94,27 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     return !isYouTubeUrl(url) && !isSpotifyUrl(url); // upload/link
   };
 
+  const suggested = useMemo(() => {
+    if (!suggestMode || !stageTitle) return null;
+    const fakeStage = {
+      id: 'sug',
+      nome_simbolico: stageTitle,
+      descricao: stageDescription || '',
+    } as unknown as CeremonyStage;
+    const results = matchAudiosForStage(fakeStage, library, 50);
+    return results.map((r) => r.audio);
+  }, [suggestMode, stageTitle, stageDescription, library]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return library.filter((a) => {
-      // when searching or filtering by source, ignore folder scoping
-      const scoped = search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
+    const base = suggested ?? library;
+    return base.filter((a) => {
+      // when searching, filtering by source, or in suggest mode, ignore folder scoping
+      const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, search, currentFolderId, sourceFilter]);
+  }, [library, suggested, search, currentFolderId, sourceFilter]);
 
 
   const formatTime = (s: number) => {
