@@ -6,12 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import {
-  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2,
+  BookOpen, Music, Play, Pause, Save, Upload, FileText, Loader2, Sparkles, Square, Search, GripVertical, Library, Trash2, FileStack,
 } from 'lucide-react';
 
 import { CeremonyStage } from '@/types/ceremony';
 import { useRoteiros, useRoteiroBySection, Roteiro } from '@/hooks/useRoteiros';
-import { insertCueAtCursor, insertTrackAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
+import { insertCueAtCursor, insertTrackAtCursor, insertPageBreakAtCursor, parseRoteiro } from '@/lib/roteiroFormat';
 import { RoteiroImportDialog } from './RoteiroImportDialog';
 import { RoteiroReader } from './RoteiroReader';
 import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
