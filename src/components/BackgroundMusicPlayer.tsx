@@ -145,6 +145,24 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </div>
             )}
 
+            {/* Progress / time */}
+            {currentTrack && (
+              <div className="space-y-1">
+                <Slider
+                  value={[Math.min(currentTime, duration || 0)]}
+                  min={0}
+                  max={Math.max(1, duration || 0)}
+                  step={0.1}
+                  onValueChange={([v]) => seek(v)}
+                />
+                <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
+                </div>
+              </div>
+            )}
+
+
             {/* Volume */}
             <div className="flex items-center gap-2">
               <Volume2 size={13} className="text-muted-foreground shrink-0" />
