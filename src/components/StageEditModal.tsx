@@ -387,6 +387,8 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                 onClose={() => setPickerOpen(false)}
                 audios={audioItems}
                 onChange={setAudioItems}
+                stageTitle={formData.nome_simbolico}
+                stageDescription={formData.descricao}
               />
             </div>
           )}

@@ -13,13 +13,10 @@ import { useSections } from '@/hooks/useSections';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
-import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Wand2 } from 'lucide-react';
+import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
-import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { useAllStageAudios } from '@/hooks/useStageAudios';
-import { useAutoSuggestAudios } from '@/hooks/useAutoSuggestAudios';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -32,9 +29,8 @@ const Index = () => {
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
   const [isNewSectionModal, setIsNewSectionModal] = useState(false);
   const [deleteSectionData, setDeleteSectionData] = useState<CeremonySection | null>(null);
-  const { audios: libraryAudios } = useAudioLibrary();
-  const { audiosByStageId } = useAllStageAudios();
-  const { run: runAutoSuggest, isRunning: isSuggesting } = useAutoSuggestAudios();
+
+
   
 
   const handleSaveSection = (data: CeremonySectionInsert | CeremonySectionUpdate) => {
@@ -80,28 +76,6 @@ const Index = () => {
         {/* Banner principal editável */}
         <EditableBanner />
 
-        {sections.length > 0 && stages.length > 0 && (
-          <div className="mb-4 flex justify-end">
-            <Button
-              onClick={() =>
-                runAutoSuggest({
-                  stages,
-                  library: libraryAudios,
-                  existingByStageId: audiosByStageId,
-                  perStage: 5,
-                })
-              }
-              disabled={isSuggesting}
-              variant="outline"
-              size="sm"
-              className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30"
-              title="Sugere até 5 músicas da biblioteca por etapa de todas as seções"
-            >
-              {isSuggesting ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-              Sugerir músicas para todas as etapas
-            </Button>
-          </div>
-        )}
 
         {sections.length === 0 ? (
           <div className="text-center py-12">

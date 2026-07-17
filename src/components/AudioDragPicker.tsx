@@ -1,12 +1,14 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Play, Pause, Square, Plus, Upload, Loader2,
-  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2,
+  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2,
 
 } from 'lucide-react';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
+import { matchAudiosForStage } from '@/lib/autoMatchAudios';
+import type { CeremonyStage } from '@/types/ceremony';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -28,6 +30,8 @@ interface AudioDragPickerProps {
   audios: AudioItem[];
   onChange: (audios: AudioItem[]) => void;
   maxAudios?: number;
+  stageTitle?: string;
+  stageDescription?: string;
 }
 
 type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
@@ -55,12 +59,13 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   return <FolderMusicIcon size={size} />;
 }
 
-export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity }: AudioDragPickerProps) {
+export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity, stageTitle, stageDescription }: AudioDragPickerProps) {
   const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'upload' | 'youtube' | 'spotify'>('all');
+  const [suggestMode, setSuggestMode] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -89,15 +94,27 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     return !isYouTubeUrl(url) && !isSpotifyUrl(url); // upload/link
   };
 
+  const suggested = useMemo(() => {
+    if (!suggestMode || !stageTitle) return null;
+    const fakeStage = {
+      id: 'sug',
+      nome_simbolico: stageTitle,
+      descricao: stageDescription || '',
+    } as unknown as CeremonyStage;
+    const results = matchAudiosForStage(fakeStage, library, 50);
+    return results.map((r) => r.audio);
+  }, [suggestMode, stageTitle, stageDescription, library]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return library.filter((a) => {
-      // when searching or filtering by source, ignore folder scoping
-      const scoped = search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
+    const base = suggested ?? library;
+    return base.filter((a) => {
+      // when searching, filtering by source, or in suggest mode, ignore folder scoping
+      const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, search, currentFolderId, sourceFilter]);
+  }, [library, suggested, search, currentFolderId, sourceFilter]);
 
 
   const formatTime = (s: number) => {
@@ -328,12 +345,28 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-none w-screen h-[100dvh] sm:h-screen rounded-none border-0 flex flex-col p-0 gap-0">
         <DialogHeader className="px-4 py-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-2 text-base flex-wrap">
             <Library className="text-gold" size={18} />
             Escolher áudios
             <span className="ml-1 text-xs font-normal text-muted-foreground hidden sm:flex items-center gap-1">
               <GripVertical size={12} /> arraste da biblioteca para a lista
             </span>
+            {stageTitle && (
+              <button
+                type="button"
+                onClick={() => setSuggestMode((v) => !v)}
+                className={cn(
+                  'ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                  suggestMode
+                    ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
+                    : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                )}
+                title={`Sugere músicas conforme "${stageTitle}"`}
+              >
+                <Wand2 size={12} />
+                {suggestMode ? 'Sugestões ativas' : 'Sugerir músicas'}
+              </button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
