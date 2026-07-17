@@ -38,6 +38,9 @@ interface BackgroundMusicContextValue {
   setFadeMs: (v: number) => void;
   maxDurationSec: number; // 0 = sem limite
   setMaxDurationSec: (v: number) => void;
+  currentTime: number;
+  duration: number;
+  seek: (sec: number) => void;
 }
 
 const STORAGE_KEY = 'bg-music-playlist-v1';
