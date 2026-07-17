@@ -36,6 +36,8 @@ interface BackgroundMusicContextValue {
   setAutoMode: (m: AutoDuckMode) => void;
   setDuckVolume: (v: number) => void;
   setFadeMs: (v: number) => void;
+  maxDurationSec: number; // 0 = sem limite
+  setMaxDurationSec: (v: number) => void;
 }
 
 const STORAGE_KEY = 'bg-music-playlist-v1';
