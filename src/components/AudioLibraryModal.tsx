@@ -70,12 +70,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           return false;
         }
         if (audioFilter && !audioFilter(a)) return false;
+        if (sourceFilter !== 'all' && getAudioSource(a) !== sourceFilter) return false;
         if (!term) return true;
         return a.nome.toLowerCase().includes(term);
       });
     }
     return audios.filter(a => getAudioFolderId(a) === currentFolderId && (!audioFilter || audioFilter(a)));
-  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, audioFilter]);
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, sourceFilter, audioFilter]);
 
 
   const isYouTubeUrl = (url: string) => {
