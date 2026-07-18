@@ -490,18 +490,22 @@ const SectionDetail = () => {
         <MasonicFooter />
       </main>
 
-      <StageEditModal
-        stage={editingStage}
-        isOpen={!!editingStage || isNewStageModal}
-        onClose={() => {
-          setEditingStage(null);
-          setIsNewStageModal(false);
-        }}
-        onSave={handleSaveStage}
-        isNew={isNewStageModal}
-        sections={sections}
-        defaultSectionId={section?.id}
-      />
+      {(editingStage || isNewStageModal) && (
+        <Suspense fallback={null}>
+          <StageEditModal
+            stage={editingStage}
+            isOpen={!!editingStage || isNewStageModal}
+            onClose={() => {
+              setEditingStage(null);
+              setIsNewStageModal(false);
+            }}
+            onSave={handleSaveStage}
+            isNew={isNewStageModal}
+            sections={sections}
+            defaultSectionId={section?.id}
+          />
+        </Suspense>
+      )}
 
       <DeleteConfirmModal
         isOpen={!!deleteStageData}
