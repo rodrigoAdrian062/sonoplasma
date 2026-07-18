@@ -32,18 +32,24 @@ export async function prefetchAudio(url: string): Promise<void> {
   if (inFlight.has(url)) return inFlight.get(url);
 
   const task = (async () => {
+    // Bug corrigido: fetch sem timeout deixava a promise pendurada para
+    // sempre em redes instáveis (tablets), bloqueando novas tentativas
+    // para a mesma URL. Agora aborta em 20s.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
     try {
       const cache = await caches.open(CACHE_NAME);
       const existing = await cache.match(url);
       if (existing) return;
-      const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+      const res = await fetch(url, { mode: 'cors', cache: 'force-cache', signal: ctrl.signal });
       if (res.ok) {
         await cache.put(url, res.clone());
         void trimCache();
       }
     } catch {
-      // Falha de rede/CORS não deve quebrar nada — só perde o cache.
+      // Falha de rede/CORS/timeout não deve quebrar nada — só perde o cache.
     } finally {
+      clearTimeout(timer);
       inFlight.delete(url);
     }
   })();
@@ -69,10 +75,27 @@ async function trimCache(): Promise<void> {
     const keys = await cache.keys();
     if (keys.length <= MAX_CACHE_ENTRIES) return;
     const excess = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
-    await Promise.all(excess.map((req) => cache.delete(req)));
+    await Promise.all(excess.map(async (req) => {
+      await cache.delete(req);
+      // Bug corrigido: object URLs ficavam pendurados na memória para
+      // sempre. Agora revogamos junto com a remoção do cache.
+      const blobUrl = blobUrlMap.get(req.url);
+      if (blobUrl) {
+        try { URL.revokeObjectURL(blobUrl); } catch { /* noop */ }
+        blobUrlMap.delete(req.url);
+      }
+    }));
   } catch {
     // noop
   }
+}
+
+/** Libera todos os object URLs (chamar em logout ou reset). */
+export function clearAudioBlobCache(): void {
+  blobUrlMap.forEach((objectUrl) => {
+    try { URL.revokeObjectURL(objectUrl); } catch { /* noop */ }
+  });
+  blobUrlMap.clear();
 }
 
 /** Indica se o áudio já está pronto em cache (para UI de status). */

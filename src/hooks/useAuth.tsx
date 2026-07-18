@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAudioBlobCache } from '@/lib/audioCache';
 
 interface AuthContextType {
   user: User | null;
@@ -60,6 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Bug corrigido: cache de áudio (blob URLs + Cache Storage) persistia
+    // entre contas, causando vazamento em dispositivos compartilhados.
+    try { clearAudioBlobCache(); } catch { /* noop */ }
+    try {
+      if (typeof caches !== 'undefined') await caches.delete('sonoplastia-audio-v1');
+    } catch { /* noop */ }
     await supabase.auth.signOut();
   };
 

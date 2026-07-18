@@ -168,23 +168,30 @@ const SectionDetail = () => {
     return queue;
   }, [sectionStages, audiosByStageId]);
 
-  // Reprodução contínua: ao terminar uma música, inicia a próxima da seção
+  // Bug corrigido: a fila era dependência do efeito, então cada refetch da
+  // biblioteca desregistrava o callback e reinstalava — se uma faixa terminava
+  // exatamente nessa janela, a reprodução contínua parava. Agora usamos um ref
+  // que sempre reflete a fila atual, e registramos o callback só uma vez por
+  // mudança da flag "reproducao_continua".
+  const sectionQueueRef = useRef(sectionQueue);
+  useEffect(() => { sectionQueueRef.current = sectionQueue; }, [sectionQueue]);
   useEffect(() => {
     if (!section?.reproducao_continua) {
       setOnTrackEnded(null);
       return;
     }
     setOnTrackEnded((endedStageId, endedUrl) => {
-      const idx = sectionQueue.findIndex(
-        (q) => q.stageId === endedStageId && q.url === endedUrl
+      const q = sectionQueueRef.current;
+      const idx = q.findIndex(
+        (item) => item.stageId === endedStageId && item.url === endedUrl
       );
-      if (idx === -1 || idx + 1 >= sectionQueue.length) return false;
-      const next = sectionQueue[idx + 1];
+      if (idx === -1 || idx + 1 >= q.length) return false;
+      const next = q[idx + 1];
       play(next.stageId, next.url);
       return true;
     });
     return () => setOnTrackEnded(null);
-  }, [section?.reproducao_continua, sectionQueue, play, setOnTrackEnded]);
+  }, [section?.reproducao_continua, play, setOnTrackEnded]);
 
 
 

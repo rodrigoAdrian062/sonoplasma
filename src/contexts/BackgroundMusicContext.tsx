@@ -101,6 +101,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const playlistRef = useRef<BackgroundTrack[]>(playlist);
   const currentIndexRef = useRef(currentIndex);
   const playRequestRef = useRef(0);
+  // Reflete a intenção do usuário — usado no handleEnded para não retomar
+  // uma faixa que foi pausada exatamente quando a anterior terminou.
+  const wantsToPlayRef = useRef(false);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   const { status: mainStatus } = useUniversalAudioPlayer();
@@ -116,6 +119,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const handleEnded = () => {
       const pl = playlistRef.current;
       if (pl.length === 0) return;
+      // Bug corrigido: se o usuário pausou justo quando a faixa acabou,
+      // handleEnded reiniciava/avançava mesmo assim. Agora respeita a intenção.
+      if (!wantsToPlayRef.current) return;
       if (pl.length === 1) {
         try {
           a.currentTime = 0;
@@ -134,7 +140,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         a.play().catch(() => undefined);
       }
     };
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => { wantsToPlayRef.current = true; setIsPlaying(true); };
     const handlePause = () => setIsPlaying(false);
     const handleError = () => {
       setIsPlaying(false);
@@ -357,6 +363,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
+    wantsToPlayRef.current = false;
     audioRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
@@ -407,9 +414,23 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const removeTrack = useCallback((id: string) => {
     setPlaylist((prev) => {
       const idx = prev.findIndex((t) => t.id === id);
+      if (idx < 0) return prev;
       const next = prev.filter((t) => t.id !== id);
-      if (idx >= 0 && idx <= currentIndex && currentIndex > 0) {
-        setCurrentIndex((c) => Math.max(0, c - 1));
+      const cur = currentIndexRef.current;
+      // Bug corrigido: se a faixa removida for a que está tocando (idx === cur),
+      // o <audio> ficava com o src antigo enquanto currentIndex apontava para
+      // outra faixa — trocando de música sem aviso. Agora paramos e realinhamos.
+      if (idx === cur) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+        const newIdx = next.length === 0 ? 0 : Math.min(cur, next.length - 1);
+        currentIndexRef.current = newIdx;
+        setCurrentIndex(newIdx);
+        if (audioRef.current) audioRef.current.src = next[newIdx]?.audio_url || '';
+      } else if (idx < cur) {
+        const newIdx = cur - 1;
+        currentIndexRef.current = newIdx;
+        setCurrentIndex(newIdx);
       }
       if (next.length === 0) {
         audioRef.current?.pause();
@@ -417,7 +438,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, [currentIndex]);
+  }, []);
 
   const clearPlaylist = useCallback(() => {
     audioRef.current?.pause();
