@@ -26,6 +26,14 @@ function getAudioFolderId(audio: { pasta_id?: string | null }) {
   return audio.pasta_id ?? null;
 }
 
+function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'spotify' | 'file' {
+  const url = (a.audio_url || '').toLowerCase();
+  const t = (a.tipo || '').toLowerCase();
+  if (t === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (t === 'spotify' || url.includes('open.spotify.com') || url.startsWith('spotify:')) return 'spotify';
+  return 'file';
+}
+
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
