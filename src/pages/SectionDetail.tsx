@@ -23,7 +23,7 @@ import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
 import { lazy, Suspense } from 'react';
-import { StageEditModal } from '@/components/StageEditModal';
+// Modal pesado — carregado sob demanda ao editar/criar etapa.
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
 import { useStages } from '@/hooks/useStages';
