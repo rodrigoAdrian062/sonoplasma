@@ -32,18 +32,24 @@ export async function prefetchAudio(url: string): Promise<void> {
   if (inFlight.has(url)) return inFlight.get(url);
 
   const task = (async () => {
+    // Bug corrigido: fetch sem timeout deixava a promise pendurada para
+    // sempre em redes instáveis (tablets), bloqueando novas tentativas
+    // para a mesma URL. Agora aborta em 20s.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
     try {
       const cache = await caches.open(CACHE_NAME);
       const existing = await cache.match(url);
       if (existing) return;
-      const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+      const res = await fetch(url, { mode: 'cors', cache: 'force-cache', signal: ctrl.signal });
       if (res.ok) {
         await cache.put(url, res.clone());
         void trimCache();
       }
     } catch {
-      // Falha de rede/CORS não deve quebrar nada — só perde o cache.
+      // Falha de rede/CORS/timeout não deve quebrar nada — só perde o cache.
     } finally {
+      clearTimeout(timer);
       inFlight.delete(url);
     }
   })();
