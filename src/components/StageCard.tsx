@@ -129,6 +129,8 @@ export function StageCard({
   const [audioReady, setAudioReady] = useState(true);
   useEffect(() => {
     let active = true;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 15; // ~12s total, evita polling infinito quando o áudio nunca cacheia
     const url = currentAudio?.audio_url;
     if (!url || !isCacheableAudioUrl(url)) {
       setAudioReady(true);
@@ -139,6 +141,8 @@ export function StageCard({
       const ready = await isAudioCached(url);
       if (!active) return;
       if (ready) { setAudioReady(true); return; }
+      attempts += 1;
+      if (attempts >= MAX_ATTEMPTS) { setAudioReady(true); return; }
       setTimeout(check, 800);
     };
     check();
