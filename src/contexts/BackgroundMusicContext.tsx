@@ -101,6 +101,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const playlistRef = useRef<BackgroundTrack[]>(playlist);
   const currentIndexRef = useRef(currentIndex);
   const playRequestRef = useRef(0);
+  // Reflete a intenção do usuário — usado no handleEnded para não retomar
+  // uma faixa que foi pausada exatamente quando a anterior terminou.
+  const wantsToPlayRef = useRef(false);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   const { status: mainStatus } = useUniversalAudioPlayer();
