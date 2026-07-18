@@ -25,17 +25,16 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        // Divide o bundle em chunks lógicos para melhorar o cache do navegador
-        // e reduzir o JS baixado no primeiro carregamento.
+        // Chunks conservadores: qualquer coisa que dependa de React fica junto
+        // do próprio React para evitar "createContext is undefined" no bundle
+        // publicado por ordem de carregamento entre chunks.
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return;
-          if (id.includes("react-dom") || id.includes("react-router") || id.includes("scheduler") || id.match(/[\\/]react[\\/]/)) return "vendor-react";
-          if (id.includes("@radix-ui") || id.includes("cmdk") || id.includes("vaul") || id.includes("sonner")) return "vendor-ui";
-          if (id.includes("@dnd-kit")) return "vendor-dnd";
-          if (id.includes("@tanstack")) return "vendor-tanstack";
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("lucide-react")) return "vendor-icons";
-          if (id.includes("date-fns") || id.includes("zod") || id.includes("clsx") || id.includes("tailwind-merge")) return "vendor-utils";
+          // Todo o resto (react, react-dom, react-router, radix, tanstack,
+          // dnd-kit, scheduler, react-is, use-sync-external-store, etc.)
+          // fica no mesmo chunk para preservar a ordem de inicialização.
           return "vendor";
         },
       },
