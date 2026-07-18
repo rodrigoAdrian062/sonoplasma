@@ -47,6 +47,9 @@ import { Music, Play, Square } from 'lucide-react';
 const PresentationMode = lazy(() =>
   import('@/components/PresentationMode').then((m) => ({ default: m.PresentationMode }))
 );
+const StageEditModal = lazy(() =>
+  import('@/components/StageEditModal').then((m) => ({ default: m.StageEditModal }))
+);
 
 
 const SectionDetail = () => {
