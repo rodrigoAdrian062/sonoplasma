@@ -12,6 +12,7 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
+import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 interface StageCardProps {
@@ -115,11 +116,14 @@ export function StageCard({
   }, [audios, selectedAudioIndex]);
 
   // Pré-carrega os áudios diretos da etapa para início instantâneo no tablet.
+  // Só executa quando o usuário mantém o pré-carregamento habilitado.
+  const [prefetchOn] = usePrefetchEnabled();
   useEffect(() => {
+    if (!prefetchOn) return;
     if (audios.length > 0) {
       prefetchAudios(audios.map((a) => a.audio_url));
     }
-  }, [audios]);
+  }, [audios, prefetchOn]);
 
   // Acompanha se o áudio selecionado já está pronto em cache (para indicador).
   const [audioReady, setAudioReady] = useState(true);

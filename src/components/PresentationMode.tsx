@@ -29,7 +29,10 @@ import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
-
+import { prefetchAudios } from '@/lib/audioCache';
+import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
+import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
+import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
@@ -208,6 +211,23 @@ export function PresentationMode({
   const timer = useTimer(() => {
     onStop();
   });
+
+  // Pré-carregamento das próximas etapas: baixa em background os áudios
+  // das N próximas etapas para que o start seja quase instantâneo. Não
+  // toca nada — só popula o cache. Respeita o toggle do usuário.
+  const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  useEffect(() => {
+    if (!prefetchOn) return;
+    const urls: string[] = [];
+    for (let i = 1; i <= PREFETCH_LOOKAHEAD; i++) {
+      const next = stages[selectedStageIndex + i];
+      if (!next) break;
+      (audiosByStageId[next.id] || []).forEach((a) => {
+        if (a.audio_url) urls.push(a.audio_url);
+      });
+    }
+    if (urls.length > 0) prefetchAudios(urls);
+  }, [prefetchOn, selectedStageIndex, stages, audiosByStageId]);
 
   // Bug corrigido: o destaque do cue ficava congelado quando o usuário
   // trocava de áudio por outro caminho (clique na etapa, atalho, etc.).
@@ -599,6 +619,18 @@ export function PresentationMode({
                 className={`h-8 w-8 ${fadeEnabled ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
               >
                 <AudioLines size={16} />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPrefetchOn(!prefetchOn)}
+                title={prefetchOn
+                  ? 'Pré-carregamento ativo: as próximas etapas são baixadas em segundo plano.'
+                  : 'Pré-carregamento desativado: os áudios só baixam ao tocar.'}
+                className={`h-8 w-8 ${prefetchOn ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                <Download size={16} />
               </Button>
 
               <Button
