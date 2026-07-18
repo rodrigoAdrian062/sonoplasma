@@ -29,7 +29,10 @@ import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
-
+import { prefetchAudios } from '@/lib/audioCache';
+import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
+import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
+import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
