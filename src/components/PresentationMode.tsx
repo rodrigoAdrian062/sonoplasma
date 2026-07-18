@@ -400,6 +400,14 @@ export function PresentationMode({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Não sequestrar teclas quando o usuário está digitando em um input/textarea/contentEditable
+      const t = e.target as HTMLElement | null;
+      if (t) {
+        const tag = t.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable) {
+          return;
+        }
+      }
       setShowKeyboardHints(true);
       switch (e.key) {
         case 'ArrowLeft':

@@ -91,7 +91,14 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     } else {
       audioElement?.pause();
       const newAudio = new Audio(audio.audio_url);
-      newAudio.play();
+      newAudio.onerror = () => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      };
+      newAudio.play().catch(() => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      });
       newAudio.onended = () => {
         setPlayingId(null);
         setAudioElement(null);

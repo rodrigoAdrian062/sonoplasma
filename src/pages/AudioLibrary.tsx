@@ -331,7 +331,14 @@ export default function AudioLibraryPage() {
       const newAudio = new Audio(audio.audio_url);
       newAudio.ontimeupdate = () => { setAudioCurrentTime(newAudio.currentTime); };
       newAudio.onloadedmetadata = () => { setAudioDuration(newAudio.duration); };
-      newAudio.play();
+      newAudio.onerror = () => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0);
+      };
+      newAudio.play().catch(() => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      });
       newAudio.onended = () => { setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0); };
       setAudioElement(newAudio);
       setPlayingId(audio.id);
