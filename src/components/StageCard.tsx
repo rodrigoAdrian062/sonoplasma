@@ -115,11 +115,14 @@ export function StageCard({
   }, [audios, selectedAudioIndex]);
 
   // Pré-carrega os áudios diretos da etapa para início instantâneo no tablet.
+  // Só executa quando o usuário mantém o pré-carregamento habilitado.
+  const [prefetchOn] = usePrefetchEnabled();
   useEffect(() => {
+    if (!prefetchOn) return;
     if (audios.length > 0) {
       prefetchAudios(audios.map((a) => a.audio_url));
     }
-  }, [audios]);
+  }, [audios, prefetchOn]);
 
   // Acompanha se o áudio selecionado já está pronto em cache (para indicador).
   const [audioReady, setAudioReady] = useState(true);
