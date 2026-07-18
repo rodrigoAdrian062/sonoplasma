@@ -23,7 +23,7 @@ import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
 import { ControlBar } from '@/components/ControlBar';
 import { lazy, Suspense } from 'react';
-import { StageEditModal } from '@/components/StageEditModal';
+// Modal pesado — carregado sob demanda ao editar/criar etapa.
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { CeremonyIcon } from '@/components/icons/CeremonyIcon';
 import { useStages } from '@/hooks/useStages';
@@ -46,6 +46,9 @@ import { Music, Play, Square } from 'lucide-react';
 
 const PresentationMode = lazy(() =>
   import('@/components/PresentationMode').then((m) => ({ default: m.PresentationMode }))
+);
+const StageEditModal = lazy(() =>
+  import('@/components/StageEditModal').then((m) => ({ default: m.StageEditModal }))
 );
 
 
@@ -487,18 +490,22 @@ const SectionDetail = () => {
         <MasonicFooter />
       </main>
 
-      <StageEditModal
-        stage={editingStage}
-        isOpen={!!editingStage || isNewStageModal}
-        onClose={() => {
-          setEditingStage(null);
-          setIsNewStageModal(false);
-        }}
-        onSave={handleSaveStage}
-        isNew={isNewStageModal}
-        sections={sections}
-        defaultSectionId={section?.id}
-      />
+      {(editingStage || isNewStageModal) && (
+        <Suspense fallback={null}>
+          <StageEditModal
+            stage={editingStage}
+            isOpen={!!editingStage || isNewStageModal}
+            onClose={() => {
+              setEditingStage(null);
+              setIsNewStageModal(false);
+            }}
+            onSave={handleSaveStage}
+            isNew={isNewStageModal}
+            sections={sections}
+            defaultSectionId={section?.id}
+          />
+        </Suspense>
+      )}
 
       <DeleteConfirmModal
         isOpen={!!deleteStageData}

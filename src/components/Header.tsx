@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SettingsModal } from '@/components/SettingsModal';
 import { InstallPWA } from '@/components/InstallPWA';
 import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
+
+// Modal pesado — só carrega quando o usuário abre as configurações.
+const SettingsModal = lazy(() =>
+  import('@/components/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
 
 
 import { useSettings } from '@/hooks/useSettings';
@@ -252,10 +256,14 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
         </div>
       </header>
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      {isSettingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+          />
+        </Suspense>
+      )}
 
 
 
