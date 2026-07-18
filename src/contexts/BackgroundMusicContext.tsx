@@ -363,6 +363,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
+    wantsToPlayRef.current = false;
     audioRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
