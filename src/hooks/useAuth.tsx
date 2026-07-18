@@ -61,6 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Bug corrigido: cache de áudio (blob URLs + Cache Storage) persistia
+    // entre contas, causando vazamento em dispositivos compartilhados.
+    try { clearAudioBlobCache(); } catch { /* noop */ }
+    try {
+      if (typeof caches !== 'undefined') await caches.delete('sonoplastia-audio-v1');
+    } catch { /* noop */ }
     await supabase.auth.signOut();
   };
 
