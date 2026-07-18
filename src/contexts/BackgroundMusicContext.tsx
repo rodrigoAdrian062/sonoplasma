@@ -407,9 +407,23 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const removeTrack = useCallback((id: string) => {
     setPlaylist((prev) => {
       const idx = prev.findIndex((t) => t.id === id);
+      if (idx < 0) return prev;
       const next = prev.filter((t) => t.id !== id);
-      if (idx >= 0 && idx <= currentIndex && currentIndex > 0) {
-        setCurrentIndex((c) => Math.max(0, c - 1));
+      const cur = currentIndexRef.current;
+      // Bug corrigido: se a faixa removida for a que está tocando (idx === cur),
+      // o <audio> ficava com o src antigo enquanto currentIndex apontava para
+      // outra faixa — trocando de música sem aviso. Agora paramos e realinhamos.
+      if (idx === cur) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+        const newIdx = next.length === 0 ? 0 : Math.min(cur, next.length - 1);
+        currentIndexRef.current = newIdx;
+        setCurrentIndex(newIdx);
+        if (audioRef.current) audioRef.current.src = next[newIdx]?.audio_url || '';
+      } else if (idx < cur) {
+        const newIdx = cur - 1;
+        currentIndexRef.current = newIdx;
+        setCurrentIndex(newIdx);
       }
       if (next.length === 0) {
         audioRef.current?.pause();
@@ -417,7 +431,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, [currentIndex]);
+  }, []);
 
   const clearPlaylist = useCallback(() => {
     audioRef.current?.pause();
