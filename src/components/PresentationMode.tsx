@@ -212,6 +212,23 @@ export function PresentationMode({
     onStop();
   });
 
+  // Pré-carregamento das próximas etapas: baixa em background os áudios
+  // das N próximas etapas para que o start seja quase instantâneo. Não
+  // toca nada — só popula o cache. Respeita o toggle do usuário.
+  const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  useEffect(() => {
+    if (!prefetchOn) return;
+    const urls: string[] = [];
+    for (let i = 1; i <= PREFETCH_LOOKAHEAD; i++) {
+      const next = stages[selectedStageIndex + i];
+      if (!next) break;
+      (audiosByStageId[next.id] || []).forEach((a) => {
+        if (a.audio_url) urls.push(a.audio_url);
+      });
+    }
+    if (urls.length > 0) prefetchAudios(urls);
+  }, [prefetchOn, selectedStageIndex, stages, audiosByStageId]);
+
   // Bug corrigido: o destaque do cue ficava congelado quando o usuário
   // trocava de áudio por outro caminho (clique na etapa, atalho, etc.).
   // Agora limpamos também sempre que a faixa ativa muda ou fica ociosa.
