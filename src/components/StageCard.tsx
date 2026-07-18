@@ -12,6 +12,7 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
+import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 interface StageCardProps {
