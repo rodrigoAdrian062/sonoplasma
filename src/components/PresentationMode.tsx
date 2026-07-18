@@ -624,6 +624,18 @@ export function PresentationMode({
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setPrefetchOn(!prefetchOn)}
+                title={prefetchOn
+                  ? 'Pré-carregamento ativo: as próximas etapas são baixadas em segundo plano.'
+                  : 'Pré-carregamento desativado: os áudios só baixam ao tocar.'}
+                className={`h-8 w-8 ${prefetchOn ? 'text-gold' : 'text-muted-foreground hover:text-gold'}`}
+              >
+                <Download size={16} />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setPinKeyboardHints((prev) => {
                     const next = !prev;
