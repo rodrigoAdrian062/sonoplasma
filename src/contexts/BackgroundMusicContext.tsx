@@ -119,6 +119,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const handleEnded = () => {
       const pl = playlistRef.current;
       if (pl.length === 0) return;
+      // Bug corrigido: se o usuário pausou justo quando a faixa acabou,
+      // handleEnded reiniciava/avançava mesmo assim. Agora respeita a intenção.
+      if (!wantsToPlayRef.current) return;
       if (pl.length === 1) {
         try {
           a.currentTime = 0;
@@ -137,7 +140,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         a.play().catch(() => undefined);
       }
     };
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => { wantsToPlayRef.current = true; setIsPlaying(true); };
     const handlePause = () => setIsPlaying(false);
     const handleError = () => {
       setIsPlaying(false);
