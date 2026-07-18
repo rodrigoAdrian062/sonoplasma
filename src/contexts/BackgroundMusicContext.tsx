@@ -59,9 +59,12 @@ function isStreamingUrl(url: string): boolean {
 }
 
 export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
+  const safeRead = (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
   const [playlist, setPlaylist] = useState<BackgroundTrack[]>(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as BackgroundTrack[];
+      const saved = JSON.parse(safeRead(STORAGE_KEY) || '[]') as BackgroundTrack[];
       return Array.isArray(saved) ? saved.filter((track) => track?.audio_url && !isStreamingUrl(track.audio_url)) : [];
     } catch {
       return [];
@@ -70,23 +73,23 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolumeState] = useState<number>(() => {
-    const v = parseFloat(localStorage.getItem(VOLUME_KEY) || '0.25');
+    const v = parseFloat(safeRead(VOLUME_KEY) || '0.25');
     return isNaN(v) ? 0.25 : v;
   });
   const [autoPauseEnabled, setAutoPauseEnabledState] = useState<boolean>(() => {
-    return localStorage.getItem(AUTO_KEY) !== 'false';
+    return safeRead(AUTO_KEY) !== 'false';
   });
   const [autoMode, setAutoModeState] = useState<AutoDuckMode>(() => {
-    const m = localStorage.getItem(MODE_KEY);
+    const m = safeRead(MODE_KEY);
     return m === 'duck' ? 'duck' : 'pause';
   });
   const [duckVolume, setDuckVolumeState] = useState<number>(() => {
-    const v = parseFloat(localStorage.getItem(DUCK_KEY) || '0.08');
+    const v = parseFloat(safeRead(DUCK_KEY) || '0.08');
     return isNaN(v) ? 0.08 : v;
   });
   const [fadeMs, setFadeMsState] = useState<number>(0);
   const [maxDurationSec, setMaxDurationSecState] = useState<number>(() => {
-    const v = parseInt(localStorage.getItem(MAX_DUR_KEY) || '0', 10);
+    const v = parseInt(safeRead(MAX_DUR_KEY) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
@@ -167,18 +170,21 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist)); }, [playlist]);
+  // Persist (silencioso se localStorage indisponível — Safari privado/quota)
+  const safeWrite = (key: string, value: string) => {
+    try { localStorage.setItem(key, value); } catch { /* noop */ }
+  };
+  useEffect(() => { safeWrite(STORAGE_KEY, JSON.stringify(playlist)); }, [playlist]);
   useEffect(() => {
-    localStorage.setItem(VOLUME_KEY, String(volume));
+    safeWrite(VOLUME_KEY, String(volume));
     // If not ducking, sync element volume directly
     if (audioRef.current && !isDuckingRef.current) audioRef.current.volume = volume;
   }, [volume]);
-  useEffect(() => { localStorage.setItem(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
-  useEffect(() => { localStorage.setItem(MODE_KEY, autoMode); }, [autoMode]);
-  useEffect(() => { localStorage.setItem(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
-  useEffect(() => { localStorage.setItem(FADE_KEY, String(fadeMs)); }, [fadeMs]);
-  useEffect(() => { localStorage.setItem(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
+  useEffect(() => { safeWrite(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
+  useEffect(() => { safeWrite(MODE_KEY, autoMode); }, [autoMode]);
+  useEffect(() => { safeWrite(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
+  useEffect(() => { safeWrite(FADE_KEY, String(fadeMs)); }, [fadeMs]);
+  useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
 
   // Enforce max duration cutoff (loops or advances)
   const maxDurationRef = useRef(maxDurationSec);

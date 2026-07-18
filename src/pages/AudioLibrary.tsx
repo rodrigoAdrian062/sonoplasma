@@ -76,6 +76,8 @@ export default function AudioLibraryPage() {
   }, [allStageAudios, stages, sections]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  // Ao sair da página, pausa a prévia para não seguir tocando em segundo plano
+  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
   const ytPlayerRef = useRef<any>(null);
   const ytInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -331,7 +333,14 @@ export default function AudioLibraryPage() {
       const newAudio = new Audio(audio.audio_url);
       newAudio.ontimeupdate = () => { setAudioCurrentTime(newAudio.currentTime); };
       newAudio.onloadedmetadata = () => { setAudioDuration(newAudio.duration); };
-      newAudio.play();
+      newAudio.onerror = () => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0);
+      };
+      newAudio.play().catch(() => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      });
       newAudio.onended = () => { setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0); };
       setAudioElement(newAudio);
       setPlayingId(audio.id);

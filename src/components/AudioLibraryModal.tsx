@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
+  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -91,7 +93,14 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     } else {
       audioElement?.pause();
       const newAudio = new Audio(audio.audio_url);
-      newAudio.play();
+      newAudio.onerror = () => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      };
+      newAudio.play().catch(() => {
+        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+        setPlayingId(null); setAudioElement(null);
+      });
       newAudio.onended = () => {
         setPlayingId(null);
         setAudioElement(null);

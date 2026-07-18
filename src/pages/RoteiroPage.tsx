@@ -60,6 +60,7 @@ export default function RoteiroPage() {
 
       <div className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
         <RoteiroEditor
+          key={section.id}
           secaoId={section.id}
           secaoNome={section.nome}
           stages={sectionStages}

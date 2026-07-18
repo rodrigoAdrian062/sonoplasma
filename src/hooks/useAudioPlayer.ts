@@ -66,17 +66,19 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
     // Se é o mesmo áudio pausado, apenas continua
     if (currentStageId === stageId && status === 'paused') {
-      audio.play().catch(() => setStatus('paused'));
-      setStatus('playing');
+      audio.play()
+        .then(() => setStatus('playing'))
+        .catch(() => setStatus('paused'));
       return;
     }
 
     // Novo áudio
     audio.src = url;
     audio.volume = volume;
-    audio.play().catch(() => setStatus('idle'));
     setCurrentStageId(stageId);
-    setStatus('playing');
+    audio.play()
+      .then(() => setStatus('playing'))
+      .catch(() => setStatus('idle'));
   }, [currentStageId, status, volume]);
 
   const pause = useCallback(() => {
