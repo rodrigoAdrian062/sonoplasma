@@ -209,9 +209,17 @@ export function PresentationMode({
     onStop();
   });
 
+  // Bug corrigido: o destaque do cue ficava congelado quando o usuário
+  // trocava de áudio por outro caminho (clique na etapa, atalho, etc.).
+  // Agora limpamos também sempre que a faixa ativa muda ou fica ociosa.
   useEffect(() => {
-    if (status === 'idle') setActiveCueKey(null);
-  }, [status]);
+    if (status === 'idle') { setActiveCueKey(null); return; }
+    if (!activeCueKey) return;
+    const expected = activeCueKey.startsWith('cue:')
+      ? activeCueKey.slice(4)
+      : `track:${activeCueKey.slice(6)}`;
+    if (currentStageId !== expected) setActiveCueKey(null);
+  }, [status, currentStageId, activeCueKey]);
 
   useEffect(() => {
     if (currentStage) {
