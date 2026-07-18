@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -25,12 +26,21 @@ function getAudioFolderId(audio: { pasta_id?: string | null }) {
   return audio.pasta_id ?? null;
 }
 
+function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'spotify' | 'file' {
+  const url = (a.audio_url || '').toLowerCase();
+  const t = (a.tipo || '').toLowerCase();
+  if (t === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (t === 'spotify' || url.includes('open.spotify.com') || url.startsWith('spotify:')) return 'spotify';
+  return 'file';
+}
+
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube' | 'spotify'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
@@ -60,12 +70,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           return false;
         }
         if (audioFilter && !audioFilter(a)) return false;
+        if (sourceFilter !== 'all' && getAudioSource(a) !== sourceFilter) return false;
         if (!term) return true;
         return a.nome.toLowerCase().includes(term);
       });
     }
     return audios.filter(a => getAudioFolderId(a) === currentFolderId && (!audioFilter || audioFilter(a)));
-  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, audioFilter]);
+  }, [audios, currentFolderId, selectionMode, searchTerm, folderFilter, sourceFilter, audioFilter]);
 
 
   const isYouTubeUrl = (url: string) => {
@@ -421,6 +432,30 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {/* Chips por origem (arquivo / YouTube / Spotify) */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+                {([
+                  { id: 'all', label: 'Todos', icon: null, count: audios.length },
+                  { id: 'file', label: 'Arquivos', icon: <FileAudio size={11} />, count: audios.filter(a => getAudioSource(a) === 'file').length },
+                  { id: 'youtube', label: 'YouTube', icon: <Youtube size={11} className="text-[#FF0000]" />, count: audios.filter(a => getAudioSource(a) === 'youtube').length },
+                  { id: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={11} />, count: audios.filter(a => getAudioSource(a) === 'spotify').length },
+                ] as const).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSourceFilter(s.id as typeof sourceFilter)}
+                    className={cn(
+                      'shrink-0 text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 whitespace-nowrap',
+                      sourceFilter === s.id
+                        ? 'bg-gold/20 border-gold/50 text-gold'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {s.icon}
+                    {s.label} ({s.count})
+                  </button>
+                ))}
+              </div>
               {folders.length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
                   <button
@@ -510,8 +545,10 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     )}
 
                     <div className="p-2 bg-primary/10 rounded-lg">
-                      {audio.tipo === 'youtube' || isYouTubeUrl(audio.audio_url) ? (
-                        <Youtube size={18} className="text-destructive" />
+                      {getAudioSource(audio) === 'youtube' ? (
+                        <Youtube size={18} className="text-[#FF0000]" />
+                      ) : getAudioSource(audio) === 'spotify' ? (
+                        <SpotifyIcon size={18} />
                       ) : (
                         <Music size={18} className="text-primary" />
                       )}
@@ -520,7 +557,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {audio.tipo === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        {getAudioSource(audio) === 'youtube' ? 'YouTube' : getAudioSource(audio) === 'spotify' ? 'Spotify' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                       </p>
                     </div>
 
