@@ -432,6 +432,30 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
+              {/* Chips por origem (arquivo / YouTube / Spotify) */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+                {([
+                  { id: 'all', label: 'Todos', icon: null, count: audios.length },
+                  { id: 'file', label: 'Arquivos', icon: <FileAudio size={11} />, count: audios.filter(a => getAudioSource(a) === 'file').length },
+                  { id: 'youtube', label: 'YouTube', icon: <Youtube size={11} className="text-[#FF0000]" />, count: audios.filter(a => getAudioSource(a) === 'youtube').length },
+                  { id: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={11} />, count: audios.filter(a => getAudioSource(a) === 'spotify').length },
+                ] as const).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSourceFilter(s.id as typeof sourceFilter)}
+                    className={cn(
+                      'shrink-0 text-xs px-2.5 py-1 rounded-full border transition-colors flex items-center gap-1 whitespace-nowrap',
+                      sourceFilter === s.id
+                        ? 'bg-gold/20 border-gold/50 text-gold'
+                        : 'bg-secondary/50 border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {s.icon}
+                    {s.label} ({s.count})
+                  </button>
+                ))}
+              </div>
               {folders.length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
                   <button
