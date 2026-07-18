@@ -424,8 +424,20 @@ export function PresentationMode({
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement | null;
-      // Permitir rolagem normal dentro do painel do roteiro
-      if (target && target.closest('[data-roteiro-scroll]')) return;
+      if (!target) return;
+      // Bug corrigido: o handler global sequestrava a rolagem de qualquer
+      // elemento (modais, listas, atalhos, dropdowns). Agora respeitamos
+      // qualquer container marcado com data-allow-scroll, o painel do
+      // roteiro e qualquer elemento com overflow rolável real.
+      if (target.closest('[data-roteiro-scroll],[data-allow-scroll],[role="dialog"],[role="menu"],[role="listbox"],input,textarea,select')) return;
+      // Verifica se algum ancestral tem overflow rolável nativo.
+      let el: HTMLElement | null = target;
+      while (el && el !== document.body) {
+        const style = getComputedStyle(el);
+        const oy = style.overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) return;
+        el = el.parentElement;
+      }
       e.preventDefault();
       const delta = e.deltaY < 0 ? 0.02 : -0.02;
       onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
