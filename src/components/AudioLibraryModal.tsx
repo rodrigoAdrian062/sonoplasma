@@ -33,6 +33,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
+  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');

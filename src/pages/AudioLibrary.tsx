@@ -76,6 +76,8 @@ export default function AudioLibraryPage() {
   }, [allStageAudios, stages, sections]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  // Ao sair da página, pausa a prévia para não seguir tocando em segundo plano
+  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
   const ytPlayerRef = useRef<any>(null);
   const ytInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
