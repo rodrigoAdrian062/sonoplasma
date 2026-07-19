@@ -37,8 +37,11 @@ function spotifyEmbed(url: string): string | null {
       return null;
     }
     const u = new URL(url);
-    // /track/ID, /playlist/ID, /album/ID, /episode/ID
-    const path = u.pathname.replace(/^\/(embed\/)?/, '');
+    // Remove barras iniciais, prefixo /embed/ e prefixo de idioma /intl-xx/
+    let path = u.pathname.replace(/^\/+/, '');
+    path = path.replace(/^embed\//, '');
+    path = path.replace(/^intl-[a-z]{2}\//i, '');
+    if (!path) return null;
     return `https://open.spotify.com/embed/${path}`;
   } catch {
     return null;
