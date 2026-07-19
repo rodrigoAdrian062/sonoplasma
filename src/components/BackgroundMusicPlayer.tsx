@@ -60,6 +60,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    resumeDelayMs,
+    setResumeDelayMs,
     currentTime,
     duration,
     seek,
