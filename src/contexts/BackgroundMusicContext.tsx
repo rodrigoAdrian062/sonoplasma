@@ -193,6 +193,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { safeWrite(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
   useEffect(() => { safeWrite(FADE_KEY, String(fadeMs)); }, [fadeMs]);
   useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
+  useEffect(() => { safeWrite(RESUME_DELAY_KEY, String(resumeDelayMs)); }, [resumeDelayMs]);
 
   // Enforce max duration cutoff (loops or advances)
   const maxDurationRef = useRef(maxDurationSec);
