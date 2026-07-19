@@ -33,6 +33,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
