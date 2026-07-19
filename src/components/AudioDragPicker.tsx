@@ -736,8 +736,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                               </button>
                             )}
                             {selected ? (
-                              <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
-                                <Check size={14} />
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] font-medium text-gold" title="Já em uso nesta etapa">
+                                <Check size={11} /> Em uso
                               </span>
                             ) : (
                               <button
