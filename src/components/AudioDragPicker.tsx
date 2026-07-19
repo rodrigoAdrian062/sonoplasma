@@ -251,6 +251,47 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     }
   };
 
+  const [isAutoPickingAll, setIsAutoPickingAll] = useState(false);
+  const autoPickAllYtSp = async () => {
+    if (!stageTitle) return;
+    if (atMax) { toast.info('Etapa já está no máximo de áudios'); return; }
+    setIsAutoPickingAll(true);
+    try {
+      // Todo o catálogo YouTube + Spotify (todas as pastas), excluindo os já selecionados
+      const pool = library.filter((a) =>
+        (isYouTubeUrl(a.audio_url) || isSpotifyUrl(a.audio_url)) &&
+        !selectedUrls.has(a.audio_url)
+      );
+      if (pool.length === 0) { toast.info('Nenhum áudio de YouTube/Spotify disponível'); return; }
+
+      const remainingSlots = Math.max(0, maxAudios - audios.length);
+      const askLimit = Math.min(50, Number.isFinite(remainingSlots) ? remainingSlots : 50);
+
+      const { data, error } = await supabase.functions.invoke('suggest-audios', {
+        body: {
+          stageTitle,
+          stageDescription: stageDescription || '',
+          userHint: aiHint || aiHintDraft || '',
+          limit: askLimit,
+          library: pool.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+        },
+      });
+      if (error) { toast.error('IA indisponível no momento'); return; }
+
+      const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+      const picks = indices
+        .map((i) => pool[i])
+        .filter((a): a is typeof library[number] => Boolean(a) && !selectedUrls.has(a.audio_url))
+        .slice(0, remainingSlots);
+
+      if (picks.length === 0) { toast.info('A IA não retornou sugestões desta vez'); return; }
+      onChange([...audios, ...picks.map((a) => ({ nome: a.nome, audio_url: a.audio_url }))]);
+      toast.success(`${picks.length} áudio(s) do YouTube/Spotify adicionados pela IA`);
+    } finally {
+      setIsAutoPickingAll(false);
+    }
+  };
+
 
   const formatTime = (s: number) => {
     if (!Number.isFinite(s)) return '0:00';
