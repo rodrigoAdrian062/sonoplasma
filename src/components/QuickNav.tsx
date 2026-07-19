@@ -26,11 +26,12 @@ export function QuickNav() {
   const { stages } = useStages();
   const { audiosByStageId } = useAllStageAudios();
   const isPresentation = useIsPresentationActive();
+  const { toggles } = useUiToggles();
 
   // Hide on the auth page or during presentation mode
   if (location.pathname === '/auth' || isPresentation) return null;
 
-  const links = LINKS;
+  const links = LINKS.filter((l) => !l.toggleKey || toggles[l.toggleKey]);
 
   const isPlaying = status === 'playing' || status === 'paused';
   const currentAudio = (audiosByStageId[currentStageId ?? ''] || []).find(
