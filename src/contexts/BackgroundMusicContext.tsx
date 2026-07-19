@@ -485,7 +485,46 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     seek,
   };
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  const streamCurrent = playlist[currentIndex];
+  const streamKind = streamCurrent ? detectStream(streamCurrent.audio_url) : null;
+  const streamEmbed = streamCurrent && streamKind
+    ? toEmbedUrl(streamCurrent.audio_url, { autoplay: isPlaying })
+    : null;
+
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      {/* Iframe persistente para YouTube/Spotify — fica montado fora do popover
+          para que a reprodução não seja interrompida ao fechar o painel. */}
+      {streamEmbed && isPlaying && (
+        <div
+          aria-hidden={false}
+          style={{
+            position: 'fixed',
+            right: 12,
+            bottom: 64,
+            width: streamKind === 'spotify' ? 300 : 260,
+            height: streamKind === 'spotify' ? 80 : 150,
+            zIndex: 99,
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+            border: '1px solid rgba(212,175,55,0.4)',
+            background: '#000',
+          }}
+        >
+          <iframe
+            key={streamCurrent!.id}
+            src={streamEmbed}
+            title={`Fundo — ${streamCurrent!.nome}`}
+            style={{ width: '100%', height: '100%', border: 0 }}
+            allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
+    </Ctx.Provider>
+  );
 }
 
 export function useBackgroundMusic(): BackgroundMusicContextValue {
