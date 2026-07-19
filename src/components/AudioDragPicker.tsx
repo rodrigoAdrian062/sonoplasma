@@ -189,12 +189,14 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     const q = search.trim().toLowerCase();
     const base = suggested ?? library;
     return base.filter((a) => {
+      // Ocultar áudios já selecionados nesta etapa — evita confusão visual.
+      if (selectedUrls.has(a.audio_url)) return false;
       // when searching, filtering by source, or in suggest mode, ignore folder scoping
       const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, suggested, search, currentFolderId, sourceFilter]);
+  }, [library, suggested, search, currentFolderId, sourceFilter, selectedUrls]);
 
 
   const formatTime = (s: number) => {
