@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useBackgroundMusic } from '@/contexts/BackgroundMusicContext';
+import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import { AudioLibraryModal } from '@/components/AudioLibraryModal';
 import { cn } from '@/lib/utils';
 
