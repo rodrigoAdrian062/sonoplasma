@@ -326,6 +326,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Saída de áudio */}
           <AudioOutputSelector />
 
+          {/* Pré-carregamento das próximas etapas */}
+          <div className="space-y-2 border-t border-border pt-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <Label className="flex items-center gap-2">
+                  <Download size={14} className="text-gold" />
+                  Pré-carregar próximas etapas
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Baixa os áudios das próximas etapas em segundo plano para iniciar sem atraso.
+                </p>
+              </div>
+              <Switch checked={prefetchOn} onCheckedChange={setPrefetchOn} />
+            </div>
+          </div>
+
           {/* Backup / Restauração */}
           <BackupSection />
 
