@@ -96,6 +96,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const v = parseInt(safeRead(MAX_DUR_KEY) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
+  const [resumeDelayMs, setResumeDelayMsState] = useState<number>(() => {
+    const v = parseInt(safeRead(RESUME_DELAY_KEY) || '0', 10);
+    return isNaN(v) ? 0 : v;
+  });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
