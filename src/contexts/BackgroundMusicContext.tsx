@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect, useCallback, Re
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { toast } from '@/hooks/use-toast';
 import { registerAudioElement } from '@/lib/audioOutput';
+import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 
 export interface BackgroundTrack {
   id: string;
