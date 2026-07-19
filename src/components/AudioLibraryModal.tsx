@@ -179,6 +179,10 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handleSelect = (audio: { nome: string; audio_url: string }) => {
+    audioElement?.pause();
+    setPlayingId(null);
+    setAudioElement(null);
+    setPreviewEmbedId(null);
     onSelectAudio?.(audio);
     onClose();
   };
