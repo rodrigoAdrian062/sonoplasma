@@ -20,7 +20,8 @@ import { BackupSection } from '@/components/BackupSection';
 import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 import { Switch } from '@/components/ui/switch';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
-import { Download } from 'lucide-react';
+import { useUiToggles } from '@/hooks/useUiToggles';
+import { Download, Eye } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
@@ -340,6 +342,34 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </div>
               <Switch checked={prefetchOn} onCheckedChange={setPrefetchOn} />
             </div>
+          </div>
+
+          {/* Botões e atalhos visíveis */}
+          <div className="space-y-3 border-t border-border pt-5">
+            <div className="flex items-center gap-2">
+              <Eye size={14} className="text-gold" />
+              <Label className="m-0">Botões e atalhos visíveis</Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Desative o que não quer usar. Fica oculto até ativar novamente aqui.
+            </p>
+
+            {([
+              { key: 'btn_apresentar', label: 'Botão "Apresentar" (modo apresentação)' },
+              { key: 'btn_roteiro', label: 'Botão "Roteiro" (leitura do ritual)' },
+              { key: 'nav_biblioteca', label: 'Atalho rápido: Biblioteca' },
+              { key: 'nav_roteiros', label: 'Atalho rápido: Roteiros' },
+              { key: 'nav_youtube', label: 'Atalho rápido: YouTube' },
+              { key: 'nav_spotify', label: 'Atalho rápido: Spotify' },
+            ] as const).map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-3">
+                <span className="text-sm">{item.label}</span>
+                <Switch
+                  checked={toggles[item.key]}
+                  onCheckedChange={(v) => setToggle(item.key, v)}
+                />
+              </div>
+            ))}
           </div>
 
           {/* Backup / Restauração */}

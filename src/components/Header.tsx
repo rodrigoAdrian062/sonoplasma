@@ -14,6 +14,7 @@ const SettingsModal = lazy(() =>
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useUiToggles } from '@/hooks/useUiToggles';
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +34,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const { settings } = useSettings();
   const { signOut } = useAuth();
   const { isSuperAdmin } = useUserRole();
+  const { toggles } = useUiToggles();
 
   const handleLogout = async () => {
     await signOut();
@@ -121,7 +123,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               >
                 <Settings size={18} aria-hidden="true" />
               </Button>
-              {hasStages && onPresentationMode && (
+              {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Button
                   onClick={onPresentationMode}
                   className="gap-1 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 h-8 px-2"
@@ -224,7 +226,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               >
                 <Settings size={20} aria-hidden="true" />
               </Button>
-              {hasStages && onPresentationMode && (
+              {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

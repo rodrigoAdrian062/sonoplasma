@@ -32,6 +32,7 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { useUniversalAudioPlayer, useAudioProgress } from '@/hooks/useUniversalAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useUiToggles } from '@/hooks/useUiToggles';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { Button } from '@/components/ui/button';
 import {
@@ -87,6 +88,7 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const { toggles } = useUiToggles();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const pendingNavRef = useRef<(() => void) | null>(null);
 
@@ -370,17 +372,19 @@ const SectionDetail = () => {
                 </p>
               )}
             </div>
-            <Button
-              onClick={() => navigate(`/roteiro/${sectionId}`)}
-              size="sm"
-              className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
-              variant="outline"
-              title="Roteiro / Leitura do ritual"
-            >
-              <BookOpen size={16} />
-              <span className="hidden sm:inline">Roteiro</span>
-            </Button>
-            {sectionStages.length > 0 && (
+            {toggles.btn_roteiro && (
+              <Button
+                onClick={() => navigate(`/roteiro/${sectionId}`)}
+                size="sm"
+                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                variant="outline"
+                title="Roteiro / Leitura do ritual"
+              >
+                <BookOpen size={16} />
+                <span className="hidden sm:inline">Roteiro</span>
+              </Button>
+            )}
+            {toggles.btn_apresentar && sectionStages.length > 0 && (
               <Button
                 onClick={() => setIsPresentationMode(true)}
                 size="sm"

@@ -8,13 +8,14 @@ import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 import { useAllStageAudios } from '@/hooks/useStageAudios';
 import { useIsPresentationActive } from '@/lib/presentationState';
+import { useUiToggles, UiToggleKey } from '@/hooks/useUiToggles';
 
-const LINKS = [
+const LINKS: Array<{ to: string; label: string; icon: any; activeClass: string; toggleKey?: UiToggleKey }> = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
-  { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40' },
-  { to: '/roteiros', label: 'Roteiros', icon: BookOpen, activeClass: 'bg-gold/20 text-gold border-gold/40' },
-  { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40' },
-  { to: '/spotify', label: 'Spotify', icon: SpotifyIcon, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40' },
+  { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_biblioteca' },
+  { to: '/roteiros', label: 'Roteiros', icon: BookOpen, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_roteiros' },
+  { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40', toggleKey: 'nav_youtube' },
+  { to: '/spotify', label: 'Spotify', icon: SpotifyIcon, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40', toggleKey: 'nav_spotify' },
 ];
 
 
@@ -25,11 +26,12 @@ export function QuickNav() {
   const { stages } = useStages();
   const { audiosByStageId } = useAllStageAudios();
   const isPresentation = useIsPresentationActive();
+  const { toggles } = useUiToggles();
 
   // Hide on the auth page or during presentation mode
   if (location.pathname === '/auth' || isPresentation) return null;
 
-  const links = LINKS;
+  const links = LINKS.filter((l) => !l.toggleKey || toggles[l.toggleKey]);
 
   const isPlaying = status === 'playing' || status === 'paused';
   const currentAudio = (audiosByStageId[currentStageId ?? ''] || []).find(
