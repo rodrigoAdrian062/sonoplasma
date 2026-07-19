@@ -60,6 +60,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    resumeDelayMs,
+    setResumeDelayMs,
     currentTime,
     duration,
     seek,
@@ -244,6 +246,51 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
               {autoPauseEnabled && (
                 <>
+                  {/* Delay antes de retomar/restaurar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>Retomar após etapa parar</span>
+                      <span className="font-mono">
+                        {resumeDelayMs === 0 ? 'Imediato' : `${(resumeDelayMs / 60000).toFixed(resumeDelayMs < 60000 ? 2 : 1)} min`}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 flex-wrap">
+                      {[
+                        { label: 'Imediato', ms: 0 },
+                        { label: '15s', ms: 15000 },
+                        { label: '30s', ms: 30000 },
+                        { label: '1min', ms: 60000 },
+                        { label: '2min', ms: 120000 },
+                        { label: '5min', ms: 300000 },
+                      ].map((opt) => (
+                        <button
+                          key={opt.ms}
+                          onClick={() => setResumeDelayMs(opt.ms)}
+                          className={cn(
+                            'text-[10px] px-2 py-0.5 rounded-md border transition-colors',
+                            resumeDelayMs === opt.ms
+                              ? 'bg-gold/20 text-gold border-gold/40'
+                              : 'text-muted-foreground border-border/40 hover:border-gold/30'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        placeholder="min"
+                        value={resumeDelayMs > 0 ? +(resumeDelayMs / 60000).toFixed(2) : ''}
+                        onChange={(e) => {
+                          const min = parseFloat(e.target.value);
+                          setResumeDelayMs(isNaN(min) || min <= 0 ? 0 : Math.round(min * 60000));
+                        }}
+                        className="w-14 h-6 rounded-md border border-border/60 bg-background/60 px-1.5 text-[10px] text-right"
+                      />
+                    </div>
+                  </div>
+
                   {/* Mode selector */}
                   <div className="flex gap-1 p-0.5 rounded-md bg-secondary/50">
                     <button

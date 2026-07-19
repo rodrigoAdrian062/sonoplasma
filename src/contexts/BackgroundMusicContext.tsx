@@ -39,6 +39,8 @@ interface BackgroundMusicContextValue {
   setFadeMs: (v: number) => void;
   maxDurationSec: number; // 0 = sem limite
   setMaxDurationSec: (v: number) => void;
+  resumeDelayMs: number; // atraso antes de retomar/restaurar após etapa parar
+  setResumeDelayMs: (v: number) => void;
   currentTime: number;
   duration: number;
   seek: (sec: number) => void;
@@ -51,6 +53,7 @@ const MODE_KEY = 'bg-music-auto-mode-v1';
 const DUCK_KEY = 'bg-music-duck-volume-v1';
 const FADE_KEY = 'bg-music-fade-ms-v1';
 const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
+const RESUME_DELAY_KEY = 'bg-music-resume-delay-ms-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
@@ -91,6 +94,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [fadeMs, setFadeMsState] = useState<number>(0);
   const [maxDurationSec, setMaxDurationSecState] = useState<number>(() => {
     const v = parseInt(safeRead(MAX_DUR_KEY) || '0', 10);
+    return isNaN(v) ? 0 : v;
+  });
+  const [resumeDelayMs, setResumeDelayMsState] = useState<number>(() => {
+    const v = parseInt(safeRead(RESUME_DELAY_KEY) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
@@ -186,6 +193,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { safeWrite(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
   useEffect(() => { safeWrite(FADE_KEY, String(fadeMs)); }, [fadeMs]);
   useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
+  useEffect(() => { safeWrite(RESUME_DELAY_KEY, String(resumeDelayMs)); }, [resumeDelayMs]);
 
   // Enforce max duration cutoff (loops or advances)
   const maxDurationRef = useRef(maxDurationSec);
@@ -308,25 +316,34 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         }
       }
     } else if (mainStatus === 'idle') {
-      if (autoMode === 'duck') {
-        if (isDuckingRef.current) {
-          isDuckingRef.current = false;
-          setIsDucking(false);
-          fadeTo(volume, fadeMs);
-        }
-      } else {
-        if (wasAutoPausedRef.current && playlist.length > 0) {
-          wasAutoPausedRef.current = false;
-          setWasAutoPaused(false);
-          a.volume = 0;
-          a.play().then(() => {
-            setIsPlaying(true);
+      const delay = Math.max(0, resumeDelayMs);
+      const doResume = () => {
+        if (autoMode === 'duck') {
+          if (isDuckingRef.current) {
+            isDuckingRef.current = false;
+            setIsDucking(false);
             fadeTo(volume, fadeMs);
-          }).catch(() => {});
+          }
+        } else {
+          if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
+            wasAutoPausedRef.current = false;
+            setWasAutoPaused(false);
+            a.volume = 0;
+            a.play().then(() => {
+              setIsPlaying(true);
+              fadeTo(volume, fadeMs);
+            }).catch(() => {});
+          }
         }
+      };
+      if (delay === 0) {
+        doResume();
+      } else {
+        const t = setTimeout(doResume, delay);
+        return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, fadeTo]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
@@ -465,6 +482,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const setDuckVolume = useCallback((v: number) => setDuckVolumeState(Math.max(0, Math.min(1, v))), []);
   const setFadeMs = useCallback((v: number) => setFadeMsState(Math.max(0, Math.min(5000, Math.round(v)))), []);
   const setMaxDurationSec = useCallback((v: number) => setMaxDurationSecState(Math.max(0, Math.round(v))), []);
+  const setResumeDelayMs = useCallback((v: number) => setResumeDelayMsState(Math.max(0, Math.round(v))), []);
 
   const value: BackgroundMusicContextValue = {
     playlist,
@@ -493,6 +511,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    resumeDelayMs,
+    setResumeDelayMs,
     currentTime,
     duration,
     seek,
