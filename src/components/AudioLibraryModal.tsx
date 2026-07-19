@@ -111,14 +111,26 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
       setAudioElement(null);
     } else {
       audioElement?.pause();
-      const newAudio = new Audio(audio.audio_url);
+      const newAudio = new Audio();
+      newAudio.preload = 'auto';
+      newAudio.crossOrigin = 'anonymous';
+      newAudio.volume = 1;
+      newAudio.src = audio.audio_url;
       newAudio.onerror = () => {
-        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
-        setPlayingId(null); setAudioElement(null);
+        // Retry sem crossOrigin (alguns storages não devolvem CORS)
+        const retry = new Audio(audio.audio_url);
+        retry.volume = 1;
+        retry.onended = () => { setPlayingId(null); setAudioElement(null); };
+        retry.play().then(() => {
+          setAudioElement(retry);
+          setPlayingId(audio.id);
+        }).catch(() => {
+          toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+          setPlayingId(null); setAudioElement(null);
+        });
       };
       newAudio.play().catch(() => {
-        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
-        setPlayingId(null); setAudioElement(null);
+        // deixa o onerror tratar
       });
       newAudio.onended = () => {
         setPlayingId(null);
