@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones } from 'lucide-react';
+import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube' | 'spotify'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
   useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
@@ -92,10 +94,16 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (isYouTubeUrl(audio.audio_url)) {
-      window.open(audio.audio_url, '_blank');
+    // YouTube/Spotify: prévia inline via iframe embed
+    if (detectStream(audio.audio_url)) {
+      audioElement?.pause();
+      setPlayingId(null);
+      setAudioElement(null);
+      setPreviewEmbedId((prev) => (prev === audio.id ? null : audio.id));
       return;
     }
+
+    setPreviewEmbedId(null);
 
     if (playingId === audio.id) {
       audioElement?.pause();
@@ -171,6 +179,10 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handleSelect = (audio: { nome: string; audio_url: string }) => {
+    audioElement?.pause();
+    setPlayingId(null);
+    setAudioElement(null);
+    setPreviewEmbedId(null);
     onSelectAudio?.(audio);
     onClose();
   };
@@ -258,6 +270,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     audioElement?.pause();
     setPlayingId(null);
     setAudioElement(null);
+    setPreviewEmbedId(null);
     setBulkDeleteMode(false);
     setSelectedIds(new Set());
     setCurrentFolderId(null);
@@ -519,9 +532,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
             ) : (
               <div className="space-y-2">
-                {filteredAudios.map((audio) => (
+                {filteredAudios.map((audio) => {
+                  const isStream = !!detectStream(audio.audio_url);
+                  const showEmbed = previewEmbedId === audio.id && isStream;
+                  const embedUrl = showEmbed ? toEmbedUrl(audio.audio_url, { autoplay: true }) : null;
+                  return (
+                  <div key={audio.id} className="space-y-2">
                   <div
-                    key={audio.id}
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
                       selectionMode && 'cursor-pointer hover:border-primary/50',
@@ -563,48 +580,66 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1">
+                        {/* Botão de prévia — sempre disponível, inclusive em selectionMode */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={isStream ? 'Ouvir prévia' : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlay(audio);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          {(playingId === audio.id || showEmbed) ? (
+                            <Pause size={16} className="text-primary" />
+                          ) : isStream ? (
+                            <Headphones size={16} className="text-primary" />
+                          ) : (
+                            <Play size={16} className="text-primary" />
+                          )}
+                        </Button>
+
                         {selectionMode ? (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-primary"
+                            onClick={(e) => { e.stopPropagation(); handleSelect(audio); }}
                           >
                             Selecionar
                           </Button>
                         ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlay(audio);
-                              }}
-                              className="h-8 w-8"
-                            >
-                              {playingId === audio.id ? (
-                                <Pause size={16} className="text-primary" />
-                              ) : (
-                                <Play size={16} className="text-primary" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteAudio.mutate(audio.id);
-                              }}
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAudio.mutate(audio.id);
+                            }}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
                         )}
                       </div>
                     )}
                   </div>
-                ))}
+                  {showEmbed && embedUrl && (
+                    <div className="rounded-lg overflow-hidden border border-gold/30 bg-black/40" onClick={(e) => e.stopPropagation()}>
+                      <iframe
+                        src={embedUrl}
+                        title={`Prévia — ${audio.nome}`}
+                        className="w-full"
+                        style={{ height: getAudioSource(audio) === 'spotify' ? 152 : 180 }}
+                        allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                  </div>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>

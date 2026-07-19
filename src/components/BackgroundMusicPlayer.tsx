@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useBackgroundMusic } from '@/contexts/BackgroundMusicContext';
+import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import { AudioLibraryModal } from '@/components/AudioLibraryModal';
 import { cn } from '@/lib/utils';
 
@@ -152,8 +153,30 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </div>
             )}
 
-            {/* Progress / time */}
-            {currentTrack && (
+            {/* Embed inline (YouTube/Spotify) — usa o player nativo do serviço */}
+            {currentTrack && detectStream(currentTrack.audio_url) && (() => {
+              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: false });
+              const kind = detectStream(currentTrack.audio_url);
+              if (!embed) return null;
+              return (
+                <div className="rounded-lg overflow-hidden border border-gold/40 bg-black/50">
+                  <iframe
+                    src={embed}
+                    title={`Fundo — ${currentTrack.nome}`}
+                    className="w-full"
+                    style={{ height: kind === 'spotify' ? 152 : 170 }}
+                    allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                    allowFullScreen
+                  />
+                  <p className="text-[10px] text-muted-foreground text-center py-1 px-2">
+                    Controle diretamente no player {kind === 'spotify' ? 'do Spotify' : 'do YouTube'} acima.
+                  </p>
+                </div>
+              );
+            })()}
+
+            {/* Progress / time — apenas para arquivos locais */}
+            {currentTrack && !detectStream(currentTrack.audio_url) && (
               <div className="space-y-1">
                 <Slider
                   value={[Math.min(currentTime, duration || 0)]}
