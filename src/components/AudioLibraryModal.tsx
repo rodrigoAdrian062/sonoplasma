@@ -270,6 +270,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     audioElement?.pause();
     setPlayingId(null);
     setAudioElement(null);
+    setPreviewEmbedId(null);
     setBulkDeleteMode(false);
     setSelectedIds(new Set());
     setCurrentFolderId(null);
