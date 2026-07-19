@@ -226,7 +226,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               >
                 <Settings size={20} aria-hidden="true" />
               </Button>
-              {hasStages && onPresentationMode && (
+              {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
