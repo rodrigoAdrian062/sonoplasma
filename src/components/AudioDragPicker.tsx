@@ -189,14 +189,67 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     const q = search.trim().toLowerCase();
     const base = suggested ?? library;
     return base.filter((a) => {
-      // Ocultar áudios já selecionados nesta etapa — evita confusão visual.
-      if (selectedUrls.has(a.audio_url)) return false;
-      // when searching, filtering by source, or in suggest mode, ignore folder scoping
+      // Mantém áudios já selecionados visíveis com estado "Em uso" (não selecionáveis)
       const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, suggested, search, currentFolderId, sourceFilter, selectedUrls]);
+  }, [library, suggested, search, currentFolderId, sourceFilter]);
+
+  const [isAutoPicking, setIsAutoPicking] = useState(false);
+  const autoPickSix = async () => {
+    if (!stageTitle) return;
+    if (atMax) { toast.info('Etapa já está no máximo de áudios'); return; }
+    setIsAutoPicking(true);
+    try {
+      const available = library.filter((a) => !selectedUrls.has(a.audio_url));
+      if (available.length === 0) { toast.info('Biblioteca sem áudios disponíveis'); return; }
+
+      // 3 por semelhança de nome (matcher local)
+      const fakeStage = { id: 'auto', nome_simbolico: stageTitle, descricao: stageDescription || '' } as unknown as CeremonyStage;
+      const byName = matchAudiosForStage(fakeStage, available, 3).map((r) => r.audio);
+      const usedUrls = new Set(byName.map((a) => a.audio_url));
+
+      // 3 pela IA (excluindo os já escolhidos por nome)
+      let byAI: typeof library = [];
+      try {
+        const remaining = available.filter((a) => !usedUrls.has(a.audio_url));
+        const { data, error } = await supabase.functions.invoke('suggest-audios', {
+          body: {
+            stageTitle,
+            stageDescription: stageDescription || '',
+            userHint: aiHint || aiHintDraft || '',
+            limit: 3,
+            library: remaining.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          },
+        });
+        if (!error) {
+          const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+          byAI = indices.map((i) => remaining[i]).filter(Boolean).slice(0, 3);
+        }
+      } catch { /* fallback abaixo */ }
+
+      // Fallback: completa com matcher local se IA não trouxe 3
+      if (byAI.length < 3) {
+        const need = 3 - byAI.length;
+        const filler = matchAudiosForStage(fakeStage,
+          available.filter((a) => !usedUrls.has(a.audio_url) && !byAI.some((b) => b.audio_url === a.audio_url)),
+          need
+        ).map((r) => r.audio);
+        byAI = [...byAI, ...filler];
+      }
+
+      const picks = [...byName, ...byAI]
+        .filter((a) => a && !selectedUrls.has(a.audio_url))
+        .slice(0, Math.max(0, maxAudios - audios.length));
+
+      if (picks.length === 0) { toast.info('Nada novo a adicionar'); return; }
+      onChange([...audios, ...picks.map((a) => ({ nome: a.nome, audio_url: a.audio_url }))]);
+      toast.success(`${picks.length} áudio(s) adicionado(s) — ${byName.length} por nome + ${picks.length - byName.length} pela IA`);
+    } finally {
+      setIsAutoPicking(false);
+    }
+  };
 
 
   const formatTime = (s: number) => {
