@@ -123,7 +123,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               >
                 <Settings size={18} aria-hidden="true" />
               </Button>
-              {hasStages && onPresentationMode && (
+              {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Button
                   onClick={onPresentationMode}
                   className="gap-1 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 h-8 px-2"
