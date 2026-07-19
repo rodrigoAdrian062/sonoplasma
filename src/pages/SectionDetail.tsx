@@ -32,6 +32,7 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { useUniversalAudioPlayer, useAudioProgress } from '@/hooks/useUniversalAudioPlayer';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useUiToggles } from '@/hooks/useUiToggles';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { Button } from '@/components/ui/button';
 import {
