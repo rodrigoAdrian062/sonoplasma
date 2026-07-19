@@ -482,6 +482,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const setDuckVolume = useCallback((v: number) => setDuckVolumeState(Math.max(0, Math.min(1, v))), []);
   const setFadeMs = useCallback((v: number) => setFadeMsState(Math.max(0, Math.min(5000, Math.round(v)))), []);
   const setMaxDurationSec = useCallback((v: number) => setMaxDurationSecState(Math.max(0, Math.round(v))), []);
+  const setResumeDelayMs = useCallback((v: number) => setResumeDelayMsState(Math.max(0, Math.round(v))), []);
 
   const value: BackgroundMusicContextValue = {
     playlist,
