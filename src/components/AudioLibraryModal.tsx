@@ -291,7 +291,12 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl h-[85vh] max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className={cn(
+        "flex flex-col overflow-hidden",
+        selectionMode
+          ? "max-w-[100vw] w-[100vw] h-[100vh] max-h-[100vh] sm:rounded-none border-0 p-4 sm:p-6"
+          : "max-w-2xl h-[85vh] max-h-[85vh]"
+      )}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Library className="text-gold" size={20} />
