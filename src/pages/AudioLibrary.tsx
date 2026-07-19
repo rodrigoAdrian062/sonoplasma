@@ -844,6 +844,7 @@ export default function AudioLibraryPage() {
             unassignedStages={unassignedStages}
             isYouTubeUrl={isYouTubeUrl}
             formatFileSize={formatFileSize}
+            audioUsageMap={audioUsageMap}
           />
         )}
       </main>
