@@ -1,0 +1,2 @@
+ALTER TABLE public.sonoplastia_etapa_audios DROP CONSTRAINT IF EXISTS max_5_audios_per_stage;
+ALTER TABLE public.sonoplastia_etapa_audios ADD CONSTRAINT max_10_audios_per_stage CHECK (ordem >= 0 AND ordem < 10);
