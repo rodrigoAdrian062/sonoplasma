@@ -20,7 +20,8 @@ import { BackupSection } from '@/components/BackupSection';
 import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 import { Switch } from '@/components/ui/switch';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
-import { Download } from 'lucide-react';
+import { useUiToggles } from '@/hooks/useUiToggles';
+import { Download, Eye } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
