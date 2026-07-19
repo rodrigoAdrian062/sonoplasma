@@ -63,7 +63,23 @@ export function StageCard({
   const [loopUntilTimer, setLoopUntilTimer] = useState(false);
   const loopUntilTimerRef = useRef(loopUntilTimer);
   useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
-  const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
+  const armedKey = `stage:armedAudio:${stage.id}`;
+  const [selectedAudioIndex, setSelectedAudioIndex] = useState(() => {
+    try {
+      const savedUrl = localStorage.getItem(armedKey);
+      if (savedUrl) {
+        const idx = audios.findIndex((a) => a.audio_url === savedUrl);
+        if (idx >= 0) return idx;
+      }
+    } catch {}
+    return 0;
+  });
+  // Persist the "armed" (prepared) track per stage.
+  useEffect(() => {
+    const a = audios[selectedAudioIndex];
+    if (!a) return;
+    try { localStorage.setItem(armedKey, a.audio_url); } catch {}
+  }, [selectedAudioIndex, audios, armedKey]);
   const { currentUrl } = useUniversalAudioPlayer();
 
   // Sincroniza o índice destacado com o áudio que está realmente tocando
