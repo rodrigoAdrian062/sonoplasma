@@ -65,7 +65,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [playlist, setPlaylist] = useState<BackgroundTrack[]>(() => {
     try {
       const saved = JSON.parse(safeRead(STORAGE_KEY) || '[]') as BackgroundTrack[];
-      return Array.isArray(saved) ? saved.filter((track) => track?.audio_url && !isStreamingUrl(track.audio_url)) : [];
+      return Array.isArray(saved) ? saved.filter((track) => !!track?.audio_url) : [];
     } catch {
       return [];
     }
@@ -324,13 +324,11 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     }
     const track = playlist[targetIdx];
     if (!track) return;
+    // YouTube/Spotify: o player embutido (iframe) cuida do play; só marcamos o estado.
     if (isStreamingUrl(track.audio_url)) {
-      toast({
-        title: 'Música incompatível com o player de fundo',
-        description: 'Escolha um arquivo de áudio enviado à biblioteca. YouTube e Spotify não funcionam como fundo.',
-        variant: 'destructive',
-      });
-      setIsPlaying(false);
+      try { a.pause(); } catch { /* noop */ }
+      wantsToPlayRef.current = true;
+      setIsPlaying(true);
       return;
     }
     const requestId = ++playRequestRef.current;
@@ -395,14 +393,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   }, [currentIndex, playlist.length, isPlaying, play]);
 
   const addTrack = useCallback((t: BackgroundTrack) => {
-    if (isStreamingUrl(t.audio_url)) {
-      toast({
-        title: 'Música incompatível com o player de fundo',
-        description: 'Use apenas arquivos de áudio da biblioteca para música de fundo.',
-        variant: 'destructive',
-      });
-      return;
-    }
     setPlaylist((prev) => {
       const existingIndex = prev.findIndex((x) => x.audio_url === t.audio_url);
       if (existingIndex >= 0) {
