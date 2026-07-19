@@ -165,6 +165,15 @@ export function StageCard({
     return () => { active = false; };
   }, [currentAudio?.audio_url]);
 
+  // Pré-carrega ativamente a faixa "preparada" para tocar sem atraso.
+  useEffect(() => {
+    const url = currentAudio?.audio_url;
+    if (!url) return;
+    if (isCacheableAudioUrl(url)) {
+      prefetchAudios([url]);
+    }
+  }, [currentAudio?.audio_url]);
+
 
 
 
