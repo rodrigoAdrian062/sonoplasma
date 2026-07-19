@@ -531,9 +531,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
             ) : (
               <div className="space-y-2">
-                {filteredAudios.map((audio) => (
+                {filteredAudios.map((audio) => {
+                  const isStream = !!detectStream(audio.audio_url);
+                  const showEmbed = previewEmbedId === audio.id && isStream;
+                  const embedUrl = showEmbed ? toEmbedUrl(audio.audio_url, { autoplay: true }) : null;
+                  return (
+                  <div key={audio.id} className="space-y-2">
                   <div
-                    key={audio.id}
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
                       selectionMode && 'cursor-pointer hover:border-primary/50',
@@ -575,48 +579,66 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1">
+                        {/* Botão de prévia — sempre disponível, inclusive em selectionMode */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={isStream ? 'Ouvir prévia' : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlay(audio);
+                          }}
+                          className="h-8 w-8"
+                        >
+                          {(playingId === audio.id || showEmbed) ? (
+                            <Pause size={16} className="text-primary" />
+                          ) : isStream ? (
+                            <Headphones size={16} className="text-primary" />
+                          ) : (
+                            <Play size={16} className="text-primary" />
+                          )}
+                        </Button>
+
                         {selectionMode ? (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-primary"
+                            onClick={(e) => { e.stopPropagation(); handleSelect(audio); }}
                           >
                             Selecionar
                           </Button>
                         ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePlay(audio);
-                              }}
-                              className="h-8 w-8"
-                            >
-                              {playingId === audio.id ? (
-                                <Pause size={16} className="text-primary" />
-                              ) : (
-                                <Play size={16} className="text-primary" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteAudio.mutate(audio.id);
-                              }}
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          </>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteAudio.mutate(audio.id);
+                            }}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
                         )}
                       </div>
                     )}
                   </div>
-                ))}
+                  {showEmbed && embedUrl && (
+                    <div className="rounded-lg overflow-hidden border border-gold/30 bg-black/40" onClick={(e) => e.stopPropagation()}>
+                      <iframe
+                        src={embedUrl}
+                        title={`Prévia — ${audio.nome}`}
+                        className="w-full"
+                        style={{ height: getAudioSource(audio) === 'spotify' ? 152 : 180 }}
+                        allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                  </div>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
