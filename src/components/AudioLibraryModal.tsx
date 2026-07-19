@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones } from 'lucide-react';
+import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -589,7 +589,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1 shrink-0 ml-auto">
-                        {/* Botão de prévia — sempre visível, com borda dourada para destacar */}
+                        {/* Prévia — ícone dourado sempre visível */}
                         <Button
                           type="button"
                           variant="outline"
@@ -615,11 +615,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         {selectionMode ? (
                           <Button
                             type="button"
-                            size="sm"
-                            className="shrink-0 bg-gold hover:bg-gold-glow text-background"
+                            size="icon"
+                            title="Selecionar esta faixa"
+                            aria-label="Selecionar"
+                            className="h-9 w-9 shrink-0 bg-gold hover:bg-gold-glow text-background"
                             onClick={(e) => { e.stopPropagation(); handleSelect(audio); }}
                           >
-                            Selecionar
+                            <Check size={18} strokeWidth={3} />
                           </Button>
                         ) : (
                           <Button
