@@ -407,6 +407,14 @@ export function StageCard({
                     >
                       <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                       <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
+                      {index === selectedAudioIndex && !isActive && (
+                        <span
+                          className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
+                          title="Faixa preparada"
+                        >
+                          <Play size={7} fill="currentColor" /> Preparada
+                        </span>
+                      )}
                       {continuousPlayback && isPlaying && index === selectedAudioIndex && index < audios.length - 1 && (
                         <span className="text-[9px] uppercase tracking-wider text-gold/80 shrink-0">
                           a seguir ↓
