@@ -511,6 +511,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setFadeMs,
     maxDurationSec,
     setMaxDurationSec,
+    resumeDelayMs,
+    setResumeDelayMs,
     currentTime,
     duration,
     seek,
