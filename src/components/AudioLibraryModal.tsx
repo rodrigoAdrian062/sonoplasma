@@ -111,14 +111,26 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
       setAudioElement(null);
     } else {
       audioElement?.pause();
-      const newAudio = new Audio(audio.audio_url);
+      const newAudio = new Audio();
+      newAudio.preload = 'auto';
+      newAudio.crossOrigin = 'anonymous';
+      newAudio.volume = 1;
+      newAudio.src = audio.audio_url;
       newAudio.onerror = () => {
-        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
-        setPlayingId(null); setAudioElement(null);
+        // Retry sem crossOrigin (alguns storages não devolvem CORS)
+        const retry = new Audio(audio.audio_url);
+        retry.volume = 1;
+        retry.onended = () => { setPlayingId(null); setAudioElement(null); };
+        retry.play().then(() => {
+          setAudioElement(retry);
+          setPlayingId(audio.id);
+        }).catch(() => {
+          toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
+          setPlayingId(null); setAudioElement(null);
+        });
       };
       newAudio.play().catch(() => {
-        toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
-        setPlayingId(null); setAudioElement(null);
+        // deixa o onerror tratar
       });
       newAudio.onended = () => {
         setPlayingId(null);
@@ -541,14 +553,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   <div
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
-                      selectionMode && 'cursor-pointer hover:border-primary/50',
                       bulkDeleteMode && 'cursor-pointer',
                       bulkDeleteMode && selectedIds.has(audio.id) && 'border-destructive/50 bg-destructive/5'
                     )}
                     onClick={
-                      selectionMode
-                        ? () => handleSelect(audio)
-                        : bulkDeleteMode
+                      bulkDeleteMode
                         ? () => toggleSelectId(audio.id)
                         : undefined
                     }
