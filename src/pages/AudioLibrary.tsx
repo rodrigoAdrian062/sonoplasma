@@ -966,6 +966,27 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                       {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                     </p>
                   )}
+                  {(() => {
+                    const usages = audioUsageMap.get(audio.audio_url) || [];
+                    if (usages.length === 0) return null;
+                    const shown = usages.slice(0, 3);
+                    const extra = usages.length - shown.length;
+                    return (
+                      <div className="mt-1 flex flex-wrap gap-1" title={usages.map(u => `${u.sectionName} › ${u.stageName}`).join('\n')}>
+                        {shown.map((u, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] text-gold">
+                            <FolderOpen size={10} />
+                            <span className="truncate max-w-[140px]">{u.sectionName} › {u.stageName}</span>
+                          </span>
+                        ))}
+                        {extra > 0 && (
+                          <span className="inline-flex items-center rounded-full border border-border/50 bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+                            +{extra}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
