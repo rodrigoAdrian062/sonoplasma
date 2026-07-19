@@ -589,7 +589,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1 shrink-0 ml-auto">
-                        {/* Botão de prévia — sempre visível, com borda dourada para destacar */}
+                        {/* Prévia — ícone dourado sempre visível */}
                         <Button
                           type="button"
                           variant="outline"
@@ -615,11 +615,13 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         {selectionMode ? (
                           <Button
                             type="button"
-                            size="sm"
-                            className="shrink-0 bg-gold hover:bg-gold-glow text-background"
+                            size="icon"
+                            title="Selecionar esta faixa"
+                            aria-label="Selecionar"
+                            className="h-9 w-9 shrink-0 bg-gold hover:bg-gold-glow text-background"
                             onClick={(e) => { e.stopPropagation(); handleSelect(audio); }}
                           >
-                            Selecionar
+                            <Check size={18} strokeWidth={3} />
                           </Button>
                         ) : (
                           <Button
