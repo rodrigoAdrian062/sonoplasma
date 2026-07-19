@@ -316,25 +316,34 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         }
       }
     } else if (mainStatus === 'idle') {
-      if (autoMode === 'duck') {
-        if (isDuckingRef.current) {
-          isDuckingRef.current = false;
-          setIsDucking(false);
-          fadeTo(volume, fadeMs);
-        }
-      } else {
-        if (wasAutoPausedRef.current && playlist.length > 0) {
-          wasAutoPausedRef.current = false;
-          setWasAutoPaused(false);
-          a.volume = 0;
-          a.play().then(() => {
-            setIsPlaying(true);
+      const delay = Math.max(0, resumeDelayMs);
+      const doResume = () => {
+        if (autoMode === 'duck') {
+          if (isDuckingRef.current) {
+            isDuckingRef.current = false;
+            setIsDucking(false);
             fadeTo(volume, fadeMs);
-          }).catch(() => {});
+          }
+        } else {
+          if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
+            wasAutoPausedRef.current = false;
+            setWasAutoPaused(false);
+            a.volume = 0;
+            a.play().then(() => {
+              setIsPlaying(true);
+              fadeTo(volume, fadeMs);
+            }).catch(() => {});
+          }
         }
+      };
+      if (delay === 0) {
+        doResume();
+      } else {
+        const t = setTimeout(doResume, delay);
+        return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, fadeTo]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
