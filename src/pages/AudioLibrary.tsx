@@ -875,6 +875,7 @@ interface VirtualAudioListProps {
   unassignedStages: any[];
   isYouTubeUrl: (url: string) => boolean;
   formatFileSize: (bytes: number | null) => string;
+  audioUsageMap: Map<string, Array<{ stageName: string; sectionName: string }>>;
 }
 
 function VirtualAudioList(props: VirtualAudioListProps) {
@@ -884,7 +885,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
     handlePauseResume, handleSeek, handleSeekTo, stopCurrentPlayback,
     deleteAudio, stages, folders, currentFolderId, moveAudioToFolder,
     handleAddToStage, stagesBySection, unassignedStages,
-    isYouTubeUrl, formatFileSize,
+    isYouTubeUrl, formatFileSize, audioUsageMap,
   } = props;
 
   const parentRef = useRef<HTMLDivElement>(null);
