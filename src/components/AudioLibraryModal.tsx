@@ -588,32 +588,35 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     </div>
 
                     {!bulkDeleteMode && (
-                      <div className="flex items-center gap-1">
-                        {/* Botão de prévia — sempre disponível, inclusive em selectionMode */}
+                      <div className="flex items-center gap-1 shrink-0 ml-auto">
+                        {/* Botão de prévia — sempre visível, com borda dourada para destacar */}
                         <Button
-                          variant="ghost"
+                          type="button"
+                          variant="outline"
                           size="icon"
-                          title={isStream ? 'Ouvir prévia' : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
+                          title={isStream ? (showEmbed ? 'Fechar prévia' : 'Ouvir prévia') : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
+                          aria-label={isStream ? 'Ouvir prévia' : 'Ouvir'}
                           onClick={(e) => {
                             e.stopPropagation();
+                            e.preventDefault();
                             handlePlay(audio);
                           }}
-                          className="h-8 w-8"
+                          className="h-9 w-9 shrink-0 border-gold/50 bg-gold/10 hover:bg-gold/20 text-gold"
                         >
                           {(playingId === audio.id || showEmbed) ? (
-                            <Pause size={16} className="text-primary" />
+                            <Pause size={16} fill="currentColor" />
                           ) : isStream ? (
-                            <Headphones size={16} className="text-primary" />
+                            <Headphones size={16} />
                           ) : (
-                            <Play size={16} className="text-primary" />
+                            <Play size={16} fill="currentColor" />
                           )}
                         </Button>
 
                         {selectionMode ? (
                           <Button
-                            variant="ghost"
+                            type="button"
                             size="sm"
-                            className="text-primary"
+                            className="shrink-0 bg-gold hover:bg-gold-glow text-background"
                             onClick={(e) => { e.stopPropagation(); handleSelect(audio); }}
                           >
                             Selecionar
@@ -626,7 +629,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                               e.stopPropagation();
                               deleteAudio.mutate(audio.id);
                             }}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 size={16} />
                           </Button>
