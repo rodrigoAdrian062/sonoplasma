@@ -39,6 +39,8 @@ interface BackgroundMusicContextValue {
   setFadeMs: (v: number) => void;
   maxDurationSec: number; // 0 = sem limite
   setMaxDurationSec: (v: number) => void;
+  resumeDelayMs: number; // atraso antes de retomar/restaurar após etapa parar
+  setResumeDelayMs: (v: number) => void;
   currentTime: number;
   duration: number;
   seek: (sec: number) => void;
