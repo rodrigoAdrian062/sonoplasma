@@ -14,6 +14,7 @@ const SettingsModal = lazy(() =>
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useUiToggles } from '@/hooks/useUiToggles';
 import {
   Tooltip,
   TooltipContent,
