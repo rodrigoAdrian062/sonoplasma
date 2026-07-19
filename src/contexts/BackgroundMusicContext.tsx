@@ -236,6 +236,19 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       a.removeAttribute('src');
       return;
     }
+
+    // YouTube/Spotify não podem ser carregados pelo elemento <audio> nativo.
+    // Eles são tocados pelo iframe persistente abaixo; manter o <audio> limpo
+    // evita erro falso logo após selecionar a faixa como música de fundo.
+    if (isStreamingUrl(track.audio_url)) {
+      a.pause();
+      a.removeAttribute('src');
+      a.load();
+      setCurrentTime(0);
+      setDuration(0);
+      return;
+    }
+
     if (a.src !== track.audio_url) {
       a.src = track.audio_url;
       a.load();
