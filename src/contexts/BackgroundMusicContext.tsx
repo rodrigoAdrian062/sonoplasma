@@ -53,6 +53,7 @@ const MODE_KEY = 'bg-music-auto-mode-v1';
 const DUCK_KEY = 'bg-music-duck-volume-v1';
 const FADE_KEY = 'bg-music-fade-ms-v1';
 const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
+const RESUME_DELAY_KEY = 'bg-music-resume-delay-ms-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
