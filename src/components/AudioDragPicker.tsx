@@ -544,6 +544,19 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 </button>
                 <button
                   type="button"
+                  onClick={autoPickAllYtSp}
+                  disabled={isAutoPickingAll || atMax}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    'border-[#1DB954]/60 bg-gradient-to-r from-red-500/90 to-[#1DB954]/90 text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                  title="A IA seleciona TODAS as músicas relevantes do YouTube + Spotify de todas as pastas"
+                >
+                  {isAutoPickingAll ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  {isAutoPickingAll ? 'Analisando YT + Spotify...' : 'IA: todas do YouTube + Spotify'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSuggestMode((v) => !v)}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
