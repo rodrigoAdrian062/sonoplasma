@@ -189,14 +189,67 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     const q = search.trim().toLowerCase();
     const base = suggested ?? library;
     return base.filter((a) => {
-      // Ocultar áudios já selecionados nesta etapa — evita confusão visual.
-      if (selectedUrls.has(a.audio_url)) return false;
-      // when searching, filtering by source, or in suggest mode, ignore folder scoping
+      // Mantém áudios já selecionados visíveis com estado "Em uso" (não selecionáveis)
       const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
-  }, [library, suggested, search, currentFolderId, sourceFilter, selectedUrls]);
+  }, [library, suggested, search, currentFolderId, sourceFilter]);
+
+  const [isAutoPicking, setIsAutoPicking] = useState(false);
+  const autoPickSix = async () => {
+    if (!stageTitle) return;
+    if (atMax) { toast.info('Etapa já está no máximo de áudios'); return; }
+    setIsAutoPicking(true);
+    try {
+      const available = library.filter((a) => !selectedUrls.has(a.audio_url));
+      if (available.length === 0) { toast.info('Biblioteca sem áudios disponíveis'); return; }
+
+      // 3 por semelhança de nome (matcher local)
+      const fakeStage = { id: 'auto', nome_simbolico: stageTitle, descricao: stageDescription || '' } as unknown as CeremonyStage;
+      const byName = matchAudiosForStage(fakeStage, available, 3).map((r) => r.audio);
+      const usedUrls = new Set(byName.map((a) => a.audio_url));
+
+      // 3 pela IA (excluindo os já escolhidos por nome)
+      let byAI: typeof library = [];
+      try {
+        const remaining = available.filter((a) => !usedUrls.has(a.audio_url));
+        const { data, error } = await supabase.functions.invoke('suggest-audios', {
+          body: {
+            stageTitle,
+            stageDescription: stageDescription || '',
+            userHint: aiHint || aiHintDraft || '',
+            limit: 3,
+            library: remaining.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          },
+        });
+        if (!error) {
+          const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+          byAI = indices.map((i) => remaining[i]).filter(Boolean).slice(0, 3);
+        }
+      } catch { /* fallback abaixo */ }
+
+      // Fallback: completa com matcher local se IA não trouxe 3
+      if (byAI.length < 3) {
+        const need = 3 - byAI.length;
+        const filler = matchAudiosForStage(fakeStage,
+          available.filter((a) => !usedUrls.has(a.audio_url) && !byAI.some((b) => b.audio_url === a.audio_url)),
+          need
+        ).map((r) => r.audio);
+        byAI = [...byAI, ...filler];
+      }
+
+      const picks = [...byName, ...byAI]
+        .filter((a) => a && !selectedUrls.has(a.audio_url))
+        .slice(0, Math.max(0, maxAudios - audios.length));
+
+      if (picks.length === 0) { toast.info('Nada novo a adicionar'); return; }
+      onChange([...audios, ...picks.map((a) => ({ nome: a.nome, audio_url: a.audio_url }))]);
+      toast.success(`${picks.length} áudio(s) adicionado(s) — ${byName.length} por nome + ${picks.length - byName.length} pela IA`);
+    } finally {
+      setIsAutoPicking(false);
+    }
+  };
 
 
   const formatTime = (s: number) => {
@@ -434,20 +487,35 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               <GripVertical size={12} /> arraste da biblioteca para a lista
             </span>
             {stageTitle && (
-              <button
-                type="button"
-                onClick={() => setSuggestMode((v) => !v)}
-                className={cn(
-                  'ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                  suggestMode
-                    ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
-                    : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
-                )}
-                title={`Sugere músicas conforme "${stageTitle}"`}
-              >
-                {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
-              </button>
+              <div className="ml-auto flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={autoPickSix}
+                  disabled={isAutoPicking || atMax}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    'border-gold/60 bg-gold text-background hover:bg-gold/90 disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                  title="A IA escolhe 6 áudios: 3 pelo nome + 3 pela análise da etapa"
+                >
+                  {isAutoPicking ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  {isAutoPicking ? 'Selecionando...' : 'IA escolher 6 áudios'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuggestMode((v) => !v)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    suggestMode
+                      ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
+                      : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                  )}
+                  title={`Sugere músicas conforme "${stageTitle}"`}
+                >
+                  {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
+                </button>
+              </div>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -668,8 +736,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                               </button>
                             )}
                             {selected ? (
-                              <span className="shrink-0 rounded-md p-1.5 text-gold" title="Já adicionado">
-                                <Check size={14} />
+                              <span className="shrink-0 inline-flex items-center gap-1 rounded-md border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] font-medium text-gold" title="Já em uso nesta etapa">
+                                <Check size={11} /> Em uso
                               </span>
                             ) : (
                               <button
