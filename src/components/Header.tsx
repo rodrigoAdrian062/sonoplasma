@@ -34,6 +34,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const { settings } = useSettings();
   const { signOut } = useAuth();
   const { isSuperAdmin } = useUserRole();
+  const { toggles } = useUiToggles();
 
   const handleLogout = async () => {
     await signOut();
