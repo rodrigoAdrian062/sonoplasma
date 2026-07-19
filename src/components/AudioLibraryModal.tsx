@@ -541,14 +541,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   <div
                     className={cn(
                       'flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
-                      selectionMode && 'cursor-pointer hover:border-primary/50',
                       bulkDeleteMode && 'cursor-pointer',
                       bulkDeleteMode && selectedIds.has(audio.id) && 'border-destructive/50 bg-destructive/5'
                     )}
                     onClick={
-                      selectionMode
-                        ? () => handleSelect(audio)
-                        : bulkDeleteMode
+                      bulkDeleteMode
                         ? () => toggleSelectId(audio.id)
                         : undefined
                     }
