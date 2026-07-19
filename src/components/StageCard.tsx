@@ -63,7 +63,23 @@ export function StageCard({
   const [loopUntilTimer, setLoopUntilTimer] = useState(false);
   const loopUntilTimerRef = useRef(loopUntilTimer);
   useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
-  const [selectedAudioIndex, setSelectedAudioIndex] = useState(0);
+  const armedKey = `stage:armedAudio:${stage.id}`;
+  const [selectedAudioIndex, setSelectedAudioIndex] = useState(() => {
+    try {
+      const savedUrl = localStorage.getItem(armedKey);
+      if (savedUrl) {
+        const idx = audios.findIndex((a) => a.audio_url === savedUrl);
+        if (idx >= 0) return idx;
+      }
+    } catch {}
+    return 0;
+  });
+  // Persist the "armed" (prepared) track per stage.
+  useEffect(() => {
+    const a = audios[selectedAudioIndex];
+    if (!a) return;
+    try { localStorage.setItem(armedKey, a.audio_url); } catch {}
+  }, [selectedAudioIndex, audios, armedKey]);
   const { currentUrl } = useUniversalAudioPlayer();
 
   // Sincroniza o índice destacado com o áudio que está realmente tocando
@@ -147,6 +163,15 @@ export function StageCard({
     };
     check();
     return () => { active = false; };
+  }, [currentAudio?.audio_url]);
+
+  // Pré-carrega ativamente a faixa "preparada" para tocar sem atraso.
+  useEffect(() => {
+    const url = currentAudio?.audio_url;
+    if (!url) return;
+    if (isCacheableAudioUrl(url)) {
+      prefetchAudios([url]);
+    }
   }, [currentAudio?.audio_url]);
 
 
@@ -338,8 +363,16 @@ export function StageCard({
             >
               <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} active />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">
-                  {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
+                <p className="text-xs font-medium truncate flex items-center gap-1.5">
+                  <span className="truncate">{currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}</span>
+                  {!isActive && currentAudio && (
+                    <span
+                      className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
+                      title="Faixa preparada — pressione Play para tocar imediatamente"
+                    >
+                      <Play size={7} fill="currentColor" /> Preparada
+                    </span>
+                  )}
                 </p>
                 {audios.length > 1 && (
                   <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
