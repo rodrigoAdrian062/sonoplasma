@@ -363,8 +363,16 @@ export function StageCard({
             >
               <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} active />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">
-                  {currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}
+                <p className="text-xs font-medium truncate flex items-center gap-1.5">
+                  <span className="truncate">{currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}</span>
+                  {!isActive && currentAudio && (
+                    <span
+                      className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
+                      title="Faixa preparada — pressione Play para tocar imediatamente"
+                    >
+                      <Play size={7} fill="currentColor" /> Preparada
+                    </span>
+                  )}
                 </p>
                 {audios.length > 1 && (
                   <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
