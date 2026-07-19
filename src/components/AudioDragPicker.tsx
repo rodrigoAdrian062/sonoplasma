@@ -487,20 +487,35 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               <GripVertical size={12} /> arraste da biblioteca para a lista
             </span>
             {stageTitle && (
-              <button
-                type="button"
-                onClick={() => setSuggestMode((v) => !v)}
-                className={cn(
-                  'ml-auto inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                  suggestMode
-                    ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
-                    : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
-                )}
-                title={`Sugere músicas conforme "${stageTitle}"`}
-              >
-                {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
-              </button>
+              <div className="ml-auto flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={autoPickSix}
+                  disabled={isAutoPicking || atMax}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    'border-gold/60 bg-gold text-background hover:bg-gold/90 disabled:opacity-50 disabled:cursor-not-allowed'
+                  )}
+                  title="A IA escolhe 6 áudios: 3 pelo nome + 3 pela análise da etapa"
+                >
+                  {isAutoPicking ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  {isAutoPicking ? 'Selecionando...' : 'IA escolher 6 áudios'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuggestMode((v) => !v)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    suggestMode
+                      ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
+                      : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                  )}
+                  title={`Sugere músicas conforme "${stageTitle}"`}
+                >
+                  {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                  {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
+                </button>
+              </div>
             )}
           </DialogTitle>
         </DialogHeader>
