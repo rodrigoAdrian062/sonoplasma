@@ -88,6 +88,7 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const { toggles } = useUiToggles();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const pendingNavRef = useRef<(() => void) | null>(null);
 
