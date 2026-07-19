@@ -43,6 +43,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube' | 'spotify'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
   useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
@@ -93,10 +94,16 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    if (isYouTubeUrl(audio.audio_url)) {
-      window.open(audio.audio_url, '_blank');
+    // YouTube/Spotify: prévia inline via iframe embed
+    if (detectStream(audio.audio_url)) {
+      audioElement?.pause();
+      setPlayingId(null);
+      setAudioElement(null);
+      setPreviewEmbedId((prev) => (prev === audio.id ? null : audio.id));
       return;
     }
+
+    setPreviewEmbedId(null);
 
     if (playingId === audio.id) {
       audioElement?.pause();
