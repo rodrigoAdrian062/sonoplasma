@@ -158,7 +158,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
             {/* Embed inline (YouTube/Spotify) — usa o player nativo do serviço */}
             {currentTrack && detectStream(currentTrack.audio_url) && (() => {
-              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: false });
+              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: isPlaying });
               const kind = detectStream(currentTrack.audio_url);
               if (!embed) return null;
               const bustedSrc = `${embed}${embed.includes('?') ? '&' : '?'}_r=${reloadTick}`;
