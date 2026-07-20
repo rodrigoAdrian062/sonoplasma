@@ -69,6 +69,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
   const [libOpen, setLibOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const isPresentation = variant === 'presentation';
 
@@ -160,19 +161,31 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: false });
               const kind = detectStream(currentTrack.audio_url);
               if (!embed) return null;
+              const bustedSrc = `${embed}${embed.includes('?') ? '&' : '?'}_r=${reloadTick}`;
               return (
                 <div className="rounded-lg overflow-hidden border border-gold/40 bg-black/50">
                   <iframe
-                    src={embed}
+                    key={`${currentTrack.id}-${reloadTick}`}
+                    src={bustedSrc}
                     title={`Fundo — ${currentTrack.nome}`}
                     className="w-full"
                     style={{ height: kind === 'spotify' ? 152 : 170 }}
                     allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
                     allowFullScreen
                   />
-                  <p className="text-[10px] text-muted-foreground text-center py-1 px-2">
-                    Controle diretamente no player {kind === 'spotify' ? 'do Spotify' : 'do YouTube'} acima.
-                  </p>
+                  <div className="flex items-center justify-between gap-2 py-1 px-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      Controle no player {kind === 'spotify' ? 'do Spotify' : 'do YouTube'} acima.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setReloadTick((t) => t + 1)}
+                      className="text-[10px] text-gold hover:underline shrink-0"
+                      title="Recarregar player (Spotify às vezes retorna 'upstream request timeout')"
+                    >
+                      Recarregar
+                    </button>
+                  </div>
                 </div>
               );
             })()}
