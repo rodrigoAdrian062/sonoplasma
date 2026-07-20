@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect, useCallback, Re
 import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
+import { getSpotifyUri, isSpotifyUrl } from '@/lib/embedUrl';
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB
@@ -59,24 +60,6 @@ function getYouTubeVideoId(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
-}
-
-function parseSpotify(url: string): { type: string; id: string } | null {
-  const u = (url || '').trim();
-  const uriMatch = u.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)/);
-  if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] };
-  const urlMatch = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/);
-  if (urlMatch) return { type: urlMatch[1], id: urlMatch[2] };
-  return null;
-}
-
-function isSpotifyUrl(url: string): boolean {
-  return parseSpotify(url) !== null;
-}
-
-function getSpotifyUri(url: string): string | null {
-  const p = parseSpotify(url);
-  return p ? `spotify:${p.type}:${p.id}` : null;
 }
 
 // Load the Spotify IFrame API once.

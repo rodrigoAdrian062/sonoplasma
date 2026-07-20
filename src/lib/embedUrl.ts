@@ -1,6 +1,9 @@
 // Converte URLs de YouTube/Spotify em URLs de embed prontos para <iframe>.
 
 export type StreamKind = 'youtube' | 'spotify' | null;
+export type SpotifyType = 'track' | 'album' | 'playlist' | 'episode' | 'show' | 'artist';
+
+const SPOTIFY_TYPES = new Set<SpotifyType>(['track', 'album', 'playlist', 'episode', 'show', 'artist']);
 
 export function detectStream(url: string): StreamKind {
   const u = (url || '').toLowerCase();
@@ -11,6 +14,47 @@ export function detectStream(url: string): StreamKind {
 
 export function isStreamingUrl(url: string): boolean {
   return detectStream(url) !== null;
+}
+
+export function parseSpotify(url: string): { type: SpotifyType; id: string } | null {
+  const raw = (url || '').trim();
+  if (!raw) return null;
+
+  const uriMatch = raw.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)$/i);
+  if (uriMatch) return { type: uriMatch[1].toLowerCase() as SpotifyType, id: uriMatch[2] };
+
+  try {
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const u = new URL(normalized);
+    if (!u.hostname.toLowerCase().includes('open.spotify.com')) return null;
+
+    // Aceita variações em qualquer ordem:
+    // /track/ID, /intl-pt/track/ID, /embed/track/ID,
+    // /intl-pt/embed/track/ID, /embed/intl-pt/track/ID e até URLs já duplicadas.
+    const parts = u.pathname
+      .split('/')
+      .filter(Boolean)
+      .filter((part) => !/^intl-[a-z]{2}(?:-[a-z]{2})?$/i.test(part) && part.toLowerCase() !== 'embed');
+
+    const typeIndex = parts.findIndex((part) => SPOTIFY_TYPES.has(part.toLowerCase() as SpotifyType));
+    if (typeIndex < 0) return null;
+
+    const type = parts[typeIndex].toLowerCase() as SpotifyType;
+    const id = parts[typeIndex + 1]?.match(/^[a-zA-Z0-9]+/)?.[0];
+    if (!id) return null;
+    return { type, id };
+  } catch {
+    return null;
+  }
+}
+
+export function getSpotifyUri(url: string): string | null {
+  const parsed = parseSpotify(url);
+  return parsed ? `spotify:${parsed.type}:${parsed.id}` : null;
+}
+
+export function isSpotifyUrl(url: string): boolean {
+  return parseSpotify(url) !== null;
 }
 
 function ytId(url: string): string | null {
@@ -29,29 +73,9 @@ function ytId(url: string): string | null {
 }
 
 function spotifyEmbed(url: string): string | null {
-  try {
-    // spotify:track:ID -> https://open.spotify.com/embed/track/ID
-    if (url.startsWith('spotify:')) {
-      const parts = url.split(':');
-      if (parts.length >= 3) return `https://open.spotify.com/embed/${parts[1]}/${parts[2]}`;
-      return null;
-    }
-    const u = new URL(url);
-    // Remove barras iniciais e, de forma iterativa, prefixos /embed/ e /intl-xx/
-    // em qualquer ordem — evita gerar /embed/embed/... que retorna
-    // "upstream request timeout" no player do Spotify.
-    let path = u.pathname.replace(/^\/+/, '');
-    for (let i = 0; i < 4; i++) {
-      const before = path;
-      path = path.replace(/^embed\//, '');
-      path = path.replace(/^intl-[a-z]{2}\//i, '');
-      if (path === before) break;
-    }
-    if (!path) return null;
-    return `https://open.spotify.com/embed/${path}`;
-  } catch {
-    return null;
-  }
+  const parsed = parseSpotify(url);
+  if (!parsed) return null;
+  return `https://open.spotify.com/embed/${parsed.type}/${parsed.id}`;
 }
 
 export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): string | null {

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
 import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
+import { parseSpotify } from '@/lib/embedUrl';
 
 // Normaliza uma URL de áudio para comparação de duplicatas.
 // Reduz YouTube/Spotify ao seu ID único; para o resto, compara a URL limpa.
@@ -10,8 +11,8 @@ function normalizeAudioUrl(url: string): string {
   const u = (url || '').trim().toLowerCase();
   const yt = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-z0-9_-]{11})/i);
   if (yt) return `yt:${yt[1]}`;
-  const sp = u.match(/(?:spotify[:/])+(track|album|playlist|episode|show)[:/]([a-z0-9]+)/i);
-  if (sp) return `sp:${sp[1]}:${sp[2]}`;
+  const sp = parseSpotify(url);
+  if (sp) return `sp:${sp.type}:${sp.id.toLowerCase()}`;
   return u.replace(/[?#].*$/, '').replace(/\/+$/, '');
 }
 
