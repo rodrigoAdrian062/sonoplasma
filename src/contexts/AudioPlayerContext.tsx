@@ -641,33 +641,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setOnTrackEnded: (cb) => { onTrackEndedRef.current = cb; },
   };
 
-  const spotifyEmbedUrl = isSpotify && currentUrl
-    ? getSpotifyUrl(currentUrl, { embed: true, autoplay: status === 'playing' })
-    : null;
-  const spotifyEmbedSrc = spotifyEmbedUrl
-    ? `${spotifyEmbedUrl}${spotifyEmbedUrl.includes('?') ? '&' : '?'}_r=${spotifyReloadTick}`
-    : null;
-
   return (
     <AudioPlayerContext.Provider value={value}>
       <AudioProgressContext.Provider value={{ currentTime, duration }}>
         {children}
-        {spotifyEmbedSrc && status !== 'idle' && (
-          <div
-            className="fixed bottom-4 right-4 z-[70] overflow-hidden rounded-lg border border-gold/40 bg-background shadow-2xl"
-            style={{ width: 'min(360px, calc(100vw - 32px))', height: 152 }}
-          >
-            <iframe
-              key={spotifyEmbedSrc}
-              src={spotifyEmbedSrc}
-              title="Player Spotify"
-              style={{ width: '100%', height: '100%', border: 0 }}
-              allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
-        )}
       </AudioProgressContext.Provider>
     </AudioPlayerContext.Provider>
   );

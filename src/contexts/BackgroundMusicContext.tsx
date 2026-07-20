@@ -59,7 +59,7 @@ const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
 function isStreamingUrl(url: string): boolean {
   const u = (url || '').toLowerCase();
-  return u.includes('youtube.com') || u.includes('youtu.be') || u.includes('open.spotify.com') || u.startsWith('spotify:');
+  return u.includes('youtube.com') || u.includes('youtu.be');
 }
 
 export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
@@ -106,7 +106,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [streamFrame, setStreamFrame] = useState<{
     trackId: string;
-    kind: 'youtube' | 'spotify';
+    kind: 'youtube';
     src: string;
   } | null>(null);
 
@@ -165,7 +165,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       toast({
         title: 'Não foi possível tocar a música de fundo',
-        description: 'Use um arquivo de áudio da biblioteca. Links do YouTube ou Spotify não tocam neste player.',
+        description: 'Use um arquivo de áudio da biblioteca ou um link do YouTube.',
         variant: 'destructive',
       });
     };
@@ -207,33 +207,22 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const frame = streamIframeRef.current;
     const mounted = streamFrameRef.current;
     if (!frame?.contentWindow || !mounted) return;
-
-    if (mounted.kind === 'youtube') {
-      const func = command === 'play' ? 'playVideo' : 'pauseVideo';
-      frame.contentWindow.postMessage(
-        JSON.stringify({ event: 'command', func, args: [] }),
-        'https://www.youtube.com'
-      );
-      return;
-    }
-
-    // O Spotify não oferece pausa tão estável quanto arquivos locais/YouTube,
-    // mas esses comandos são aceitos por algumas versões do embed sem remontar
-    // o iframe — evitando que a faixa volte ao início quando funcionar.
-    frame.contentWindow.postMessage({ command }, 'https://open.spotify.com');
-    frame.contentWindow.postMessage({ type: 'player_command', command }, 'https://open.spotify.com');
+    const func = command === 'play' ? 'playVideo' : 'pauseVideo';
+    frame.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func, args: [] }),
+      'https://www.youtube.com'
+    );
   }, []);
 
   const ensureStreamFrame = useCallback((track: BackgroundTrack, autoplay: boolean) => {
-    const kind = detectStream(track.audio_url);
-    if (!kind) return false;
+    if (detectStream(track.audio_url) !== 'youtube') return false;
     const embed = toEmbedUrl(track.audio_url, { autoplay });
     if (!embed) return false;
 
     setStreamFrame((prev) => {
       if (prev?.trackId === track.id) return prev;
       const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
-      return { trackId: track.id, kind, src: withCacheBust };
+      return { trackId: track.id, kind: 'youtube', src: withCacheBust };
     });
     return true;
   }, []);
@@ -289,8 +278,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // YouTube/Spotify não podem ser carregados pelo elemento <audio> nativo.
-    // Eles são tocados pelo iframe persistente abaixo; manter o <audio> limpo
+    // YouTube não pode ser carregado pelo elemento <audio> nativo.
+    // É tocado pelo iframe persistente abaixo; manter o <audio> limpo
     // evita erro falso logo após selecionar a faixa como música de fundo.
     if (isStreamingUrl(track.audio_url)) {
       a.pause();
@@ -412,7 +401,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     }
     const track = playlist[targetIdx];
     if (!track) return;
-    // YouTube/Spotify: o player embutido (iframe) cuida do play; só marcamos o estado.
+    // YouTube: o player embutido (iframe) cuida do play; só marcamos o estado.
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
       if (!ensureStreamFrame(track, true)) {
@@ -587,26 +576,21 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      {/* Iframe persistente para YouTube/Spotify — fica montado fora do popover
+      {/* Iframe persistente para YouTube — fica montado fora do popover
           para que pausar/retomar não recarregue a música do começo. */}
       {streamFrame && (
         <div
-          aria-hidden={streamFrame.kind !== 'spotify'}
-          className={streamFrame.kind === 'spotify'
-            ? 'fixed bottom-24 right-4 z-[70] overflow-hidden rounded-lg border border-gold/40 bg-background shadow-2xl'
-            : undefined}
-          style={streamFrame.kind === 'spotify'
-            ? { width: 'min(320px, calc(100vw - 32px))', height: 80, pointerEvents: 'auto' }
-            : {
-                position: 'fixed',
-                left: -10000,
-                top: -10000,
-                width: 260,
-                height: 150,
-                opacity: 0,
-                pointerEvents: 'none',
-                zIndex: -1,
-              }}
+          aria-hidden
+          style={{
+            position: 'fixed',
+            left: -10000,
+            top: -10000,
+            width: 260,
+            height: 150,
+            opacity: 0,
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
         >
           <iframe
             ref={streamIframeRef}

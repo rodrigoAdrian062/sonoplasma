@@ -360,7 +360,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               { key: 'nav_biblioteca', label: 'Atalho rápido: Biblioteca' },
               { key: 'nav_roteiros', label: 'Atalho rápido: Roteiros' },
               { key: 'nav_youtube', label: 'Atalho rápido: YouTube' },
-              { key: 'nav_spotify', label: 'Atalho rápido: Spotify' },
+              
             ] as const).map((item) => (
               <div key={item.key} className="flex items-center justify-between gap-3">
                 <span className="text-sm">{item.label}</span>
