@@ -62,30 +62,6 @@ function getYouTubeVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// Load the Spotify IFrame API once.
-let spotifyApiPromise: Promise<any> | null = null;
-function loadSpotifyApi(): Promise<any> {
-  if (spotifyApiPromise) return spotifyApiPromise;
-  spotifyApiPromise = new Promise((resolve) => {
-    if ((window as any).SpotifyIframeApi) {
-      resolve((window as any).SpotifyIframeApi);
-      return;
-    }
-    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
-      (window as any).SpotifyIframeApi = IFrameAPI;
-      resolve(IFrameAPI);
-    };
-    if (!document.getElementById('spotify-iframe-api')) {
-      const script = document.createElement('script');
-      script.id = 'spotify-iframe-api';
-      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  });
-  return spotifyApiPromise;
-}
-
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
@@ -98,6 +74,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
   const [isSpotify, setIsSpotify] = useState(false);
+  const [spotifyReloadTick, setSpotifyReloadTick] = useState(0);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
 
   const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
@@ -115,10 +92,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
-  const spotifyControllerRef = useRef<any>(null);
-  const spotifyReadyRef = useRef(false);
-  const spotifyReadyTimeoutRef = useRef<number | null>(null);
-  const spotifyPlayRequestRef = useRef(0);
   const isYouTubeRef = useRef(false);
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
