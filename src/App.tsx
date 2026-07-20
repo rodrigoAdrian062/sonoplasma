@@ -98,7 +98,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            </Route>
+            
 
             <Route 
               path="/youtube" 
