@@ -854,6 +854,17 @@ export default function AudioLibraryPage() {
           />
         )}
       </main>
+      <Mp3ConverterModal
+        open={showConverter}
+        onClose={() => setShowConverter(false)}
+        onSaveToLibrary={async (file, name) => {
+          const result = await uploadAndAddAudio(file, name);
+          if (currentFolderId && result?.id) {
+            await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
+          }
+          return result;
+        }}
+      />
     </div>
   );
 }
