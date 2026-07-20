@@ -296,6 +296,9 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       a.pause();
       a.removeAttribute('src');
       a.load();
+      if (streamFrameRef.current && streamFrameRef.current.trackId !== track.id) {
+        setStreamFrame(null);
+      }
       setCurrentTime(0);
       setDuration(0);
       return;
@@ -581,35 +584,30 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     seek,
   };
 
-  const streamCurrent = playlist[currentIndex];
-  const streamKind = streamCurrent ? detectStream(streamCurrent.audio_url) : null;
-  const streamEmbed = streamCurrent && streamKind
-    ? toEmbedUrl(streamCurrent.audio_url, { autoplay: isPlaying })
-    : null;
-
   return (
     <Ctx.Provider value={value}>
       {children}
       {/* Iframe persistente para YouTube/Spotify — fica montado fora do popover
-          para que a reprodução não seja interrompida ao fechar o painel. */}
-      {streamEmbed && isPlaying && (
+          para que pausar/retomar não recarregue a música do começo. */}
+      {streamFrame && (
         <div
           aria-hidden
           style={{
             position: 'fixed',
             left: -10000,
             top: -10000,
-            width: streamKind === 'spotify' ? 300 : 260,
-            height: streamKind === 'spotify' ? 80 : 150,
+            width: streamFrame.kind === 'spotify' ? 300 : 260,
+            height: streamFrame.kind === 'spotify' ? 80 : 150,
             opacity: 0,
             pointerEvents: 'none',
             zIndex: -1,
           }}
         >
           <iframe
-            key={streamCurrent!.id}
-            src={streamEmbed}
-            title={`Fundo — ${streamCurrent!.nome}`}
+            ref={streamIframeRef}
+            key={streamFrame.trackId}
+            src={streamFrame.src}
+            title="Player de música de fundo"
             style={{ width: '100%', height: '100%', border: 0 }}
             allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
             allowFullScreen
