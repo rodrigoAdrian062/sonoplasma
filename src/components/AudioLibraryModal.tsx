@@ -652,6 +652,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         className="w-full"
                         style={{ height: getAudioSource(audio) === 'spotify' ? 152 : 180 }}
                         allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                        referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
                       />
                     </div>

@@ -59,6 +59,12 @@ export function getSpotifyUrl(url: string, opts: { embed?: boolean; autoplay?: b
   if (!parsed) return null;
   const path = opts.embed ? `/embed/${parsed.type}/${parsed.id}` : `/${parsed.type}/${parsed.id}`;
   const u = new URL(`https://open.spotify.com${path}`);
+  if (opts.embed) {
+    // Mantém o formato oficial gerado pelo Spotify. Isso evita embeds vazios
+    // em alguns navegadores quando a URL vem só com locale/autoplay.
+    u.searchParams.set('utm_source', 'generator');
+    u.searchParams.set('theme', '0');
+  }
   // O embed do Spotify pode quebrar com “Incorrect locale information provided”
   // quando o navegador/ambiente não informa locale válido. Forçamos pt-BR.
   u.searchParams.set('locale', SPOTIFY_LOCALE);

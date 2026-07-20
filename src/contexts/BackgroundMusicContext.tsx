@@ -591,17 +591,22 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           para que pausar/retomar não recarregue a música do começo. */}
       {streamFrame && (
         <div
-          aria-hidden
-          style={{
-            position: 'fixed',
-            left: -10000,
-            top: -10000,
-            width: streamFrame.kind === 'spotify' ? 300 : 260,
-            height: streamFrame.kind === 'spotify' ? 80 : 150,
-            opacity: 0,
-            pointerEvents: 'none',
-            zIndex: -1,
-          }}
+          aria-hidden={streamFrame.kind !== 'spotify'}
+          className={streamFrame.kind === 'spotify'
+            ? 'fixed bottom-24 right-4 z-[70] overflow-hidden rounded-lg border border-gold/40 bg-background shadow-2xl'
+            : undefined}
+          style={streamFrame.kind === 'spotify'
+            ? { width: 'min(320px, calc(100vw - 32px))', height: 80, pointerEvents: 'auto' }
+            : {
+                position: 'fixed',
+                left: -10000,
+                top: -10000,
+                width: 260,
+                height: 150,
+                opacity: 0,
+                pointerEvents: 'none',
+                zIndex: -1,
+              }}
         >
           <iframe
             ref={streamIframeRef}
@@ -610,6 +615,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
             title="Player de música de fundo"
             style={{ width: '100%', height: '100%', border: 0 }}
             allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
         </div>
