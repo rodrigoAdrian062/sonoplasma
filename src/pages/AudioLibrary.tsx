@@ -86,7 +86,7 @@ export default function AudioLibraryPage() {
   const [newAudioName, setNewAudioName] = useState('');
   const [newAudioUrl, setNewAudioUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showConverter, setShowConverter] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
