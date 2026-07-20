@@ -85,8 +85,8 @@ function ytId(url: string): string | null {
   }
 }
 
-function spotifyEmbed(url: string): string | null {
-  return getSpotifyUrl(url, { embed: true });
+function spotifyEmbed(url: string, opts: { autoplay?: boolean } = {}): string | null {
+  return getSpotifyUrl(url, { embed: true, autoplay: opts.autoplay });
 }
 
 export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): string | null {
@@ -101,7 +101,7 @@ export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): stri
     return `https://www.youtube.com/embed/${id}?${params.toString()}`;
   }
   if (kind === 'spotify') {
-    return spotifyEmbed(url);
+    return spotifyEmbed(url, opts);
   }
   return null;
 }
