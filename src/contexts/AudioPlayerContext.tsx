@@ -316,11 +316,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(ytInitTimeoutRef.current);
       ytInitTimeoutRef.current = null;
     }
-    spotifyPlayRequestRef.current += 1;
-    if (spotifyReadyTimeoutRef.current !== null) {
-      clearTimeout(spotifyReadyTimeoutRef.current);
-      spotifyReadyTimeoutRef.current = null;
-    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -337,73 +332,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     const existingContainer = document.getElementById('yt-player-container');
     if (existingContainer) existingContainer.remove();
-    if (spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.destroy(); } catch { /* noop */ }
-      spotifyControllerRef.current = null;
-      spotifyReadyRef.current = false;
-    }
-    const spotifyContainer = document.getElementById('spotify-player-container');
-    if (spotifyContainer) spotifyContainer.remove();
-  }, []);
-
-  const createSpotifyPlayer = useCallback((url: string, attempt = 0, requestId = ++spotifyPlayRequestRef.current) => {
-    let container = document.getElementById('spotify-player-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'spotify-player-container';
-      // Não colapsar o iframe para 1px: o embed do Spotify é mais estável
-      // quando mantém o tamanho real, mesmo ficando fora da tela.
-      container.style.cssText = 'position: fixed; top: 0; left: -10000px; width: 300px; height: 80px; opacity: 0.01; pointer-events: none; z-index: -1; overflow: hidden;';
-      document.body.appendChild(container);
-    }
-    const el = document.createElement('div');
-    container.innerHTML = '';
-    container.appendChild(el);
-
-    // Auto-retry se o Spotify não ficar "ready" em 8s (falha comum: upstream timeout)
-    if (spotifyReadyTimeoutRef.current !== null) {
-      clearTimeout(spotifyReadyTimeoutRef.current);
-    }
-    spotifyReadyTimeoutRef.current = window.setTimeout(() => {
-      spotifyReadyTimeoutRef.current = null;
-      if (requestId !== spotifyPlayRequestRef.current) return;
-      if (!spotifyReadyRef.current && attempt < 2) {
-        console.warn(`[Spotify] timeout esperando 'ready' (tentativa ${attempt + 1}), recriando player...`);
-        try { spotifyControllerRef.current?.destroy(); } catch { /* noop */ }
-        spotifyControllerRef.current = null;
-        createSpotifyPlayer(url, attempt + 1, requestId);
-      } else if (!spotifyReadyRef.current) {
-        console.warn('[Spotify] player não ficou pronto após as tentativas.');
-        setStatus('idle');
-      }
-    }, 8000);
-
-    loadSpotifyApi().then((IFrameAPI) => {
-      IFrameAPI.createController(el, { url, width: '300', height: '80' }, (controller: any) => {
-        if (requestId !== spotifyPlayRequestRef.current) {
-          try { controller.destroy(); } catch { /* noop */ }
-          return;
-        }
-        spotifyControllerRef.current = controller;
-        controller.addListener('ready', () => {
-          if (requestId !== spotifyPlayRequestRef.current) return;
-          spotifyReadyRef.current = true;
-          if (spotifyReadyTimeoutRef.current !== null) {
-            clearTimeout(spotifyReadyTimeoutRef.current);
-            spotifyReadyTimeoutRef.current = null;
-          }
-          try { controller.play(); } catch { /* noop */ }
-        });
-        controller.addListener('playback_update', (e: any) => {
-          if (requestId !== spotifyPlayRequestRef.current) return;
-          const d = e?.data;
-          if (!d) return;
-          if (typeof d.position === 'number') setCurrentTime(d.position / 1000);
-          if (typeof d.duration === 'number' && d.duration > 0) setDuration(d.duration / 1000);
-          if (typeof d.isPaused === 'boolean') setStatus(d.isPaused ? 'paused' : 'playing');
-        });
-      });
-    });
   }, []);
 
   const createYouTubePlayer = useCallback((videoId: string, stageId: string) => {
