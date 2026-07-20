@@ -477,9 +477,30 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         // Ignora se o usuário já trocou de áudio nesse meio tempo.
         if (currentUrlRef.current !== url) return;
         audio.src = cachedUrl || url;
-        audio.play().catch(err => {
-          console.error('Audio play error:', err);
-        });
+        const attemptPlay = (retry = 0) => {
+          audio.play().catch((err) => {
+            // Autoplay bloqueado ou erro de rede: 1 retry rápido e depois notifica.
+            if (retry === 0 && err?.name !== 'NotAllowedError') {
+              setTimeout(() => attemptPlay(1), 500);
+              return;
+            }
+            // eslint-disable-next-line no-console
+            console.error('[AudioPlayer] falha ao reproduzir:', err, { url });
+            try {
+              import('sonner').then(({ toast }) => {
+                if (err?.name === 'NotAllowedError') {
+                  toast.error('Toque na tela para liberar o áudio (autoplay bloqueado).');
+                } else {
+                  toast.error('Não foi possível iniciar o áudio.');
+                }
+              });
+            } catch { /* noop */ }
+          });
+        };
+        attemptPlay();
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('[AudioPlayer] falha ao carregar do cache:', err, { url });
       });
       setCurrentStageId(stageId);
       setStatus('playing');

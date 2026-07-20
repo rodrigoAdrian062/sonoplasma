@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
@@ -34,7 +35,19 @@ const queryClient = new QueryClient({
       staleTime: 30_000,
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
+      // 2 retentativas com backoff exponencial (máx 5s), pulando erros
+      // de autenticação/permissão que não vão se resolver com retry.
+      retry: (failureCount, error: unknown) => {
+        if (failureCount >= 2) return false;
+        const msg = (error instanceof Error ? error.message : String(error || "")).toLowerCase();
+        if (msg.includes("jwt") || msg.includes("unauthorized") || msg.includes("permission") || msg.includes("policy")) return false;
+        return true;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    },
+    mutations: {
       retry: 1,
+      retryDelay: 500,
     },
   },
 });
@@ -57,13 +70,14 @@ const App = () => (
           
           
           <Suspense fallback={<RouteFallback />}>
+          <ErrorBoundary context="routes">
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
               path="/" 
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <ErrorBoundary context="Index"><Index /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -71,16 +85,17 @@ const App = () => (
               path="/secao/:sectionId" 
               element={
                 <ProtectedRoute>
-                  <SectionDetail />
+                  <ErrorBoundary context="SectionDetail"><SectionDetail /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
+            
             
             <Route 
               path="/biblioteca" 
               element={
                 <ProtectedRoute>
-                  <AudioLibrary />
+                  <ErrorBoundary context="AudioLibrary"><AudioLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -88,7 +103,7 @@ const App = () => (
               path="/spotify" 
               element={
                 <ProtectedRoute>
-                  <SpotifyLibrary />
+                  <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -96,7 +111,7 @@ const App = () => (
               path="/youtube" 
               element={
                 <ProtectedRoute>
-                  <YoutubeLibrary />
+                  <ErrorBoundary context="YoutubeLibrary"><YoutubeLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -104,7 +119,7 @@ const App = () => (
               path="/usuarios" 
               element={
                 <ProtectedRoute>
-                  <UserManagement />
+                  <ErrorBoundary context="UserManagement"><UserManagement /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -112,7 +127,7 @@ const App = () => (
               path="/roteiro/:sectionId"
               element={
                 <ProtectedRoute>
-                  <RoteiroPage />
+                  <ErrorBoundary context="RoteiroPage"><RoteiroPage /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -120,7 +135,7 @@ const App = () => (
               path="/roteiros"
               element={
                 <ProtectedRoute>
-                  <RoteirosLibrary />
+                  <ErrorBoundary context="RoteirosLibrary"><RoteirosLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -128,6 +143,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
           </Suspense>
           <MiniPlayer />
           <QuickNav />

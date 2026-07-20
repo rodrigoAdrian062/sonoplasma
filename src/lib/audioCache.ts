@@ -32,24 +32,40 @@ export async function prefetchAudio(url: string): Promise<void> {
   if (inFlight.has(url)) return inFlight.get(url);
 
   const task = (async () => {
+    // Retry leve com backoff: redes de tablet oscilam bastante.
     // Bug corrigido: fetch sem timeout deixava a promise pendurada para
     // sempre em redes instáveis (tablets), bloqueando novas tentativas
-    // para a mesma URL. Agora aborta em 20s.
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const existing = await cache.match(url);
-      if (existing) return;
-      const res = await fetch(url, { mode: 'cors', cache: 'force-cache', signal: ctrl.signal });
-      if (res.ok) {
-        await cache.put(url, res.clone());
-        void trimCache();
+    // para a mesma URL. Agora aborta em 20s por tentativa.
+    const attempt = async (): Promise<void> => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000);
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        const existing = await cache.match(url);
+        if (existing) return;
+        const res = await fetch(url, { mode: 'cors', cache: 'force-cache', signal: ctrl.signal });
+        if (res.ok) {
+          await cache.put(url, res.clone());
+          void trimCache();
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } finally {
+        clearTimeout(timer);
       }
+    };
+    try {
+      await attempt();
     } catch {
-      // Falha de rede/CORS/timeout não deve quebrar nada — só perde o cache.
+      try {
+        await new Promise((r) => setTimeout(r, 800));
+        await attempt();
+      } catch (err) {
+        // Silencioso — perder o cache não deve quebrar reprodução.
+        // eslint-disable-next-line no-console
+        console.warn('[audioCache] prefetch falhou:', url, err);
+      }
     } finally {
-      clearTimeout(timer);
       inFlight.delete(url);
     }
   })();
