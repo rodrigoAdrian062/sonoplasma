@@ -4,6 +4,7 @@ export type StreamKind = 'youtube' | 'spotify' | null;
 export type SpotifyType = 'track' | 'album' | 'playlist' | 'episode' | 'show' | 'artist';
 
 const SPOTIFY_TYPES = new Set<SpotifyType>(['track', 'album', 'playlist', 'episode', 'show', 'artist']);
+const SPOTIFY_LOCALE = 'pt-BR';
 
 export function detectStream(url: string): StreamKind {
   const u = (url || '').toLowerCase();
@@ -53,6 +54,18 @@ export function getSpotifyUri(url: string): string | null {
   return parsed ? `spotify:${parsed.type}:${parsed.id}` : null;
 }
 
+export function getSpotifyUrl(url: string, opts: { embed?: boolean; autoplay?: boolean } = {}): string | null {
+  const parsed = parseSpotify(url);
+  if (!parsed) return null;
+  const path = opts.embed ? `/embed/${parsed.type}/${parsed.id}` : `/${parsed.type}/${parsed.id}`;
+  const u = new URL(`https://open.spotify.com${path}`);
+  // O embed do Spotify pode quebrar com “Incorrect locale information provided”
+  // quando o navegador/ambiente não informa locale válido. Forçamos pt-BR.
+  u.searchParams.set('locale', SPOTIFY_LOCALE);
+  if (opts.autoplay) u.searchParams.set('autoplay', '1');
+  return u.toString();
+}
+
 export function isSpotifyUrl(url: string): boolean {
   return parseSpotify(url) !== null;
 }
@@ -73,9 +86,7 @@ function ytId(url: string): string | null {
 }
 
 function spotifyEmbed(url: string): string | null {
-  const parsed = parseSpotify(url);
-  if (!parsed) return null;
-  return `https://open.spotify.com/embed/${parsed.type}/${parsed.id}`;
+  return getSpotifyUrl(url, { embed: true });
 }
 
 export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): string | null {
