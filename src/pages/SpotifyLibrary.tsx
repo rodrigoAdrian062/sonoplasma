@@ -19,24 +19,7 @@ import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/librar
 import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-
-function parseSpotify(url: string): { type: string; id: string } | null {
-  const u = (url || '').trim();
-  const uriMatch = u.match(/^spotify:(track|album|playlist|episode|show|artist):([a-zA-Z0-9]+)/);
-  if (uriMatch) return { type: uriMatch[1], id: uriMatch[2] };
-  const urlMatch = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode|show|artist)\/([a-zA-Z0-9]+)/);
-  if (urlMatch) return { type: urlMatch[1], id: urlMatch[2] };
-  return null;
-}
-
-function getSpotifyUri(url: string): string | null {
-  const p = parseSpotify(url);
-  return p ? `spotify:${p.type}:${p.id}` : null;
-}
-
-function isSpotifyUrl(url: string): boolean {
-  return parseSpotify(url) !== null;
-}
+import { getSpotifyUri, isSpotifyUrl } from '@/lib/embedUrl';
 
 // Load the Spotify IFrame API once and resolve with the API object.
 let spotifyApiPromise: Promise<any> | null = null;
