@@ -632,31 +632,24 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       <AudioProgressContext.Provider value={{ currentTime, duration }}>
         {children}
         {spotifyEmbedSrc && status !== 'idle' && (
-          <div className="fixed bottom-20 right-3 z-[9999] w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-lg border border-gold/50 bg-background shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between gap-2 border-b border-border/60 px-2 py-1.5 text-xs">
-              <span className="truncate font-medium text-gold">Player Spotify</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSpotifyReloadTick((tick) => tick + 1)}
-                  className="rounded border border-gold/40 px-2 py-0.5 text-[11px] text-gold hover:bg-gold/10"
-                >
-                  Recarregar
-                </button>
-                <button
-                  type="button"
-                  onClick={stop}
-                  className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
+          <div
+            aria-hidden
+            style={{
+              position: 'fixed',
+              left: -10000,
+              top: -10000,
+              width: 320,
+              height: 152,
+              opacity: 0,
+              pointerEvents: 'none',
+              zIndex: -1,
+            }}
+          >
             <iframe
               key={spotifyEmbedSrc}
               src={spotifyEmbedSrc}
               title="Player Spotify"
-              className="h-[152px] w-full border-0"
+              style={{ width: '100%', height: '100%', border: 0 }}
               allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
               allowFullScreen
             />
