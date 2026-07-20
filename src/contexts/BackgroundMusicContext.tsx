@@ -285,6 +285,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     if (!track) {
       a.pause();
       a.removeAttribute('src');
+      setStreamFrame(null);
       return;
     }
 
@@ -301,6 +302,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     }
 
     if (a.src !== track.audio_url) {
+      setStreamFrame(null);
       a.src = track.audio_url;
       a.load();
     }
@@ -401,8 +403,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     // YouTube/Spotify: o player embutido (iframe) cuida do play; só marcamos o estado.
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
+      if (!ensureStreamFrame(track, true)) {
+        setIsPlaying(false);
+        return;
+      }
       wantsToPlayRef.current = true;
       setIsPlaying(true);
+      window.setTimeout(() => postStreamCommand('play'), 300);
       return;
     }
     const requestId = ++playRequestRef.current;
@@ -437,16 +444,17 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         variant: 'destructive',
       });
     });
-  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand]);
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
     wantsToPlayRef.current = false;
+    postStreamCommand('pause');
     audioRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
     setWasAutoPaused(false);
-  }, []);
+  }, [postStreamCommand]);
 
   const toggle = useCallback(() => { if (isPlaying) pause(); else play(); }, [isPlaying, pause, play]);
 
@@ -492,6 +500,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       // outra faixa — trocando de música sem aviso. Agora paramos e realinhamos.
       if (idx === cur) {
         audioRef.current?.pause();
+        setStreamFrame(null);
         setIsPlaying(false);
         const newIdx = next.length === 0 ? 0 : Math.min(cur, next.length - 1);
         currentIndexRef.current = newIdx;
@@ -504,6 +513,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       }
       if (next.length === 0) {
         audioRef.current?.pause();
+        setStreamFrame(null);
         setIsPlaying(false);
       }
       return next;
@@ -512,6 +522,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   const clearPlaylist = useCallback(() => {
     audioRef.current?.pause();
+    setStreamFrame(null);
     setPlaylist([]);
     setCurrentIndex(0);
     setIsPlaying(false);
