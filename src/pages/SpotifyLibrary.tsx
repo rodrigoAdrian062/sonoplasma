@@ -148,32 +148,51 @@ export default function SpotifyLibraryPage() {
     if (!uri) return;
 
     let cancelled = false;
-    loadSpotifyApi().then((IFrameAPI) => {
-      if (cancelled || !embedElRef.current) return;
-      if (controllerRef.current) {
-        try {
-          controllerRef.current.loadUri(uri);
-          controllerRef.current.play();
-        } catch { /* noop */ }
-        return;
-      }
-      IFrameAPI.createController(
-        embedElRef.current,
-        { uri, width: '100%', height: 152 },
-        (controller: any) => {
-          if (cancelled) { try { controller.destroy(); } catch { /* noop */ } return; }
-          controllerRef.current = controller;
-          controller.addListener('ready', () => {
-            try { controller.play(); } catch { /* noop */ }
-          });
-          controller.addListener('playback_update', (e: any) => {
-            if (typeof e?.data?.isPaused === 'boolean') setIsPaused(e.data.isPaused);
-          });
-        }
-      );
-    });
+    let readyTimeout: number | null = null;
+    let attempt = 0;
 
-    return () => { cancelled = true; };
+    const spawn = () => {
+      // Sempre destrói o controller anterior — reuso via loadUri fica preso
+      // quando o Spotify retorna "upstream request timeout".
+      destroyController();
+      if (!embedElRef.current) return;
+
+      readyTimeout = window.setTimeout(() => {
+        readyTimeout = null;
+        if (cancelled) return;
+        if (attempt < 2) {
+          attempt += 1;
+          console.warn(`[Spotify] player não ficou pronto, retentando (${attempt}/2)...`);
+          spawn();
+        }
+      }, 8000);
+
+      loadSpotifyApi().then((IFrameAPI) => {
+        if (cancelled || !embedElRef.current) return;
+        IFrameAPI.createController(
+          embedElRef.current,
+          { uri, width: '100%', height: 152 },
+          (controller: any) => {
+            if (cancelled) { try { controller.destroy(); } catch { /* noop */ } return; }
+            controllerRef.current = controller;
+            controller.addListener('ready', () => {
+              if (readyTimeout) { clearTimeout(readyTimeout); readyTimeout = null; }
+              try { controller.play(); } catch { /* noop */ }
+            });
+            controller.addListener('playback_update', (e: any) => {
+              if (typeof e?.data?.isPaused === 'boolean') setIsPaused(e.data.isPaused);
+            });
+          }
+        );
+      });
+    };
+
+    spawn();
+
+    return () => {
+      cancelled = true;
+      if (readyTimeout) clearTimeout(readyTimeout);
+    };
   }, [playingId, spotifyAudios, destroyController]);
 
   const handlePlayPause = (id: string) => {
