@@ -633,17 +633,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         {children}
         {spotifyEmbedSrc && status !== 'idle' && (
           <div
-            aria-hidden
-            style={{
-              position: 'fixed',
-              left: -10000,
-              top: -10000,
-              width: 320,
-              height: 152,
-              opacity: 0,
-              pointerEvents: 'none',
-              zIndex: -1,
-            }}
+            className="fixed bottom-4 right-4 z-[70] overflow-hidden rounded-lg border border-gold/40 bg-background shadow-2xl"
+            style={{ width: 'min(360px, calc(100vw - 32px))', height: 152 }}
           >
             <iframe
               key={spotifyEmbedSrc}
@@ -651,6 +642,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               title="Player Spotify"
               style={{ width: '100%', height: '100%', border: 0 }}
               allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           </div>

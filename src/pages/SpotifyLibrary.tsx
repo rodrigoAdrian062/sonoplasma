@@ -424,6 +424,7 @@ export default function SpotifyLibraryPage() {
                           className="w-full border-0"
                           style={{ height: 152 }}
                           allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                          referrerPolicy="strict-origin-when-cross-origin"
                           allowFullScreen
                         />
                       </div>
