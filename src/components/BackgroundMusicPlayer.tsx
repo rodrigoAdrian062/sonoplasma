@@ -69,6 +69,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
   const [libOpen, setLibOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const isPresentation = variant === 'presentation';
 
