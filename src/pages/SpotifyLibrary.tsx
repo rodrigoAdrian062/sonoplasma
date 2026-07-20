@@ -19,31 +19,7 @@ import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/librar
 import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
-import { getSpotifyUri, isSpotifyUrl } from '@/lib/embedUrl';
-
-// Load the Spotify IFrame API once and resolve with the API object.
-let spotifyApiPromise: Promise<any> | null = null;
-function loadSpotifyApi(): Promise<any> {
-  if (spotifyApiPromise) return spotifyApiPromise;
-  spotifyApiPromise = new Promise((resolve) => {
-    if ((window as any).SpotifyIframeApi) {
-      resolve((window as any).SpotifyIframeApi);
-      return;
-    }
-    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
-      (window as any).SpotifyIframeApi = IFrameAPI;
-      resolve(IFrameAPI);
-    };
-    if (!document.getElementById('spotify-iframe-api')) {
-      const script = document.createElement('script');
-      script.id = 'spotify-iframe-api';
-      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  });
-  return spotifyApiPromise;
-}
+import { getSpotifyUrl, isSpotifyUrl } from '@/lib/embedUrl';
 
 export default function SpotifyLibraryPage() {
   const navigate = useNavigate();
@@ -83,8 +59,7 @@ export default function SpotifyLibraryPage() {
   const [search, setSearch] = useState('');
   const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
 
-  const controllerRef = useRef<any>(null);
-  const embedElRef = useRef<HTMLDivElement | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const PAGE_SIZE = 30;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -128,87 +103,18 @@ export default function SpotifyLibraryPage() {
     return () => obs.disconnect();
   }, [showList, spotifyAudios.length, visibleCount]);
 
-  const destroyController = useCallback(() => {
-    if (controllerRef.current) {
-      try { controllerRef.current.destroy(); } catch { /* noop */ }
-      controllerRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => () => destroyController(), [destroyController]);
-
-  // Create/switch the controller whenever the playing track changes.
-  useEffect(() => {
-    if (!playingId) {
-      destroyController();
-      return;
-    }
-    const audio = spotifyAudios.find((a) => a.id === playingId);
-    const uri = audio ? getSpotifyUri(audio.audio_url) : null;
-    if (!uri) return;
-
-    let cancelled = false;
-    let readyTimeout: number | null = null;
-    let attempt = 0;
-
-    const spawn = () => {
-      // Sempre destrói o controller anterior — reuso via loadUri fica preso
-      // quando o Spotify retorna "upstream request timeout".
-      destroyController();
-      if (!embedElRef.current) return;
-
-      readyTimeout = window.setTimeout(() => {
-        readyTimeout = null;
-        if (cancelled) return;
-        if (attempt < 2) {
-          attempt += 1;
-          console.warn(`[Spotify] player não ficou pronto, retentando (${attempt}/2)...`);
-          spawn();
-        }
-      }, 8000);
-
-      loadSpotifyApi().then((IFrameAPI) => {
-        if (cancelled || !embedElRef.current) return;
-        IFrameAPI.createController(
-          embedElRef.current,
-          { uri, width: '100%', height: 152 },
-          (controller: any) => {
-            if (cancelled) { try { controller.destroy(); } catch { /* noop */ } return; }
-            controllerRef.current = controller;
-            controller.addListener('ready', () => {
-              if (readyTimeout) { clearTimeout(readyTimeout); readyTimeout = null; }
-              try { controller.play(); } catch { /* noop */ }
-            });
-            controller.addListener('playback_update', (e: any) => {
-              if (typeof e?.data?.isPaused === 'boolean') setIsPaused(e.data.isPaused);
-            });
-          }
-        );
-      });
-    };
-
-    spawn();
-
-    return () => {
-      cancelled = true;
-      if (readyTimeout) clearTimeout(readyTimeout);
-    };
-  }, [playingId, spotifyAudios, destroyController]);
-
   const handlePlayPause = (id: string) => {
     if (playingId !== id) {
       setIsPaused(false);
       setPlayingId(id);
+      setReloadTick((t) => t + 1);
       return;
     }
-    // Same track: toggle
-    if (controllerRef.current) {
-      try { controllerRef.current.togglePlay(); } catch { /* noop */ }
-    }
+    setPlayingId(null);
+    setIsPaused(false);
   };
 
   const handleStop = () => {
-    destroyController();
     setPlayingId(null);
     setIsPaused(false);
   };
@@ -510,8 +416,17 @@ export default function SpotifyLibraryPage() {
                   </div>
                   {isCurrent && (
                     <div className="px-2 pb-2">
-                      {/* The IFrame API replaces this element with the embedded player */}
-                      <div ref={embedElRef} className="rounded-xl overflow-hidden" />
+                      <div className="rounded-xl overflow-hidden border border-[#1DB954]/30 bg-black/50">
+                        <iframe
+                          key={`${audio.id}-${reloadTick}`}
+                          src={getSpotifyUrl(audio.audio_url, { embed: true, autoplay: true }) || ''}
+                          title={`Prévia — ${audio.nome}`}
+                          className="w-full border-0"
+                          style={{ height: 152 }}
+                          allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
