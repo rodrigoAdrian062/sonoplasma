@@ -70,13 +70,14 @@ const App = () => (
           
           
           <Suspense fallback={<RouteFallback />}>
+          <ErrorBoundary context="routes">
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
               path="/" 
               element={
                 <ProtectedRoute>
-                  <Index />
+                  <ErrorBoundary context="Index"><Index /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -84,10 +85,11 @@ const App = () => (
               path="/secao/:sectionId" 
               element={
                 <ProtectedRoute>
-                  <SectionDetail />
+                  <ErrorBoundary context="SectionDetail"><SectionDetail /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
+            
             
             <Route 
               path="/biblioteca" 
