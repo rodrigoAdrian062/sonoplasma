@@ -318,19 +318,8 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
                     <Youtube size={12} />
                     YouTube
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setInputMode(index, 'spotify')}
-                    className={cn(
-                      'flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded text-xs transition-all',
-                      mode === 'spotify'
-                        ? 'bg-[#1DB954]/20 text-[#1DB954] font-medium'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Music2 size={12} />
-                    Spotify
-                  </button>
+
+
                   <button
                     type="button"
                     onClick={() => setLibraryPickerIndex(index)}

@@ -668,7 +668,6 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                     ? library.length
                     : library.filter((a) => (
                         f.id === 'youtube' ? isYouTubeUrl(a.audio_url)
-                        : f.id === 'spotify' ? isSpotifyUrl(a.audio_url)
                         : !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url)
                       )).length;
                   return (
