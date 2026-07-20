@@ -28,7 +28,14 @@ export function useAudioLibrary() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AudioLibraryItem[];
+      // Spotify foi removido do app — ocultamos faixas antigas do Spotify
+      // de toda a UI (a linha continua no banco para eventual restauração).
+      return (data as AudioLibraryItem[]).filter((a) => {
+        const url = (a.audio_url || '').toLowerCase();
+        if (a.tipo === 'spotify') return false;
+        if (url.includes('open.spotify.com') || url.startsWith('spotify:')) return false;
+        return true;
+      });
     },
     staleTime: 60_000,
   });
