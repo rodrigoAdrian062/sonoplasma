@@ -364,7 +364,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (spotifyContainer) spotifyContainer.remove();
   }, []);
 
-  const createSpotifyPlayer = useCallback((uri: string) => {
+  const createSpotifyPlayer = useCallback((uri: string, attempt = 0) => {
     let container = document.getElementById('spotify-player-container');
     if (!container) {
       container = document.createElement('div');
@@ -376,11 +376,23 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     container.innerHTML = '';
     container.appendChild(el);
 
+    // Auto-retry se o Spotify não ficar "ready" em 8s (falha comum: upstream timeout)
+    let readyTimeout: number | null = window.setTimeout(() => {
+      readyTimeout = null;
+      if (!spotifyReadyRef.current && attempt < 2) {
+        console.warn(`[Spotify] timeout esperando 'ready' (tentativa ${attempt + 1}), recriando player...`);
+        try { spotifyControllerRef.current?.destroy(); } catch { /* noop */ }
+        spotifyControllerRef.current = null;
+        createSpotifyPlayer(uri, attempt + 1);
+      }
+    }, 8000);
+
     loadSpotifyApi().then((IFrameAPI) => {
       IFrameAPI.createController(el, { uri, width: '300', height: '80' }, (controller: any) => {
         spotifyControllerRef.current = controller;
         controller.addListener('ready', () => {
           spotifyReadyRef.current = true;
+          if (readyTimeout) { clearTimeout(readyTimeout); readyTimeout = null; }
           try { controller.play(); } catch { /* noop */ }
         });
         controller.addListener('playback_update', (e: any) => {
