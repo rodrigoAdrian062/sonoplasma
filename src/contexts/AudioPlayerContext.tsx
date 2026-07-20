@@ -117,6 +117,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const currentUrlRef = useRef<string | null>(null);
   const spotifyControllerRef = useRef<any>(null);
   const spotifyReadyRef = useRef(false);
+  const spotifyReadyTimeoutRef = useRef<number | null>(null);
+  const spotifyPlayRequestRef = useRef(0);
   const isYouTubeRef = useRef(false);
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
@@ -341,6 +343,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(ytInitTimeoutRef.current);
       ytInitTimeoutRef.current = null;
     }
+    spotifyPlayRequestRef.current += 1;
+    if (spotifyReadyTimeoutRef.current !== null) {
+      clearTimeout(spotifyReadyTimeoutRef.current);
+      spotifyReadyTimeoutRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -366,7 +373,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (spotifyContainer) spotifyContainer.remove();
   }, []);
 
-  const createSpotifyPlayer = useCallback((url: string, attempt = 0) => {
+  const createSpotifyPlayer = useCallback((url: string, attempt = 0, requestId = ++spotifyPlayRequestRef.current) => {
     let container = document.getElementById('spotify-player-container');
     if (!container) {
       container = document.createElement('div');
@@ -381,13 +388,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     container.appendChild(el);
 
     // Auto-retry se o Spotify não ficar "ready" em 8s (falha comum: upstream timeout)
-    let readyTimeout: number | null = window.setTimeout(() => {
-      readyTimeout = null;
+    if (spotifyReadyTimeoutRef.current !== null) {
+      clearTimeout(spotifyReadyTimeoutRef.current);
+    }
+    spotifyReadyTimeoutRef.current = window.setTimeout(() => {
+      spotifyReadyTimeoutRef.current = null;
+      if (requestId !== spotifyPlayRequestRef.current) return;
       if (!spotifyReadyRef.current && attempt < 2) {
         console.warn(`[Spotify] timeout esperando 'ready' (tentativa ${attempt + 1}), recriando player...`);
         try { spotifyControllerRef.current?.destroy(); } catch { /* noop */ }
         spotifyControllerRef.current = null;
-        createSpotifyPlayer(url, attempt + 1);
+        createSpotifyPlayer(url, attempt + 1, requestId);
       } else if (!spotifyReadyRef.current) {
         console.warn('[Spotify] player não ficou pronto após as tentativas.');
         setStatus('idle');
@@ -396,13 +407,22 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     loadSpotifyApi().then((IFrameAPI) => {
       IFrameAPI.createController(el, { url, width: '300', height: '80' }, (controller: any) => {
+        if (requestId !== spotifyPlayRequestRef.current) {
+          try { controller.destroy(); } catch { /* noop */ }
+          return;
+        }
         spotifyControllerRef.current = controller;
         controller.addListener('ready', () => {
+          if (requestId !== spotifyPlayRequestRef.current) return;
           spotifyReadyRef.current = true;
-          if (readyTimeout) { clearTimeout(readyTimeout); readyTimeout = null; }
+          if (spotifyReadyTimeoutRef.current !== null) {
+            clearTimeout(spotifyReadyTimeoutRef.current);
+            spotifyReadyTimeoutRef.current = null;
+          }
           try { controller.play(); } catch { /* noop */ }
         });
         controller.addListener('playback_update', (e: any) => {
+          if (requestId !== spotifyPlayRequestRef.current) return;
           const d = e?.data;
           if (!d) return;
           if (typeof d.position === 'number') setCurrentTime(d.position / 1000);
