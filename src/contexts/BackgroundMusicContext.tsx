@@ -352,6 +352,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         // pause mode: fade out then pause
         if (isPlaying) {
           fadeTo(0, fadeMs, () => {
+            postStreamCommand('pause');
             a.pause();
             setIsPlaying(false);
             wasAutoPausedRef.current = true;
@@ -373,11 +374,19 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
             wasAutoPausedRef.current = false;
             setWasAutoPaused(false);
-            a.volume = 0;
-            a.play().then(() => {
+            const track = playlistRef.current[currentIndexRef.current];
+            if (track && isStreamingUrl(track.audio_url)) {
+              ensureStreamFrame(track, false);
+              wantsToPlayRef.current = true;
               setIsPlaying(true);
-              fadeTo(volume, fadeMs);
-            }).catch(() => {});
+              window.setTimeout(() => postStreamCommand('play'), 300);
+            } else {
+              a.volume = 0;
+              a.play().then(() => {
+                setIsPlaying(true);
+                fadeTo(volume, fadeMs);
+              }).catch(() => {});
+            }
           }
         }
       };
@@ -388,7 +397,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
