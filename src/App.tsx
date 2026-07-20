@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
@@ -34,7 +35,19 @@ const queryClient = new QueryClient({
       staleTime: 30_000,
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
+      // 2 retentativas com backoff exponencial (máx 5s), pulando erros
+      // de autenticação/permissão que não vão se resolver com retry.
+      retry: (failureCount, error: unknown) => {
+        if (failureCount >= 2) return false;
+        const msg = (error instanceof Error ? error.message : String(error || "")).toLowerCase();
+        if (msg.includes("jwt") || msg.includes("unauthorized") || msg.includes("permission") || msg.includes("policy")) return false;
+        return true;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    },
+    mutations: {
       retry: 1,
+      retryDelay: 500,
     },
   },
 });
