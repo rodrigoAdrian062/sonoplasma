@@ -438,7 +438,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsSpotify(isSpot);
 
     if (isSpot) {
-      const spotifyUrl = getSpotifyUrl(url);
+      const spotifyUrl = getSpotifyUrl(url, { embed: true, autoplay: true });
       if (!spotifyUrl) {
         console.error('Invalid Spotify URL:', url);
         return;
@@ -450,7 +450,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('playing');
       setCurrentTime(0);
       setDuration(0);
-      createSpotifyPlayer(spotifyUrl);
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
@@ -484,7 +484,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
+  }, [stopCurrentPlayback, createYouTubePlayer]);
 
   const preload = useCallback((urls: (string | null | undefined)[]) => {
     prefetchAudios(urls);
@@ -492,8 +492,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(() => {
     const doPause = () => {
-      if (isSpotifyRef.current && spotifyControllerRef.current) {
-        try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
+      if (isSpotifyRef.current) {
+        setSpotifyReloadTick((tick) => tick + 1);
       } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
         ytPlayerRef.current.pauseVideo();
       } else if (audioRef.current) {
@@ -512,8 +512,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const resume = useCallback(() => {
     clearFade();
     applyPlayerVolume(volumeRef.current);
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
@@ -552,8 +552,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seekForward = useCallback((seconds = 10) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, currentTime + seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
@@ -563,8 +563,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTime]);
 
   const seekBackward = useCallback((seconds = 10) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, currentTime - seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
@@ -574,8 +574,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
