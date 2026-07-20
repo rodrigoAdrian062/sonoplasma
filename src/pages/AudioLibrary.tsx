@@ -30,7 +30,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Mp3ConverterModal } from '@/components/Mp3ConverterModal';
+
 
 const FOLDER_COLORS = [
   '#D4AF37', '#EF4444', '#F97316', '#EAB308', '#22C55E',
@@ -86,7 +86,6 @@ export default function AudioLibraryPage() {
   const [newAudioName, setNewAudioName] = useState('');
   const [newAudioUrl, setNewAudioUrl] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showConverter, setShowConverter] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
@@ -562,16 +561,6 @@ export default function AudioLibraryPage() {
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowConverter(true)}
-            title="Converter áudio/vídeo para MP3 (grátis, no navegador)"
-            className="border-gold/60 text-gold hover:bg-gold/10 shrink-0"
-          >
-            <Music size={14} className="mr-1" />
-            <span className="hidden sm:inline">Conversor MP3</span>
-          </Button>
 
           {filteredAudios.length > 0 && (
             <div className="flex items-center gap-1 sm:gap-2">
@@ -861,17 +850,6 @@ export default function AudioLibraryPage() {
           />
         )}
       </main>
-      <Mp3ConverterModal
-        open={showConverter}
-        onClose={() => setShowConverter(false)}
-        onSaveToLibrary={async (file, name) => {
-          const result = await uploadAndAddAudio(file, name);
-          if (currentFolderId && result?.id) {
-            await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
-          }
-          return result;
-        }}
-      />
     </div>
   );
 }
