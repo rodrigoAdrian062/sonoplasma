@@ -14,19 +14,6 @@ interface BackgroundMusicPlayerProps {
   compact?: boolean;
 }
 
-function isPlayableBackgroundAudio(audio: { audio_url: string; tipo?: string | null }) {
-  const url = (audio.audio_url || '').toLowerCase();
-  const type = (audio.tipo || '').toLowerCase();
-  return !(
-    type === 'youtube' ||
-    type === 'spotify' ||
-    url.includes('youtube.com') ||
-    url.includes('youtu.be') ||
-    url.includes('open.spotify.com') ||
-    url.startsWith('spotify:')
-  );
-}
-
 function formatTime(sec: number): string {
   if (!isFinite(sec) || sec < 0) return '0:00';
   const m = Math.floor(sec / 60);
@@ -158,7 +145,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
             {/* Embed inline (YouTube/Spotify) — usa o player nativo do serviço */}
             {currentTrack && detectStream(currentTrack.audio_url) && (() => {
-              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: false });
+              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: isPlaying });
               const kind = detectStream(currentTrack.audio_url);
               if (!embed) return null;
               const bustedSrc = `${embed}${embed.includes('?') ? '&' : '?'}_r=${reloadTick}`;

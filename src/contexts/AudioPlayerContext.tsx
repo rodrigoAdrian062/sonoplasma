@@ -62,30 +62,6 @@ function getYouTubeVideoId(url: string): string | null {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// Load the Spotify IFrame API once.
-let spotifyApiPromise: Promise<any> | null = null;
-function loadSpotifyApi(): Promise<any> {
-  if (spotifyApiPromise) return spotifyApiPromise;
-  spotifyApiPromise = new Promise((resolve) => {
-    if ((window as any).SpotifyIframeApi) {
-      resolve((window as any).SpotifyIframeApi);
-      return;
-    }
-    (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
-      (window as any).SpotifyIframeApi = IFrameAPI;
-      resolve(IFrameAPI);
-    };
-    if (!document.getElementById('spotify-iframe-api')) {
-      const script = document.createElement('script');
-      script.id = 'spotify-iframe-api';
-      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  });
-  return spotifyApiPromise;
-}
-
 const AudioPlayerContext = createContext<AudioPlayerContextValue | null>(null);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
@@ -98,6 +74,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
   const [isSpotify, setIsSpotify] = useState(false);
+  const [spotifyReloadTick, setSpotifyReloadTick] = useState(0);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
 
   const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
@@ -115,10 +92,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
   const currentUrlRef = useRef<string | null>(null);
-  const spotifyControllerRef = useRef<any>(null);
-  const spotifyReadyRef = useRef(false);
-  const spotifyReadyTimeoutRef = useRef<number | null>(null);
-  const spotifyPlayRequestRef = useRef(0);
   const isYouTubeRef = useRef(false);
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
@@ -343,11 +316,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       clearTimeout(ytInitTimeoutRef.current);
       ytInitTimeoutRef.current = null;
     }
-    spotifyPlayRequestRef.current += 1;
-    if (spotifyReadyTimeoutRef.current !== null) {
-      clearTimeout(spotifyReadyTimeoutRef.current);
-      spotifyReadyTimeoutRef.current = null;
-    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -364,73 +332,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
     const existingContainer = document.getElementById('yt-player-container');
     if (existingContainer) existingContainer.remove();
-    if (spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.destroy(); } catch { /* noop */ }
-      spotifyControllerRef.current = null;
-      spotifyReadyRef.current = false;
-    }
-    const spotifyContainer = document.getElementById('spotify-player-container');
-    if (spotifyContainer) spotifyContainer.remove();
-  }, []);
-
-  const createSpotifyPlayer = useCallback((url: string, attempt = 0, requestId = ++spotifyPlayRequestRef.current) => {
-    let container = document.getElementById('spotify-player-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'spotify-player-container';
-      // Não colapsar o iframe para 1px: o embed do Spotify é mais estável
-      // quando mantém o tamanho real, mesmo ficando fora da tela.
-      container.style.cssText = 'position: fixed; top: 0; left: -10000px; width: 300px; height: 80px; opacity: 0.01; pointer-events: none; z-index: -1; overflow: hidden;';
-      document.body.appendChild(container);
-    }
-    const el = document.createElement('div');
-    container.innerHTML = '';
-    container.appendChild(el);
-
-    // Auto-retry se o Spotify não ficar "ready" em 8s (falha comum: upstream timeout)
-    if (spotifyReadyTimeoutRef.current !== null) {
-      clearTimeout(spotifyReadyTimeoutRef.current);
-    }
-    spotifyReadyTimeoutRef.current = window.setTimeout(() => {
-      spotifyReadyTimeoutRef.current = null;
-      if (requestId !== spotifyPlayRequestRef.current) return;
-      if (!spotifyReadyRef.current && attempt < 2) {
-        console.warn(`[Spotify] timeout esperando 'ready' (tentativa ${attempt + 1}), recriando player...`);
-        try { spotifyControllerRef.current?.destroy(); } catch { /* noop */ }
-        spotifyControllerRef.current = null;
-        createSpotifyPlayer(url, attempt + 1, requestId);
-      } else if (!spotifyReadyRef.current) {
-        console.warn('[Spotify] player não ficou pronto após as tentativas.');
-        setStatus('idle');
-      }
-    }, 8000);
-
-    loadSpotifyApi().then((IFrameAPI) => {
-      IFrameAPI.createController(el, { url, width: '300', height: '80' }, (controller: any) => {
-        if (requestId !== spotifyPlayRequestRef.current) {
-          try { controller.destroy(); } catch { /* noop */ }
-          return;
-        }
-        spotifyControllerRef.current = controller;
-        controller.addListener('ready', () => {
-          if (requestId !== spotifyPlayRequestRef.current) return;
-          spotifyReadyRef.current = true;
-          if (spotifyReadyTimeoutRef.current !== null) {
-            clearTimeout(spotifyReadyTimeoutRef.current);
-            spotifyReadyTimeoutRef.current = null;
-          }
-          try { controller.play(); } catch { /* noop */ }
-        });
-        controller.addListener('playback_update', (e: any) => {
-          if (requestId !== spotifyPlayRequestRef.current) return;
-          const d = e?.data;
-          if (!d) return;
-          if (typeof d.position === 'number') setCurrentTime(d.position / 1000);
-          if (typeof d.duration === 'number' && d.duration > 0) setDuration(d.duration / 1000);
-          if (typeof d.isPaused === 'boolean') setStatus(d.isPaused ? 'paused' : 'playing');
-        });
-      });
-    });
   }, []);
 
   const createYouTubePlayer = useCallback((videoId: string, stageId: string) => {
@@ -537,7 +438,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsSpotify(isSpot);
 
     if (isSpot) {
-      const spotifyUrl = getSpotifyUrl(url);
+      const spotifyUrl = getSpotifyUrl(url, { embed: true, autoplay: true });
       if (!spotifyUrl) {
         console.error('Invalid Spotify URL:', url);
         return;
@@ -549,7 +450,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('playing');
       setCurrentTime(0);
       setDuration(0);
-      createSpotifyPlayer(spotifyUrl);
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
@@ -583,7 +484,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [stopCurrentPlayback, createYouTubePlayer, createSpotifyPlayer]);
+  }, [stopCurrentPlayback, createYouTubePlayer]);
 
   const preload = useCallback((urls: (string | null | undefined)[]) => {
     prefetchAudios(urls);
@@ -591,8 +492,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(() => {
     const doPause = () => {
-      if (isSpotifyRef.current && spotifyControllerRef.current) {
-        try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
+      if (isSpotifyRef.current) {
+        setSpotifyReloadTick((tick) => tick + 1);
       } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
         ytPlayerRef.current.pauseVideo();
       } else if (audioRef.current) {
@@ -611,8 +512,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const resume = useCallback(() => {
     clearFade();
     applyPlayerVolume(volumeRef.current);
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
@@ -651,8 +552,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seekForward = useCallback((seconds = 10) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, currentTime + seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
@@ -662,8 +563,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTime]);
 
   const seekBackward = useCallback((seconds = 10) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, currentTime - seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
@@ -673,8 +574,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
-    if (isSpotifyRef.current && spotifyControllerRef.current) {
-      try { spotifyControllerRef.current.seek(Math.max(0, seconds)); } catch { /* noop */ }
+    if (isSpotifyRef.current) {
+      setSpotifyReloadTick((tick) => tick + 1);
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
@@ -719,10 +620,48 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setOnTrackEnded: (cb) => { onTrackEndedRef.current = cb; },
   };
 
+  const spotifyEmbedUrl = isSpotify && currentUrl
+    ? getSpotifyUrl(currentUrl, { embed: true, autoplay: status === 'playing' })
+    : null;
+  const spotifyEmbedSrc = spotifyEmbedUrl
+    ? `${spotifyEmbedUrl}${spotifyEmbedUrl.includes('?') ? '&' : '?'}_r=${spotifyReloadTick}`
+    : null;
+
   return (
     <AudioPlayerContext.Provider value={value}>
       <AudioProgressContext.Provider value={{ currentTime, duration }}>
         {children}
+        {spotifyEmbedSrc && status !== 'idle' && (
+          <div className="fixed bottom-20 right-3 z-[9999] w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-lg border border-gold/50 bg-background shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between gap-2 border-b border-border/60 px-2 py-1.5 text-xs">
+              <span className="truncate font-medium text-gold">Player Spotify</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSpotifyReloadTick((tick) => tick + 1)}
+                  className="rounded border border-gold/40 px-2 py-0.5 text-[11px] text-gold hover:bg-gold/10"
+                >
+                  Recarregar
+                </button>
+                <button
+                  type="button"
+                  onClick={stop}
+                  className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+            <iframe
+              key={spotifyEmbedSrc}
+              src={spotifyEmbedSrc}
+              title="Player Spotify"
+              className="h-[152px] w-full border-0"
+              allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
       </AudioProgressContext.Provider>
     </AudioPlayerContext.Provider>
   );
