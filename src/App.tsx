@@ -98,14 +98,8 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/spotify" 
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
-                </ProtectedRoute>
-              } 
-            />
+            </Route>
+
             <Route 
               path="/youtube" 
               element={

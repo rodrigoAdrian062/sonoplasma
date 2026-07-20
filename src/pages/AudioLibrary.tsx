@@ -549,17 +549,8 @@ export default function AudioLibraryPage() {
             </Button>
           )}
 
-          {!currentFolderId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/spotify')}
-              className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
-            >
-              <SpotifyIcon size={14} className="mr-1 text-[#1DB954]" />
-              <span className="hidden sm:inline">Spotify</span>
-            </Button>
-          )}
+
+
 
 
           {filteredAudios.length > 0 && (
