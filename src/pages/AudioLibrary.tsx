@@ -533,15 +533,27 @@ export default function AudioLibraryPage() {
           </div>
 
           {!currentFolderId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/youtube')}
-              className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
-            >
-              <YoutubeIcon size={14} className="mr-1" />
-              <span className="hidden sm:inline">YouTube</span>
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/youtube')}
+                className="border-red-500/60 text-red-500 hover:bg-red-500/10 shrink-0"
+              >
+                <YoutubeIcon size={14} className="mr-1" />
+                <span className="hidden sm:inline">YouTube</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/conversor-mp3')}
+                className="border-gold/60 text-gold hover:bg-gold/10 shrink-0"
+                title="Conversor MP3"
+              >
+                <Download size={14} className="mr-1" />
+                <span className="hidden sm:inline">Conversor</span>
+              </Button>
+            </>
           )}
 
 
