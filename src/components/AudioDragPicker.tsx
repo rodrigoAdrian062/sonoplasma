@@ -680,8 +680,6 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                         active
                           ? f.id === 'youtube'
                             ? 'border-red-500/50 bg-red-500/15 text-red-500'
-                            : f.id === 'spotify'
-                            ? 'border-[#1DB954]/50 bg-[#1DB954]/15 text-[#1DB954]'
                             : 'border-gold/50 bg-gold/15 text-gold'
                           : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
                       )}
