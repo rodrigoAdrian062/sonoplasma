@@ -247,7 +247,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const onTimeUpdate = () => {
       setCurrentTime(a.currentTime || 0);
       const limit = maxDurationRef.current;
-      if (limit > 0 && a.currentTime >= limit) {
+      if (limit > 0 && wantsToPlayRef.current && !a.paused && a.currentTime >= limit) {
         const pl = playlistRef.current;
         if (pl.length <= 1) {
           try { a.currentTime = 0; a.play().catch(() => undefined); } catch { /* noop */ }
