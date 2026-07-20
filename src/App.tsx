@@ -95,7 +95,7 @@ const App = () => (
               path="/biblioteca" 
               element={
                 <ProtectedRoute>
-                  <AudioLibrary />
+                  <ErrorBoundary context="AudioLibrary"><AudioLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -103,7 +103,7 @@ const App = () => (
               path="/spotify" 
               element={
                 <ProtectedRoute>
-                  <SpotifyLibrary />
+                  <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -111,7 +111,7 @@ const App = () => (
               path="/youtube" 
               element={
                 <ProtectedRoute>
-                  <YoutubeLibrary />
+                  <ErrorBoundary context="YoutubeLibrary"><YoutubeLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -119,7 +119,7 @@ const App = () => (
               path="/usuarios" 
               element={
                 <ProtectedRoute>
-                  <UserManagement />
+                  <ErrorBoundary context="UserManagement"><UserManagement /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
@@ -127,7 +127,7 @@ const App = () => (
               path="/roteiro/:sectionId"
               element={
                 <ProtectedRoute>
-                  <RoteiroPage />
+                  <ErrorBoundary context="RoteiroPage"><RoteiroPage /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -135,7 +135,7 @@ const App = () => (
               path="/roteiros"
               element={
                 <ProtectedRoute>
-                  <RoteirosLibrary />
+                  <ErrorBoundary context="RoteirosLibrary"><RoteirosLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -143,6 +143,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
           </Suspense>
           <MiniPlayer />
           <QuickNav />
