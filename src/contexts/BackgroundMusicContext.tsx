@@ -104,8 +104,15 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [isDucking, setIsDucking] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [streamFrame, setStreamFrame] = useState<{
+    trackId: string;
+    kind: 'youtube' | 'spotify';
+    src: string;
+  } | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const streamFrameRef = useRef<typeof streamFrame>(null);
   const wasAutoPausedRef = useRef(false);
   const isDuckingRef = useRef(false);
   const fadeRafRef = useRef<number | null>(null);
@@ -117,6 +124,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const wantsToPlayRef = useRef(false);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
@@ -194,6 +202,41 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { safeWrite(FADE_KEY, String(fadeMs)); }, [fadeMs]);
   useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
   useEffect(() => { safeWrite(RESUME_DELAY_KEY, String(resumeDelayMs)); }, [resumeDelayMs]);
+
+  const postStreamCommand = useCallback((command: 'play' | 'pause') => {
+    const frame = streamIframeRef.current;
+    const mounted = streamFrameRef.current;
+    if (!frame?.contentWindow || !mounted) return;
+
+    if (mounted.kind === 'youtube') {
+      const func = command === 'play' ? 'playVideo' : 'pauseVideo';
+      frame.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func, args: [] }),
+        'https://www.youtube.com'
+      );
+      return;
+    }
+
+    // O Spotify não oferece pausa tão estável quanto arquivos locais/YouTube,
+    // mas esses comandos são aceitos por algumas versões do embed sem remontar
+    // o iframe — evitando que a faixa volte ao início quando funcionar.
+    frame.contentWindow.postMessage({ command }, 'https://open.spotify.com');
+    frame.contentWindow.postMessage({ type: 'player_command', command }, 'https://open.spotify.com');
+  }, []);
+
+  const ensureStreamFrame = useCallback((track: BackgroundTrack, autoplay: boolean) => {
+    const kind = detectStream(track.audio_url);
+    if (!kind) return false;
+    const embed = toEmbedUrl(track.audio_url, { autoplay });
+    if (!embed) return false;
+
+    setStreamFrame((prev) => {
+      if (prev?.trackId === track.id) return prev;
+      const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
+      return { trackId: track.id, kind, src: withCacheBust };
+    });
+    return true;
+  }, []);
 
   // Enforce max duration cutoff (loops or advances)
   const maxDurationRef = useRef(maxDurationSec);
