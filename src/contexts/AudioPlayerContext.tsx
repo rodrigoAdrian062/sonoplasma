@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect, useCallback, Re
 import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
-import { getSpotifyUri, isSpotifyUrl } from '@/lib/embedUrl';
+import { getSpotifyUrl, isSpotifyUrl } from '@/lib/embedUrl';
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB
@@ -117,6 +117,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const currentUrlRef = useRef<string | null>(null);
   const spotifyControllerRef = useRef<any>(null);
   const spotifyReadyRef = useRef(false);
+  const isYouTubeRef = useRef(false);
+  const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -364,12 +366,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (spotifyContainer) spotifyContainer.remove();
   }, []);
 
-  const createSpotifyPlayer = useCallback((uri: string, attempt = 0) => {
+  const createSpotifyPlayer = useCallback((url: string, attempt = 0) => {
     let container = document.getElementById('spotify-player-container');
     if (!container) {
       container = document.createElement('div');
       container.id = 'spotify-player-container';
-      container.style.cssText = 'position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; z-index: -1;';
+      // Não colapsar o iframe para 1px: o embed do Spotify é mais estável
+      // quando mantém o tamanho real, mesmo ficando fora da tela.
+      container.style.cssText = 'position: fixed; top: 0; left: -10000px; width: 300px; height: 80px; opacity: 0.01; pointer-events: none; z-index: -1; overflow: hidden;';
       document.body.appendChild(container);
     }
     const el = document.createElement('div');
@@ -383,12 +387,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         console.warn(`[Spotify] timeout esperando 'ready' (tentativa ${attempt + 1}), recriando player...`);
         try { spotifyControllerRef.current?.destroy(); } catch { /* noop */ }
         spotifyControllerRef.current = null;
-        createSpotifyPlayer(uri, attempt + 1);
+        createSpotifyPlayer(url, attempt + 1);
+      } else if (!spotifyReadyRef.current) {
+        console.warn('[Spotify] player não ficou pronto após as tentativas.');
+        setStatus('idle');
       }
     }, 8000);
 
     loadSpotifyApi().then((IFrameAPI) => {
-      IFrameAPI.createController(el, { uri, width: '300', height: '80' }, (controller: any) => {
+      IFrameAPI.createController(el, { url, width: '300', height: '80' }, (controller: any) => {
         spotifyControllerRef.current = controller;
         controller.addListener('ready', () => {
           spotifyReadyRef.current = true;
@@ -504,12 +511,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     const isYT = isYouTubeUrl(url);
     const isSpot = isSpotifyUrl(url);
+    isYouTubeRef.current = isYT;
+    isSpotifyRef.current = isSpot;
     setIsYouTube(isYT);
     setIsSpotify(isSpot);
 
     if (isSpot) {
-      const uri = getSpotifyUri(url);
-      if (!uri) {
+      const spotifyUrl = getSpotifyUrl(url);
+      if (!spotifyUrl) {
         console.error('Invalid Spotify URL:', url);
         return;
       }
@@ -520,7 +529,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('playing');
       setCurrentTime(0);
       setDuration(0);
-      createSpotifyPlayer(uri);
+      createSpotifyPlayer(spotifyUrl);
     } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
@@ -562,9 +571,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(() => {
     const doPause = () => {
-      if (isSpotify && spotifyControllerRef.current) {
+      if (isSpotifyRef.current && spotifyControllerRef.current) {
         try { spotifyControllerRef.current.pause(); } catch { /* noop */ }
-      } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+      } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
         ytPlayerRef.current.pauseVideo();
       } else if (audioRef.current) {
         audioRef.current.pause();
@@ -572,25 +581,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('paused');
     };
     // Spotify iframe controller does not expose reliable volume control
-    if (fadeEnabledRef.current && !isSpotify) {
+    if (fadeEnabledRef.current && !isSpotifyRef.current) {
       fadeOutThen(doPause);
     } else {
       doPause();
     }
-  }, [isYouTube, isSpotify, fadeOutThen]);
+  }, [fadeOutThen]);
 
   const resume = useCallback(() => {
     clearFade();
     applyPlayerVolume(volumeRef.current);
-    if (isSpotify && spotifyControllerRef.current) {
+    if (isSpotifyRef.current && spotifyControllerRef.current) {
       try { spotifyControllerRef.current.resume(); } catch { /* noop */ }
-    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
       audioRef.current.play();
     }
     setStatus('playing');
-  }, [isYouTube, isSpotify, clearFade, applyPlayerVolume]);
+  }, [clearFade, applyPlayerVolume]);
 
   const stop = useCallback(() => {
     const doStop = () => {
@@ -600,16 +609,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(0);
       setIsYouTube(false);
       setIsSpotify(false);
+      isYouTubeRef.current = false;
+      isSpotifyRef.current = false;
       setYoutubeVideoId(null);
       currentUrlRef.current = null;
       setCurrentUrl(null);
     };
-    if (fadeEnabledRef.current && !isSpotify && status === 'playing') {
+    if (fadeEnabledRef.current && !isSpotifyRef.current && status === 'playing') {
       fadeOutThen(doStop);
     } else {
       doStop();
     }
-  }, [stopCurrentPlayback, isSpotify, status, fadeOutThen]);
+  }, [stopCurrentPlayback, status, fadeOutThen]);
 
   const setVolume = useCallback((value: number) => {
     if (audioRef.current) audioRef.current.volume = value;
@@ -620,36 +631,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seekForward = useCallback((seconds = 10) => {
-    if (isSpotify && spotifyControllerRef.current) {
+    if (isSpotifyRef.current && spotifyControllerRef.current) {
       try { spotifyControllerRef.current.seek(Math.max(0, currentTime + seconds)); } catch { /* noop */ }
-    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + seconds);
     }
-  }, [isYouTube, isSpotify, currentTime]);
+  }, [currentTime]);
 
   const seekBackward = useCallback((seconds = 10) => {
-    if (isSpotify && spotifyControllerRef.current) {
+    if (isSpotifyRef.current && spotifyControllerRef.current) {
       try { spotifyControllerRef.current.seek(Math.max(0, currentTime - seconds)); } catch { /* noop */ }
-    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - seconds);
     }
-  }, [isYouTube, isSpotify, currentTime]);
+  }, [currentTime]);
 
   const seekTo = useCallback((seconds: number) => {
-    if (isSpotify && spotifyControllerRef.current) {
+    if (isSpotifyRef.current && spotifyControllerRef.current) {
       try { spotifyControllerRef.current.seek(Math.max(0, seconds)); } catch { /* noop */ }
-    } else if (isYouTube && ytPlayerRef.current && ytPlayerReadyRef.current) {
+    } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
       audioRef.current.currentTime = Math.max(0, Math.min(audioRef.current.duration || 0, seconds));
     }
-  }, [isYouTube, isSpotify]);
+  }, []);
 
   const setEQ = useCallback((settings: Partial<EQSettings>) => {
     setEQState(prev => {
