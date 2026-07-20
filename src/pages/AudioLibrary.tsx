@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { cn } from '@/lib/utils';
 // JSZip e file-saver são pesados (~90 KB) e só rodam no "baixar tudo".
 // Carregados dinamicamente dentro de handleDownloadAll.
@@ -106,13 +106,10 @@ export default function AudioLibraryPage() {
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
 
-  const isSpotifyUrl = (url: string) =>
-    url.includes('open.spotify.com') || url.startsWith('spotify:');
-
   // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
   useEffect(() => {
     const pending = audios.filter(
-      (a) => a.duracao_segundos == null && !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url),
+      (a) => a.duracao_segundos == null && !isYouTubeUrl(a.audio_url),
     );
     if (pending.length === 0) return;
     let cancelled = false;
@@ -135,14 +132,12 @@ export default function AudioLibraryPage() {
   }, [audios]);
 
 
-  // Filter audios by current folder and usage filter (YouTube & Spotify have their own tabs)
+  // Filter audios by current folder and usage filter (YouTube tem aba própria)
   const filteredAudios = audios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
-    const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = (a as any).pasta_id;
-    // Fora de pastas (raiz): esconde YouTube/Spotify — eles têm abas próprias.
-    // Dentro de uma pasta: mostra tudo que estiver ali, incluindo YouTube/Spotify.
-    if (!currentFolderId && (isYt || isSp)) return false;
+    // Fora de pastas (raiz): esconde YouTube — tem aba própria.
+    if (!currentFolderId && isYt) return false;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;

@@ -26,7 +26,7 @@ import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { prefetchAudios } from '@/lib/audioCache';
