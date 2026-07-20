@@ -531,19 +531,16 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           para que a reprodução não seja interrompida ao fechar o painel. */}
       {streamEmbed && isPlaying && (
         <div
-          aria-hidden={false}
+          aria-hidden
           style={{
             position: 'fixed',
-            right: 12,
-            bottom: 64,
+            left: -10000,
+            top: -10000,
             width: streamKind === 'spotify' ? 300 : 260,
             height: streamKind === 'spotify' ? 80 : 150,
-            zIndex: 99,
-            borderRadius: 12,
-            overflow: 'hidden',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
-            border: '1px solid rgba(212,175,55,0.4)',
-            background: '#000',
+            opacity: 0,
+            pointerEvents: 'none',
+            zIndex: -1,
           }}
         >
           <iframe
