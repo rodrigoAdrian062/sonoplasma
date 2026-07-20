@@ -37,10 +37,16 @@ function spotifyEmbed(url: string): string | null {
       return null;
     }
     const u = new URL(url);
-    // Remove barras iniciais, prefixo /embed/ e prefixo de idioma /intl-xx/
+    // Remove barras iniciais e, de forma iterativa, prefixos /embed/ e /intl-xx/
+    // em qualquer ordem — evita gerar /embed/embed/... que retorna
+    // "upstream request timeout" no player do Spotify.
     let path = u.pathname.replace(/^\/+/, '');
-    path = path.replace(/^embed\//, '');
-    path = path.replace(/^intl-[a-z]{2}\//i, '');
+    for (let i = 0; i < 4; i++) {
+      const before = path;
+      path = path.replace(/^embed\//, '');
+      path = path.replace(/^intl-[a-z]{2}\//i, '');
+      if (path === before) break;
+    }
     if (!path) return null;
     return `https://open.spotify.com/embed/${path}`;
   } catch {
