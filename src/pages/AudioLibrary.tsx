@@ -562,6 +562,17 @@ export default function AudioLibraryPage() {
             </Button>
           )}
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowConverter(true)}
+            title="Converter áudio/vídeo para MP3 (grátis, no navegador)"
+            className="border-gold/60 text-gold hover:bg-gold/10 shrink-0"
+          >
+            <Music size={14} className="mr-1" />
+            <span className="hidden sm:inline">Conversor MP3</span>
+          </Button>
+
           {filteredAudios.length > 0 && (
             <div className="flex items-center gap-1 sm:gap-2">
               {bulkDeleteMode ? (
@@ -597,10 +608,6 @@ export default function AudioLibraryPage() {
                   <Button variant="outline" size="sm" onClick={handleDownloadAll} disabled={isDownloadingAll}>
                     {isDownloadingAll ? <Loader2 className="animate-spin mr-1" size={14} /> : <Download size={14} className="mr-1" />}
                     <span className="hidden sm:inline">{isDownloadingAll ? 'Baixando...' : 'Baixar'}</span>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowConverter(true)} title="Converter áudio/vídeo para MP3">
-                    <Music size={14} className="mr-1" />
-                    <span className="hidden sm:inline">Conversor MP3</span>
                   </Button>
                 </>
               )}
