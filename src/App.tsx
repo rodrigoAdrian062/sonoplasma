@@ -16,7 +16,6 @@ import Auth from "./pages/Auth";
 
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
-const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
