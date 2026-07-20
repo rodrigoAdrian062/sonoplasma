@@ -133,6 +133,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/conversor-mp3"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="ConversorMp3"><ConversorMp3 /></ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
