@@ -96,6 +96,8 @@ export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): stri
     if (!id) return null;
     const params = new URLSearchParams();
     if (opts.autoplay) params.set('autoplay', '1');
+    params.set('enablejsapi', '1');
+    if (typeof window !== 'undefined') params.set('origin', window.location.origin);
     params.set('rel', '0');
     params.set('modestbranding', '1');
     return `https://www.youtube.com/embed/${id}?${params.toString()}`;
