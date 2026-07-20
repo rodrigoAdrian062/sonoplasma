@@ -4,7 +4,7 @@ import {
   Loader2, Link as LinkIcon, X, Folder, ChevronLeft, Library,
 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -29,11 +29,9 @@ interface AudioPickerProps {
 type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
 
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
-const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
-  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
   return <FolderMusicIcon size={size} />;
 }
 

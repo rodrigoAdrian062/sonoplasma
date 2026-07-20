@@ -4,7 +4,7 @@ import {
   Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2,
 
 } from 'lucide-react';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
@@ -84,7 +84,6 @@ function getHintPresets(stageTitle: string): HintPreset[] {
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
-  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
   return <FolderMusicIcon size={size} />;
 }
 
@@ -879,7 +878,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
                         { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                        { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
+                        
                         { id: 'link', label: 'Link', icon: LinkIcon },
                       ] as const).map((t) => (
                         <button

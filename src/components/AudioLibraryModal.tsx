@@ -7,7 +7,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
@@ -27,11 +27,10 @@ function getAudioFolderId(audio: { pasta_id?: string | null }) {
   return audio.pasta_id ?? null;
 }
 
-function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'spotify' | 'file' {
+function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'file' {
   const url = (a.audio_url || '').toLowerCase();
   const t = (a.tipo || '').toLowerCase();
   if (t === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-  if (t === 'spotify' || url.includes('open.spotify.com') || url.startsWith('spotify:')) return 'spotify';
   return 'file';
 }
 
@@ -41,7 +40,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube' | 'spotify'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -462,13 +461,12 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              {/* Chips por origem (arquivo / YouTube / Spotify) */}
+              {/* Chips por origem (arquivo / YouTube) */}
               <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
                 {([
                   { id: 'all', label: 'Todos', icon: null, count: audios.length },
                   { id: 'file', label: 'Arquivos', icon: <FileAudio size={11} />, count: audios.filter(a => getAudioSource(a) === 'file').length },
                   { id: 'youtube', label: 'YouTube', icon: <Youtube size={11} className="text-[#FF0000]" />, count: audios.filter(a => getAudioSource(a) === 'youtube').length },
-                  { id: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={11} />, count: audios.filter(a => getAudioSource(a) === 'spotify').length },
                 ] as const).map((s) => (
                   <button
                     key={s.id}
@@ -578,8 +576,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="p-2 bg-primary/10 rounded-lg">
                       {getAudioSource(audio) === 'youtube' ? (
                         <Youtube size={18} className="text-[#FF0000]" />
-                      ) : getAudioSource(audio) === 'spotify' ? (
-                        <SpotifyIcon size={18} />
                       ) : (
                         <Music size={18} className="text-primary" />
                       )}
@@ -588,7 +584,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {getAudioSource(audio) === 'youtube' ? 'YouTube' : getAudioSource(audio) === 'spotify' ? 'Spotify' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        {getAudioSource(audio) === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                       </p>
                     </div>
 
@@ -650,7 +646,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         src={embedUrl}
                         title={`Prévia — ${audio.nome}`}
                         className="w-full"
-                        style={{ height: getAudioSource(audio) === 'spotify' ? 152 : 180 }}
+                        style={{ height: 180 }}
                         allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
                         referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
