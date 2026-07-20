@@ -104,8 +104,15 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const [isDucking, setIsDucking] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [streamFrame, setStreamFrame] = useState<{
+    trackId: string;
+    kind: 'youtube' | 'spotify';
+    src: string;
+  } | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const streamFrameRef = useRef<typeof streamFrame>(null);
   const wasAutoPausedRef = useRef(false);
   const isDuckingRef = useRef(false);
   const fadeRafRef = useRef<number | null>(null);
@@ -117,6 +124,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const wantsToPlayRef = useRef(false);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   // Init audio element
@@ -195,6 +203,41 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
   useEffect(() => { safeWrite(RESUME_DELAY_KEY, String(resumeDelayMs)); }, [resumeDelayMs]);
 
+  const postStreamCommand = useCallback((command: 'play' | 'pause') => {
+    const frame = streamIframeRef.current;
+    const mounted = streamFrameRef.current;
+    if (!frame?.contentWindow || !mounted) return;
+
+    if (mounted.kind === 'youtube') {
+      const func = command === 'play' ? 'playVideo' : 'pauseVideo';
+      frame.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func, args: [] }),
+        'https://www.youtube.com'
+      );
+      return;
+    }
+
+    // O Spotify não oferece pausa tão estável quanto arquivos locais/YouTube,
+    // mas esses comandos são aceitos por algumas versões do embed sem remontar
+    // o iframe — evitando que a faixa volte ao início quando funcionar.
+    frame.contentWindow.postMessage({ command }, 'https://open.spotify.com');
+    frame.contentWindow.postMessage({ type: 'player_command', command }, 'https://open.spotify.com');
+  }, []);
+
+  const ensureStreamFrame = useCallback((track: BackgroundTrack, autoplay: boolean) => {
+    const kind = detectStream(track.audio_url);
+    if (!kind) return false;
+    const embed = toEmbedUrl(track.audio_url, { autoplay });
+    if (!embed) return false;
+
+    setStreamFrame((prev) => {
+      if (prev?.trackId === track.id) return prev;
+      const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
+      return { trackId: track.id, kind, src: withCacheBust };
+    });
+    return true;
+  }, []);
+
   // Enforce max duration cutoff (loops or advances)
   const maxDurationRef = useRef(maxDurationSec);
   useEffect(() => { maxDurationRef.current = maxDurationSec; }, [maxDurationSec]);
@@ -204,7 +247,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const onTimeUpdate = () => {
       setCurrentTime(a.currentTime || 0);
       const limit = maxDurationRef.current;
-      if (limit > 0 && a.currentTime >= limit) {
+      if (limit > 0 && wantsToPlayRef.current && !a.paused && a.currentTime >= limit) {
         const pl = playlistRef.current;
         if (pl.length <= 1) {
           try { a.currentTime = 0; a.play().catch(() => undefined); } catch { /* noop */ }
@@ -242,6 +285,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     if (!track) {
       a.pause();
       a.removeAttribute('src');
+      setStreamFrame(null);
       return;
     }
 
@@ -252,12 +296,16 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       a.pause();
       a.removeAttribute('src');
       a.load();
+      if (streamFrameRef.current && streamFrameRef.current.trackId !== track.id) {
+        setStreamFrame(null);
+      }
       setCurrentTime(0);
       setDuration(0);
       return;
     }
 
     if (a.src !== track.audio_url) {
+      setStreamFrame(null);
       a.src = track.audio_url;
       a.load();
     }
@@ -307,6 +355,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         // pause mode: fade out then pause
         if (isPlaying) {
           fadeTo(0, fadeMs, () => {
+            postStreamCommand('pause');
             a.pause();
             setIsPlaying(false);
             wasAutoPausedRef.current = true;
@@ -328,11 +377,19 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
             wasAutoPausedRef.current = false;
             setWasAutoPaused(false);
-            a.volume = 0;
-            a.play().then(() => {
+            const track = playlistRef.current[currentIndexRef.current];
+            if (track && isStreamingUrl(track.audio_url)) {
+              ensureStreamFrame(track, false);
+              wantsToPlayRef.current = true;
               setIsPlaying(true);
-              fadeTo(volume, fadeMs);
-            }).catch(() => {});
+              window.setTimeout(() => postStreamCommand('play'), 300);
+            } else {
+              a.volume = 0;
+              a.play().then(() => {
+                setIsPlaying(true);
+                fadeTo(volume, fadeMs);
+              }).catch(() => {});
+            }
           }
         }
       };
@@ -343,7 +400,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
@@ -358,8 +415,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     // YouTube/Spotify: o player embutido (iframe) cuida do play; só marcamos o estado.
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
+      if (!ensureStreamFrame(track, true)) {
+        setIsPlaying(false);
+        return;
+      }
       wantsToPlayRef.current = true;
       setIsPlaying(true);
+      window.setTimeout(() => postStreamCommand('play'), 300);
       return;
     }
     const requestId = ++playRequestRef.current;
@@ -394,16 +456,17 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         variant: 'destructive',
       });
     });
-  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand]);
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
     wantsToPlayRef.current = false;
+    postStreamCommand('pause');
     audioRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
     setWasAutoPaused(false);
-  }, []);
+  }, [postStreamCommand]);
 
   const toggle = useCallback(() => { if (isPlaying) pause(); else play(); }, [isPlaying, pause, play]);
 
@@ -449,6 +512,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       // outra faixa — trocando de música sem aviso. Agora paramos e realinhamos.
       if (idx === cur) {
         audioRef.current?.pause();
+        setStreamFrame(null);
         setIsPlaying(false);
         const newIdx = next.length === 0 ? 0 : Math.min(cur, next.length - 1);
         currentIndexRef.current = newIdx;
@@ -461,6 +525,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       }
       if (next.length === 0) {
         audioRef.current?.pause();
+        setStreamFrame(null);
         setIsPlaying(false);
       }
       return next;
@@ -469,6 +534,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   const clearPlaylist = useCallback(() => {
     audioRef.current?.pause();
+    setStreamFrame(null);
     setPlaylist([]);
     setCurrentIndex(0);
     setIsPlaying(false);
@@ -518,35 +584,30 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     seek,
   };
 
-  const streamCurrent = playlist[currentIndex];
-  const streamKind = streamCurrent ? detectStream(streamCurrent.audio_url) : null;
-  const streamEmbed = streamCurrent && streamKind
-    ? toEmbedUrl(streamCurrent.audio_url, { autoplay: isPlaying })
-    : null;
-
   return (
     <Ctx.Provider value={value}>
       {children}
       {/* Iframe persistente para YouTube/Spotify — fica montado fora do popover
-          para que a reprodução não seja interrompida ao fechar o painel. */}
-      {streamEmbed && isPlaying && (
+          para que pausar/retomar não recarregue a música do começo. */}
+      {streamFrame && (
         <div
           aria-hidden
           style={{
             position: 'fixed',
             left: -10000,
             top: -10000,
-            width: streamKind === 'spotify' ? 300 : 260,
-            height: streamKind === 'spotify' ? 80 : 150,
+            width: streamFrame.kind === 'spotify' ? 300 : 260,
+            height: streamFrame.kind === 'spotify' ? 80 : 150,
             opacity: 0,
             pointerEvents: 'none',
             zIndex: -1,
           }}
         >
           <iframe
-            key={streamCurrent!.id}
-            src={streamEmbed}
-            title={`Fundo — ${streamCurrent!.nome}`}
+            ref={streamIframeRef}
+            key={streamFrame.trackId}
+            src={streamFrame.src}
+            title="Player de música de fundo"
             style={{ width: '100%', height: '100%', border: 0 }}
             allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
             allowFullScreen

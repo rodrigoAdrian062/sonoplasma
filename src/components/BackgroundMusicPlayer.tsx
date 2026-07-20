@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useBackgroundMusic } from '@/contexts/BackgroundMusicContext';
-import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
+import { detectStream } from '@/lib/embedUrl';
 import { AudioLibraryModal } from '@/components/AudioLibraryModal';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +56,6 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
   const [libOpen, setLibOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [reloadTick, setReloadTick] = useState(0);
 
   const isPresentation = variant === 'presentation';
 
@@ -143,39 +142,14 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </div>
             )}
 
-            {/* Embed inline (YouTube/Spotify) — usa o player nativo do serviço */}
-            {currentTrack && detectStream(currentTrack.audio_url) && (() => {
-              const embed = toEmbedUrl(currentTrack.audio_url, { autoplay: isPlaying });
-              const kind = detectStream(currentTrack.audio_url);
-              if (!embed) return null;
-              const bustedSrc = `${embed}${embed.includes('?') ? '&' : '?'}_r=${reloadTick}`;
-              return (
-                <div className="rounded-lg overflow-hidden border border-gold/40 bg-black/50">
-                  <iframe
-                    key={`${currentTrack.id}-${reloadTick}`}
-                    src={bustedSrc}
-                    title={`Fundo — ${currentTrack.nome}`}
-                    className="w-full"
-                    style={{ height: kind === 'spotify' ? 152 : 170 }}
-                    allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
-                    allowFullScreen
-                  />
-                  <div className="flex items-center justify-between gap-2 py-1 px-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Controle no player {kind === 'spotify' ? 'do Spotify' : 'do YouTube'} acima.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setReloadTick((t) => t + 1)}
-                      className="text-[10px] text-gold hover:underline shrink-0"
-                      title="Recarregar player (Spotify às vezes retorna 'upstream request timeout')"
-                    >
-                      Recarregar
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+            {currentTrack && detectStream(currentTrack.audio_url) && (
+              <div className="rounded-lg border border-gold/30 bg-secondary/40 px-3 py-2">
+                <p className="truncate text-xs font-medium text-gold">{currentTrack.nome}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {isPlaying ? 'Tocando em segundo plano' : 'Pausado'}
+                </p>
+              </div>
+            )}
 
             {/* Progress / time — apenas para arquivos locais */}
             {currentTrack && !detectStream(currentTrack.audio_url) && (
