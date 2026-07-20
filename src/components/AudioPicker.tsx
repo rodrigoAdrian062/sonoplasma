@@ -70,7 +70,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
   };
 
   const togglePreview = (url: string) => {
-    if (isYouTubeUrl(url) || isSpotifyUrl(url)) {
+    if (isYouTubeUrl(url)) {
       window.open(url, '_blank');
       return;
     }
@@ -130,7 +130,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
       toast.error('Preencha nome e link');
       return;
     }
-    const tipo = isYouTubeUrl(newUrl) ? 'youtube' : isSpotifyUrl(newUrl) ? 'spotify' : 'external';
+    const tipo = isYouTubeUrl(newUrl) ? 'youtube' : 'external';
     try {
       await addAudio.mutateAsync({ nome: newName.trim(), audio_url: newUrl.trim(), tipo });
       if (!atMax) onChange([...audios, { nome: newName.trim(), audio_url: newUrl.trim() }]);
