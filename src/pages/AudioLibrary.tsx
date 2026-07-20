@@ -609,10 +609,6 @@ export default function AudioLibraryPage() {
                     {isDownloadingAll ? <Loader2 className="animate-spin mr-1" size={14} /> : <Download size={14} className="mr-1" />}
                     <span className="hidden sm:inline">{isDownloadingAll ? 'Baixando...' : 'Baixar'}</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowConverter(true)} title="Converter áudio/vídeo para MP3">
-                    <Music size={14} className="mr-1" />
-                    <span className="hidden sm:inline">Conversor MP3</span>
-                  </Button>
                 </>
               )}
             </div>
