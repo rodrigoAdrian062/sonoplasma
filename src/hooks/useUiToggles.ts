@@ -9,7 +9,8 @@ export type UiToggleKey =
   | 'btn_roteiro'
   | 'nav_biblioteca'
   | 'nav_roteiros'
-  | 'nav_youtube';
+  | 'nav_youtube'
+  | 'nav_conversor';
 
 const STORAGE_KEY = 'sonoplastia:uiToggles';
 const EVENT = 'sonoplastia:uiToggles:changed';
@@ -20,6 +21,7 @@ const DEFAULTS: Record<UiToggleKey, boolean> = {
   nav_biblioteca: true,
   nav_roteiros: true,
   nav_youtube: true,
+  nav_conversor: true,
 };
 
 function read(): Record<UiToggleKey, boolean> {
