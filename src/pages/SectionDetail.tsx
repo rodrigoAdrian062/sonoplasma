@@ -250,6 +250,83 @@ const SectionDetail = () => {
     }
   };
 
+  const TARGET_PER_STAGE = 6;
+  const handleAutoFillAll = async () => {
+    if (sectionStages.length === 0) { toast.info('Nenhuma etapa nesta seção'); return; }
+    if (libraryAudios.length === 0) { toast.error('Biblioteca de áudios está vazia'); return; }
+    setIsAutoFilling(true);
+    const toastId = toast.loading('Preenchendo etapas com IA...');
+    let totalAdded = 0;
+    let stagesUpdated = 0;
+    try {
+      for (const stage of sectionStages) {
+        const existing = audiosByStageId[stage.id] || [];
+        const need = TARGET_PER_STAGE - existing.length;
+        if (need <= 0) continue;
+
+        const existingUrls = new Set(existing.map((a) => a.audio_url));
+        const available = libraryAudios.filter((a) => !existingUrls.has(a.audio_url));
+        if (available.length === 0) continue;
+
+        // 1) Tenta IA
+        const picks: Array<{ nome: string; audio_url: string }> = [];
+        try {
+          const { data, error } = await supabaseClient.functions.invoke('suggest-audios', {
+            body: {
+              stageTitle: stage.nome_simbolico,
+              stageDescription: stage.descricao || '',
+              userHint: '',
+              limit: need,
+              library: available.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+            },
+          });
+          if (!error) {
+            const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+            for (const i of indices) {
+              const a = available[i];
+              if (a && !picks.some((p) => p.audio_url === a.audio_url)) {
+                picks.push({ nome: a.nome, audio_url: a.audio_url });
+                if (picks.length >= need) break;
+              }
+            }
+          }
+        } catch { /* fallback abaixo */ }
+
+        // 2) Completa com matcher local por similaridade de nome
+        if (picks.length < need) {
+          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
+          const local = matchAudiosForStage(stage, pool, need - picks.length);
+          for (const r of local) picks.push({ nome: r.audio.nome, audio_url: r.audio.audio_url });
+        }
+
+        // 3) Ainda faltando? completa aleatoriamente
+        if (picks.length < need) {
+          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
+          for (const a of pool) {
+            picks.push({ nome: a.nome, audio_url: a.audio_url });
+            if (picks.length >= need) break;
+          }
+        }
+
+        if (picks.length === 0) continue;
+
+        const merged = [
+          ...existing.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          ...picks,
+        ].slice(0, 10);
+
+        await saveAudios.mutateAsync({ etapa_id: stage.id, audios: merged });
+        totalAdded += picks.length;
+        stagesUpdated += 1;
+      }
+      toast.success(`${stagesUpdated} etapa(s) preenchida(s) — ${totalAdded} áudio(s) adicionado(s)`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao preencher: ${e?.message || 'desconhecido'}`, { id: toastId });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
   const handleDeleteStage = () => {
     if (deleteStageData) {
       if (currentStageId === deleteStageData.id) stop();
