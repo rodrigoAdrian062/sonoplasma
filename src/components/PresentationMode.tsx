@@ -384,17 +384,17 @@ export function PresentationMode({
 
   // Ajuste fino do volume (aos poucos)
   const handleVolumeFineUp = () => {
-    onVolumeChange(Math.min(1, Math.round((volume + 0.02) * 100) / 100));
+    onVolumeChange(Math.min(1, Math.round((volume + 0.01) * 100) / 100));
   };
 
   const handleVolumeFineDown = () => {
-    onVolumeChange(Math.max(0, Math.round((volume - 0.02) * 100) / 100));
+    onVolumeChange(Math.max(0, Math.round((volume - 0.01) * 100) / 100));
   };
 
   // Rolagem do mouse sobre o controle de volume
   const handleVolumeWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.02 : -0.02;
+    const delta = e.deltaY < 0 ? 0.01 : -0.01;
     onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
   };
 
@@ -467,7 +467,7 @@ export function PresentationMode({
         el = el.parentElement;
       }
       e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.02 : -0.02;
+      const delta = e.deltaY < 0 ? 0.01 : -0.01;
       onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
