@@ -26,8 +26,8 @@ export function QuickNav() {
   const isPresentation = useIsPresentationActive();
   const { toggles } = useUiToggles();
 
-  // Hide on the auth page or during presentation mode
-  if (location.pathname === '/auth' || isPresentation) return null;
+  // Hide on the auth page
+  if (location.pathname === '/auth') return null;
 
   const links = LINKS.filter((l) => !l.toggleKey || toggles[l.toggleKey]);
 
@@ -53,7 +53,13 @@ export function QuickNav() {
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onClick={() => navigate(link.to)}
+                onClick={() => {
+                  if (isPresentation) {
+                    window.open(link.to, '_blank', 'noopener');
+                  } else {
+                    navigate(link.to);
+                  }
+                }}
                 aria-label={link.label}
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-all',
