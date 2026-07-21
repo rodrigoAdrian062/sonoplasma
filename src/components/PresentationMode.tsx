@@ -394,7 +394,7 @@ export function PresentationMode({
   // Rolagem do mouse sobre o controle de volume
   const handleVolumeWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.02 : -0.02;
+    const delta = e.deltaY < 0 ? 0.01 : -0.01;
     onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
   };
 
