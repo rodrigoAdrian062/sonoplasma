@@ -30,6 +30,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+
 
 
 const FOLDER_COLORS = [
@@ -498,6 +500,17 @@ export default function AudioLibraryPage() {
     }
   };
 
+  const handleMoveToFolderDnd = async (audio: { id: string; nome: string }, folderId: string | null) => {
+    try {
+      await moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId });
+      const folderName = folders.find((f) => f.id === folderId)?.nome;
+      toast({ title: folderId ? `"${audio.nome}" movido para "${folderName}"` : `"${audio.nome}" removido da pasta` });
+    } catch {
+      toast({ title: 'Erro ao mover para a pasta', variant: 'destructive' });
+    }
+  };
+
+
   // Group stages by section for the dropdown
   const stagesBySection = sections.map(sec => ({
     section: sec,
@@ -811,33 +824,40 @@ export default function AudioLibraryPage() {
             <p className="text-sm mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
           </div>
         ) : (
-          <VirtualAudioList
-            audios={filteredAudios}
-            bulkDeleteMode={bulkDeleteMode}
-            selectedIds={selectedIds}
-            toggleSelectId={toggleSelectId}
-            playingId={playingId}
-            isPaused={isPaused}
-            audioCurrentTime={audioCurrentTime}
-            audioDuration={audioDuration}
-            handlePauseResume={handlePauseResume}
-            handleSeek={handleSeek}
-            handleSeekTo={handleSeekTo}
-            stopCurrentPlayback={stopCurrentPlayback}
-            deleteAudio={deleteAudio}
-            stages={stages}
-            folders={folders}
-            currentFolderId={currentFolderId}
-            moveAudioToFolder={moveAudioToFolder}
-            handleAddToStage={handleAddToStage}
-            stagesBySection={stagesBySection}
-            unassignedStages={unassignedStages}
-            isYouTubeUrl={isYouTubeUrl}
-            formatFileSize={formatFileSize}
-            audioUsageMap={audioUsageMap}
-          />
+          <AudioDndZone
+            accent="green"
+            onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
+            onMoveToFolder={(a, fid) => handleMoveToFolderDnd(a, fid)}
+          >
+            <VirtualAudioList
+              audios={filteredAudios}
+              bulkDeleteMode={bulkDeleteMode}
+              selectedIds={selectedIds}
+              toggleSelectId={toggleSelectId}
+              playingId={playingId}
+              isPaused={isPaused}
+              audioCurrentTime={audioCurrentTime}
+              audioDuration={audioDuration}
+              handlePauseResume={handlePauseResume}
+              handleSeek={handleSeek}
+              handleSeekTo={handleSeekTo}
+              stopCurrentPlayback={stopCurrentPlayback}
+              deleteAudio={deleteAudio}
+              stages={stages}
+              folders={folders}
+              currentFolderId={currentFolderId}
+              moveAudioToFolder={moveAudioToFolder}
+              handleAddToStage={handleAddToStage}
+              stagesBySection={stagesBySection}
+              unassignedStages={unassignedStages}
+              isYouTubeUrl={isYouTubeUrl}
+              formatFileSize={formatFileSize}
+              audioUsageMap={audioUsageMap}
+            />
+          </AudioDndZone>
         )}
       </main>
+
     </div>
   );
 }
