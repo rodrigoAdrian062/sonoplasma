@@ -17,7 +17,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, BookOpen } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2 } from 'lucide-react';
+import { matchAudiosForStage } from '@/lib/autoMatchAudios';
+import { toast } from 'sonner';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
