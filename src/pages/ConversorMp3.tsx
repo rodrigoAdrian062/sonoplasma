@@ -127,8 +127,15 @@ export default function ConversorMp3() {
             {BROWSERS.map((b) => (
               <button
                 key={b.id}
-                onClick={() => openIn(b)}
-                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-secondary/40 p-5 transition-all hover:scale-[1.02] hover:border-gold/60 hover:bg-secondary"
+                onClick={() => {
+                  setSelectedBrowser(b.id);
+                  setSplit(true);
+                }}
+                className={`group flex flex-col items-center gap-3 rounded-xl border p-5 transition-all hover:scale-[1.02] hover:bg-secondary ${
+                  selectedBrowser === b.id && split
+                    ? 'border-gold bg-secondary'
+                    : 'border-border bg-secondary/40 hover:border-gold/60'
+                }`}
                 style={{ boxShadow: `inset 0 0 0 1px ${b.color}20` }}
               >
                 <img
@@ -142,7 +149,7 @@ export default function ConversorMp3() {
                   className="inline-flex items-center gap-1 text-xs"
                   style={{ color: b.color }}
                 >
-                  Abrir <ExternalLink className="h-3 w-3" />
+                  {selectedBrowser === b.id && split ? 'Ativo' : 'Abrir aqui'}
                 </span>
               </button>
             ))}
