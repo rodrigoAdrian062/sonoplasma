@@ -21,7 +21,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const RoteiroPage = lazy(() => import("./pages/RoteiroPage"));
 const RoteirosLibrary = lazy(() => import("./pages/RoteirosLibrary"));
-const ConversorMp3 = lazy(() => import("./pages/ConversorMp3"));
+
 
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
@@ -130,14 +130,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ErrorBoundary context="RoteirosLibrary"><RoteirosLibrary /></ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/conversor-mp3"
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="ConversorMp3"><ConversorMp3 /></ErrorBoundary>
                 </ProtectedRoute>
               }
             />
