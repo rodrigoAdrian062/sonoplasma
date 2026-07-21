@@ -17,7 +17,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, BookOpen } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2 } from 'lucide-react';
+import { matchAudiosForStage } from '@/lib/autoMatchAudios';
+import { toast } from 'sonner';
+import { supabase as supabaseClient } from '@/integrations/supabase/client';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
@@ -88,6 +91,7 @@ const SectionDetail = () => {
   const [isNewStageModal, setIsNewStageModal] = useState(false);
   const [deleteStageData, setDeleteStageData] = useState<CeremonyStage | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
   const { toggles } = useUiToggles();
   const [showExitDialog, setShowExitDialog] = useState(false);
   const pendingNavRef = useRef<(() => void) | null>(null);
@@ -246,6 +250,83 @@ const SectionDetail = () => {
     }
   };
 
+  const TARGET_PER_STAGE = 6;
+  const handleAutoFillAll = async () => {
+    if (sectionStages.length === 0) { toast.info('Nenhuma etapa nesta seção'); return; }
+    if (libraryAudios.length === 0) { toast.error('Biblioteca de áudios está vazia'); return; }
+    setIsAutoFilling(true);
+    const toastId = toast.loading('Preenchendo etapas com IA...');
+    let totalAdded = 0;
+    let stagesUpdated = 0;
+    try {
+      for (const stage of sectionStages) {
+        const existing = audiosByStageId[stage.id] || [];
+        const need = TARGET_PER_STAGE - existing.length;
+        if (need <= 0) continue;
+
+        const existingUrls = new Set(existing.map((a) => a.audio_url));
+        const available = libraryAudios.filter((a) => !existingUrls.has(a.audio_url));
+        if (available.length === 0) continue;
+
+        // 1) Tenta IA
+        const picks: Array<{ nome: string; audio_url: string }> = [];
+        try {
+          const { data, error } = await supabaseClient.functions.invoke('suggest-audios', {
+            body: {
+              stageTitle: stage.nome_simbolico,
+              stageDescription: stage.descricao || '',
+              userHint: '',
+              limit: need,
+              library: available.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+            },
+          });
+          if (!error) {
+            const indices: number[] = Array.isArray(data?.indices) ? data.indices : [];
+            for (const i of indices) {
+              const a = available[i];
+              if (a && !picks.some((p) => p.audio_url === a.audio_url)) {
+                picks.push({ nome: a.nome, audio_url: a.audio_url });
+                if (picks.length >= need) break;
+              }
+            }
+          }
+        } catch { /* fallback abaixo */ }
+
+        // 2) Completa com matcher local por similaridade de nome
+        if (picks.length < need) {
+          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
+          const local = matchAudiosForStage(stage, pool, need - picks.length);
+          for (const r of local) picks.push({ nome: r.audio.nome, audio_url: r.audio.audio_url });
+        }
+
+        // 3) Ainda faltando? completa aleatoriamente
+        if (picks.length < need) {
+          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
+          for (const a of pool) {
+            picks.push({ nome: a.nome, audio_url: a.audio_url });
+            if (picks.length >= need) break;
+          }
+        }
+
+        if (picks.length === 0) continue;
+
+        const merged = [
+          ...existing.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          ...picks,
+        ].slice(0, 10);
+
+        await saveAudios.mutateAsync({ etapa_id: stage.id, audios: merged });
+        totalAdded += picks.length;
+        stagesUpdated += 1;
+      }
+      toast.success(`${stagesUpdated} etapa(s) preenchida(s) — ${totalAdded} áudio(s) adicionado(s)`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao preencher: ${e?.message || 'desconhecido'}`, { id: toastId });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
   const handleDeleteStage = () => {
     if (deleteStageData) {
       if (currentStageId === deleteStageData.id) stop();
@@ -393,6 +474,20 @@ const SectionDetail = () => {
               >
                 <Presentation size={16} />
                 <span className="hidden sm:inline">Apresentar</span>
+              </Button>
+            )}
+
+            {sectionStages.length > 0 && (
+              <Button
+                onClick={handleAutoFillAll}
+                disabled={isAutoFilling}
+                size="sm"
+                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                variant="outline"
+                title="Preencher todas as etapas desta seção com até 6 áudios (mantém os já escolhidos)"
+              >
+                {isAutoFilling ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                <span className="hidden sm:inline">Preencher 6 (IA)</span>
               </Button>
             )}
 
