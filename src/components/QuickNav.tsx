@@ -53,13 +53,7 @@ export function QuickNav() {
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onClick={() => {
-                  if (isPresentation) {
-                    window.open(link.to, '_blank', 'noopener');
-                  } else {
-                    navigate(link.to);
-                  }
-                }}
+                onClick={() => navigate(link.to)}
                 aria-label={link.label}
                 className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-all',
