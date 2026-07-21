@@ -467,7 +467,7 @@ export function PresentationMode({
         el = el.parentElement;
       }
       e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.02 : -0.02;
+      const delta = e.deltaY < 0 ? 0.01 : -0.01;
       onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
