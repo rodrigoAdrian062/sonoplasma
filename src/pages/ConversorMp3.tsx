@@ -42,6 +42,7 @@ export default function ConversorMp3() {
   const navigate = useNavigate();
   const [split, setSplit] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const [selectedBrowser, setSelectedBrowser] = useState<BrowserOption['id']>('chrome');
 
   useEffect(() => {
     document.title = 'Conversor MP3 | Sonoplasma';
