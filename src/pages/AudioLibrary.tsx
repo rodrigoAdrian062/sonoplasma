@@ -935,6 +935,8 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                 paddingBottom: 8,
               }}
             >
+              <DraggableAudioRow audio={{ id: audio.id, nome: audio.nome, audio_url: audio.audio_url }}>
+                {({ handleProps }) => (
               <div
                 className={cn(
                   'flex items-center gap-3 p-3 sm:p-4 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
@@ -943,11 +945,13 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                 )}
                 onClick={bulkDeleteMode ? () => toggleSelectId(audio.id) : undefined}
               >
+                {!bulkDeleteMode && <DragHandle handleProps={handleProps} className="-ml-1" />}
                 {bulkDeleteMode && (
                   <Checkbox
                     checked={selectedIds.has(audio.id)}
                     onCheckedChange={() => toggleSelectId(audio.id)}
                     onClick={(e) => e.stopPropagation()}
+
                   />
                 )}
                 <div className="p-2 bg-gold/10 rounded-lg shrink-0">
