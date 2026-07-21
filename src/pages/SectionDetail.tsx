@@ -265,10 +265,25 @@ const SectionDetail = () => {
         if (need <= 0) continue;
 
         const existingUrls = new Set(existing.map((a) => a.audio_url));
-        const available = libraryAudios.filter((a) => !existingUrls.has(a.audio_url));
-        if (available.length === 0) continue;
+        const isYt = (u: string) => {
+          const s = (u || '').toLowerCase();
+          return s.includes('youtube.com') || s.includes('youtu.be');
+        };
+        const availableAll = libraryAudios.filter((a) => !existingUrls.has(a.audio_url));
+        if (availableAll.length === 0) continue;
 
-        // 1) Tenta IA
+        // Intercala Arquivos e YouTube para garantir que ambos apareçam
+        // dentro do limite enviado à IA (evita YouTube ser cortado).
+        const localOnly = availableAll.filter((a) => !isYt(a.audio_url));
+        const ytOnly = availableAll.filter((a) => isYt(a.audio_url));
+        const available: typeof availableAll = [];
+        const maxLen = Math.max(localOnly.length, ytOnly.length);
+        for (let i = 0; i < maxLen; i++) {
+          if (localOnly[i]) available.push(localOnly[i]);
+          if (ytOnly[i]) available.push(ytOnly[i]);
+        }
+
+        // 1) Tenta IA (biblioteca inclui Arquivos + YouTube)
         const picks: Array<{ nome: string; audio_url: string }> = [];
         try {
           const { data, error } = await supabaseClient.functions.invoke('suggest-audios', {
@@ -292,18 +307,31 @@ const SectionDetail = () => {
           }
         } catch { /* fallback abaixo */ }
 
-        // 2) Completa com matcher local por similaridade de nome
+        // 2) Completa com matcher local (nome). Roda 2x: Arquivos e YouTube.
         if (picks.length < need) {
-          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
-          const local = matchAudiosForStage(stage, pool, need - picks.length);
-          for (const r of local) picks.push({ nome: r.audio.nome, audio_url: r.audio.audio_url });
+          const usedUrls = new Set(picks.map((p) => p.audio_url));
+          const localMatch = matchAudiosForStage(
+            stage,
+            localOnly.filter((a) => !usedUrls.has(a.audio_url)),
+            Math.ceil((need - picks.length) / 2),
+          );
+          const ytMatch = matchAudiosForStage(
+            stage,
+            ytOnly.filter((a) => !usedUrls.has(a.audio_url)),
+            need - picks.length - localMatch.length,
+          );
+          for (const r of [...localMatch, ...ytMatch]) {
+            picks.push({ nome: r.audio.nome, audio_url: r.audio.audio_url });
+          }
         }
 
-        // 3) Ainda faltando? completa aleatoriamente
+        // 3) Ainda faltando? completa aleatoriamente intercalando fontes
         if (picks.length < need) {
-          const pool = available.filter((a) => !picks.some((p) => p.audio_url === a.audio_url));
-          for (const a of pool) {
+          const usedUrls = new Set(picks.map((p) => p.audio_url));
+          for (const a of available) {
+            if (usedUrls.has(a.audio_url)) continue;
             picks.push({ nome: a.nome, audio_url: a.audio_url });
+            usedUrls.add(a.audio_url);
             if (picks.length >= need) break;
           }
         }
@@ -319,7 +347,7 @@ const SectionDetail = () => {
         totalAdded += picks.length;
         stagesUpdated += 1;
       }
-      toast.success(`${stagesUpdated} etapa(s) preenchida(s) — ${totalAdded} áudio(s) adicionado(s)`, { id: toastId });
+      toast.success(`${stagesUpdated} etapa(s) preenchida(s) — ${totalAdded} áudio(s) (Arquivos + YouTube)`, { id: toastId });
     } catch (e: any) {
       toast.error(`Erro ao preencher: ${e?.message || 'desconhecido'}`, { id: toastId });
     } finally {
