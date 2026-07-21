@@ -1111,7 +1111,10 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                   </div>
                 )}
               </div>
+                )}
+              </DraggableAudioRow>
             </div>
+
           );
         })}
       </div>
