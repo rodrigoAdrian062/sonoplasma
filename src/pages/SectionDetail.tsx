@@ -477,6 +477,20 @@ const SectionDetail = () => {
               </Button>
             )}
 
+            {sectionStages.length > 0 && (
+              <Button
+                onClick={handleAutoFillAll}
+                disabled={isAutoFilling}
+                size="sm"
+                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
+                variant="outline"
+                title="Preencher todas as etapas desta seção com até 6 áudios (mantém os já escolhidos)"
+              >
+                {isAutoFilling ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                <span className="hidden sm:inline">Preencher 6 (IA)</span>
+              </Button>
+            )}
+
             <Button
               onClick={() => setIsNewStageModal(true)}
               size="sm"
