@@ -62,6 +62,11 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
   return (
     <>
       <div
+        onWheel={(e) => {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 0.02 : -0.02;
+          setVolume(Math.max(0, Math.min(1, volume + delta)));
+        }}
         className={cn(
           'flex items-center gap-1 rounded-full border-2 backdrop-blur-xl transition-colors shadow-lg shadow-black/40 ring-1 ring-gold/20',
           isPresentation
@@ -70,7 +75,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
           isPlaying && 'border-gold shadow-gold/20',
           compact && 'scale-90'
         )}
-        title="Música de fundo"
+        title={`Música de fundo — role o mouse para ajustar volume (${Math.round(volume * 100)}%)`}
       >
 
         <Popover open={expanded} onOpenChange={setExpanded}>
