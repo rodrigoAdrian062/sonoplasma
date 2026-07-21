@@ -190,19 +190,24 @@ export default function ConversorMp3() {
                 cvmp3.com/pt/
               </span>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Abrir em:</span>
-                {BROWSERS.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => openIn(b)}
-                    title={`Abrir no ${b.name}`}
-                    aria-label={`Abrir no ${b.name}`}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background/60 transition hover:scale-110 hover:border-gold/60"
-                    style={{ boxShadow: `inset 0 0 0 1px ${b.color}30` }}
-                  >
-                    <img src={b.logo} alt={b.name} className="h-4 w-4" loading="lazy" />
-                  </button>
-                ))}
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Navegador:</span>
+                {BROWSERS.map((b) => {
+                  const active = selectedBrowser === b.id;
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => setSelectedBrowser(b.id)}
+                      title={b.name}
+                      aria-label={b.name}
+                      className={`flex h-7 w-7 items-center justify-center rounded-md border transition hover:scale-110 ${
+                        active ? 'border-gold bg-gold/10' : 'border-border bg-background/60 hover:border-gold/60'
+                      }`}
+                      style={{ boxShadow: `inset 0 0 0 1px ${b.color}30` }}
+                    >
+                      <img src={b.logo} alt={b.name} className="h-4 w-4" loading="lazy" />
+                    </button>
+                  );
+                })}
                 <div className="mx-1 h-4 w-px bg-border" />
                 <Button
                   variant="ghost"
