@@ -64,7 +64,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
       <div
         onWheel={(e) => {
           e.preventDefault();
-          const delta = e.deltaY < 0 ? 0.02 : -0.02;
+          const delta = e.deltaY < 0 ? 0.01 : -0.01;
           setVolume(Math.max(0, Math.min(1, volume + delta)));
         }}
         className={cn(
