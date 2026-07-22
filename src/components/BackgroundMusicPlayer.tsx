@@ -132,12 +132,26 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                     key={t.id}
                     className={cn(
                       'group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer',
-                      i === currentIndex ? 'bg-gold/10 text-gold' : 'hover:bg-secondary/60'
+                      i === currentIndex ? 'bg-gold/10 text-gold' : 'hover:bg-secondary/60',
+                      t.disabled && 'opacity-40'
                     )}
-                    onClick={() => play(i)}
+                    onClick={() => !t.disabled && play(i)}
                   >
                     <span className="text-[10px] font-mono w-4 text-right opacity-60">{i + 1}</span>
-                    <span className="text-xs truncate flex-1">{t.nome}</span>
+                    <span className={cn('text-xs truncate flex-1', t.disabled && 'line-through')}>{t.nome}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleTrackEnabled(t.id); }}
+                      className={cn(
+                        'p-0.5 transition-colors',
+                        t.disabled
+                          ? 'text-muted-foreground/60 hover:text-gold opacity-100'
+                          : 'text-muted-foreground hover:text-gold opacity-0 group-hover:opacity-100'
+                      )}
+                      aria-label={t.disabled ? 'Ativar faixa' : 'Desativar faixa'}
+                      title={t.disabled ? 'Ativar faixa' : 'Desativar (pular sem excluir)'}
+                    >
+                      {t.disabled ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); removeTrack(t.id); }}
                       className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-destructive"
