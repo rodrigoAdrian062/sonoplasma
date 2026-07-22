@@ -207,6 +207,23 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               </span>
             </div>
 
+            {/* Crossfade entre faixas */}
+            <div className="space-y-1 pt-2 border-t border-border/40">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>Crossfade entre faixas</span>
+                <span className="font-mono">
+                  {crossfadeMs === 0 ? 'Desligado' : `${(crossfadeMs / 1000).toFixed(1)}s`}
+                </span>
+              </div>
+              <Slider
+                value={[crossfadeMs]}
+                min={0}
+                max={10000}
+                step={500}
+                onValueChange={([v]) => setCrossfadeMs(v)}
+              />
+            </div>
+
             {/* Max duration cutoff */}
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
               <div className="flex flex-col">
