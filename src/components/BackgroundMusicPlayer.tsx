@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Plus, Volume2, Music2, X, ListMusic, ChevronDown } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Plus, Volume2, Music2, X, ListMusic, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -52,6 +52,9 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     currentTime,
     duration,
     seek,
+    crossfadeMs,
+    setCrossfadeMs,
+    toggleTrackEnabled,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
@@ -129,12 +132,26 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                     key={t.id}
                     className={cn(
                       'group flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer',
-                      i === currentIndex ? 'bg-gold/10 text-gold' : 'hover:bg-secondary/60'
+                      i === currentIndex ? 'bg-gold/10 text-gold' : 'hover:bg-secondary/60',
+                      t.disabled && 'opacity-40'
                     )}
-                    onClick={() => play(i)}
+                    onClick={() => !t.disabled && play(i)}
                   >
                     <span className="text-[10px] font-mono w-4 text-right opacity-60">{i + 1}</span>
-                    <span className="text-xs truncate flex-1">{t.nome}</span>
+                    <span className={cn('text-xs truncate flex-1', t.disabled && 'line-through')}>{t.nome}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleTrackEnabled(t.id); }}
+                      className={cn(
+                        'p-0.5 transition-colors',
+                        t.disabled
+                          ? 'text-muted-foreground/60 hover:text-gold opacity-100'
+                          : 'text-muted-foreground hover:text-gold opacity-0 group-hover:opacity-100'
+                      )}
+                      aria-label={t.disabled ? 'Ativar faixa' : 'Desativar faixa'}
+                      title={t.disabled ? 'Ativar faixa' : 'Desativar (pular sem excluir)'}
+                    >
+                      {t.disabled ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); removeTrack(t.id); }}
                       className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-destructive"
@@ -188,6 +205,23 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
               <span className="text-[10px] font-mono w-8 text-right text-muted-foreground">
                 {Math.round(volume * 100)}%
               </span>
+            </div>
+
+            {/* Crossfade entre faixas */}
+            <div className="space-y-1 pt-2 border-t border-border/40">
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>Crossfade entre faixas</span>
+                <span className="font-mono">
+                  {crossfadeMs === 0 ? 'Desligado' : `${(crossfadeMs / 1000).toFixed(1)}s`}
+                </span>
+              </div>
+              <Slider
+                value={[crossfadeMs]}
+                min={0}
+                max={10000}
+                step={500}
+                onValueChange={([v]) => setCrossfadeMs(v)}
+              />
             </div>
 
             {/* Max duration cutoff */}
