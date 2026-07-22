@@ -8,6 +8,7 @@ export interface BackgroundTrack {
   id: string;
   nome: string;
   audio_url: string;
+  disabled?: boolean;
 }
 
 export type AutoDuckMode = 'pause' | 'duck';
@@ -21,11 +22,14 @@ interface BackgroundMusicContextValue {
   autoPauseEnabled: boolean;
   wasAutoPaused: boolean;
   autoMode: AutoDuckMode;
-  duckVolume: number; // 0..1 target volume when ducking
-  fadeMs: number;    // fade duration in ms
+  duckVolume: number;
+  fadeMs: number;
   isDucking: boolean;
+  crossfadeMs: number;
+  setCrossfadeMs: (v: number) => void;
   addTrack: (t: BackgroundTrack) => void;
   removeTrack: (id: string) => void;
+  toggleTrackEnabled: (id: string) => void;
   clearPlaylist: () => void;
   play: (index?: number) => void;
   pause: () => void;
@@ -37,9 +41,9 @@ interface BackgroundMusicContextValue {
   setAutoMode: (m: AutoDuckMode) => void;
   setDuckVolume: (v: number) => void;
   setFadeMs: (v: number) => void;
-  maxDurationSec: number; // 0 = sem limite
+  maxDurationSec: number;
   setMaxDurationSec: (v: number) => void;
-  resumeDelayMs: number; // atraso antes de retomar/restaurar após etapa parar
+  resumeDelayMs: number;
   setResumeDelayMs: (v: number) => void;
   currentTime: number;
   duration: number;
@@ -54,12 +58,22 @@ const DUCK_KEY = 'bg-music-duck-volume-v1';
 const FADE_KEY = 'bg-music-fade-ms-v1';
 const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
 const RESUME_DELAY_KEY = 'bg-music-resume-delay-ms-v1';
+const CROSSFADE_KEY = 'bg-music-crossfade-ms-v1';
 
 const Ctx = createContext<BackgroundMusicContextValue | null>(null);
 
 function isStreamingUrl(url: string): boolean {
   const u = (url || '').toLowerCase();
   return u.includes('youtube.com') || u.includes('youtu.be');
+}
+
+function findNextEnabled(pl: BackgroundTrack[], from: number, dir: 1 | -1 = 1): number {
+  if (pl.length === 0) return -1;
+  for (let i = 1; i <= pl.length; i++) {
+    const idx = ((from + i * dir) % pl.length + pl.length) % pl.length;
+    if (!pl[idx].disabled) return idx;
+  }
+  return -1;
 }
 
 export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
@@ -100,6 +114,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const v = parseInt(safeRead(RESUME_DELAY_KEY) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
+  const [crossfadeMs, setCrossfadeMsState] = useState<number>(() => {
+    const v = parseInt(safeRead(CROSSFADE_KEY) || '3000', 10);
+    return isNaN(v) ? 3000 : v;
+  });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
   const [isDucking, setIsDucking] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -110,58 +128,140 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     src: string;
   } | null>(null);
 
+  // Dois elementos de áudio para crossfade. audioRef aponta para o "ativo".
+  const audioARef = useRef<HTMLAudioElement | null>(null);
+  const audioBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
   const streamFrameRef = useRef<typeof streamFrame>(null);
   const wasAutoPausedRef = useRef(false);
   const isDuckingRef = useRef(false);
   const fadeRafRef = useRef<number | null>(null);
+  const crossfadeRafRef = useRef<number | null>(null);
+  const crossfadingRef = useRef(false);
   const playlistRef = useRef<BackgroundTrack[]>(playlist);
   const currentIndexRef = useRef(currentIndex);
   const playRequestRef = useRef(0);
-  // Reflete a intenção do usuário — usado no handleEnded para não retomar
-  // uma faixa que foi pausada exatamente quando a anterior terminou.
   const wantsToPlayRef = useRef(false);
+  const crossfadeMsRef = useRef(crossfadeMs);
+  const volumeRef = useRef(volume);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
+  useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
-  // Init audio element
+  const cancelCrossfade = useCallback(() => {
+    if (crossfadeRafRef.current) {
+      cancelAnimationFrame(crossfadeRafRef.current);
+      crossfadeRafRef.current = null;
+    }
+    crossfadingRef.current = false;
+    // Pause the inactive one to prevent double playback
+    const inactive = audioRef.current === audioARef.current ? audioBRef.current : audioARef.current;
+    try { inactive?.pause(); } catch { /* noop */ }
+  }, []);
+
+  const swapActive = useCallback(() => {
+    audioRef.current = audioRef.current === audioARef.current ? audioBRef.current : audioARef.current;
+  }, []);
+
+  const startCrossfade = useCallback((toIdx: number) => {
+    const active = audioRef.current;
+    if (!active) return;
+    const pl = playlistRef.current;
+    const track = pl[toIdx];
+    if (!track || isStreamingUrl(track.audio_url)) return;
+    const other = active === audioARef.current ? audioBRef.current : audioARef.current;
+    if (!other) return;
+    const dur = crossfadeMsRef.current;
+    if (dur <= 0) return;
+
+    crossfadingRef.current = true;
+    try {
+      other.src = track.audio_url;
+      other.currentTime = 0;
+      other.volume = 0;
+      other.play().catch(() => { crossfadingRef.current = false; });
+    } catch { crossfadingRef.current = false; return; }
+
+    const startA = active.volume;
+    const targetB = isDuckingRef.current ? duckVolume : volumeRef.current;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / dur);
+      try {
+        active.volume = Math.max(0, startA * (1 - p));
+        other.volume = Math.max(0, Math.min(1, targetB * p));
+      } catch { /* noop */ }
+      if (p < 1 && crossfadingRef.current) {
+        crossfadeRafRef.current = requestAnimationFrame(step);
+      } else {
+        crossfadeRafRef.current = null;
+        try { active.pause(); active.currentTime = 0; } catch { /* noop */ }
+        try { active.volume = volumeRef.current; } catch { /* noop */ }
+        // Swap
+        audioRef.current = other;
+        currentIndexRef.current = toIdx;
+        setCurrentIndex(toIdx);
+        crossfadingRef.current = false;
+      }
+    };
+    crossfadeRafRef.current = requestAnimationFrame(step);
+  }, [duckVolume]);
+
+  // Init audio elements
   useEffect(() => {
-    const a = new Audio();
-    a.loop = false;
-    a.preload = 'auto';
-    a.volume = volume;
+    const makeAudio = () => {
+      const a = new Audio();
+      a.loop = false;
+      a.preload = 'auto';
+      a.volume = volume;
+      registerAudioElement(a);
+      return a;
+    };
+    const a = makeAudio();
+    const b = makeAudio();
+    audioARef.current = a;
+    audioBRef.current = b;
     audioRef.current = a;
-    registerAudioElement(a);
-    const handleEnded = () => {
+
+    const handleEnded = (e: Event) => {
+      const el = e.target as HTMLAudioElement;
+      // Se este elemento não é mais o ativo (crossfade concluiu), ignore.
+      if (el !== audioRef.current) return;
       const pl = playlistRef.current;
       if (pl.length === 0) return;
-      // Bug corrigido: se o usuário pausou justo quando a faixa acabou,
-      // handleEnded reiniciava/avançava mesmo assim. Agora respeita a intenção.
       if (!wantsToPlayRef.current) return;
-      if (pl.length === 1) {
-        try {
-          a.currentTime = 0;
-          a.play().catch(() => undefined);
-        } catch {
-          setIsPlaying(false);
-        }
+      const enabled = pl.filter((t) => !t.disabled);
+      if (enabled.length === 0) return;
+      if (enabled.length === 1 && !pl[currentIndexRef.current].disabled) {
+        try { el.currentTime = 0; el.play().catch(() => undefined); }
+        catch { setIsPlaying(false); }
         return;
       }
-      const nextIdx = (currentIndexRef.current + 1) % pl.length;
+      const nextIdx = findNextEnabled(pl, currentIndexRef.current, 1);
+      if (nextIdx < 0) return;
       currentIndexRef.current = nextIdx;
       setCurrentIndex(nextIdx);
       const track = pl[nextIdx];
-      if (track) {
-        a.src = track.audio_url;
-        a.play().catch(() => undefined);
+      if (track && !isStreamingUrl(track.audio_url)) {
+        el.src = track.audio_url;
+        el.play().catch(() => undefined);
       }
     };
-    const handlePlay = () => { wantsToPlayRef.current = true; setIsPlaying(true); };
-    const handlePause = () => setIsPlaying(false);
-    const handleError = () => {
+    const handlePlay = (e: Event) => {
+      if ((e.target as HTMLAudioElement) !== audioRef.current) return;
+      wantsToPlayRef.current = true; setIsPlaying(true);
+    };
+    const handlePause = (e: Event) => {
+      if ((e.target as HTMLAudioElement) !== audioRef.current) return;
+      if (crossfadingRef.current) return;
+      setIsPlaying(false);
+    };
+    const handleError = (e: Event) => {
+      if ((e.target as HTMLAudioElement) !== audioRef.current) return;
       setIsPlaying(false);
       toast({
         title: 'Não foi possível tocar a música de fundo',
@@ -169,32 +269,34 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         variant: 'destructive',
       });
     };
-    a.addEventListener('ended', handleEnded);
-    a.addEventListener('play', handlePlay);
-    a.addEventListener('pause', handlePause);
-    a.addEventListener('error', handleError);
+    [a, b].forEach((el) => {
+      el.addEventListener('ended', handleEnded);
+      el.addEventListener('play', handlePlay);
+      el.addEventListener('pause', handlePause);
+      el.addEventListener('error', handleError);
+    });
 
     return () => {
-      a.removeEventListener('ended', handleEnded);
-      a.removeEventListener('play', handlePlay);
-      a.removeEventListener('pause', handlePause);
-      a.removeEventListener('error', handleError);
-      a.pause();
+      [a, b].forEach((el) => {
+        el.removeEventListener('ended', handleEnded);
+        el.removeEventListener('play', handlePlay);
+        el.removeEventListener('pause', handlePause);
+        el.removeEventListener('error', handleError);
+        el.pause();
+      });
       if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
+      if (crossfadeRafRef.current) cancelAnimationFrame(crossfadeRafRef.current);
     };
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist (silencioso se localStorage indisponível — Safari privado/quota)
   const safeWrite = (key: string, value: string) => {
     try { localStorage.setItem(key, value); } catch { /* noop */ }
   };
   useEffect(() => { safeWrite(STORAGE_KEY, JSON.stringify(playlist)); }, [playlist]);
   useEffect(() => {
     safeWrite(VOLUME_KEY, String(volume));
-    // If not ducking, sync element volume directly
-    if (audioRef.current && !isDuckingRef.current) audioRef.current.volume = volume;
+    if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = volume;
   }, [volume]);
   useEffect(() => { safeWrite(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
   useEffect(() => { safeWrite(MODE_KEY, autoMode); }, [autoMode]);
@@ -202,6 +304,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => { safeWrite(FADE_KEY, String(fadeMs)); }, [fadeMs]);
   useEffect(() => { safeWrite(MAX_DUR_KEY, String(maxDurationSec)); }, [maxDurationSec]);
   useEffect(() => { safeWrite(RESUME_DELAY_KEY, String(resumeDelayMs)); }, [resumeDelayMs]);
+  useEffect(() => { safeWrite(CROSSFADE_KEY, String(crossfadeMs)); }, [crossfadeMs]);
 
   const postStreamCommand = useCallback((command: 'play' | 'pause') => {
     const frame = streamIframeRef.current;
@@ -227,38 +330,69 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  // Enforce max duration cutoff (loops or advances)
+  // Enforce max duration cutoff & crossfade trigger
   const maxDurationRef = useRef(maxDurationSec);
   useEffect(() => { maxDurationRef.current = maxDurationSec; }, [maxDurationSec]);
   useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onTimeUpdate = () => {
-      setCurrentTime(a.currentTime || 0);
+    const els = [audioARef.current, audioBRef.current].filter(Boolean) as HTMLAudioElement[];
+    const onTimeUpdate = (e: Event) => {
+      const el = e.target as HTMLAudioElement;
+      if (el !== audioRef.current) return;
+      setCurrentTime(el.currentTime || 0);
+      const pl = playlistRef.current;
       const limit = maxDurationRef.current;
-      if (limit > 0 && wantsToPlayRef.current && !a.paused && a.currentTime >= limit) {
-        const pl = playlistRef.current;
-        if (pl.length <= 1) {
-          try { a.currentTime = 0; a.play().catch(() => undefined); } catch { /* noop */ }
+      const xfade = crossfadeMsRef.current;
+      const dur = isFinite(el.duration) ? el.duration : 0;
+      const enabled = pl.filter((t) => !t.disabled).length;
+
+      // Corte manual (maxDuration): hard cut, avança/reinicia
+      if (limit > 0 && wantsToPlayRef.current && !el.paused && el.currentTime >= limit) {
+        if (enabled <= 1) {
+          try { el.currentTime = 0; el.play().catch(() => undefined); } catch { /* noop */ }
         } else {
-          const nextIdx = (currentIndexRef.current + 1) % pl.length;
-          currentIndexRef.current = nextIdx;
-          setCurrentIndex(nextIdx);
-          const track = pl[nextIdx];
-          if (track) { a.src = track.audio_url; a.play().catch(() => undefined); }
+          const nextIdx = findNextEnabled(pl, currentIndexRef.current, 1);
+          if (nextIdx >= 0) {
+            currentIndexRef.current = nextIdx;
+            setCurrentIndex(nextIdx);
+            const track = pl[nextIdx];
+            if (track && !isStreamingUrl(track.audio_url)) {
+              el.src = track.audio_url; el.play().catch(() => undefined);
+            }
+          }
+        }
+        return;
+      }
+
+      // Crossfade: quando faltar < xfade e houver próxima faixa habilitada
+      if (
+        xfade > 0 && dur > 0 && enabled > 1 && !crossfadingRef.current &&
+        wantsToPlayRef.current && !el.paused &&
+        (dur - el.currentTime) * 1000 <= xfade
+      ) {
+        const nextIdx = findNextEnabled(pl, currentIndexRef.current, 1);
+        if (nextIdx >= 0 && nextIdx !== currentIndexRef.current) {
+          startCrossfade(nextIdx);
         }
       }
     };
-    const onLoaded = () => setDuration(isFinite(a.duration) ? a.duration : 0);
-    a.addEventListener('timeupdate', onTimeUpdate);
-    a.addEventListener('loadedmetadata', onLoaded);
-    a.addEventListener('durationchange', onLoaded);
-    return () => {
-      a.removeEventListener('timeupdate', onTimeUpdate);
-      a.removeEventListener('loadedmetadata', onLoaded);
-      a.removeEventListener('durationchange', onLoaded);
+    const onLoaded = (e: Event) => {
+      const el = e.target as HTMLAudioElement;
+      if (el !== audioRef.current) return;
+      setDuration(isFinite(el.duration) ? el.duration : 0);
     };
-  }, []);
+    els.forEach((el) => {
+      el.addEventListener('timeupdate', onTimeUpdate);
+      el.addEventListener('loadedmetadata', onLoaded);
+      el.addEventListener('durationchange', onLoaded);
+    });
+    return () => {
+      els.forEach((el) => {
+        el.removeEventListener('timeupdate', onTimeUpdate);
+        el.removeEventListener('loadedmetadata', onLoaded);
+        el.removeEventListener('durationchange', onLoaded);
+      });
+    };
+  }, [startCrossfade]);
 
   const seek = useCallback((sec: number) => {
     const a = audioRef.current;
@@ -270,6 +404,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    if (crossfadingRef.current) return; // crossfade gerencia o src do outro elemento
     const track = playlist[currentIndex];
     if (!track) {
       a.pause();
@@ -278,9 +413,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // YouTube não pode ser carregado pelo elemento <audio> nativo.
-    // É tocado pelo iframe persistente abaixo; manter o <audio> limpo
-    // evita erro falso logo após selecionar a faixa como música de fundo.
     if (isStreamingUrl(track.audio_url)) {
       a.pause();
       a.removeAttribute('src');
@@ -301,7 +433,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   }, [currentIndex, playlist]);
 
 
-  // Fade helper
   const fadeTo = useCallback((target: number, duration: number, onDone?: () => void) => {
     const a = audioRef.current;
     if (!a) return;
@@ -327,7 +458,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     fadeRafRef.current = requestAnimationFrame(step);
   }, []);
 
-  // Auto pause/duck on main player status
   useEffect(() => {
     if (!autoPauseEnabled) return;
     const a = audioRef.current;
@@ -341,7 +471,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           fadeTo(duckVolume, fadeMs);
         }
       } else {
-        // pause mode: fade out then pause
         if (isPlaying) {
           fadeTo(0, fadeMs, () => {
             postStreamCommand('pause');
@@ -349,7 +478,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
             setIsPlaying(false);
             wasAutoPausedRef.current = true;
             setWasAutoPaused(true);
-            a.volume = volume; // restore for later
+            a.volume = volume;
           });
         }
       }
@@ -394,14 +523,23 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
     if (!a || playlist.length === 0) return;
-    const targetIdx = index !== undefined ? index : currentIndex;
-    if (index !== undefined) {
-      currentIndexRef.current = index;
-      setCurrentIndex(index);
+    cancelCrossfade();
+    let targetIdx = index !== undefined ? index : currentIndex;
+    // Se a faixa alvo está desativada, pula para próxima habilitada
+    if (playlist[targetIdx]?.disabled) {
+      const nextIdx = findNextEnabled(playlist, targetIdx - 1, 1);
+      if (nextIdx < 0) {
+        toast({ title: 'Todas as faixas estão desativadas', variant: 'destructive' });
+        return;
+      }
+      targetIdx = nextIdx;
+    }
+    if (targetIdx !== currentIndex) {
+      currentIndexRef.current = targetIdx;
+      setCurrentIndex(targetIdx);
     }
     const track = playlist[targetIdx];
     if (!track) return;
-    // YouTube: o player embutido (iframe) cuida do play; só marcamos o estado.
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
       if (!ensureStreamFrame(track, true)) {
@@ -445,35 +583,39 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         variant: 'destructive',
       });
     });
-  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
     wantsToPlayRef.current = false;
+    cancelCrossfade();
     postStreamCommand('pause');
-    audioRef.current?.pause();
+    audioARef.current?.pause();
+    audioBRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
     setWasAutoPaused(false);
-  }, [postStreamCommand]);
+  }, [postStreamCommand, cancelCrossfade]);
 
   const toggle = useCallback(() => { if (isPlaying) pause(); else play(); }, [isPlaying, pause, play]);
 
   const next = useCallback(() => {
     if (playlist.length === 0) return;
-    const n = (currentIndex + 1) % playlist.length;
+    const n = findNextEnabled(playlist, currentIndex, 1);
+    if (n < 0) return;
     currentIndexRef.current = n;
     setCurrentIndex(n);
     if (isPlaying) play(n);
-  }, [currentIndex, playlist.length, isPlaying, play]);
+  }, [currentIndex, playlist, isPlaying, play]);
 
   const prev = useCallback(() => {
     if (playlist.length === 0) return;
-    const p = (currentIndex - 1 + playlist.length) % playlist.length;
+    const p = findNextEnabled(playlist, currentIndex, -1);
+    if (p < 0) return;
     currentIndexRef.current = p;
     setCurrentIndex(p);
     if (isPlaying) play(p);
-  }, [currentIndex, playlist.length, isPlaying, play]);
+  }, [currentIndex, playlist, isPlaying, play]);
 
   const addTrack = useCallback((t: BackgroundTrack) => {
     setPlaylist((prev) => {
@@ -496,9 +638,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       if (idx < 0) return prev;
       const next = prev.filter((t) => t.id !== id);
       const cur = currentIndexRef.current;
-      // Bug corrigido: se a faixa removida for a que está tocando (idx === cur),
-      // o <audio> ficava com o src antigo enquanto currentIndex apontava para
-      // outra faixa — trocando de música sem aviso. Agora paramos e realinhamos.
       if (idx === cur) {
         audioRef.current?.pause();
         setStreamFrame(null);
@@ -521,8 +660,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const toggleTrackEnabled = useCallback((id: string) => {
+    setPlaylist((prev) => prev.map((t) => t.id === id ? { ...t, disabled: !t.disabled } : t));
+  }, []);
+
   const clearPlaylist = useCallback(() => {
-    audioRef.current?.pause();
+    audioARef.current?.pause();
+    audioBRef.current?.pause();
     setStreamFrame(null);
     setPlaylist([]);
     setCurrentIndex(0);
@@ -538,6 +682,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const setFadeMs = useCallback((v: number) => setFadeMsState(Math.max(0, Math.min(5000, Math.round(v)))), []);
   const setMaxDurationSec = useCallback((v: number) => setMaxDurationSecState(Math.max(0, Math.round(v))), []);
   const setResumeDelayMs = useCallback((v: number) => setResumeDelayMsState(Math.max(0, Math.round(v))), []);
+  const setCrossfadeMs = useCallback((v: number) => setCrossfadeMsState(Math.max(0, Math.min(15000, Math.round(v)))), []);
 
   const value: BackgroundMusicContextValue = {
     playlist,
@@ -551,8 +696,11 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     duckVolume,
     fadeMs,
     isDucking,
+    crossfadeMs,
+    setCrossfadeMs,
     addTrack,
     removeTrack,
+    toggleTrackEnabled,
     clearPlaylist,
     play,
     pause,
@@ -576,8 +724,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      {/* Iframe persistente para YouTube — fica montado fora do popover
-          para que pausar/retomar não recarregue a música do começo. */}
       {streamFrame && (
         <div
           aria-hidden
