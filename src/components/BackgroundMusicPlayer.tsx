@@ -52,6 +52,9 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     currentTime,
     duration,
     seek,
+    crossfadeMs,
+    setCrossfadeMs,
+    toggleTrackEnabled,
   } = useBackgroundMusic();
 
   const [libOpen, setLibOpen] = useState(false);
