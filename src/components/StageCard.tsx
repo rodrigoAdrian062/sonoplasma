@@ -524,7 +524,7 @@ export function StageCard({
         </div>
 
         {/* Play / Control buttons */}
-        <div className="flex items-center gap-1.5 mt-2.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 mt-2.5 flex-wrap">
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
