@@ -292,9 +292,9 @@ export function StageCard({
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="relative p-3 sm:p-4 min-w-0 overflow-hidden">
+      <div className="relative p-2.5 sm:p-3 md:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
-        <div className="flex items-center gap-3 mb-2.5">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2.5">
           {stageNumber !== undefined && (
             <span
               className={cn(
