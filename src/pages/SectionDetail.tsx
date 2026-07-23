@@ -581,7 +581,7 @@ const SectionDetail = () => {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sectionStages.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-              <div className="grid gap-3">
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
                 {sectionStages.map((stage, index) => (
                   <div key={stage.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.03}s` }}>
                     <SortableStageCard
