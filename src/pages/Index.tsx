@@ -109,7 +109,7 @@ const Index = () => {
                     role="button"
                     tabIndex={0}
                     aria-label={`Abrir seção ${section.nome}`}
-                    className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-sm p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-sm p-3 sm:p-4 md:p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     onClick={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
