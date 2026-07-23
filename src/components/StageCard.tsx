@@ -300,8 +300,8 @@ export function StageCard({
               className={cn(
                 'shrink-0 flex items-center justify-center rounded-full font-bold font-display transition-all duration-300 ring-2',
                 isActive
-                  ? 'h-11 w-11 text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
-                  : 'h-7 w-7 text-xs bg-gold/15 text-gold ring-gold/20'
+                  ? 'h-9 w-9 sm:h-11 sm:w-11 text-base sm:text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
+                  : 'h-6 w-6 sm:h-7 sm:w-7 text-[10px] sm:text-xs bg-gold/15 text-gold ring-gold/20'
               )}
               aria-label={`Etapa número ${stageNumber}`}
             >
