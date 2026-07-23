@@ -464,9 +464,9 @@ export function StageCard({
         {/* Timer + Controls row */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Timer inline */}
-          <div className="flex items-center gap-1.5 mr-auto">
-            <Clock size={13} className="text-muted-foreground/50" />
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <div className="flex items-center gap-1.5 flex-wrap mr-auto min-w-0">
+            <Clock size={13} className="text-muted-foreground/50 shrink-0" />
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70 shrink-0">
               <input
                 type="checkbox"
                 checked={useTimerEnabled}
@@ -483,14 +483,14 @@ export function StageCard({
                   max="60"
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold shrink-0"
                 />
-                <span className="text-xs text-muted-foreground/60">min</span>
+                <span className="text-xs text-muted-foreground/60 shrink-0">min</span>
                 <button
                   type="button"
                   onClick={() => setLoopUntilTimer((v) => !v)}
                   className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border',
+                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border shrink-0',
                     loopUntilTimer
                       ? 'bg-gold/15 border-gold/40 text-gold'
                       : 'bg-secondary/40 border-border/40 text-muted-foreground/70 hover:text-foreground hover:border-gold/30'
@@ -499,7 +499,8 @@ export function StageCard({
                   aria-pressed={loopUntilTimer}
                 >
                   <Repeat size={10} aria-hidden="true" />
-                  Repetir até o tempo
+                  <span className="hidden xs:inline sm:inline">Repetir até o tempo</span>
+                  <span className="xs:hidden sm:hidden">Repetir</span>
                 </button>
               </>
             )}
