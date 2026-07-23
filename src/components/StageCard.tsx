@@ -292,16 +292,16 @@ export function StageCard({
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       )}
 
-      <div className="relative p-3 sm:p-4 min-w-0 overflow-hidden">
+      <div className="relative p-2.5 sm:p-3 md:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
-        <div className="flex items-center gap-3 mb-2.5">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2.5">
           {stageNumber !== undefined && (
             <span
               className={cn(
                 'shrink-0 flex items-center justify-center rounded-full font-bold font-display transition-all duration-300 ring-2',
                 isActive
-                  ? 'h-11 w-11 text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
-                  : 'h-7 w-7 text-xs bg-gold/15 text-gold ring-gold/20'
+                  ? 'h-9 w-9 sm:h-11 sm:w-11 text-base sm:text-lg bg-gold text-background ring-gold/60 shadow-[0_0_18px_-2px_hsl(var(--gold)/0.6)]'
+                  : 'h-6 w-6 sm:h-7 sm:w-7 text-[10px] sm:text-xs bg-gold/15 text-gold ring-gold/20'
               )}
               aria-label={`Etapa número ${stageNumber}`}
             >
@@ -312,10 +312,10 @@ export function StageCard({
             className={cn(
               'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
               isActive ? 'bg-gold/15 ring-gold/30' : 'bg-secondary/80 ring-border/30 group-hover:ring-gold/25',
-              (stage as any).icone_url ? 'p-0.5' : 'p-2'
+              (stage as any).icone_url ? 'p-0.5' : 'p-1.5 sm:p-2'
             )}
           >
-            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
+            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 32 : 16} className="sm:!w-[18px] sm:!h-[18px]" />
           </div>
 
 
@@ -464,9 +464,9 @@ export function StageCard({
         {/* Timer + Controls row */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Timer inline */}
-          <div className="flex items-center gap-1.5 mr-auto">
-            <Clock size={13} className="text-muted-foreground/50" />
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <div className="flex items-center gap-1.5 flex-wrap mr-auto min-w-0">
+            <Clock size={13} className="text-muted-foreground/50 shrink-0" />
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70 shrink-0">
               <input
                 type="checkbox"
                 checked={useTimerEnabled}
@@ -483,14 +483,14 @@ export function StageCard({
                   max="60"
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold shrink-0"
                 />
-                <span className="text-xs text-muted-foreground/60">min</span>
+                <span className="text-xs text-muted-foreground/60 shrink-0">min</span>
                 <button
                   type="button"
                   onClick={() => setLoopUntilTimer((v) => !v)}
                   className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border',
+                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border shrink-0',
                     loopUntilTimer
                       ? 'bg-gold/15 border-gold/40 text-gold'
                       : 'bg-secondary/40 border-border/40 text-muted-foreground/70 hover:text-foreground hover:border-gold/30'
@@ -499,7 +499,8 @@ export function StageCard({
                   aria-pressed={loopUntilTimer}
                 >
                   <Repeat size={10} aria-hidden="true" />
-                  Repetir até o tempo
+                  <span className="hidden xs:inline sm:inline">Repetir até o tempo</span>
+                  <span className="xs:hidden sm:hidden">Repetir</span>
                 </button>
               </>
             )}
@@ -523,7 +524,7 @@ export function StageCard({
         </div>
 
         {/* Play / Control buttons */}
-        <div className="flex items-center gap-1.5 mt-2.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 mt-2.5 flex-wrap">
           {!isActive ? (
             <Button
               onClick={handlePlayWithTimer}
