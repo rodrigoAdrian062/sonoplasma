@@ -96,7 +96,7 @@ const Index = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {sections.map((section, index) => {
               const stageCount = getStageCount(section.id);
               return (
@@ -109,7 +109,7 @@ const Index = () => {
                     role="button"
                     tabIndex={0}
                     aria-label={`Abrir seção ${section.nome}`}
-                    className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-sm p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 to-card/30 backdrop-blur-sm p-3 sm:p-4 md:p-5 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     onClick={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -123,15 +123,15 @@ const Index = () => {
                     {/* Brilho decorativo */}
                     <span className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gold/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden="true" />
 
-                    <div className="flex items-start gap-4">
-                      <div className="shrink-0 p-3 bg-gold/10 group-hover:bg-gold/20 rounded-xl ring-1 ring-gold/10 group-hover:ring-gold/30 transition-all duration-300">
+                    <div className="flex items-start gap-2.5 sm:gap-3 md:gap-4">
+                      <div className="shrink-0 p-2 sm:p-2.5 md:p-3 bg-gold/10 group-hover:bg-gold/20 rounded-lg sm:rounded-xl ring-1 ring-gold/10 group-hover:ring-gold/30 transition-all duration-300">
                         {section.icone_url ? (
-                          <img src={section.icone_url} alt="" className="w-7 h-7 object-cover rounded" />
+                          <img src={section.icone_url} alt="" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 object-cover rounded" />
                         ) : (
                           <CeremonyIcon
                             name={section.icone || 'folder'}
-                            size={26}
-                            className="text-gold"
+                            size={22}
+                            className="text-gold sm:!w-6 sm:!h-6 md:!w-[26px] md:!h-[26px]"
                             aria-hidden="true"
                           />
                         )}
@@ -139,40 +139,40 @@ const Index = () => {
 
 
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-display text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">
+                        <h3 className="font-display text-base sm:text-lg font-semibold text-foreground truncate group-hover:text-gold transition-colors duration-300">
                           {section.nome}
                         </h3>
                         {section.descricao && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-0.5 sm:mt-1">
                             {section.descricao}
                           </p>
                         )}
                       </div>
-                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-gold group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
+                      <ChevronRight size={18} className="text-muted-foreground group-hover:text-gold group-hover:translate-x-1 transition-all shrink-0 sm:!w-5 sm:!h-5" aria-hidden="true" />
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-secondary/60 rounded-full px-2.5 py-1">
+                    <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2 border-t border-border/40 pt-2.5 sm:pt-3">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-medium text-muted-foreground bg-secondary/60 rounded-full px-2 sm:px-2.5 py-0.5 sm:py-1 whitespace-nowrap">
                         {stageCount} {stageCount === 1 ? 'etapa' : 'etapas'}
                       </span>
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-0.5 sm:gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setEditingSection(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                           aria-label={`Editar seção ${section.nome}`}
                         >
-                          <Edit2 size={15} aria-hidden="true" />
+                          <Edit2 size={14} aria-hidden="true" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeleteSectionData(section)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                           aria-label={`Excluir seção ${section.nome}`}
                         >
-                          <Trash2 size={15} aria-hidden="true" />
+                          <Trash2 size={14} aria-hidden="true" />
                         </Button>
                       </div>
                     </div>
