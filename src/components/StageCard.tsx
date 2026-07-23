@@ -312,10 +312,10 @@ export function StageCard({
             className={cn(
               'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
               isActive ? 'bg-gold/15 ring-gold/30' : 'bg-secondary/80 ring-border/30 group-hover:ring-gold/25',
-              (stage as any).icone_url ? 'p-0.5' : 'p-2'
+              (stage as any).icone_url ? 'p-0.5' : 'p-1.5 sm:p-2'
             )}
           >
-            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 36 : 18} />
+            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 32 : 16} className="sm:!w-[18px] sm:!h-[18px]" />
           </div>
 
 
