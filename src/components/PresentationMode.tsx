@@ -1093,6 +1093,7 @@ export function PresentationMode({
                             </>
                           )}
                           {audio.nome || `Áudio ${index + 1}`}
+                          <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
                         </button>
                         <button
                           onClick={(e) => {
