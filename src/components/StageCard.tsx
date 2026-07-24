@@ -401,6 +401,7 @@ export function StageCard({
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate flex items-center gap-1.5">
                   <span className="truncate">{currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}</span>
+                  {currentAudio && <TrackHzBadge url={currentAudio.audio_url} playing={isPlaying} />}
                   {!isActive && currentAudio && (
                     <span
                       className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
