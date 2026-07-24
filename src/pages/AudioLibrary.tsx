@@ -91,7 +91,7 @@ function TrackHzSelector({ url }: { url: string }) {
         </div>
         <DropdownMenuItem
           onClick={(e) => { e.stopPropagation(); setTrackHz(url, null); }}
-          className={cn(hz == null && 'bg-gold/10 text-gold')}
+          className={cn(override == null && 'bg-gold/10 text-gold')}
         >
           <div className="flex flex-col">
             <span className="text-xs font-medium">Padrão global</span>
