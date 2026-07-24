@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
+import { TrackHzBadge } from '@/components/TrackHzBadge';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
@@ -400,6 +401,7 @@ export function StageCard({
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate flex items-center gap-1.5">
                   <span className="truncate">{currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}</span>
+                  {currentAudio && <TrackHzBadge url={currentAudio.audio_url} playing={isPlaying} />}
                   {!isActive && currentAudio && (
                     <span
                       className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
@@ -442,6 +444,7 @@ export function StageCard({
                     >
                       <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                       <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
+                      <TrackHzBadge url={audio.audio_url} playing={isPlaying && index === selectedAudioIndex} />
                       {index === selectedAudioIndex && !isActive && (
                         <span
                           className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"

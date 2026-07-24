@@ -26,6 +26,7 @@ import { useUniversalAudioPlayer } from '@/hooks/useUniversalAudioPlayer';
 import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
+import { TrackHzBadge } from '@/components/TrackHzBadge';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
@@ -987,6 +988,11 @@ export function PresentationMode({
           )}>
             {currentStage.nome_simbolico}
           </h1>
+          {currentAudio && (
+            <div className="flex justify-center mb-2">
+              <TrackHzBadge url={currentAudio.audio_url} playing={isPlaying} size="sm" />
+            </div>
+          )}
 
 
           {/* Description */}
@@ -1092,6 +1098,7 @@ export function PresentationMode({
                             </>
                           )}
                           {audio.nome || `Áudio ${index + 1}`}
+                          <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
                         </button>
                         <button
                           onClick={(e) => {

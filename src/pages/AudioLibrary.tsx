@@ -19,7 +19,7 @@ import {
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
   Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
 } from 'lucide-react';
-import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz } from '@/lib/pitch432';
+import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 
@@ -52,9 +52,17 @@ function FolderIcon({ name, size = 20, className = '' }: { name?: string | null;
 }
 
 function TrackHzSelector({ url }: { url: string }) {
-  const [hz, setHz] = useState<number | null>(() => getTrackHz(url));
-  useEffect(() => subscribeTrackHz(() => setHz(getTrackHz(url))), [url]);
-  const info = hz != null ? HEALING_FREQUENCIES.find((f) => f.hz === hz) : null;
+  const [override, setOverride] = useState<number | null>(() => getTrackHz(url));
+  const [, force] = useState(0);
+  useEffect(() => subscribeTrackHz(() => {
+    setOverride(getTrackHz(url));
+    force((n) => n + 1);
+  }), [url]);
+  // Escuta mudanças da Hz global também
+  useEffect(() => subscribeHealingHz(() => force((n) => n + 1)), []);
+  const effectiveHz = getEffectiveHz(url);
+  const info = HEALING_FREQUENCIES.find((f) => f.hz === effectiveHz);
+  const active = effectiveHz !== 440;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -63,13 +71,14 @@ function TrackHzSelector({ url }: { url: string }) {
           size="sm"
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            'h-8 px-2 gap-1 text-[10px] font-mono',
-            hz != null ? 'text-gold hover:text-gold' : 'text-muted-foreground hover:text-gold'
+            'h-8 px-2 gap-1 text-[10px] font-mono tabular-nums',
+            active ? 'text-gold hover:text-gold' : 'text-muted-foreground hover:text-gold',
+            override != null && 'ring-1 ring-gold/40 rounded-md',
           )}
-          title={info ? `${info.label} — ${info.desc}` : 'Frequência (padrão global)'}
+          title={info ? `${info.label} — ${info.desc}${override != null ? ' (faixa)' : ' (global)'}` : `${effectiveHz}Hz`}
         >
           <Waves size={12} />
-          <span className="tabular-nums">{hz != null ? `${hz}Hz` : 'Hz'}</span>
+          <span>{effectiveHz}Hz</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-y-auto">
@@ -78,7 +87,7 @@ function TrackHzSelector({ url }: { url: string }) {
         </div>
         <DropdownMenuItem
           onClick={(e) => { e.stopPropagation(); setTrackHz(url, null); }}
-          className={cn(hz == null && 'bg-gold/10 text-gold')}
+          className={cn(override == null && 'bg-gold/10 text-gold')}
         >
           <div className="flex flex-col">
             <span className="text-xs font-medium">Padrão global</span>
@@ -90,7 +99,7 @@ function TrackHzSelector({ url }: { url: string }) {
           <DropdownMenuItem
             key={f.hz}
             onClick={(e) => { e.stopPropagation(); setTrackHz(url, f.hz); }}
-            className={cn(hz === f.hz && 'bg-gold/10 text-gold')}
+            className={cn(override === f.hz && 'bg-gold/10 text-gold')}
           >
             <div className="flex flex-col">
               <span className="text-xs font-medium">{f.label}</span>
