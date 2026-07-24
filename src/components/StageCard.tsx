@@ -647,6 +647,7 @@ export function StageCard({
             </span>
           </div>
         )}
+        </>)}
       </div>
     </div>
   );
