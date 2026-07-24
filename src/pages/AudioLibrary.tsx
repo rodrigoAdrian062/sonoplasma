@@ -19,7 +19,7 @@ import {
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
   Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
 } from 'lucide-react';
-import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz } from '@/lib/pitch432';
+import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 
