@@ -348,8 +348,18 @@ export function StageCard({
             >
               <Trash2 size={14} />
             </button>
+            <button
+              onClick={() => setCollapsed((c) => !c)}
+              className="p-1.5 text-muted-foreground/60 hover:text-gold transition-colors rounded-md hover:bg-gold/10"
+              aria-label={collapsed ? 'Expandir etapa' : 'Recolher etapa'}
+            >
+              {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            </button>
           </div>
         </div>
+
+        {!collapsed && (<>
+
 
         {/* Audio selector */}
         {hasAudios ? (
