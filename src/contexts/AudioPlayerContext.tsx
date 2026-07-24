@@ -3,6 +3,8 @@ import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
 import { getSpotifyUrl, isSpotifyUrl } from '@/lib/embedUrl';
+import { ensure432Registered, create432Node, set432Enabled, getFrequency432, subscribeFrequency432 } from '@/lib/pitch432';
+import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB
@@ -87,6 +89,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const bassFilterRef = useRef<BiquadFilterNode | null>(null);
   const midFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleFilterRef = useRef<BiquadFilterNode | null>(null);
+  const pitch432NodeRef = useRef<SoundTouchNode | null>(null);
   const ytPlayerRef = useRef<any>(null);
   const ytInitTimeoutRef = useRef<number | null>(null);
   const ytPlayerReadyRef = useRef(false);
@@ -163,7 +166,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [clearFade, applyPlayerVolume]);
 
 
-  // Initialize HTML5 Audio with EQ filters (once, lives for app lifetime)
+  // Initialize HTML5 Audio with EQ filters + 432Hz pitch node (once, lives for app lifetime)
   useEffect(() => {
     const audio = new Audio();
     audio.volume = volumeRef.current;
@@ -198,7 +201,33 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     treble.gain.value = 0;
     trebleFilterRef.current = treble;
 
+    let disposed = false;
+    let cleanupPitchSub: (() => void) | null = null;
+
+    // Conexão inicial (sem pitch): source -> bass -> mid -> treble -> destination.
+    // O nó de 432Hz é inserido depois, quando o worklet estiver carregado.
     source.connect(bass).connect(mid).connect(treble).connect(ctx.destination);
+
+    // Carrega o worklet de pitch-shift em segundo plano e o insere no grafo.
+    ensure432Registered(ctx)
+      .then(() => {
+        if (disposed) return;
+        try {
+          const pitchNode = create432Node(ctx, getFrequency432());
+          pitch432NodeRef.current = pitchNode;
+          // Reconecta: source -> pitchNode -> bass (bass já está ligado ao restante)
+          try { source.disconnect(); } catch { /* noop */ }
+          source.connect(pitchNode).connect(bass);
+          cleanupPitchSub = subscribeFrequency432((enabled) => {
+            set432Enabled(pitch432NodeRef.current, enabled);
+          });
+        } catch (err) {
+          console.warn('[432Hz] falha ao inserir nó de pitch, seguindo sem ele:', err);
+        }
+      })
+      .catch((err) => {
+        console.warn('[432Hz] worklet indisponível, seguindo sem pitch-shift:', err);
+      });
 
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleLoadedMetadata = () => setDuration(audio.duration);
@@ -233,6 +262,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audio.addEventListener('error', handleError);
 
     return () => {
+      disposed = true;
+      cleanupPitchSub?.();
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
