@@ -21,7 +21,8 @@ import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 import { Switch } from '@/components/ui/switch';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUiToggles } from '@/hooks/useUiToggles';
-import { useFrequency432 } from '@/hooks/useFrequency432';
+import { useFrequency432, useHealingHz } from '@/hooks/useFrequency432';
+import { HEALING_FREQUENCIES } from '@/lib/pitch432';
 import { Download, Eye, Music2 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -35,6 +36,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
   const [freq432, setFreq432] = useFrequency432();
+  const [healingHz, setHealingHz] = useHealingHz();
   const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
