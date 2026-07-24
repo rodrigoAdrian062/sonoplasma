@@ -47,6 +47,38 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [resizedSize, setResizedSize] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const testCtxRef = useRef<AudioContext | null>(null);
+
+  const test432Tone = (mode: '440' | '432' | 'ab') => {
+    try {
+      if (!testCtxRef.current) {
+        testCtxRef.current = new AudioContext();
+      }
+      const ctx = testCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const now = ctx.currentTime;
+      const play = (freq: number, start: number, dur = 1.4) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.05);
+        gain.gain.setValueAtTime(0.18, start + dur - 0.15);
+        gain.gain.linearRampToValueAtTime(0, start + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+      };
+      if (mode === '440') play(440, now);
+      else if (mode === '432') play(432, now);
+      else { play(440, now, 1.2); play(432, now + 1.4, 1.2); }
+    } catch (err) {
+      console.warn('[432Hz test] falha ao reproduzir tom de teste:', err);
+      toast.error('Não foi possível reproduzir o tom de teste.');
+    }
+  };
+
 
   useEffect(() => {
     if (settings) {
@@ -347,7 +379,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           {/* Frequência 432Hz */}
-          <div className="space-y-2 border-t border-border pt-5">
+          <div className="space-y-3 border-t border-border pt-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <Label className="flex items-center gap-2">
@@ -355,12 +387,46 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   Frequência 432Hz
                 </Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas. YouTube não é suportado.
+                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas e à música de fundo. YouTube não é suportado.
                 </p>
               </div>
               <Switch checked={freq432} onCheckedChange={setFreq432} />
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('440')}
+                className="h-8"
+              >
+                Testar 440 Hz
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('432')}
+                className="h-8 border-gold/50 text-gold hover:bg-gold/10"
+              >
+                Testar 432 Hz
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('ab')}
+                className="h-8"
+              >
+                A/B (440 → 432)
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                Tom de teste (Lá) — compare de ouvido antes de usar no templo.
+              </span>
+            </div>
           </div>
+
 
 
           <div className="space-y-3 border-t border-border pt-5">
