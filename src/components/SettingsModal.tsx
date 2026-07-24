@@ -21,7 +21,8 @@ import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 import { Switch } from '@/components/ui/switch';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUiToggles } from '@/hooks/useUiToggles';
-import { Download, Eye } from 'lucide-react';
+import { useFrequency432 } from '@/hooks/useFrequency432';
+import { Download, Eye, Music2 } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  const [freq432, setFreq432] = useFrequency432();
   const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
   const [subtituloApp, setSubtituloApp] = useState('');
@@ -344,7 +346,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* Botões e atalhos visíveis */}
+          {/* Frequência 432Hz */}
+          <div className="space-y-2 border-t border-border pt-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <Label className="flex items-center gap-2">
+                  <Music2 size={14} className="text-gold" />
+                  Frequência 432Hz
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas. YouTube não é suportado.
+                </p>
+              </div>
+              <Switch checked={freq432} onCheckedChange={setFreq432} />
+            </div>
+          </div>
+
+
           <div className="space-y-3 border-t border-border pt-5">
             <div className="flex items-center gap-2">
               <Eye size={14} className="text-gold" />
