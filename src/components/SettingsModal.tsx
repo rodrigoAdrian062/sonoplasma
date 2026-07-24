@@ -51,7 +51,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const testCtxRef = useRef<AudioContext | null>(null);
 
-  const test432Tone = (mode: '440' | '432' | 'ab') => {
+  const testTone = (mode: 'ref' | 'selected' | 'ab') => {
     try {
       if (!testCtxRef.current) {
         testCtxRef.current = new AudioContext();
@@ -72,11 +72,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         osc.start(start);
         osc.stop(start + dur + 0.02);
       };
-      if (mode === '440') play(440, now);
-      else if (mode === '432') play(432, now);
-      else { play(440, now, 1.2); play(432, now + 1.4, 1.2); }
+      const target = healingHz && healingHz !== 440 ? healingHz : 432;
+      if (mode === 'ref') play(440, now);
+      else if (mode === 'selected') play(target, now);
+      else { play(440, now, 1.2); play(target, now + 1.4, 1.2); }
     } catch (err) {
-      console.warn('[432Hz test] falha ao reproduzir tom de teste:', err);
+      console.warn('[Hz test] falha ao reproduzir tom de teste:', err);
       toast.error('Não foi possível reproduzir o tom de teste.');
     }
   };
