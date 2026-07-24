@@ -47,6 +47,38 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [originalSize, setOriginalSize] = useState<number | null>(null);
   const [resizedSize, setResizedSize] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const testCtxRef = useRef<AudioContext | null>(null);
+
+  const test432Tone = (mode: '440' | '432' | 'ab') => {
+    try {
+      if (!testCtxRef.current) {
+        testCtxRef.current = new AudioContext();
+      }
+      const ctx = testCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const now = ctx.currentTime;
+      const play = (freq: number, start: number, dur = 1.4) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.05);
+        gain.gain.setValueAtTime(0.18, start + dur - 0.15);
+        gain.gain.linearRampToValueAtTime(0, start + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+      };
+      if (mode === '440') play(440, now);
+      else if (mode === '432') play(432, now);
+      else { play(440, now, 1.2); play(432, now + 1.4, 1.2); }
+    } catch (err) {
+      console.warn('[432Hz test] falha ao reproduzir tom de teste:', err);
+      toast.error('Não foi possível reproduzir o tom de teste.');
+    }
+  };
+
 
   useEffect(() => {
     if (settings) {
