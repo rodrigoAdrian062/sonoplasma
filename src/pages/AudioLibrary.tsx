@@ -1079,6 +1079,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         <X size={16} />
                       </Button>
                     )}
+                    <TrackHzSelector url={audio.audio_url} />
                     {stages.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
