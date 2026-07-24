@@ -78,6 +78,52 @@ export function getFrequencyInfo(hz = currentHz): HealingFrequency | undefined {
   return HEALING_FREQUENCIES.find((f) => f.hz === hz);
 }
 
+// -------------------- Override por faixa (URL → Hz) --------------------
+export const STORAGE_KEY_TRACK_HZ = 'audio-healing-track-hz-v1';
+type TrackMap = Record<string, number>;
+type TrackListener = () => void;
+const trackListeners = new Set<TrackListener>();
+
+function readTrackMap(): TrackMap {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_TRACK_HZ);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') return obj as TrackMap;
+    }
+  } catch { /* noop */ }
+  return {};
+}
+let trackMap: TrackMap = typeof window !== 'undefined' ? readTrackMap() : {};
+
+export function getTrackHz(url: string | null | undefined): number | null {
+  if (!url) return null;
+  const v = trackMap[url];
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+export function setTrackHz(url: string, hz: number | null): void {
+  if (!url) return;
+  if (hz == null) delete trackMap[url];
+  else trackMap[url] = hz;
+  try { localStorage.setItem(STORAGE_KEY_TRACK_HZ, JSON.stringify(trackMap)); } catch { /* noop */ }
+  trackListeners.forEach((l) => { try { l(); } catch { /* noop */ } });
+}
+
+export function subscribeTrackHz(cb: TrackListener): () => void {
+  trackListeners.add(cb);
+  return () => { trackListeners.delete(cb); };
+}
+
+export function getEffectiveHz(url?: string | null): number {
+  const t = getTrackHz(url ?? null);
+  return t ?? currentHz;
+}
+
+export function getEffectivePitchRatio(url?: string | null): number {
+  return getEffectiveHz(url) / 440;
+}
+
 // -------------------- Node helpers --------------------
 export function create432Node(ctx: BaseAudioContext, _enabled?: boolean): SoundTouchNode {
   const node = new SoundTouchNode({ context: ctx });
@@ -88,6 +134,11 @@ export function create432Node(ctx: BaseAudioContext, _enabled?: boolean): SoundT
 export function set432Enabled(node: SoundTouchNode | null, _enabled?: boolean): void {
   if (!node) return;
   try { node.pitch.value = getPitchRatio(); } catch { /* noop */ }
+}
+
+export function applyPitchForUrl(node: SoundTouchNode | null, url?: string | null): void {
+  if (!node) return;
+  try { node.pitch.value = getEffectivePitchRatio(url); } catch { /* noop */ }
 }
 
 // -------------------- API legada (compat) --------------------

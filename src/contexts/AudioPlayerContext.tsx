@@ -3,7 +3,7 @@ import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
 import { getSpotifyUrl, isSpotifyUrl } from '@/lib/embedUrl';
-import { ensure432Registered, create432Node, set432Enabled, getFrequency432, subscribeFrequency432 } from '@/lib/pitch432';
+import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequency432, subscribeTrackHz } from '@/lib/pitch432';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
 
 export interface EQSettings {
@@ -213,14 +213,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       .then(() => {
         if (disposed) return;
         try {
-          const pitchNode = create432Node(ctx, getFrequency432());
+          const pitchNode = create432Node(ctx);
           pitch432NodeRef.current = pitchNode;
           // Reconecta: source -> pitchNode -> bass (bass já está ligado ao restante)
           try { source.disconnect(); } catch { /* noop */ }
           source.connect(pitchNode).connect(bass);
-          cleanupPitchSub = subscribeFrequency432((enabled) => {
-            set432Enabled(pitch432NodeRef.current, enabled);
-          });
+          applyPitchForUrl(pitchNode, currentUrlRef.current);
+          const reapply = () => applyPitchForUrl(pitch432NodeRef.current, currentUrlRef.current);
+          const unsubGlobal = subscribeFrequency432(reapply);
+          const unsubTrack = subscribeTrackHz(reapply);
+          cleanupPitchSub = () => { unsubGlobal(); unsubTrack(); };
         } catch (err) {
           console.warn('[432Hz] falha ao inserir nó de pitch, seguindo sem ele:', err);
         }
@@ -501,6 +503,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (!audio) return;
       currentUrlRef.current = url;
       setCurrentUrl(url);
+      applyPitchForUrl(pitch432NodeRef.current, url);
       audio.volume = volumeRef.current;
       // Toca a partir do cache local (blob) quando disponível para
       // início instantâneo; senão usa a URL direta e cacheia em segundo plano.
