@@ -35,7 +35,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
-  const [freq432, setFreq432] = useFrequency432();
+  const [, setFreq432] = useFrequency432();
   const [healingHz, setHealingHz] = useHealingHz();
   const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
@@ -381,27 +381,60 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
 
-          {/* Frequência 432Hz */}
+          {/* Frequência curativa */}
           <div className="space-y-3 border-t border-border pt-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <Label className="flex items-center gap-2">
-                  <Music2 size={14} className="text-gold" />
-                  Frequência 432Hz
-                </Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas e à música de fundo. YouTube não é suportado.
-                </p>
-              </div>
-              <Switch checked={freq432} onCheckedChange={setFreq432} />
+            <div>
+              <Label className="flex items-center gap-2">
+                <Music2 size={14} className="text-gold" />
+                Frequência curativa dos áudios
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Reafina os áudios em tempo real, preservando a velocidade original. Aplica-se aos arquivos locais das etapas e à música de fundo. YouTube não é suportado.
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid gap-2">
+              {HEALING_FREQUENCIES.map((f) => {
+                const active = healingHz === f.hz;
+                return (
+                  <button
+                    key={f.hz}
+                    type="button"
+                    onClick={() => {
+                      setHealingHz(f.hz);
+                      // manter flag legada em sincronia
+                      setFreq432(f.hz !== 440);
+                    }}
+                    className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                      active
+                        ? 'border-gold bg-gold/10 shadow-[0_0_10px_hsl(var(--gold)/0.2)]'
+                        : 'border-border hover:border-gold/40 hover:bg-gold/5'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-sm font-semibold ${active ? 'text-gold' : ''}`}>
+                        {f.label}
+                      </span>
+                      {active && (
+                        <span className="text-[10px] uppercase tracking-wider text-gold">
+                          Ativa
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      {f.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => test432Tone('440')}
+                onClick={() => testTone('ref')}
                 className="h-8"
               >
                 Testar 440 Hz
@@ -410,19 +443,21 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => test432Tone('432')}
+                onClick={() => testTone('selected')}
                 className="h-8 border-gold/50 text-gold hover:bg-gold/10"
+                disabled={healingHz === 440}
               >
-                Testar 432 Hz
+                Testar {healingHz !== 440 ? `${healingHz} Hz` : 'selecionada'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => test432Tone('ab')}
+                onClick={() => testTone('ab')}
                 className="h-8"
+                disabled={healingHz === 440}
               >
-                A/B (440 → 432)
+                A/B (440 → selecionada)
               </Button>
               <span className="text-[11px] text-muted-foreground">
                 Tom de teste (Lá) — compare de ouvido antes de usar no templo.
