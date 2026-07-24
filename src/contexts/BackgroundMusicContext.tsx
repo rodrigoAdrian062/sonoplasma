@@ -235,6 +235,14 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     let disposed = false;
     let cleanupPitchSub: (() => void) | null = null;
     const pitchNodes: SoundTouchNode[] = [];
+    const nodeByEl = new WeakMap<HTMLAudioElement, SoundTouchNode>();
+    const applyForEl = (el: HTMLAudioElement | null) => {
+      if (!el) return;
+      const n = nodeByEl.get(el);
+      if (n) applyPitchForUrl(n, el.currentSrc || el.src || null);
+    };
+    const applyAll = () => { applyForEl(a); applyForEl(b); };
+    const onLoadStart = (e: Event) => applyForEl(e.target as HTMLAudioElement);
     try {
       ctx = new AudioContext();
       const setupElement = (el: HTMLAudioElement) => {
@@ -249,16 +257,19 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         .then(() => {
           if (disposed || !ctx) return;
           try {
-            const initial = getFrequency432();
-            [[sourceA, a], [sourceB, b]].forEach(([src]) => {
-              const pitchNode = create432Node(ctx!, initial);
+            ([[sourceA, a], [sourceB, b]] as [MediaElementAudioSourceNode, HTMLAudioElement][]).forEach(([src, el]) => {
+              const pitchNode = create432Node(ctx!);
               pitchNodes.push(pitchNode);
-              try { (src as MediaElementAudioSourceNode).disconnect(); } catch { /* noop */ }
-              (src as MediaElementAudioSourceNode).connect(pitchNode).connect(ctx!.destination);
+              nodeByEl.set(el, pitchNode);
+              try { src.disconnect(); } catch { /* noop */ }
+              src.connect(pitchNode).connect(ctx!.destination);
             });
-            cleanupPitchSub = subscribeFrequency432((enabled) => {
-              pitchNodes.forEach((n) => set432Enabled(n, enabled));
-            });
+            applyAll();
+            a.addEventListener('loadstart', onLoadStart);
+            b.addEventListener('loadstart', onLoadStart);
+            const unsubG = subscribeFrequency432(applyAll);
+            const unsubT = subscribeTrackHz(applyAll);
+            cleanupPitchSub = () => { unsubG(); unsubT(); };
           } catch (err) {
             console.warn('[bg-432Hz] falha ao inserir nó de pitch:', err);
           }
