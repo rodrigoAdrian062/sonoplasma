@@ -15,10 +15,11 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter, Palette,
+  SkipBack, SkipForward, Filter, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
   Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
 } from 'lucide-react';
+import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 
