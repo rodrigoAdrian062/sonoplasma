@@ -347,7 +347,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           {/* Frequência 432Hz */}
-          <div className="space-y-2 border-t border-border pt-5">
+          <div className="space-y-3 border-t border-border pt-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <Label className="flex items-center gap-2">
@@ -355,12 +355,46 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   Frequência 432Hz
                 </Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas. YouTube não é suportado.
+                  Reafina os áudios de 440Hz para 432Hz preservando a velocidade original. Aplica-se a arquivos locais das etapas e à música de fundo. YouTube não é suportado.
                 </p>
               </div>
               <Switch checked={freq432} onCheckedChange={setFreq432} />
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('440')}
+                className="h-8"
+              >
+                Testar 440 Hz
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('432')}
+                className="h-8 border-gold/50 text-gold hover:bg-gold/10"
+              >
+                Testar 432 Hz
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => test432Tone('ab')}
+                className="h-8"
+              >
+                A/B (440 → 432)
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                Tom de teste (Lá) — compare de ouvido antes de usar no templo.
+              </span>
+            </div>
           </div>
+
 
 
           <div className="space-y-3 border-t border-border pt-5">
