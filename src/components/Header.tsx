@@ -4,6 +4,7 @@ import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Us
 import { Button } from '@/components/ui/button';
 import { InstallPWA } from '@/components/InstallPWA';
 import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
+import { Frequency432Indicator } from '@/components/Frequency432Indicator';
 
 // Modal pesado — só carrega quando o usuário abre as configurações.
 const SettingsModal = lazy(() =>
@@ -71,6 +72,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-center">
               
+              <Frequency432Indicator compact />
               <InstallPWA compact />
               <HeaderAudioOutputButton compact />
               <Tooltip>
@@ -174,6 +176,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             
             <div className="flex items-center gap-2">
               
+              <Frequency432Indicator />
               <InstallPWA />
               <HeaderAudioOutputButton />
               <Tooltip>

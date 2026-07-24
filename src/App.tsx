@@ -26,7 +26,7 @@ const RoteirosLibrary = lazy(() => import("./pages/RoteirosLibrary"));
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
-import { Frequency432Indicator } from "@/components/Frequency432Indicator";
+
 
 // Dados de cerimônia/áudio são majoritariamente estáticos entre navegações.
 // Evita refetch em cada mount / focus da aba.
@@ -143,7 +143,6 @@ const App = () => (
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />
-          <Frequency432Indicator />
           </BackgroundMusicProvider>
           </AudioPlayerProvider>
         </AuthProvider>
