@@ -321,6 +321,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      disposed = true;
+      cleanupPitchSub?.();
       [a, b].forEach((el) => {
         el.removeEventListener('ended', handleEnded);
         el.removeEventListener('play', handlePlay);
@@ -330,6 +332,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       });
       if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
       if (crossfadeRafRef.current) cancelAnimationFrame(crossfadeRafRef.current);
+      try { ctx?.close(); } catch { /* noop */ }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
