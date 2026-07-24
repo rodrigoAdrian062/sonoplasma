@@ -339,6 +339,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         el.removeEventListener('play', handlePlay);
         el.removeEventListener('pause', handlePause);
         el.removeEventListener('error', handleError);
+        el.removeEventListener('loadstart', onLoadStart);
         el.pause();
       });
       if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
