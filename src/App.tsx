@@ -143,6 +143,7 @@ const App = () => (
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />
+          <Frequency432Indicator />
           </BackgroundMusicProvider>
           </AudioPlayerProvider>
         </AuthProvider>
