@@ -213,14 +213,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       .then(() => {
         if (disposed) return;
         try {
-          const pitchNode = create432Node(ctx, getFrequency432());
+          const pitchNode = create432Node(ctx);
           pitch432NodeRef.current = pitchNode;
           // Reconecta: source -> pitchNode -> bass (bass já está ligado ao restante)
           try { source.disconnect(); } catch { /* noop */ }
           source.connect(pitchNode).connect(bass);
-          cleanupPitchSub = subscribeFrequency432((enabled) => {
-            set432Enabled(pitch432NodeRef.current, enabled);
-          });
+          applyPitchForUrl(pitchNode, currentUrlRef.current);
+          const reapply = () => applyPitchForUrl(pitch432NodeRef.current, currentUrlRef.current);
+          const unsubGlobal = subscribeFrequency432(reapply);
+          const unsubTrack = subscribeTrackHz(reapply);
+          cleanupPitchSub = () => { unsubGlobal(); unsubTrack(); };
         } catch (err) {
           console.warn('[432Hz] falha ao inserir nó de pitch, seguindo sem ele:', err);
         }
