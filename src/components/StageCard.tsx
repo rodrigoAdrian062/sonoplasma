@@ -296,7 +296,13 @@ export function StageCard({
 
       <div className="relative p-2.5 sm:p-3 md:p-4 min-w-0 overflow-hidden">
         {/* Header row - icon, name, actions */}
-        <div className="flex items-center gap-2 sm:gap-3 mb-2.5">
+        <div
+          className="flex items-center gap-2 sm:gap-3 mb-2.5 cursor-pointer"
+          onClick={() => setCollapsed((c) => !c)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed((c) => !c); } }}
+        >
           {stageNumber !== undefined && (
             <span
               className={cn(
