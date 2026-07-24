@@ -1,26 +1,44 @@
-import { useFrequency432 } from '@/hooks/useFrequency432';
+import { useHealingHz } from '@/hooks/useFrequency432';
+import { getFrequencyInfo } from '@/lib/pitch432';
 import { Music2 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+interface Props {
+  compact?: boolean;
+}
 
 /**
- * Indicador discreto e fixo no canto inferior esquerdo, mostrando
- * que a Frequência 432Hz está ativa globalmente.
+ * Indicador da frequência curativa ativa. Renderizado no header.
  */
-export function Frequency432Indicator() {
-  const [enabled] = useFrequency432();
-  if (!enabled) return null;
+export function Frequency432Indicator({ compact }: Props) {
+  const [hz] = useHealingHz();
+  if (hz === 440) return null;
+  const info = getFrequencyInfo(hz);
+  const label = info?.short ?? `${hz}Hz`;
   return (
-    <div
-      className="fixed bottom-3 left-3 z-[60] pointer-events-none select-none
-                 flex items-center gap-1.5 px-2 py-1 rounded-full
-                 bg-background/70 backdrop-blur-md border border-gold/50
-                 text-gold text-[10px] font-semibold tracking-wide
-                 shadow-[0_0_10px_hsl(var(--gold)/0.25)]"
-      role="status"
-      aria-label="Frequência 432Hz ativa"
-      title="Frequência 432Hz ativa"
-    >
-      <Music2 size={11} className="animate-pulse" />
-      <span>432 Hz</span>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          className={`select-none inline-flex items-center gap-1.5 rounded-full
+                      bg-gold/10 border border-gold/50 text-gold
+                      font-semibold tracking-wide
+                      shadow-[0_0_10px_hsl(var(--gold)/0.25)]
+                      ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+          role="status"
+          aria-label={`Frequência ${label} ativa`}
+        >
+          <Music2 size={compact ? 11 : 13} className="animate-pulse" />
+          <span>{label}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-xs">
+        <p className="font-semibold">{info?.label ?? `${hz}Hz`}</p>
+        {info?.desc && <p className="text-xs mt-1 opacity-80">{info.desc}</p>}
+      </TooltipContent>
+    </Tooltip>
   );
 }

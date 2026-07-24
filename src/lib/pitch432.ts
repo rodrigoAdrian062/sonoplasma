@@ -1,12 +1,32 @@
-// Frequência 432Hz — pitch-shift em tempo real preservando a velocidade.
-// Fator: 432/440 = 0.98181818… (~ -31,77 cents / -0.3176 semitons).
+// Frequências curativas — pitch-shift em tempo real preservando a velocidade.
+// Fator aplicado ao pitch: hz/440. Ex.: 432/440 = 0,98181...
 import { SoundTouchNode } from '@soundtouchjs/audio-worklet';
-// Vite serve o arquivo do processor como asset estático.
 // eslint-disable-next-line import/no-unresolved
 import processorUrl from '@soundtouchjs/audio-worklet/processor?url';
 
 export const RATIO_432 = 432 / 440;
-export const STORAGE_KEY_432 = 'audio-frequency-432-v1';
+export const STORAGE_KEY_432 = 'audio-frequency-432-v1'; // legado
+export const STORAGE_KEY_HZ = 'audio-healing-hz-v1';
+
+export interface HealingFrequency {
+  hz: number;
+  label: string;
+  short: string;
+  desc: string;
+}
+
+// Frequências curativas selecionadas (padrão + 432 + Solfeggio).
+export const HEALING_FREQUENCIES: HealingFrequency[] = [
+  { hz: 440, short: 'Padrão', label: 'Padrão — 440Hz', desc: 'Afinação original, sem alteração de tom.' },
+  { hz: 432, short: '432Hz', label: '432Hz — Harmonia Natural', desc: 'Ressonância com a natureza. Promove relaxamento profundo, clareza mental e equilíbrio emocional. Ideal para meditação e rituais solenes.' },
+  { hz: 528, short: '528Hz', label: '528Hz — Cura & Amor (MI)', desc: 'Solfeggio da transformação e reparação celular. Associada ao amor incondicional e à regeneração.' },
+  { hz: 396, short: '396Hz', label: '396Hz — Libertação (UT)', desc: 'Dissolve culpa e medo. Ajuda a libertar bloqueios emocionais e traumas antigos.' },
+  { hz: 417, short: '417Hz', label: '417Hz — Renovação (RE)', desc: 'Facilita mudanças, quebra padrões negativos e reconecta ao propósito.' },
+  { hz: 639, short: '639Hz', label: '639Hz — Vínculos (FA)', desc: 'Harmoniza relacionamentos, comunicação e afetos. Fortalece a fraternidade.' },
+  { hz: 741, short: '741Hz', label: '741Hz — Intuição (SOL)', desc: 'Desperta a expressão pura, a intuição e a limpeza espiritual do ambiente.' },
+  { hz: 852, short: '852Hz', label: '852Hz — Despertar (LA)', desc: 'Retorno à ordem espiritual. Eleva a consciência e a percepção sutil.' },
+  { hz: 963, short: '963Hz', label: '963Hz — Consciência Divina', desc: 'Ativação da pineal e conexão com a Fonte/Grande Arquiteto do Universo.' },
+];
 
 const registeredContexts = new WeakSet<BaseAudioContext>();
 
@@ -16,33 +36,68 @@ export async function ensure432Registered(ctx: BaseAudioContext): Promise<void> 
   registeredContexts.add(ctx);
 }
 
-export function create432Node(ctx: BaseAudioContext, enabled: boolean): SoundTouchNode {
+// -------------------- Estado global (Hz atual) --------------------
+type HzListener = (hz: number) => void;
+const hzListeners = new Set<HzListener>();
+
+function readInitialHz(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_HZ);
+    if (raw != null) {
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    // Migração do toggle antigo (boolean 432Hz on/off)
+    if (localStorage.getItem(STORAGE_KEY_432) === 'true') return 432;
+  } catch { /* noop */ }
+  return 440;
+}
+
+let currentHz = typeof window !== 'undefined' ? readInitialHz() : 440;
+
+export function getHealingHz(): number { return currentHz; }
+
+export function setHealingHz(hz: number): void {
+  currentHz = hz;
+  try {
+    localStorage.setItem(STORAGE_KEY_HZ, String(hz));
+    // manter compat com código legado que lê a chave antiga
+    localStorage.setItem(STORAGE_KEY_432, String(hz !== 440));
+  } catch { /* noop */ }
+  hzListeners.forEach((l) => { try { l(hz); } catch { /* noop */ } });
+}
+
+export function subscribeHealingHz(l: HzListener): () => void {
+  hzListeners.add(l);
+  return () => { hzListeners.delete(l); };
+}
+
+export function getPitchRatio(): number { return currentHz / 440; }
+
+export function getFrequencyInfo(hz = currentHz): HealingFrequency | undefined {
+  return HEALING_FREQUENCIES.find((f) => f.hz === hz);
+}
+
+// -------------------- Node helpers --------------------
+export function create432Node(ctx: BaseAudioContext, _enabled?: boolean): SoundTouchNode {
   const node = new SoundTouchNode({ context: ctx });
-  node.pitch.value = enabled ? RATIO_432 : 1;
+  node.pitch.value = getPitchRatio();
   return node;
 }
 
-export function set432Enabled(node: SoundTouchNode | null, enabled: boolean): void {
+export function set432Enabled(node: SoundTouchNode | null, _enabled?: boolean): void {
   if (!node) return;
-  try {
-    node.pitch.value = enabled ? RATIO_432 : 1;
-  } catch { /* noop */ }
+  try { node.pitch.value = getPitchRatio(); } catch { /* noop */ }
 }
 
-// -------------------- Toggle global (persistido em localStorage) --------------------
-type Listener = (enabled: boolean) => void;
-const listeners = new Set<Listener>();
-
-export function getFrequency432(): boolean {
-  try { return localStorage.getItem(STORAGE_KEY_432) === 'true'; } catch { return false; }
-}
+// -------------------- API legada (compat) --------------------
+export function getFrequency432(): boolean { return currentHz !== 440; }
 
 export function setFrequency432(enabled: boolean): void {
-  try { localStorage.setItem(STORAGE_KEY_432, String(enabled)); } catch { /* noop */ }
-  listeners.forEach((l) => { try { l(enabled); } catch { /* noop */ } });
+  setHealingHz(enabled ? 432 : 440);
 }
 
-export function subscribeFrequency432(l: Listener): () => void {
-  listeners.add(l);
-  return () => { listeners.delete(l); };
+// Dispara callback em qualquer mudança de Hz (contextos re-aplicam o pitch atual).
+export function subscribeFrequency432(cb: (enabled: boolean) => void): () => void {
+  return subscribeHealingHz((hz) => cb(hz !== 440));
 }
