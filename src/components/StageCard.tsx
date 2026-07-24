@@ -339,7 +339,7 @@ export function StageCard({
             )}
           </div>
 
-          <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={onEdit}
               className="p-1.5 text-muted-foreground/60 hover:text-gold transition-colors rounded-md hover:bg-gold/10"
@@ -362,6 +362,7 @@ export function StageCard({
               {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </button>
           </div>
+
         </div>
 
         {!collapsed && (<>
