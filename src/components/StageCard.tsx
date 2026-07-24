@@ -93,6 +93,8 @@ export function StageCard({
   }, [currentUrl, audios, selectedAudioIndex]);
 
   const [showAudioList, setShowAudioList] = useState(audios.length >= 5);
+  const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => { if (isPlaying || isPaused) setCollapsed(false); }, [isPlaying, isPaused]);
   
   const timer = useTimer(() => {
     onStop();
