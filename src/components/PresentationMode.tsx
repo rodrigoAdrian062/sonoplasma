@@ -988,6 +988,11 @@ export function PresentationMode({
           )}>
             {currentStage.nome_simbolico}
           </h1>
+          {currentAudio && (
+            <div className="flex justify-center mb-2">
+              <TrackHzBadge url={currentAudio.audio_url} playing={isPlaying} size="sm" />
+            </div>
+          )}
 
 
           {/* Description */}
