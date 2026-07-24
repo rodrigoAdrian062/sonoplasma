@@ -59,11 +59,7 @@ function TrackHzSelector({ url }: { url: string }) {
     force((n) => n + 1);
   }), [url]);
   // Escuta mudanças da Hz global também
-  useEffect(() => {
-    const handler = () => force((n) => n + 1);
-    window.addEventListener('healingHzChange', handler);
-    return () => window.removeEventListener('healingHzChange', handler);
-  }, []);
+  useEffect(() => subscribeHealingHz(() => force((n) => n + 1)), []);
   const effectiveHz = getEffectiveHz(url);
   const info = HEALING_FREQUENCIES.find((f) => f.hz === effectiveHz);
   const active = effectiveHz !== 440;
