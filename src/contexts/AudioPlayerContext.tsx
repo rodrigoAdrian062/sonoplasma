@@ -503,6 +503,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (!audio) return;
       currentUrlRef.current = url;
       setCurrentUrl(url);
+      applyPitchForUrl(pitch432NodeRef.current, url);
       audio.volume = volumeRef.current;
       // Toca a partir do cache local (blob) quando disponível para
       // início instantâneo; senão usa a URL direta e cacheia em segundo plano.
