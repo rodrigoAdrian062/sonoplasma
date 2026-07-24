@@ -94,7 +94,23 @@ export function StageCard({
 
   const [showAudioList, setShowAudioList] = useState(audios.length >= 5);
   const [collapsed, setCollapsed] = useState(true);
-  useEffect(() => { if (isPlaying || isPaused) setCollapsed(false); }, [isPlaying, isPaused]);
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      if (!next) {
+        try { window.dispatchEvent(new CustomEvent('stage:expanded', { detail: { id: stage.id } })); } catch {}
+      }
+      return next;
+    });
+  };
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.id && detail.id !== stage.id) setCollapsed(true);
+    };
+    window.addEventListener('stage:expanded', handler);
+    return () => window.removeEventListener('stage:expanded', handler);
+  }, [stage.id]);
   
   const timer = useTimer(() => {
     onStop();
