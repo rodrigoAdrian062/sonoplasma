@@ -443,6 +443,7 @@ export function StageCard({
                     >
                       <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
                       <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
+                      <TrackHzBadge url={audio.audio_url} playing={isPlaying && index === selectedAudioIndex} />
                       {index === selectedAudioIndex && !isActive && (
                         <span
                           className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-[1px] rounded-full text-[9px] uppercase tracking-wider bg-gold/15 text-gold border border-gold/30"
