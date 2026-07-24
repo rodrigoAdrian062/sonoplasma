@@ -3,7 +3,7 @@ import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { toast } from '@/hooks/use-toast';
 import { registerAudioElement } from '@/lib/audioOutput';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
-import { ensure432Registered, create432Node, set432Enabled, getFrequency432, subscribeFrequency432 } from '@/lib/pitch432';
+import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequency432, subscribeTrackHz } from '@/lib/pitch432';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
 
 export interface BackgroundTrack {
