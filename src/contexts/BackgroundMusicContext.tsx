@@ -219,6 +219,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       const a = new Audio();
       a.loop = false;
       a.preload = 'auto';
+      a.crossOrigin = 'anonymous';
       a.volume = volume;
       registerAudioElement(a);
       return a;
@@ -228,6 +229,47 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     audioARef.current = a;
     audioBRef.current = b;
     audioRef.current = a;
+
+    // Web Audio pipeline para suportar 432Hz nos dois elementos (A e B).
+    let ctx: AudioContext | null = null;
+    let disposed = false;
+    let cleanupPitchSub: (() => void) | null = null;
+    const pitchNodes: SoundTouchNode[] = [];
+    try {
+      ctx = new AudioContext();
+      const setupElement = (el: HTMLAudioElement) => {
+        const source = ctx!.createMediaElementSource(el);
+        source.connect(ctx!.destination);
+        return source;
+      };
+      const sourceA = setupElement(a);
+      const sourceB = setupElement(b);
+
+      ensure432Registered(ctx)
+        .then(() => {
+          if (disposed || !ctx) return;
+          try {
+            const initial = getFrequency432();
+            [[sourceA, a], [sourceB, b]].forEach(([src]) => {
+              const pitchNode = create432Node(ctx!, initial);
+              pitchNodes.push(pitchNode);
+              try { (src as MediaElementAudioSourceNode).disconnect(); } catch { /* noop */ }
+              (src as MediaElementAudioSourceNode).connect(pitchNode).connect(ctx!.destination);
+            });
+            cleanupPitchSub = subscribeFrequency432((enabled) => {
+              pitchNodes.forEach((n) => set432Enabled(n, enabled));
+            });
+          } catch (err) {
+            console.warn('[bg-432Hz] falha ao inserir nó de pitch:', err);
+          }
+        })
+        .catch((err) => {
+          console.warn('[bg-432Hz] worklet indisponível:', err);
+        });
+    } catch (err) {
+      console.warn('[bg-audio] AudioContext indisponível, seguindo sem 432Hz:', err);
+    }
+
 
     const handleEnded = (e: Event) => {
       const el = e.target as HTMLAudioElement;
