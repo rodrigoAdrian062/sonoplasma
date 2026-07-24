@@ -314,10 +314,10 @@ export function StageCard({
         {/* Header row - icon, name, actions */}
         <div
           className="flex items-center gap-2 sm:gap-3 mb-2.5 cursor-pointer"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => toggleCollapsed()}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed((c) => !c); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapsed(); } }}
         >
           {stageNumber !== undefined && (
             <span
@@ -371,7 +371,7 @@ export function StageCard({
               <Trash2 size={14} />
             </button>
             <button
-              onClick={() => setCollapsed((c) => !c)}
+              onClick={() => toggleCollapsed()}
               className="p-1.5 text-muted-foreground/60 hover:text-gold transition-colors rounded-md hover:bg-gold/10"
               aria-label={collapsed ? 'Expandir etapa' : 'Recolher etapa'}
             >
