@@ -448,13 +448,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     clearFade();
     stopCurrentPlayback();
 
-    // Bug corrigido: só reduz o volume inicial quando o fade está ativado.
-    // Antes, o volume era forçado a 10% em toda chamada de play(), ignorando
-    // o volume escolhido pelo usuário mesmo com o fade desligado.
-    if (fadeEnabledRef.current) {
-      volumeRef.current = 0.1;
-      setVolumeState(0.1);
-    }
+    // Todo play() começa em 0% — usuário sobe manualmente.
+    volumeRef.current = 0;
+    setVolumeState(0);
+
 
 
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
