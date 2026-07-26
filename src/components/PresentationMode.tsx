@@ -198,17 +198,8 @@ export function PresentationMode({
     if (urls.length > 0) prefetchAudios(urls);
   }, [prefetchOn, selectedStageIndex, stages, audiosByStageId]);
 
-  // Bug corrigido: o destaque do cue ficava congelado quando o usuário
-  // trocava de áudio por outro caminho (clique na etapa, atalho, etc.).
-  // Agora limpamos também sempre que a faixa ativa muda ou fica ociosa.
-  useEffect(() => {
-    if (status === 'idle') { setActiveCueKey(null); return; }
-    if (!activeCueKey) return;
-    const expected = activeCueKey.startsWith('cue:')
-      ? activeCueKey.slice(4)
-      : `track:${activeCueKey.slice(6)}`;
-    if (currentStageId !== expected) setActiveCueKey(null);
-  }, [status, currentStageId, activeCueKey]);
+
+
 
   useEffect(() => {
     if (currentStage) {
@@ -700,7 +691,7 @@ export function PresentationMode({
       </header>
 
       {/* Main Content - scrollable on mobile */}
-      <main className={`flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 relative overflow-y-auto transition-[padding] duration-200 ${showRoteiro && roteiro ? 'sm:pl-[440px] md:pl-[500px] lg:pl-[580px]' : ''}`}>
+      <main className="flex-1 flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 relative overflow-y-auto">
         {/* Background Banner */}
         <img 
           src={presentationBanner} 
@@ -709,144 +700,6 @@ export function PresentationMode({
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
 
-        {/* Roteiro Side Panel */}
-        {showRoteiro && roteiro && (
-          <aside className="absolute left-0 top-0 bottom-0 z-30 w-full sm:w-[420px] md:w-[480px] lg:w-[560px] max-w-[92vw] bg-card/95 backdrop-blur-xl border-r border-gold/20 shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10 shrink-0">
-              <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-widest text-gold/70">Roteiro</div>
-                <div className="text-sm font-semibold truncate">{roteiro.titulo}</div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowRoteiro(false)}
-                className="h-8 w-8 text-muted-foreground hover:text-gold shrink-0"
-                title="Ocultar"
-              >
-                <PanelLeftClose size={16} />
-              </Button>
-            </div>
-            <div data-roteiro-scroll className="flex-1 overflow-y-auto px-6 py-5 font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
-              {roteiroBlocks.length === 0 && (
-                <div className="text-muted-foreground italic">Roteiro vazio.</div>
-              )}
-              <div className="text-[10px] font-mono text-muted-foreground/60 mb-2 text-right">
-                pág. {Math.min(roteiroPage, roteiroTotalPages - 1) + 1} / {roteiroTotalPages}
-              </div>
-              {(() => {
-                // Agrupar blocos da página em parágrafos (linhas de leitura)
-                const paragraphs: RoteiroBlock[][] = [];
-                let cur: RoteiroBlock[] = [];
-                roteiroCurrentPage.forEach((b) => {
-                  if (b.type === 'page') return;
-                  if (b.type === 'text') {
-                    const parts = b.text.split(/\n\s*\n/);
-                    parts.forEach((p, i) => {
-                      if (i > 0) { if (cur.length) paragraphs.push(cur); cur = []; }
-                      if (p) cur.push({ type: 'text', text: p } as RoteiroBlock);
-                    });
-                  } else {
-                    cur.push(b);
-                  }
-                });
-                if (cur.length) paragraphs.push(cur);
-
-                return paragraphs.map((para, pIdx) => {
-                  const paraKeys = para
-                    .map((b) => b.type === 'cue' ? `cue:${b.etapaId}` : b.type === 'track' ? `track:${b.audioId}` : null)
-                    .filter(Boolean) as string[];
-                  const hasActive = activeCueKey && paraKeys.includes(activeCueKey);
-                  const isHover = hoverLineIdx === pIdx;
-                  return (
-                    <div
-                      key={pIdx}
-                      onMouseEnter={() => setHoverLineIdx(pIdx)}
-                      onMouseLeave={() => setHoverLineIdx((v) => (v === pIdx ? null : v))}
-                      className={[
-                        'transition-all duration-200 rounded-lg px-3 py-2 my-1 border border-transparent',
-                        hasActive
-                          ? 'bg-gold/15 border-gold/60 shadow-[0_0_24px_rgba(212,175,55,0.25)] ring-1 ring-gold/40'
-                          : isHover
-                            ? 'bg-gold/5 border-gold/20'
-                            : '',
-                      ].join(' ')}
-                    >
-                      {para.map((b, i) => {
-                        if (b.type === 'text') return <span key={i}>{b.text}</span>;
-                        if (b.type === 'page') return null;
-                        const key = b.type === 'cue' ? `cue:${b.etapaId}` : `track:${b.audioId}`;
-                        const label = b.type === 'cue'
-                          ? (stagesById.get(b.etapaId)?.nome_simbolico ?? '⚠ etapa removida')
-                          : (libraryById.get(b.audioId)?.nome ?? '⚠ faixa removida');
-                        const active = activeCueKey === key;
-                        const cueBlock = b;
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => fireRoteiroCue(cueBlock)}
-                            className={[
-                              'inline-flex items-center gap-1.5 my-1 mx-0.5 px-2.5 py-1 rounded-md text-xs font-semibold align-middle transition-all',
-                              active
-                                ? 'border border-gold bg-gold text-background shadow-[0_0_16px_rgba(212,175,55,0.6)] animate-pulse'
-                                : 'border border-gold/40 bg-gold/10 text-gold hover:bg-gold/25',
-                            ].join(' ')}
-                          >
-                            <Play size={12} />
-                            <span className="truncate max-w-[260px]">{label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-
-            {/* Navegação de páginas */}
-            {roteiro && (
-              <div className="border-t border-gold/10 px-3 py-2 flex items-center gap-2 shrink-0 bg-black/30">
-                <Button
-                  size="icon" variant="ghost"
-                  onClick={() => setRoteiroPage((p) => Math.max(0, p - 1))}
-                  disabled={roteiroPage === 0}
-                  className="h-8 w-8 text-muted-foreground hover:text-gold"
-                  title="Página anterior (←)"
-                >
-                  <ChevronLeft size={16} />
-                </Button>
-                <span className="text-xs font-mono text-muted-foreground flex-1 text-center">
-                  {Math.min(roteiroPage, roteiroTotalPages - 1) + 1} / {roteiroTotalPages}
-                </span>
-                <Button
-                  size="icon" variant="ghost"
-                  onClick={() => setRoteiroPage((p) => Math.min(roteiroTotalPages - 1, p + 1))}
-                  disabled={roteiroPage >= roteiroTotalPages - 1}
-                  className="h-8 w-8 text-muted-foreground hover:text-gold"
-                  title="Próxima página (→)"
-                >
-                  <ChevronRight size={16} />
-                </Button>
-                <form
-                  className="flex items-center gap-1"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const n = parseInt(roteiroGoto, 10);
-                    if (!Number.isNaN(n)) setRoteiroPage(Math.max(0, Math.min(roteiroTotalPages - 1, n - 1)));
-                    setRoteiroGoto('');
-                  }}
-                >
-                  <Input
-                    value={roteiroGoto}
-                    onChange={(e) => setRoteiroGoto(e.target.value.replace(/\D/g, ''))}
-                    placeholder="pág."
-                    className="h-8 w-14 text-xs"
-                  />
-                </form>
-              </div>
-            )}
-          </aside>
-        )}
 
 
 
