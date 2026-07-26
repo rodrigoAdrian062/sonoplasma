@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library, Music2, BookOpen } from 'lucide-react';
+import { Home, Library, Music2 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,7 +12,7 @@ import { useUiToggles, UiToggleKey } from '@/hooks/useUiToggles';
 const LINKS: Array<{ to: string; label: string; icon: any; activeClass: string; toggleKey?: UiToggleKey }> = [
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
   { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_biblioteca' },
-  { to: '/roteiros', label: 'Roteiros', icon: BookOpen, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_roteiros' },
+  
   { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40', toggleKey: 'nav_youtube' },
 ];
 
