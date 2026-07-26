@@ -481,18 +481,6 @@ const SectionDetail = () => {
                 </p>
               )}
             </div>
-            {toggles.btn_roteiro && (
-              <Button
-                onClick={() => navigate(`/roteiro/${sectionId}`)}
-                size="sm"
-                className="gap-1.5 bg-secondary hover:bg-gold/20 text-muted-foreground hover:text-gold border border-border hover:border-gold/30 shrink-0"
-                variant="outline"
-                title="Roteiro / Leitura do ritual"
-              >
-                <BookOpen size={16} />
-                <span className="hidden sm:inline">Roteiro</span>
-              </Button>
-            )}
             {toggles.btn_apresentar && sectionStages.length > 0 && (
               <Button
                 onClick={() => setIsPresentationMode(true)}

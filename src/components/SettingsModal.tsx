@@ -478,9 +478,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             {([
               { key: 'btn_apresentar', label: 'Botão "Apresentar" (modo apresentação)' },
-              { key: 'btn_roteiro', label: 'Botão "Roteiro" (leitura do ritual)' },
               { key: 'nav_biblioteca', label: 'Atalho rápido: Biblioteca' },
-              { key: 'nav_roteiros', label: 'Atalho rápido: Roteiros' },
               { key: 'nav_youtube', label: 'Atalho rápido: YouTube' },
               
             ] as const).map((item) => (

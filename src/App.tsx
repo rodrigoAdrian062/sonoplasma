@@ -19,8 +19,6 @@ const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
-const RoteiroPage = lazy(() => import("./pages/RoteiroPage"));
-const RoteirosLibrary = lazy(() => import("./pages/RoteirosLibrary"));
 
 
 import { MiniPlayer } from "@/components/MiniPlayer";
@@ -117,22 +115,6 @@ const App = () => (
                   <ErrorBoundary context="UserManagement"><UserManagement /></ErrorBoundary>
                 </ProtectedRoute>
               } 
-            />
-            <Route
-              path="/roteiro/:sectionId"
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="RoteiroPage"><RoteiroPage /></ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/roteiros"
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="RoteirosLibrary"><RoteirosLibrary /></ErrorBoundary>
-                </ProtectedRoute>
-              }
             />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

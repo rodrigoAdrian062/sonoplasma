@@ -6,9 +6,7 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, ScrollText, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useRoteiroBySection } from '@/hooks/useRoteiros';
-import { parseRoteiro, paginateBlocks, RoteiroBlock } from '@/lib/roteiroFormat';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
@@ -148,40 +146,10 @@ export function PresentationMode({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
-  const [showRoteiro, setShowRoteiro] = useState(false);
-  const [roteiroPage, setRoteiroPage] = useState(0);
-  const [roteiroGoto, setRoteiroGoto] = useState('');
-  const [activeCueKey, setActiveCueKey] = useState<string | null>(null);
-  const [hoverLineIdx, setHoverLineIdx] = useState<number | null>(null);
   const { deleteAudio } = useStageAudios();
-  const { data: roteiro } = useRoteiroBySection(secaoId);
   const { audios: libraryAudios } = useAudioLibrary();
-  const roteiroBlocks = roteiro ? parseRoteiro(roteiro.conteudo) : [];
-  const roteiroPages = roteiro ? paginateBlocks(roteiroBlocks, 900) : [];
-  const roteiroTotalPages = Math.max(1, roteiroPages.length);
-  const roteiroCurrentPage = roteiroPages[Math.min(roteiroPage, roteiroTotalPages - 1)] || [];
   const stagesById = new Map(stages.map((s) => [s.id, s] as const));
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
-
-  const fireRoteiroCue = (block: { type: 'cue'; etapaId: string } | { type: 'track'; audioId: string }) => {
-    const key = block.type === 'cue' ? `cue:${block.etapaId}` : `track:${block.audioId}`;
-    setActiveCueKey(key);
-    if (block.type === 'cue') {
-      const stage = stagesById.get(block.etapaId);
-      if (!stage) { toast.error('Etapa não encontrada'); return; }
-      const list = audiosByStageId[stage.id] || [];
-      if (!list.length) { toast.error(`"${stage.nome_simbolico}" sem áudio`); return; }
-      const idx = stages.findIndex((s) => s.id === stage.id);
-      if (idx >= 0) setSelectedStageIndex(idx);
-      onPlay(stage.id, list[0].audio_url);
-      toast.success(`▶ ${stage.nome_simbolico}`);
-    } else {
-      const tr = libraryById.get(block.audioId);
-      if (!tr) { toast.error('Faixa não encontrada'); return; }
-      onPlay(`track:${tr.id}`, tr.audio_url);
-      toast.success(`▶ ${tr.nome}`);
-    }
-  };
 
   const handleConfirmDeleteAudio = () => {
     if (!audioToDelete) return;
@@ -593,22 +561,6 @@ export function PresentationMode({
             
           </div>
           <PresentationHeaderBgMusic />
-          {roteiro && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRoteiro((v) => !v)}
-              title={showRoteiro ? 'Ocultar roteiro' : 'Mostrar roteiro'}
-              className={cn(
-                'h-8 gap-1.5 px-2 border border-gold/20',
-                showRoteiro ? 'text-gold bg-gold/10' : 'text-muted-foreground hover:text-gold'
-              )}
-            >
-              {showRoteiro ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-              <ScrollText size={14} />
-              <span className="hidden sm:inline text-xs">Roteiro</span>
-            </Button>
-          )}
         </div>
 
         

@@ -6,9 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
  */
 export type UiToggleKey =
   | 'btn_apresentar'
-  | 'btn_roteiro'
   | 'nav_biblioteca'
-  | 'nav_roteiros'
   | 'nav_youtube'
   | 'nav_conversor';
 
@@ -17,9 +15,7 @@ const EVENT = 'sonoplastia:uiToggles:changed';
 
 const DEFAULTS: Record<UiToggleKey, boolean> = {
   btn_apresentar: true,
-  btn_roteiro: true,
   nav_biblioteca: true,
-  nav_roteiros: true,
   nav_youtube: true,
   nav_conversor: true,
 };
