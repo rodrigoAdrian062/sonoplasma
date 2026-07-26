@@ -71,7 +71,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
 
   const [status, setStatus] = useState<PlaybackStatus>('idle');
-  const [volume, setVolumeState] = useState(0.7);
+  const [volume, setVolumeState] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
