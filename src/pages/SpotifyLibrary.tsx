@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Play, Pause, Search, ListMusic } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
@@ -77,7 +79,7 @@ export default function SpotifyLibraryPage() {
           </Button>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-[#1DB954]/15 flex items-center justify-center">
-              <ListMusic size={18} className="text-[#1DB954]" />
+              <SpotifyIcon size={20} className="text-[#1DB954]" />
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-semibold truncate">Biblioteca Spotify</h1>
