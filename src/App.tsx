@@ -17,7 +17,7 @@ import Auth from "./pages/Auth";
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
-const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
+
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 
@@ -108,14 +108,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ErrorBoundary context="YoutubeLibrary"><YoutubeLibrary /></ErrorBoundary>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/spotify" 
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />

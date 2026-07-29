@@ -306,7 +306,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
               {([
                 { id: 'upload', label: 'Upload', icon: Upload },
                 { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
+                
                 { id: 'link', label: 'Link', icon: LinkIcon },
               ] as const).map((t) => (
 

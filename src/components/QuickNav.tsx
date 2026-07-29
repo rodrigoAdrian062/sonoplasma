@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Library, Music2 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
-import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -15,7 +14,6 @@ const LINKS: Array<{ to: string; label: string; icon: any; activeClass: string; 
   { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
   { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_biblioteca' },
   { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40', toggleKey: 'nav_youtube' },
-  { to: '/spotify', label: 'Spotify', icon: SpotifyIcon, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40', toggleKey: 'nav_spotify' },
 ];
 
 
