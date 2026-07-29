@@ -24,7 +24,7 @@ interface Props {
 export function Frequency432Indicator({ compact }: Props) {
   const [globalHz] = useHealingHz();
   const player = useUniversalAudioPlayer();
-  const { currentUrl, status, isYouTube } = player;
+  const { currentUrl, status, isYouTube, isSpotify } = player;
 
   // Re-render quando override por faixa muda.
   const [, force] = useState(0);
@@ -35,7 +35,7 @@ export function Frequency432Indicator({ compact }: Props) {
   const displayHz = effectiveHz;
 
   // Pipeline realmente ativo? Só para arquivo local em reprodução.
-  const processing = status === 'playing' && !!currentUrl && !isYouTube;
+  const processing = status === 'playing' && !!currentUrl && !isYouTube && !isSpotify;
 
   // Se nada está tocando e o global é 440, esconde. Se está tocando e a
   // efetiva é 440 (override), ainda mostramos para transparência.
@@ -93,8 +93,8 @@ export function Frequency432Indicator({ compact }: Props) {
             Status:{' '}
             {processing ? (
               <span className="text-gold font-semibold">processando ao vivo</span>
-            ) : isYouTube && currentUrl ? (
-              <span>YouTube (sem processamento — iframe)</span>
+            ) : (isYouTube || isSpotify) && currentUrl ? (
+              <span>{isSpotify ? 'Spotify' : 'YouTube'} (sem processamento — iframe)</span>
             ) : currentUrl ? (
               <span>pausado</span>
             ) : (

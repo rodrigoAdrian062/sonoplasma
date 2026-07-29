@@ -26,7 +26,6 @@ const UserManagement = lazy(() => import("./pages/UserManagement"));
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
-import { SpotifyHost } from "@/components/SpotifyHost";
 
 
 
@@ -138,7 +137,6 @@ const App = () => (
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />
-          <SpotifyHost />
           </BackgroundMusicProvider>
 
           </AudioPlayerProvider>
