@@ -111,6 +111,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showYtAi, setShowYtAi] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>('upload');
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
