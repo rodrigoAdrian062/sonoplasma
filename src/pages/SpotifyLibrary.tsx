@@ -48,7 +48,7 @@ export default function SpotifyLibraryPage() {
       return;
     }
     try {
-      await addAudio({ nome: name, audio_url: url, tipo: 'spotify' as any });
+      await addAudio.mutateAsync({ nome: name, audio_url: url, tipo: 'spotify' as any });
       setNewName('');
       setNewUrl('');
       setShowForm(false);
@@ -181,7 +181,7 @@ export default function SpotifyLibraryPage() {
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => {
                       if (active) stop();
-                      if (confirm(`Excluir "${a.nome}"?`)) deleteAudio(a.id);
+                      if (confirm(`Excluir "${a.nome}"?`)) deleteAudio.mutate(a.id);
                     }}
                     aria-label="Excluir"
                   >
@@ -200,7 +200,7 @@ export default function SpotifyLibraryPage() {
         platform="spotify"
         isValidUrl={isSpotifyUrl}
         existingUrls={existingUrls}
-        addAudio={addAudio as any}
+        addAudio={(input) => addAudio.mutateAsync(input)}
       />
     </div>
   );
