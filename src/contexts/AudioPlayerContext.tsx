@@ -84,7 +84,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
   const [isSpotify, setIsSpotify] = useState(false);
-  const [spotifyReloadTick, setSpotifyReloadTick] = useState(0);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
 
   const [eq, setEQState] = useState<EQSettings>({ bass: 0, mid: 0, treble: 0 });
@@ -497,7 +496,6 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('playing');
       setCurrentTime(0);
       setDuration(0);
-      setSpotifyReloadTick((tick) => tick + 1);
       playSpotifyEntity(url).catch((err) => {
         console.error('[Spotify] falha ao reproduzir:', err, { url });
         setStatus('idle');
