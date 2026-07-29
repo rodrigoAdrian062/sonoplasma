@@ -22,6 +22,8 @@ import {
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 
 import { cn } from '@/lib/utils';
 // JSZip e file-saver são pesados (~90 KB) e só rodam no "baixar tudo".
@@ -620,8 +622,18 @@ export default function AudioLibraryPage() {
                 <YoutubeIcon size={14} className="mr-1" />
                 <span className="hidden sm:inline">YouTube</span>
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/spotify')}
+                className="border-[#1DB954]/60 text-[#1DB954] hover:bg-[#1DB954]/10 shrink-0"
+              >
+                <SpotifyIcon size={14} className="mr-1 text-[#1DB954]" />
+                <span className="hidden sm:inline">Spotify</span>
+              </Button>
             </>
           )}
+
 
 
 
