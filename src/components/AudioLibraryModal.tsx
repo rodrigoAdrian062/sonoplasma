@@ -502,7 +502,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   { id: 'all', label: 'Todos', icon: null, count: audios.length },
                   { id: 'file', label: 'Arquivos', icon: <FileAudio size={11} />, count: audios.filter(a => getAudioSource(a) === 'file').length },
                   { id: 'youtube', label: 'YouTube', icon: <Youtube size={11} className="text-[#FF0000]" />, count: audios.filter(a => getAudioSource(a) === 'youtube').length },
-                  { id: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={11} className="text-[#1DB954]" />, count: audios.filter(a => getAudioSource(a) === 'spotify').length },
+                  
                 ] as const).map((s) => (
 
                   <button

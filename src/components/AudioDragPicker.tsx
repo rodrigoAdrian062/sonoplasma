@@ -713,7 +713,6 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                   { id: 'all', label: 'Todos', icon: Library },
                   { id: 'upload', label: 'Áudio', icon: Music },
                   { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                  { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 ] as const).map((f) => {
                   const active = sourceFilter === f.id;
                   const count = f.id === 'all'
@@ -920,7 +919,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
                         { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                        { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
+                        
                         { id: 'link', label: 'Link', icon: LinkIcon },
                       ] as const).map((t) => (
 

@@ -834,7 +834,7 @@ export function PresentationMode({
             const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
               { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
               { key: 'youtube', label: 'YouTube', icon: <YoutubeIcon size={13} className="shrink-0" /> },
-              { key: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={13} className="shrink-0 text-[#1DB954]" /> },
+              
               { key: 'file', label: 'Baixado', icon: <FolderMusicIcon size={13} className="shrink-0" /> },
             ];
 
