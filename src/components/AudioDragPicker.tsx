@@ -1,9 +1,10 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Play, Pause, Square, Plus, Upload, Loader2,
-  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2,
+  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2, Youtube,
 
 } from 'lucide-react';
+import { YoutubeAiSuggestionsModal } from '@/components/YoutubeAiSuggestionsModal';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
