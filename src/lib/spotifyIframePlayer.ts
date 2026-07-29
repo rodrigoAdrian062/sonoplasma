@@ -96,14 +96,14 @@ function getOrCreateHost(): HTMLElement {
     host.setAttribute('aria-hidden', 'true');
     host.style.cssText = [
       'position:fixed',
-      'left:-10000px',
+      'left:0',
       'bottom:0',
       'width:320px',
       'height:152px',
-      'opacity:0.01',
+      'opacity:0.001',
       'pointer-events:none',
       'overflow:hidden',
-      'z-index:-1',
+      'z-index:0',
     ].join(';');
     document.body.appendChild(host);
   }
@@ -150,10 +150,16 @@ export async function playSpotifyEntity(url: string): Promise<void> {
   const activeController = await loadSpotifyEntity(url);
   if (activeController.play) activeController.play();
   else activeController.resume?.();
+  window.setTimeout(() => {
+    if (activeController.play) activeController.play();
+    else activeController.resume?.();
+  }, 150);
+  emitPlayback({ isPaused: false, position: 0 });
 }
 
 export async function pauseSpotifyEntity(): Promise<void> {
   controller?.pause?.();
+  emitPlayback({ isPaused: true });
 }
 
 export async function resumeSpotifyEntity(url?: string | null): Promise<void> {
@@ -161,6 +167,7 @@ export async function resumeSpotifyEntity(url?: string | null): Promise<void> {
   if (!activeController) return;
   if (activeController.resume) activeController.resume();
   else activeController.play?.();
+  emitPlayback({ isPaused: false });
 }
 
 export async function seekSpotifyEntity(seconds: number): Promise<void> {

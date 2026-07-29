@@ -54,7 +54,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
-  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
+  useEffect(() => () => { audioElement?.pause(); destroySpotifyPlayer(); }, [audioElement]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -584,7 +584,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             ) : (
               <div className="space-y-2">
                 {filteredAudios.map((audio) => {
-                  const isStream = !!detectStream(audio.audio_url);
+                  const isStream = detectStream(audio.audio_url) === 'youtube';
                   const showEmbed = previewEmbedId === audio.id && isStream;
                   const embedUrl = showEmbed ? toEmbedUrl(audio.audio_url, { autoplay: true }) : null;
                   return (
@@ -643,8 +643,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                           type="button"
                           variant="outline"
                           size="icon"
-                          title={isStream ? (showEmbed ? 'Fechar prévia' : 'Ouvir prévia') : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
-                          aria-label={isStream ? 'Ouvir prévia' : 'Ouvir'}
+                          title={showEmbed || playingId === audio.id ? 'Pausar' : 'Ouvir'}
+                          aria-label="Ouvir"
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
@@ -654,8 +654,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         >
                           {(playingId === audio.id || showEmbed) ? (
                             <Pause size={16} fill="currentColor" />
-                          ) : isStream ? (
-                            <Headphones size={16} />
                           ) : (
                             <Play size={16} fill="currentColor" />
                           )}
