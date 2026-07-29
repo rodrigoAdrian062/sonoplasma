@@ -12,6 +12,7 @@ type SpotifyEmbedController = {
   loadEntity?: (spotifyUriOrUrl: string, preferVideo?: boolean, startAt?: number) => void;
   loadUri?: (spotifyUri: string, preferVideo?: boolean, startAt?: number, theme?: string) => void;
   play?: () => void;
+  playFromStart?: () => void;
   pause?: () => void;
   resume?: () => void;
   restart?: () => void;
