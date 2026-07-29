@@ -1,9 +1,10 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search, Music, Play, Pause, Square, Plus, Upload, Loader2,
-  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2,
+  Link as LinkIcon, X, Folder, ChevronLeft, Library, GripVertical, MousePointerClick, Check, Trash2, Wand2, Youtube,
 
 } from 'lucide-react';
+import { YoutubeAiSuggestionsModal } from '@/components/YoutubeAiSuggestionsModal';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
@@ -110,6 +111,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showYtAi, setShowYtAi] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>('upload');
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -556,6 +558,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                 </button>
                 <button
                   type="button"
+                  onClick={() => setShowYtAi(true)}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                    'border-red-500/60 bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                  )}
+                  title="A IA sugere músicas instrumentais reais do YouTube para esta etapa"
+                >
+                  <Youtube size={12} />
+                  Sugerir do YouTube (IA)
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSuggestMode((v) => !v)}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
@@ -572,6 +586,20 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             )}
           </DialogTitle>
         </DialogHeader>
+
+        {stageTitle && (
+          <YoutubeAiSuggestionsModal
+            isOpen={showYtAi}
+            onClose={() => setShowYtAi(false)}
+            stageTitle={stageTitle}
+            stageDescription={stageDescription}
+            onAddToStage={(item) => {
+              if (audios.length >= maxAudios) { toast.info('Etapa cheia'); return; }
+              if (audios.some((a) => a.audio_url === item.audio_url)) { toast.info('Já está na etapa'); return; }
+              onChange([...audios, item]);
+            }}
+          />
+        )}
 
         {suggestMode && stageTitle && (
           <div className="px-4 py-3 border-b border-border bg-gold/5 space-y-2">
