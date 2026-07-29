@@ -23,6 +23,14 @@ import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffec
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import {
+  destroySpotifyPlayer,
+  pauseSpotifyEntity,
+  playSpotifyEntity,
+  resumeSpotifyEntity,
+  seekSpotifyEntity,
+  subscribeSpotifyPlayback,
+} from '@/lib/spotifyIframePlayer';
 
 
 import { cn } from '@/lib/utils';
@@ -147,6 +155,7 @@ export default function AudioLibraryPage() {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao sair da página, pausa a prévia para não seguir tocando em segundo plano
   useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
+  useEffect(() => () => { destroySpotifyPlayer(); }, []);
   const ytPlayerRef = useRef<any>(null);
   const ytInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -236,6 +245,17 @@ export default function AudioLibraryPage() {
   const [audioDuration, setAudioDuration] = useState(0);
   const timeUpdateRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (!playingId) return;
+    const currentAudio = audios.find((a) => a.id === playingId);
+    if (!currentAudio || !isSpotifyUrl(currentAudio.audio_url)) return;
+    return subscribeSpotifyPlayback((data) => {
+      if (typeof data.position === 'number') setAudioCurrentTime(data.position / 1000);
+      if (typeof data.duration === 'number' && data.duration > 0) setAudioDuration(data.duration / 1000);
+      if (typeof data.isPaused === 'boolean') setIsPaused(data.isPaused);
+    });
+  }, [playingId, audios]);
+
   // Poll time for YouTube player
   const startYtTimePolling = () => {
     stopYtTimePolling();
@@ -263,6 +283,8 @@ export default function AudioLibraryPage() {
           const current = ytPlayerRef.current.getCurrentTime() || 0;
           ytPlayerRef.current.seekTo(current + seconds, true);
         } catch {}
+      } else if (currentAudio && isSpotifyUrl(currentAudio.audio_url)) {
+        seekSpotifyEntity(audioCurrentTime + seconds).catch(() => {});
       } else if (audioElement) {
         audioElement.currentTime = Math.max(0, Math.min(audioElement.duration || 0, audioElement.currentTime + seconds));
       }
@@ -274,6 +296,8 @@ export default function AudioLibraryPage() {
       const currentAudio = audios.find(a => a.id === playingId);
       if (currentAudio && isYouTubeUrl(currentAudio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.seekTo(time, true); } catch {}
+      } else if (currentAudio && isSpotifyUrl(currentAudio.audio_url)) {
+        seekSpotifyEntity(time).catch(() => {});
       } else if (audioElement) {
         audioElement.currentTime = Math.max(0, Math.min(audioElement.duration || 0, time));
       }
@@ -302,6 +326,7 @@ export default function AudioLibraryPage() {
     // Remove Spotify iframe if present
     const spContainer = document.getElementById('sp-library-player-container');
     if (spContainer && destroy) spContainer.remove();
+    if (destroy) destroySpotifyPlayer();
     setPlayingId(null);
     setIsPaused(false);
     setAudioCurrentTime(0);
@@ -312,7 +337,9 @@ export default function AudioLibraryPage() {
   const handlePauseResume = (audio: { id: string; audio_url: string }) => {
     if (playingId === audio.id && !isPaused) {
       // Pause
-      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isSpotifyUrl(audio.audio_url)) {
+        pauseSpotifyEntity().catch(() => {});
+      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.pauseVideo(); } catch {}
       } else if (audioElement) {
         audioElement.pause();
@@ -322,7 +349,9 @@ export default function AudioLibraryPage() {
     }
     if (playingId === audio.id && isPaused) {
       // Resume
-      if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
+      if (isSpotifyUrl(audio.audio_url)) {
+        resumeSpotifyEntity(audio.audio_url).catch(() => {});
+      } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
         try { ytPlayerRef.current.playVideo(); } catch {}
       } else if (audioElement) {
         audioElement.play();
@@ -401,24 +430,14 @@ export default function AudioLibraryPage() {
         initPlayer();
       }
     } else if (isSpotifyUrl(audio.audio_url)) {
-      // Mount visible Spotify iframe (Spotify blocks playback if hidden)
-      let container = document.getElementById('sp-library-player-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'sp-library-player-container';
-        container.style.cssText = 'position: fixed; bottom: -9999px; left: -9999px; width: 320px; height: 80px; opacity: 0; pointer-events: none;';
-
-        document.body.appendChild(container);
-      }
-      import('@/lib/embedUrl').then(({ getSpotifyUrl }) => {
-        const embedUrl = getSpotifyUrl(audio.audio_url, { embed: true, autoplay: true });
-        if (!embedUrl) {
-          toast({ title: 'URL do Spotify inválida', variant: 'destructive' });
-          container?.remove();
-          return;
-        }
-        container!.innerHTML = `<iframe src="${embedUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border:0"></iframe>`;
+      playSpotifyEntity(audio.audio_url).then(() => {
         setPlayingId(audio.id);
+        setIsPaused(false);
+        setAudioCurrentTime(0);
+        setAudioDuration(0);
+      }).catch(() => {
+        toast({ title: 'Não foi possível iniciar o Spotify', variant: 'destructive' });
+        setPlayingId(null);
       });
     } else {
       const newAudio = new Audio(audio.audio_url);

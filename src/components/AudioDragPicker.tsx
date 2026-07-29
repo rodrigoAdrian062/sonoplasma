@@ -22,6 +22,14 @@ import { toast } from 'sonner';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  destroySpotifyPlayer,
+  pauseSpotifyEntity,
+  playSpotifyEntity,
+  resumeSpotifyEntity,
+  seekSpotifyEntity,
+  subscribeSpotifyPlayback,
+} from '@/lib/spotifyIframePlayer';
 
 interface AudioItem {
   nome: string;
@@ -46,13 +54,6 @@ const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.st
 const getYouTubeVideoId = (url: string): string | null => {
   const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
   return m && m[2].length === 11 ? m[2] : null;
-};
-
-const getSpotifyEmbedUrl = (url: string): string | null => {
-  // supports track / album / playlist / episode links (and spotify: URIs)
-  const m = url.match(/(?:open\.spotify\.com\/(?:intl-[a-z]+\/)?|spotify:)(track|album|playlist|episode)[/:]([a-zA-Z0-9]+)/);
-  if (!m) return null;
-  return `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`;
 };
 
 // Ready-made preview hints. Common presets always shown; theme-specific ones
@@ -113,6 +114,15 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const ytPollRef = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!playingUrl || !isSpotifyUrl(playingUrl)) return;
+    return subscribeSpotifyPlayback((data) => {
+      if (typeof data.position === 'number') setCurTime(data.position / 1000);
+      if (typeof data.duration === 'number' && data.duration > 0) setDuration(data.duration / 1000);
+      if (typeof data.isPaused === 'boolean') setIsPaused(data.isPaused);
+    });
+  }, [playingUrl]);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showYtAi, setShowYtAi] = useState(false);
@@ -313,6 +323,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       try { ytPlayerRef.current.stopVideo?.(); ytPlayerRef.current.destroy?.(); } catch { /* noop */ }
       ytPlayerRef.current = null;
     }
+    destroySpotifyPlayer();
     setPlayingUrl(null);
     setIsPaused(false);
     setCurTime(0);
@@ -379,14 +390,23 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   };
 
   const togglePreview = (url: string) => {
-    // Spotify: play inline via embedded iframe (no new tab)
+    // Spotify: toca pelo player invisível e mantém apenas o controle do sistema visível.
     if (isSpotifyUrl(url)) {
-      if (playingUrl === url) {
-        stopPreview();
-      } else {
-        stopPreview();
-        setPlayingUrl(url);
+      if (playingUrl === url && !isPaused) {
+        pauseSpotifyEntity().then(() => setIsPaused(true)).catch(() => toast.error('Erro ao pausar Spotify'));
+        return;
       }
+      if (playingUrl === url && isPaused) {
+        resumeSpotifyEntity(url).then(() => setIsPaused(false)).catch(() => toast.error('Erro ao retomar Spotify'));
+        return;
+      }
+      stopPreview();
+      playSpotifyEntity(url).then(() => {
+        setPlayingUrl(url);
+        setIsPaused(false);
+        setCurTime(0);
+        setDuration(0);
+      }).catch(() => toast.error('Erro ao tocar Spotify'));
       return;
     }
 
@@ -428,6 +448,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     if (playingUrl !== url || duration <= 0) return;
     if (isYouTubeUrl(url) && ytPlayerRef.current) {
       try { ytPlayerRef.current.seekTo(ratio * duration, true); } catch { /* noop */ }
+    } else if (isSpotifyUrl(url)) {
+      seekSpotifyEntity(ratio * duration).catch(() => { /* noop */ });
     } else if (audioRef.current) {
       audioRef.current.currentTime = ratio * duration;
     }
@@ -873,21 +895,6 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                           </div>
                         )}
 
-                        {/* Spotify inline embed player */}
-                        {playingUrl === item.audio_url && isSpotifyUrl(item.audio_url) && getSpotifyEmbedUrl(item.audio_url) && (
-                          <div className="mt-2 overflow-hidden rounded-lg">
-                            <iframe
-                              title={`spotify-${item.id}`}
-                              src={getSpotifyEmbedUrl(item.audio_url)!}
-                              width="100%"
-                              height="80"
-                              frameBorder="0"
-                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                              loading="lazy"
-                              className="rounded-lg"
-                            />
-                          </div>
-                        )}
                       </div>
 
 

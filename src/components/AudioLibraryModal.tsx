@@ -8,6 +8,11 @@ import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
+import {
+  destroySpotifyPlayer,
+  pauseSpotifyEntity,
+  playSpotifyEntity,
+} from '@/lib/spotifyIframePlayer';
 
 
 import { Checkbox } from '@/components/ui/checkbox';
@@ -50,6 +55,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
   useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
+  useEffect(() => () => { destroySpotifyPlayer(); }, []);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
@@ -88,6 +94,10 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
+  const isSpotifyUrl = (url: string) => {
+    return url.includes('open.spotify.com') || url.startsWith('spotify:');
+  };
+
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return '';
@@ -97,7 +107,26 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    // YouTube/Spotify: prévia inline via iframe embed
+    if (isSpotifyUrl(audio.audio_url)) {
+      audioElement?.pause();
+      setAudioElement(null);
+      setPreviewEmbedId(null);
+      if (playingId === audio.id) {
+        pauseSpotifyEntity().catch(() => {});
+        setPlayingId(null);
+        return;
+      }
+      destroySpotifyPlayer();
+      playSpotifyEntity(audio.audio_url).then(() => {
+        setPlayingId(audio.id);
+      }).catch(() => {
+        toast({ title: 'Não foi possível iniciar o Spotify', variant: 'destructive' });
+        setPlayingId(null);
+      });
+      return;
+    }
+
+    // YouTube: prévia inline via iframe embed
     if (detectStream(audio.audio_url)) {
       audioElement?.pause();
       setPlayingId(null);
@@ -195,6 +224,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleSelect = (audio: { nome: string; audio_url: string }) => {
     audioElement?.pause();
+    destroySpotifyPlayer();
     setPlayingId(null);
     setAudioElement(null);
     setPreviewEmbedId(null);
@@ -283,6 +313,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleClose = () => {
     audioElement?.pause();
+    destroySpotifyPlayer();
     setPlayingId(null);
     setAudioElement(null);
     setPreviewEmbedId(null);
@@ -554,7 +585,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             ) : (
               <div className="space-y-2">
                 {filteredAudios.map((audio) => {
-                  const isStream = !!detectStream(audio.audio_url);
+                  const isStream = detectStream(audio.audio_url) === 'youtube';
                   const showEmbed = previewEmbedId === audio.id && isStream;
                   const embedUrl = showEmbed ? toEmbedUrl(audio.audio_url, { autoplay: true }) : null;
                   return (
@@ -613,8 +644,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                           type="button"
                           variant="outline"
                           size="icon"
-                          title={isStream ? (showEmbed ? 'Fechar prévia' : 'Ouvir prévia') : (playingId === audio.id ? 'Pausar' : 'Ouvir')}
-                          aria-label={isStream ? 'Ouvir prévia' : 'Ouvir'}
+                          title={showEmbed || playingId === audio.id ? 'Pausar' : 'Ouvir'}
+                          aria-label="Ouvir"
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
@@ -624,8 +655,6 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                         >
                           {(playingId === audio.id || showEmbed) ? (
                             <Pause size={16} fill="currentColor" />
-                          ) : isStream ? (
-                            <Headphones size={16} />
                           ) : (
                             <Play size={16} fill="currentColor" />
                           )}
