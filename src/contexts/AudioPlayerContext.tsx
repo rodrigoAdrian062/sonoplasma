@@ -2,7 +2,15 @@ import { createContext, useContext, useState, useRef, useEffect, useCallback, Re
 import { PlaybackStatus } from '@/types/ceremony';
 import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
-import { getSpotifyUrl, isSpotifyUrl } from '@/lib/embedUrl';
+import { isSpotifyUrl } from '@/lib/embedUrl';
+import {
+  destroySpotifyPlayer,
+  pauseSpotifyEntity,
+  playSpotifyEntity,
+  resumeSpotifyEntity,
+  seekSpotifyEntity,
+  subscribeSpotifyPlayback,
+} from '@/lib/spotifyIframePlayer';
 import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequency432, subscribeTrackHz } from '@/lib/pitch432';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
 
@@ -344,6 +352,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [isYouTube, status]);
 
+  useEffect(() => {
+    return subscribeSpotifyPlayback((data) => {
+      if (!isSpotifyRef.current) return;
+      if (typeof data.position === 'number') setCurrentTime(data.position / 1000);
+      if (typeof data.duration === 'number' && data.duration > 0) setDuration(data.duration / 1000);
+      if (typeof data.isPaused === 'boolean') setStatus(data.isPaused ? 'paused' : 'playing');
+    });
+  }, []);
+
   const stopCurrentPlayback = useCallback(() => {
     if (ytInitTimeoutRef.current !== null) {
       clearTimeout(ytInitTimeoutRef.current);
@@ -363,6 +380,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       ytPlayerRef.current = null;
       ytPlayerReadyRef.current = false;
     }
+    destroySpotifyPlayer();
     const existingContainer = document.getElementById('yt-player-container');
     if (existingContainer) existingContainer.remove();
   }, []);
@@ -468,8 +486,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsSpotify(isSpot);
 
     if (isSpot) {
-      const spotifyUrl = getSpotifyUrl(url, { embed: true, autoplay: true });
-      if (!spotifyUrl) {
+      if (!isSpotifyUrl(url)) {
         console.error('Invalid Spotify URL:', url);
         return;
       }
@@ -481,6 +498,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(0);
       setDuration(0);
       setSpotifyReloadTick((tick) => tick + 1);
+      playSpotifyEntity(url).catch((err) => {
+        console.error('[Spotify] falha ao reproduzir:', err, { url });
+        setStatus('idle');
+        setCurrentStageId(null);
+        setIsSpotify(false);
+        isSpotifyRef.current = false;
+        currentUrlRef.current = null;
+        setCurrentUrl(null);
+        try {
+          import('sonner').then(({ toast }) => toast.error('Não foi possível iniciar o Spotify.'));
+        } catch { /* noop */ }
+      });
     } else if (isYT) {
       const videoId = getYouTubeVideoId(url);
       if (!videoId) {
@@ -545,7 +574,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const pause = useCallback(() => {
     const doPause = () => {
       if (isSpotifyRef.current) {
-        setSpotifyReloadTick((tick) => tick + 1);
+        pauseSpotifyEntity().catch(() => { /* noop */ });
       } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
         ytPlayerRef.current.pauseVideo();
       } else if (audioRef.current) {
@@ -565,7 +594,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     clearFade();
     applyPlayerVolume(volumeRef.current);
     if (isSpotifyRef.current) {
-      setSpotifyReloadTick((tick) => tick + 1);
+      resumeSpotifyEntity(currentUrlRef.current).catch(() => { /* noop */ });
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
     } else if (audioRef.current) {
@@ -605,7 +634,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const seekForward = useCallback((seconds = 10) => {
     if (isSpotifyRef.current) {
-      setSpotifyReloadTick((tick) => tick + 1);
+      seekSpotifyEntity(currentTime + seconds).catch(() => { /* noop */ });
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(current + seconds, true);
@@ -616,7 +645,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const seekBackward = useCallback((seconds = 10) => {
     if (isSpotifyRef.current) {
-      setSpotifyReloadTick((tick) => tick + 1);
+      seekSpotifyEntity(Math.max(0, currentTime - seconds)).catch(() => { /* noop */ });
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       const current = ytPlayerRef.current.getCurrentTime();
       ytPlayerRef.current.seekTo(Math.max(0, current - seconds), true);
@@ -627,7 +656,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const seekTo = useCallback((seconds: number) => {
     if (isSpotifyRef.current) {
-      setSpotifyReloadTick((tick) => tick + 1);
+      seekSpotifyEntity(seconds).catch(() => { /* noop */ });
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.seekTo(seconds, true);
     } else if (audioRef.current) {
