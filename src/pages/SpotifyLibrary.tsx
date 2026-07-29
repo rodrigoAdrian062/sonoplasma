@@ -8,9 +8,16 @@ import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
+import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { isSpotifyUrl, parseSpotify } from '@/lib/embedUrl';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useStages } from '@/hooks/useStages';
+import { useSections } from '@/hooks/useSections';
+import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
+import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 const SPOTIFY_STAGE = '__spotify_preview__';
 
@@ -18,6 +25,11 @@ export default function SpotifyLibraryPage() {
   const navigate = useNavigate();
   const { audios, addAudio, deleteAudio } = useAudioLibrary();
   const { play, pause, resume, stop, currentUrl, status } = useUniversalAudioPlayer();
+  const { stages } = useStages();
+  const { sections } = useSections();
+  const { saveAudios } = useStageAudios();
+  const { allAudios: allStageAudios } = useAllStageAudios();
+  const { folders, moveAudioToFolder } = useAudioFolders();
 
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -29,6 +41,22 @@ export default function SpotifyLibraryPage() {
     () => audios.filter((a) => isSpotifyUrl(a.audio_url) || a.tipo === 'spotify'),
     [audios],
   );
+
+  const usageMap = useMemo(() => {
+    const map = new Map<string, Array<{ stageName: string; sectionName: string }>>();
+    for (const sa of allStageAudios) {
+      const stage = stages.find((s) => s.id === sa.etapa_id);
+      if (!stage) continue;
+      const section = sections.find((s) => s.id === stage.secao_id);
+      const entry = { stageName: stage.nome_simbolico, sectionName: section?.nome || 'Sem seção' };
+      const existing = map.get(sa.audio_url) || [];
+      if (!existing.some((e) => e.stageName === entry.stageName && e.sectionName === entry.sectionName)) {
+        existing.push(entry);
+        map.set(sa.audio_url, existing);
+      }
+    }
+    return map;
+  }, [allStageAudios, stages, sections]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -67,6 +95,45 @@ export default function SpotifyLibraryPage() {
       else play(SPOTIFY_STAGE, url);
     } else {
       play(SPOTIFY_STAGE, url);
+    }
+  };
+
+  const handleAddToStage = async (audioNome: string, audioUrl: string, etapaId: string) => {
+    try {
+      const { data: existingAudios } = await supabase
+        .from('sonoplastia_etapa_audios')
+        .select('*')
+        .eq('etapa_id', etapaId)
+        .order('ordem', { ascending: true });
+
+      const currentAudios = existingAudios || [];
+      if (currentAudios.length >= 10) {
+        toast({ title: 'Esta etapa já possui 10 áudios (máximo)', variant: 'destructive' });
+        return;
+      }
+
+      await saveAudios.mutateAsync({
+        etapa_id: etapaId,
+        audios: [
+          ...currentAudios.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
+          { nome: audioNome, audio_url: audioUrl },
+        ],
+      });
+
+      const stage = stages.find((s) => s.id === etapaId);
+      toast({ title: `"${audioNome}" enviado para "${stage?.nome_simbolico || ''}"` });
+    } catch {
+      toast({ title: 'Erro ao enviar áudio para a etapa', variant: 'destructive' });
+    }
+  };
+
+  const handleMoveToFolder = async (audio: { id: string; nome: string }, folderId: string | null) => {
+    try {
+      await moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId });
+      const folderName = folders.find((f) => f.id === folderId)?.nome;
+      toast({ title: folderId ? `"${audio.nome}" movido para "${folderName}"` : `"${audio.nome}" removido da pasta` });
+    } catch {
+      toast({ title: 'Erro ao mover para a pasta', variant: 'destructive' });
     }
   };
 
@@ -150,49 +217,68 @@ export default function SpotifyLibraryPage() {
             </p>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filtered.map((a) => {
-              const active = currentUrl === a.audio_url;
-              const playing = active && status === 'playing';
-              const parsed = parseSpotify(a.audio_url);
-              return (
-                <li
-                  key={a.id}
-                  className={cn(
-                    'flex items-center gap-2 p-2 rounded-lg border bg-card/60 hover:bg-card transition-colors',
-                    active ? 'border-[#1DB954]/60 shadow-sm shadow-[#1DB954]/20' : 'border-border',
-                  )}
-                >
-                  <button
-                    onClick={() => handleTogglePlay(a.audio_url)}
-                    className="h-9 w-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center hover:scale-105 transition-transform shrink-0"
-                    aria-label={playing ? 'Pausar' : 'Tocar'}
-                    title={playing ? 'Pausar' : 'Tocar'}
-                  >
-                    {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{a.nome}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {parsed ? `${parsed.type}` : 'spotify'}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => {
-                      if (active) stop();
-                      if (confirm(`Excluir "${a.nome}"?`)) deleteAudio.mutate(a.id);
-                    }}
-                    aria-label="Excluir"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+          <AudioDndZone
+            accent="emerald"
+            onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
+            onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
+          >
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pb-24">
+              {filtered.map((a) => {
+                const active = currentUrl === a.audio_url;
+                const playing = active && status === 'playing';
+                const parsed = parseSpotify(a.audio_url);
+                const usage = usageMap.get(a.audio_url) || [];
+                const subtitle = usage.length > 0
+                  ? usage.map((u) => u.stageName).join(', ')
+                  : (parsed ? parsed.type : 'spotify');
+                return (
+                  <DraggableAudioRow key={a.id} audio={{ id: a.id, nome: a.nome, audio_url: a.audio_url }}>
+                    {({ handleProps }) => (
+                      <li
+                        className={cn(
+                          'group flex items-center gap-2 p-2 rounded-lg border bg-card/60 hover:bg-card transition-colors',
+                          active ? 'border-[#1DB954]/60 shadow-sm shadow-[#1DB954]/20' : 'border-border',
+                        )}
+                      >
+                        <button
+                          onClick={() => handleTogglePlay(a.audio_url)}
+                          className="h-9 w-9 rounded-full bg-[#1DB954] text-black flex items-center justify-center hover:scale-105 transition-transform shrink-0"
+                          aria-label={playing ? 'Pausar' : 'Tocar'}
+                          title={playing ? 'Pausar' : 'Tocar'}
+                        >
+                          {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{a.nome}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{subtitle}</p>
+                        </div>
+                        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100 transition-opacity">
+                          <DragHandle handleProps={handleProps} />
+                          <MoveTargetMenu
+                            accentClass="border-[#1DB954]/40 text-[#1DB954] hover:bg-[#1DB954]/10 hover:text-[#1DB954]"
+                            onSendToStage={(sid) => handleAddToStage(a.nome, a.audio_url, sid)}
+                            onMoveToFolder={(fid) => handleMoveToFolder(a, fid)}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              if (active) stop();
+                              if (confirm(`Excluir "${a.nome}"?`)) deleteAudio.mutate(a.id);
+                            }}
+                            aria-label="Excluir"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </li>
+                    )}
+                  </DraggableAudioRow>
+                );
+              })}
+            </ul>
+          </AudioDndZone>
         )}
       </main>
 
