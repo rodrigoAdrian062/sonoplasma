@@ -140,7 +140,7 @@ function getOrCreateHost(): HTMLElement {
       'bottom:0',
       'width:320px',
       'height:152px',
-      'opacity:0.01',
+      'opacity:0.001',
       'pointer-events:none',
       'overflow:hidden',
       'z-index:1',
