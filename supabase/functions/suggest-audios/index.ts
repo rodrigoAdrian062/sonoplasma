@@ -34,14 +34,35 @@ Deno.serve(async (req) => {
     };
     const listText = trimmed.map((a, i) => `${i}. [${sourceOf(a.audio_url)}] ${a.nome}`).join('\n');
 
-    const system = `Você é um especialista em ritualística maçônica e música cerimonial. Sua tarefa: dada uma etapa de cerimônia (título + descrição + prévia opcional do usuário), escolher da biblioteca as músicas MAIS adequadas ao momento — considerando tema, solenidade, tradição maçônica, referências bíblicas/espirituais e clima emocional apropriado. Se o usuário fornecer uma PRÉVIA, ela é a orientação PRINCIPAL e sobrepõe interpretações genéricas do título. IMPORTANTE: considere IGUALMENTE músicas de todas as fontes (Arquivo, YouTube e Spotify) — a fonte NÃO deve influenciar a escolha, apenas o conteúdo/título. Ex: "Abertura do Livro da Lei" combina com música sacra/solene/adoração; "Cadeia de União" com música fraternal; "Luto/Mestre" com música fúnebre/reflexiva. Responda SOMENTE JSON.`;
+    const system = `Você é o MESTRE DE HARMONIA VIRTUAL de uma Loja Maçônica. Sua missão é selecionar músicas para acompanhar os trabalhos rituais respeitando solenidade, tradição e harmonia da sessão.
+
+REGRAS INVIOLÁVEIS (rejeite qualquer faixa que viole):
+- SOMENTE música INSTRUMENTAL. NUNCA faixas com letra/vocal cantado (coral SEM palavras é permitido).
+- Priorize: piano, cordas, orquestra, coral wordless, ambientações cinematográficas suaves, drones contemplativos.
+- REJEITE: pop, rock, funk, sertanejo, eletrônica dançante, comercial, qualquer coisa que desvie atenção dos trabalhos.
+- Volume/energia sempre contido — a música é AMBIENTAÇÃO, não protagonista.
+
+CATEGORIAS RITUAIS (case a etapa em uma):
+1. Recepção dos Irmãos — piano suave, cordas discretas, tranquilo.
+2. Entrada das Autoridades — orquestra leve, solene, elegante.
+3. Abertura dos Trabalhos — instrumental solene, concentração.
+4. Momento de Reflexão — piano solo, contemplativo.
+5. Iniciações — simbólico, respeitoso, evolução emocional suave.
+6. Elevações/Exaltações — inspirador, crescimento gradual.
+7. Homenagens — piano + cordas, emocionante sem exagero.
+8. Minuto de Silêncio — drone ambiente extremamente discreto ou silêncio.
+9. Encerramento — sereno, paz, finalização harmoniosa.
+
+Analise o TÍTULO da etapa e a PRÉVIA do usuário (se houver — prioridade máxima) para identificar a categoria. Depois escolha da biblioteca as faixas que melhor servem àquele momento. Se a lista contiver faixas com nomes obviamente vocais/comerciais/pop, IGNORE-AS. Considere igualmente Arquivo e YouTube — a fonte não influencia, apenas o conteúdo. Prefira retornar MENOS faixas de alta qualidade do que forçar seleções ruins.
+
+Responda SOMENTE JSON.`;
 
     const user = `ETAPA: ${stageTitle}${stageDescription ? `\nDESCRIÇÃO: ${stageDescription}` : ''}${userHint ? `\nPRÉVIA DO USUÁRIO (prioridade máxima): ${userHint}` : ''}
 
-BIBLIOTECA (índice. [fonte] nome) — inclui Arquivo, YouTube e Spotify, todos com igual prioridade:
+BIBLIOTECA (índice. [fonte] nome):
 ${listText}
 
-Escolha até ${limit} índices ORDENADOS do mais relevante ao menos relevante, misturando livremente as fontes. Ignore músicas irrelevantes — melhor retornar menos do que forçar. Responda JSON: {"indices":[<numeros>]}`;
+Escolha até ${limit} índices ORDENADOS do mais relevante ao menos relevante seguindo TODAS as regras acima. Responda JSON: {"indices":[<numeros>]}`;
 
 
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
