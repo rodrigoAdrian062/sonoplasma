@@ -17,13 +17,17 @@ import Auth from "./pages/Auth";
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
+const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
+
 
 
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { QuickNav } from "@/components/QuickNav";
 import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
+import { SpotifyHost } from "@/components/SpotifyHost";
+
 
 
 // Dados de cerimônia/áudio são majoritariamente estáticos entre navegações.
@@ -109,6 +113,14 @@ const App = () => (
               } 
             />
             <Route 
+              path="/spotify" 
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/usuarios" 
               element={
                 <ProtectedRoute>
@@ -116,6 +128,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
@@ -125,7 +138,9 @@ const App = () => (
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />
+          <SpotifyHost />
           </BackgroundMusicProvider>
+
           </AudioPlayerProvider>
         </AuthProvider>
       </BrowserRouter>
