@@ -12,6 +12,7 @@ type SpotifyEmbedController = {
   loadEntity?: (spotifyUriOrUrl: string, preferVideo?: boolean, startAt?: number) => void;
   loadUri?: (spotifyUri: string, preferVideo?: boolean, startAt?: number, theme?: string) => void;
   play?: () => void;
+  playFromStart?: () => void;
   pause?: () => void;
   resume?: () => void;
   restart?: () => void;
@@ -28,10 +29,18 @@ type SpotifyIframeApi = {
   ) => void;
 };
 
+type SpotifyIframeConfig = {
+  host?: string;
+  referrer?: string;
+  locale?: string;
+  loading?: number;
+};
+
 declare global {
   interface Window {
     onSpotifyIframeApiReady?: (api: SpotifyIframeApi) => void;
     __sonoplastiaSpotifyIframeApi?: SpotifyIframeApi;
+    SpotifyIframeConfig?: SpotifyIframeConfig;
   }
 }
 
@@ -42,6 +51,8 @@ let apiPromise: Promise<SpotifyIframeApi> | null = null;
 let controllerPromise: Promise<SpotifyEmbedController> | null = null;
 let controller: SpotifyEmbedController | null = null;
 let loadedUri: string | null = null;
+
+const SPOTIFY_LOCALE = 'pt-BR';
 
 const playbackListeners = new Set<(data: SpotifyPlaybackData) => void>();
 
@@ -54,10 +65,30 @@ function emitPlayback(data: SpotifyPlaybackData) {
   playbackListeners.forEach((listener) => listener(data));
 }
 
+function configureSpotifyIframe() {
+  if (typeof window === 'undefined') return;
+  window.SpotifyIframeConfig = {
+    ...(window.SpotifyIframeConfig || {}),
+    locale: SPOTIFY_LOCALE,
+    referrer: window.location.origin,
+  };
+}
+
+function commandPlay(activeController: SpotifyEmbedController, fromStart = false) {
+  if (fromStart && activeController.playFromStart) {
+    activeController.playFromStart();
+    return;
+  }
+  if (activeController.play) activeController.play();
+  else activeController.resume?.();
+}
+
 export function warmUpSpotifyIframeApi(): Promise<SpotifyIframeApi> {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.reject(new Error('Spotify indisponível fora do navegador'));
   }
+
+  configureSpotifyIframe();
 
   if (window.__sonoplastiaSpotifyIframeApi) {
     return Promise.resolve(window.__sonoplastiaSpotifyIframeApi);
@@ -67,8 +98,13 @@ export function warmUpSpotifyIframeApi(): Promise<SpotifyIframeApi> {
 
   apiPromise = new Promise((resolve, reject) => {
     const previousReady = window.onSpotifyIframeApiReady;
+    const timeout = window.setTimeout(() => {
+      apiPromise = null;
+      reject(new Error('Tempo esgotado ao carregar player do Spotify'));
+    }, 12_000);
 
     window.onSpotifyIframeApiReady = (api: SpotifyIframeApi) => {
+      window.clearTimeout(timeout);
       window.__sonoplastiaSpotifyIframeApi = api;
       previousReady?.(api);
       resolve(api);
@@ -80,7 +116,11 @@ export function warmUpSpotifyIframeApi(): Promise<SpotifyIframeApi> {
       script.id = SCRIPT_ID;
       script.src = 'https://open.spotify.com/embed/iframe-api/v1';
       script.async = true;
-      script.onerror = () => reject(new Error('Falha ao carregar player do Spotify'));
+      script.onerror = () => {
+        window.clearTimeout(timeout);
+        apiPromise = null;
+        reject(new Error('Falha ao carregar player do Spotify'));
+      };
       document.body.appendChild(script);
     }
   });
@@ -103,7 +143,7 @@ function getOrCreateHost(): HTMLElement {
       'opacity:0.001',
       'pointer-events:none',
       'overflow:hidden',
-      'z-index:0',
+      'z-index:1',
     ].join(';');
     document.body.appendChild(host);
   }
@@ -139,26 +179,25 @@ async function loadSpotifyEntity(url: string): Promise<SpotifyEmbedController> {
 
   const activeController = await getController(uri);
   if (loadedUri !== uri) {
-    if (activeController.loadEntity) activeController.loadEntity(uri, false, 0);
-    else activeController.loadUri?.(uri, false, 0, 'dark');
+    if (activeController.loadUri) activeController.loadUri(uri, false, 0, 'dark');
+    else activeController.loadEntity?.(uri, false, 0);
     loadedUri = uri;
   }
   return activeController;
 }
 
 export async function playSpotifyEntity(url: string): Promise<void> {
+  const uri = getSpotifyUri(url);
   const activeController = await loadSpotifyEntity(url);
-  if (activeController.play) activeController.play();
-  else activeController.resume?.();
-  window.setTimeout(() => {
-    if (activeController.play) activeController.play();
-    else activeController.resume?.();
-  }, 150);
-  emitPlayback({ isPaused: false, position: 0 });
+  commandPlay(activeController, true);
+  window.setTimeout(() => commandPlay(activeController), 200);
+  window.setTimeout(() => commandPlay(activeController), 900);
+  emitPlayback({ isPaused: false, position: 0, playingURI: uri || undefined });
 }
 
 export async function pauseSpotifyEntity(): Promise<void> {
-  controller?.pause?.();
+  const activeController = controller || (controllerPromise ? await controllerPromise.catch(() => null) : null);
+  activeController?.pause?.();
   emitPlayback({ isPaused: true });
 }
 
@@ -166,7 +205,8 @@ export async function resumeSpotifyEntity(url?: string | null): Promise<void> {
   const activeController = url ? await loadSpotifyEntity(url) : controller;
   if (!activeController) return;
   if (activeController.resume) activeController.resume();
-  else activeController.play?.();
+  else commandPlay(activeController);
+  window.setTimeout(() => commandPlay(activeController), 200);
   emitPlayback({ isPaused: false });
 }
 
