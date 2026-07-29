@@ -406,7 +406,8 @@ export default function AudioLibraryPage() {
       if (!container) {
         container = document.createElement('div');
         container.id = 'sp-library-player-container';
-        container.style.cssText = 'position: fixed; bottom: 16px; left: 16px; z-index: 60; width: 340px; height: 160px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid rgba(212,175,55,0.4);';
+        container.style.cssText = 'position: fixed; bottom: -9999px; left: -9999px; width: 320px; height: 80px; opacity: 0; pointer-events: none;';
+
         document.body.appendChild(container);
       }
       import('@/lib/embedUrl').then(({ getSpotifyUrl }) => {
