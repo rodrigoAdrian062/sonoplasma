@@ -173,6 +173,9 @@ export default function AudioLibraryPage() {
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
+
 
   // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
   useEffect(() => {
@@ -296,11 +299,15 @@ export default function AudioLibraryPage() {
         }
       } catch {}
     }
+    // Remove Spotify iframe if present
+    const spContainer = document.getElementById('sp-library-player-container');
+    if (spContainer && destroy) spContainer.remove();
     setPlayingId(null);
     setIsPaused(false);
     setAudioCurrentTime(0);
     setAudioDuration(0);
   };
+
 
   const handlePauseResume = (audio: { id: string; audio_url: string }) => {
     if (playingId === audio.id && !isPaused) {
@@ -393,11 +400,31 @@ export default function AudioLibraryPage() {
       } else {
         initPlayer();
       }
+    } else if (isSpotifyUrl(audio.audio_url)) {
+      // Mount visible Spotify iframe (Spotify blocks playback if hidden)
+      let container = document.getElementById('sp-library-player-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'sp-library-player-container';
+        container.style.cssText = 'position: fixed; bottom: 16px; left: 16px; z-index: 60; width: 340px; height: 160px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid rgba(212,175,55,0.4);';
+        document.body.appendChild(container);
+      }
+      import('@/lib/embedUrl').then(({ getSpotifyUrl }) => {
+        const embedUrl = getSpotifyUrl(audio.audio_url, { embed: true, autoplay: true });
+        if (!embedUrl) {
+          toast({ title: 'URL do Spotify inválida', variant: 'destructive' });
+          container?.remove();
+          return;
+        }
+        container!.innerHTML = `<iframe src="${embedUrl}" width="100%" height="100%" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border:0"></iframe>`;
+        setPlayingId(audio.id);
+      });
     } else {
       const newAudio = new Audio(audio.audio_url);
       newAudio.ontimeupdate = () => { setAudioCurrentTime(newAudio.currentTime); };
       newAudio.onloadedmetadata = () => { setAudioDuration(newAudio.duration); };
       newAudio.onerror = () => {
+
         toast({ title: 'Não foi possível reproduzir este áudio', variant: 'destructive' });
         setPlayingId(null); setAudioElement(null); setAudioCurrentTime(0); setAudioDuration(0);
       };
