@@ -8,6 +8,11 @@ import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
+import {
+  destroySpotifyPlayer,
+  pauseSpotifyEntity,
+  playSpotifyEntity,
+} from '@/lib/spotifyIframePlayer';
 
 
 import { Checkbox } from '@/components/ui/checkbox';
@@ -88,6 +93,10 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
+  const isSpotifyUrl = (url: string) => {
+    return url.includes('open.spotify.com') || url.startsWith('spotify:');
+  };
+
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return '';
@@ -97,7 +106,26 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   };
 
   const handlePlay = (audio: { id: string; audio_url: string }) => {
-    // YouTube/Spotify: prévia inline via iframe embed
+    if (isSpotifyUrl(audio.audio_url)) {
+      audioElement?.pause();
+      setAudioElement(null);
+      setPreviewEmbedId(null);
+      if (playingId === audio.id) {
+        pauseSpotifyEntity().catch(() => {});
+        setPlayingId(null);
+        return;
+      }
+      destroySpotifyPlayer();
+      playSpotifyEntity(audio.audio_url).then(() => {
+        setPlayingId(audio.id);
+      }).catch(() => {
+        toast({ title: 'Não foi possível iniciar o Spotify', variant: 'destructive' });
+        setPlayingId(null);
+      });
+      return;
+    }
+
+    // YouTube: prévia inline via iframe embed
     if (detectStream(audio.audio_url)) {
       audioElement?.pause();
       setPlayingId(null);
@@ -195,6 +223,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleSelect = (audio: { nome: string; audio_url: string }) => {
     audioElement?.pause();
+    destroySpotifyPlayer();
     setPlayingId(null);
     setAudioElement(null);
     setPreviewEmbedId(null);
@@ -283,6 +312,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
   const handleClose = () => {
     audioElement?.pause();
+    destroySpotifyPlayer();
     setPlayingId(null);
     setAudioElement(null);
     setPreviewEmbedId(null);
