@@ -4,8 +4,10 @@ import {
   Loader2, Link as LinkIcon, X, Folder, ChevronLeft, Library,
 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -29,11 +31,14 @@ interface AudioPickerProps {
 type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
 
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
+const isSpotifyLinkUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
+  if (isSpotifyLinkUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
   return <FolderMusicIcon size={size} />;
 }
+
 
 export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPickerProps) {
   const { audios: library, isLoading, uploadAndAddAudio, addAudio } = useAudioLibrary();
@@ -301,9 +306,10 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
               {([
                 { id: 'upload', label: 'Upload', icon: Upload },
                 { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                
+                { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 { id: 'link', label: 'Link', icon: LinkIcon },
               ] as const).map((t) => (
+
                 <button
                   key={t.id}
                   type="button"
