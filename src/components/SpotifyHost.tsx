@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Minimize2, Maximize2 } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { getSpotifyUrl, parseSpotify } from '@/lib/embedUrl';
 import { useIsPresentationActive } from '@/lib/presentationState';
@@ -42,9 +44,11 @@ export function SpotifyHost() {
     >
       <div className="rounded-2xl border-2 border-[#1DB954]/50 bg-black/90 shadow-xl shadow-[#1DB954]/20 overflow-hidden">
         <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-[#1DB954]/10 border-b border-[#1DB954]/30">
-          <span className="text-[11px] uppercase tracking-wider text-[#1DB954] font-medium">
+          <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-[#1DB954] font-medium">
+            <SpotifyIcon size={14} className="text-[#1DB954]" />
             Spotify
           </span>
+
           <div className="flex items-center gap-1">
             <button
               onClick={() => setMinimized((v) => !v)}
