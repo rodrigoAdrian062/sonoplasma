@@ -54,7 +54,8 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   // Ao desmontar, pausa a prévia para não continuar tocando fora do modal
-  useEffect(() => () => { audioElement?.pause(); destroySpotifyPlayer(); }, [audioElement]);
+  useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
+  useEffect(() => () => { destroySpotifyPlayer(); }, []);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [newAudioName, setNewAudioName] = useState('');
