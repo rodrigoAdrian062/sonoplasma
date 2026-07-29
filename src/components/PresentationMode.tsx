@@ -28,6 +28,8 @@ import { TrackHzBadge } from '@/components/TrackHzBadge';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+
 import { prefetchAudios } from '@/lib/audioCache';
 import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
@@ -832,8 +834,10 @@ export function PresentationMode({
             const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
               { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
               { key: 'youtube', label: 'YouTube', icon: <YoutubeIcon size={13} className="shrink-0" /> },
+              { key: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={13} className="shrink-0 text-[#1DB954]" /> },
               { key: 'file', label: 'Baixado', icon: <FolderMusicIcon size={13} className="shrink-0" /> },
             ];
+
             const visibleFilters = filterOptions.filter((f) => f.key === 'all' || sourcesPresent.has(f.key as AudioSource));
             const effectiveFilter = sourceFilter !== 'all' && !sourcesPresent.has(sourceFilter as AudioSource) ? 'all' : sourceFilter;
             const filteredAudios = audios

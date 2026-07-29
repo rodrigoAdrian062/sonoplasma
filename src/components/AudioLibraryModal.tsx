@@ -6,7 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
+
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -27,12 +29,14 @@ function getAudioFolderId(audio: { pasta_id?: string | null }) {
   return audio.pasta_id ?? null;
 }
 
-function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'file' {
+function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtube' | 'spotify' | 'file' {
   const url = (a.audio_url || '').toLowerCase();
   const t = (a.tipo || '').toLowerCase();
   if (t === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (t === 'spotify' || url.includes('open.spotify.com') || url.startsWith('spotify:')) return 'spotify';
   return 'file';
 }
+
 
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
@@ -40,7 +44,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'file' | 'youtube' | 'spotify'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [previewEmbedId, setPreviewEmbedId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -467,7 +471,9 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                   { id: 'all', label: 'Todos', icon: null, count: audios.length },
                   { id: 'file', label: 'Arquivos', icon: <FileAudio size={11} />, count: audios.filter(a => getAudioSource(a) === 'file').length },
                   { id: 'youtube', label: 'YouTube', icon: <Youtube size={11} className="text-[#FF0000]" />, count: audios.filter(a => getAudioSource(a) === 'youtube').length },
+                  { id: 'spotify', label: 'Spotify', icon: <SpotifyIcon size={11} className="text-[#1DB954]" />, count: audios.filter(a => getAudioSource(a) === 'spotify').length },
                 ] as const).map((s) => (
+
                   <button
                     key={s.id}
                     type="button"
@@ -573,9 +579,16 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       />
                     )}
 
-                    <div className="p-2 bg-primary/10 rounded-lg">
+                    <div className={cn(
+                      'p-2 rounded-lg',
+                      getAudioSource(audio) === 'youtube' && 'bg-[#FF0000]/10',
+                      getAudioSource(audio) === 'spotify' && 'bg-[#1DB954]/10',
+                      getAudioSource(audio) === 'file' && 'bg-primary/10',
+                    )}>
                       {getAudioSource(audio) === 'youtube' ? (
                         <Youtube size={18} className="text-[#FF0000]" />
+                      ) : getAudioSource(audio) === 'spotify' ? (
+                        <SpotifyIcon size={18} className="text-[#1DB954]" />
                       ) : (
                         <Music size={18} className="text-primary" />
                       )}
@@ -584,9 +597,14 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{audio.nome}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {getAudioSource(audio) === 'youtube' ? 'YouTube' : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        {getAudioSource(audio) === 'youtube'
+                          ? 'YouTube'
+                          : getAudioSource(audio) === 'spotify'
+                          ? 'Spotify'
+                          : formatFileSize(audio.tamanho_bytes) || 'Link externo'}
                       </p>
                     </div>
+
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1 shrink-0 ml-auto">

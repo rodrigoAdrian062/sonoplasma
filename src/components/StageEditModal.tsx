@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Save, Clock, Type, FileText, Sparkles, Music, FolderOpen, X } from 'lucide-react';
 import { YoutubeIcon } from './icons/YoutubeIcon';
+import { SpotifyIcon } from './icons/SpotifyIcon';
 
 import { FolderMusicIcon } from './icons/FolderMusicIcon';
+
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate, suggestIconForName } from '@/types/ceremony';
 import { CeremonySection } from '@/types/section';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -362,10 +364,13 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                         <div className="rounded-md bg-secondary p-1.5 shrink-0">
                           {isYt ? (
                             <YoutubeIcon size={14} />
+                          ) : isSp ? (
+                            <SpotifyIcon size={14} className="text-[#1DB954]" />
                           ) : (
                             <FolderMusicIcon size={14} />
                           )}
                         </div>
+
                         <span className="flex-1 truncate text-sm text-foreground">{a.nome || 'Áudio'}</span>
                         <button
                           type="button"

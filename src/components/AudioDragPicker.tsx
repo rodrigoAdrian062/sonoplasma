@@ -7,7 +7,9 @@ import {
 import { YoutubeAiSuggestionsModal } from '@/components/YoutubeAiSuggestionsModal';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
+
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
 import type { CeremonyStage } from '@/types/ceremony';
 
@@ -85,8 +87,10 @@ function getHintPresets(stageTitle: string): HintPreset[] {
 
 function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
   if (isYouTubeUrl(url)) return <YoutubeIcon size={size} />;
+  if (isSpotifyUrl(url)) return <SpotifyIcon size={size} className="text-[#1DB954]" />;
   return <FolderMusicIcon size={size} />;
 }
+
 
 export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity, stageTitle, stageDescription }: AudioDragPickerProps) {
   const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
@@ -687,14 +691,14 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                   { id: 'all', label: 'Todos', icon: Library },
                   { id: 'upload', label: 'Áudio', icon: Music },
                   { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-
-
+                  { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 ] as const).map((f) => {
                   const active = sourceFilter === f.id;
                   const count = f.id === 'all'
                     ? library.length
                     : library.filter((a) => (
                         f.id === 'youtube' ? isYouTubeUrl(a.audio_url)
+                        : f.id === 'spotify' ? isSpotifyUrl(a.audio_url)
                         : !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url)
                       )).length;
                   return (
@@ -707,17 +711,20 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                         active
                           ? f.id === 'youtube'
                             ? 'border-red-500/50 bg-red-500/15 text-red-500'
+                            : f.id === 'spotify'
+                            ? 'border-[#1DB954]/50 bg-[#1DB954]/15 text-[#1DB954]'
                             : 'border-gold/50 bg-gold/15 text-gold'
                           : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      <f.icon size={12} />
+                      <f.icon size={12} className={f.id === 'spotify' ? 'text-[#1DB954]' : undefined} />
                       {f.label}
                       <span className="opacity-70">{count}</span>
                     </button>
                   );
                 })}
               </div>
+
 
 
               {!search && currentFolderId && (
@@ -906,9 +913,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                       {([
                         { id: 'upload', label: 'Upload', icon: Upload },
                         { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
-                        
+                        { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                         { id: 'link', label: 'Link', icon: LinkIcon },
                       ] as const).map((t) => (
+
                         <button
                           key={t.id}
                           type="button"
