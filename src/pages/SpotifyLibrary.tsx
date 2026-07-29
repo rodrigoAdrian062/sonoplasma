@@ -218,7 +218,7 @@ export default function SpotifyLibraryPage() {
           </div>
         ) : (
           <AudioDndZone
-            accent="emerald"
+            accent="green"
             onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
