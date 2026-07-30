@@ -169,7 +169,7 @@ export function PresentationMode({
   const [compact, setCompact] = useState(shouldAutoCompact);
 
   const { formatted: clockTime } = useClock();
-  const { fadeEnabled, setFadeEnabled } = useUniversalAudioPlayer();
+  const { fadeEnabled, setFadeEnabled, startVolume, setStartVolume } = useUniversalAudioPlayer();
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
