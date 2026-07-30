@@ -1,5 +1,6 @@
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, TrendingUp } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -15,10 +16,21 @@ interface VolumeControlProps {
 }
 
 const START_OPTIONS = Array.from({ length: 51 }, (_, i) => i);
+const RAMP_SECONDS = [3, 5, 8, 10, 15, 20, 30, 45, 60];
+const RAMP_TARGETS = [20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
   const isMuted = volume === 0;
-  const { startVolume, setStartVolume } = useUniversalAudioPlayer();
+  const {
+    startVolume,
+    setStartVolume,
+    rampEnabled,
+    setRampEnabled,
+    rampSeconds,
+    setRampSeconds,
+    rampTarget,
+    setRampTarget,
+  } = useUniversalAudioPlayer();
 
   const handleToggleMute = () => {
     onVolumeChange(isMuted ? 0.7 : 0);
