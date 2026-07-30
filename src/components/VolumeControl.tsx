@@ -37,7 +37,7 @@ export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-card rounded-lg border border-border">
+    <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-card rounded-lg border border-border">
       <button
         onClick={handleToggleMute}
         className="text-muted-foreground hover:text-gold transition-colors duration-200"
@@ -75,6 +75,52 @@ export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex items-center gap-1.5 pl-3 border-l border-border">
+        <TrendingUp size={14} className={rampEnabled ? 'text-gold' : 'text-muted-foreground'} />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+          Subida suave
+        </span>
+        <Switch
+          checked={rampEnabled}
+          onCheckedChange={setRampEnabled}
+          aria-label="Ativar subida suave de volume"
+        />
+        {rampEnabled && (
+          <>
+            <Select
+              value={String(Math.round(rampTarget * 100))}
+              onValueChange={(v) => setRampTarget(Number(v) / 100)}
+            >
+              <SelectTrigger className="h-8 w-[74px] text-xs" aria-label="Volume alvo da subida suave">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                {RAMP_TARGETS.map((p) => (
+                  <SelectItem key={p} value={String(p)} className="text-xs">
+                    até {p}%
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={String(rampSeconds)}
+              onValueChange={(v) => setRampSeconds(Number(v))}
+            >
+              <SelectTrigger className="h-8 w-[70px] text-xs" aria-label="Duração da subida suave">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                {RAMP_SECONDS.map((s) => (
+                  <SelectItem key={s} value={String(s)} className="text-xs">
+                    {s}s
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
     </div>
   );
