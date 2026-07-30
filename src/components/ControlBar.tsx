@@ -4,7 +4,7 @@ import { VolumeControl } from './VolumeControl';
 import { AudioIndicator } from './AudioIndicator';
 import { EqualizerPanel } from './EqualizerPanel';
 import { ElegantClock } from './ElegantClock';
-import { SessionStopwatch } from './SessionStopwatch';
+
 import { Button } from '@/components/ui/button';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
 
