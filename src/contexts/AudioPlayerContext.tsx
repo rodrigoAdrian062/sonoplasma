@@ -134,6 +134,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
   const startVolumeRef = useRef(startVolume);
+  const rampEnabledRef = useRef(rampEnabled);
+  const rampSecondsRef = useRef(rampSeconds);
+  const rampTargetRef = useRef(rampTarget);
+  const rampIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
