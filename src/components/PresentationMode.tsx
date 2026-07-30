@@ -169,7 +169,18 @@ export function PresentationMode({
   const [compact, setCompact] = useState(shouldAutoCompact);
 
   const { formatted: clockTime } = useClock();
-  const { fadeEnabled, setFadeEnabled, startVolume, setStartVolume } = useUniversalAudioPlayer();
+  const {
+    fadeEnabled,
+    setFadeEnabled,
+    startVolume,
+    setStartVolume,
+    rampEnabled,
+    setRampEnabled,
+    rampSeconds,
+    setRampSeconds,
+    rampTarget,
+    setRampTarget,
+  } = useUniversalAudioPlayer();
 
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
@@ -760,6 +771,41 @@ export function PresentationMode({
                   <option key={p} value={p}>{p}%</option>
                 ))}
               </select>
+            </div>
+            <div className="flex flex-col items-center gap-1 pt-3 border-t border-gold/20 w-full">
+              <label className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rampEnabled}
+                  onChange={(e) => setRampEnabled(e.target.checked)}
+                  className="accent-[hsl(var(--gold))]"
+                />
+                Subida suave
+              </label>
+              {rampEnabled && (
+                <div className="flex flex-col items-center gap-1">
+                  <select
+                    value={Math.round(rampTarget * 100)}
+                    onChange={(e) => setRampTarget(Number(e.target.value) / 100)}
+                    aria-label="Volume alvo da subida suave"
+                    className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
+                  >
+                    {[20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                      <option key={p} value={p}>até {p}%</option>
+                    ))}
+                  </select>
+                  <select
+                    value={rampSeconds}
+                    onChange={(e) => setRampSeconds(Number(e.target.value))}
+                    aria-label="Duração da subida suave"
+                    className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
+                  >
+                    {[3, 5, 8, 10, 15, 20, 30, 45, 60].map((s) => (
+                      <option key={s} value={s}>{s}s</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
           </div>

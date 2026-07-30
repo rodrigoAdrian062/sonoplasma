@@ -42,6 +42,12 @@ interface AudioPlayerContextValue {
   setVolume: (value: number) => void;
   startVolume: number;
   setStartVolume: (value: number) => void;
+  rampEnabled: boolean;
+  setRampEnabled: (value: boolean) => void;
+  rampSeconds: number;
+  setRampSeconds: (value: number) => void;
+  rampTarget: number;
+  setRampTarget: (value: number) => void;
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
@@ -88,6 +94,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const parsed = raw !== null ? Number(raw) : NaN;
     return Number.isFinite(parsed) ? Math.min(0.5, Math.max(0, parsed)) : 0.02;
   });
+  const [rampEnabled, setRampEnabledState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('sonoplastia:rampEnabled') === '1';
+  });
+  const [rampSeconds, setRampSecondsState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 8;
+    const parsed = Number(window.localStorage.getItem('sonoplastia:rampSeconds'));
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(60, parsed) : 8;
+  });
+  const [rampTarget, setRampTargetState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.7;
+    const parsed = Number(window.localStorage.getItem('sonoplastia:rampTarget'));
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(1, parsed) : 0.7;
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
@@ -114,6 +134,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
   const startVolumeRef = useRef(startVolume);
+  const rampEnabledRef = useRef(rampEnabled);
+  const rampSecondsRef = useRef(rampSeconds);
+  const rampTargetRef = useRef(rampTarget);
+  const rampIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
@@ -150,6 +174,37 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       clearInterval(fadeIntervalRef.current);
       fadeIntervalRef.current = null;
     }
+  }, []);
+
+  const clearRamp = useCallback(() => {
+    if (rampIntervalRef.current) {
+      clearInterval(rampIntervalRef.current);
+      rampIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => { rampEnabledRef.current = rampEnabled; }, [rampEnabled]);
+  useEffect(() => { rampSecondsRef.current = rampSeconds; }, [rampSeconds]);
+  useEffect(() => { rampTargetRef.current = rampTarget; }, [rampTarget]);
+
+  const setRampEnabled = useCallback((value: boolean) => {
+    setRampEnabledState(value);
+    rampEnabledRef.current = value;
+    try { window.localStorage.setItem('sonoplastia:rampEnabled', value ? '1' : '0'); } catch { /* noop */ }
+  }, []);
+
+  const setRampSeconds = useCallback((value: number) => {
+    const clamped = Math.min(60, Math.max(1, Math.round(value)));
+    setRampSecondsState(clamped);
+    rampSecondsRef.current = clamped;
+    try { window.localStorage.setItem('sonoplastia:rampSeconds', String(clamped)); } catch { /* noop */ }
+  }, []);
+
+  const setRampTarget = useCallback((value: number) => {
+    const clamped = Math.min(1, Math.max(0, value));
+    setRampTargetState(clamped);
+    rampTargetRef.current = clamped;
+    try { window.localStorage.setItem('sonoplastia:rampTarget', String(clamped)); } catch { /* noop */ }
   }, []);
 
   // Apply a volume level to whichever player is active (no state change)
@@ -472,12 +527,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback((stageId: string, url: string) => {
     clearFade();
+    clearRamp();
     stopCurrentPlayback();
 
     // Todo play() começa no volume inicial configurado (padrão 2%).
     const initialVol = startVolumeRef.current;
     volumeRef.current = initialVol;
     setVolumeState(initialVol);
+
+    // Rampa suave: sobe do volume inicial até o volume alvo em N segundos.
+    if (rampEnabledRef.current && rampTargetRef.current > initialVol) {
+      const from = initialVol;
+      const to = rampTargetRef.current;
+      const totalMs = Math.max(1, rampSecondsRef.current) * 1000;
+      const tickMs = 100;
+      const steps = Math.max(1, Math.round(totalMs / tickMs));
+      let step = 0;
+      rampIntervalRef.current = setInterval(() => {
+        step++;
+        const v = Math.min(to, from + (to - from) * (step / steps));
+        volumeRef.current = v;
+        setVolumeState(v);
+        if (audioRef.current) audioRef.current.volume = v;
+        if (ytPlayerRef.current && ytPlayerReadyRef.current) {
+          try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
+        }
+        if (step >= steps) clearRamp();
+      }, tickMs);
+    }
+
+
 
 
 
@@ -580,6 +659,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const pause = useCallback(() => {
+    clearRamp();
     const doPause = () => {
       if (isSpotifyRef.current) {
         pauseSpotifyEntity().catch(() => { /* noop */ });
@@ -596,7 +676,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     } else {
       doPause();
     }
-  }, [fadeOutThen]);
+  }, [fadeOutThen, clearRamp]);
 
   const resume = useCallback(() => {
     clearFade();
@@ -613,6 +693,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const stop = useCallback(() => {
     const doStop = () => {
+      clearRamp();
       stopCurrentPlayback();
       setStatus('idle');
       setCurrentStageId(null);
@@ -633,12 +714,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [stopCurrentPlayback, status, fadeOutThen]);
 
   const setVolume = useCallback((value: number) => {
+    // Ajuste manual cancela a rampa em andamento.
+    clearRamp();
     if (audioRef.current) audioRef.current.volume = value;
     if (ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.setVolume(value * 100);
     }
+    volumeRef.current = value;
     setVolumeState(value);
-  }, []);
+  }, [clearRamp]);
 
   const setStartVolume = useCallback((value: number) => {
     const clamped = Math.min(0.5, Math.max(0, value));
@@ -715,6 +799,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setVolume,
     startVolume,
     setStartVolume,
+    rampEnabled,
+    setRampEnabled,
+    rampSeconds,
+    setRampSeconds,
+    rampTarget,
+    setRampTarget,
     seekForward,
     seekBackward,
     seekTo,
