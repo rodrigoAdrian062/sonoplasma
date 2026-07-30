@@ -712,12 +712,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [stopCurrentPlayback, status, fadeOutThen]);
 
   const setVolume = useCallback((value: number) => {
+    // Ajuste manual cancela a rampa em andamento.
+    clearRamp();
     if (audioRef.current) audioRef.current.volume = value;
     if (ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.setVolume(value * 100);
     }
+    volumeRef.current = value;
     setVolumeState(value);
-  }, []);
+  }, [clearRamp]);
 
   const setStartVolume = useCallback((value: number) => {
     const clamped = Math.min(0.5, Math.max(0, value));
