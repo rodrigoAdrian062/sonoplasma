@@ -94,6 +94,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const parsed = raw !== null ? Number(raw) : NaN;
     return Number.isFinite(parsed) ? Math.min(0.5, Math.max(0, parsed)) : 0.02;
   });
+  const [rampEnabled, setRampEnabledState] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('sonoplastia:rampEnabled') === '1';
+  });
+  const [rampSeconds, setRampSecondsState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 8;
+    const parsed = Number(window.localStorage.getItem('sonoplastia:rampSeconds'));
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(60, parsed) : 8;
+  });
+  const [rampTarget, setRampTargetState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.7;
+    const parsed = Number(window.localStorage.getItem('sonoplastia:rampTarget'));
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(1, parsed) : 0.7;
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
