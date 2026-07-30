@@ -42,6 +42,12 @@ interface AudioPlayerContextValue {
   setVolume: (value: number) => void;
   startVolume: number;
   setStartVolume: (value: number) => void;
+  rampEnabled: boolean;
+  setRampEnabled: (value: boolean) => void;
+  rampSeconds: number;
+  setRampSeconds: (value: number) => void;
+  rampTarget: number;
+  setRampTarget: (value: number) => void;
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
