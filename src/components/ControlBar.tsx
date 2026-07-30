@@ -49,7 +49,6 @@ export function ControlBar({
             isPlaying={isPlaying} />
 
           <div className="ml-auto flex items-center gap-2 shrink-0 max-w-full overflow-hidden">
-            <SessionStopwatch />
             <ElegantClock size="sm" />
           </div>
         </div>
