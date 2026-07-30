@@ -746,6 +746,22 @@ export function PresentationMode({
             >
               {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
             </button>
+            <div className="flex flex-col items-center gap-1 pt-3 border-t border-gold/20 w-full">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Iniciar em
+              </span>
+              <select
+                value={Math.round(startVolume * 100)}
+                onChange={(e) => setStartVolume(Number(e.target.value) / 100)}
+                aria-label="Volume inicial ao dar play"
+                className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
+              >
+                {Array.from({ length: 51 }, (_, i) => i).map((p) => (
+                  <option key={p} value={p}>{p}%</option>
+                ))}
+              </select>
+            </div>
+
           </div>
         </div>
 
