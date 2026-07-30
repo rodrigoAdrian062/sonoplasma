@@ -40,6 +40,8 @@ interface AudioPlayerContextValue {
   resume: () => void;
   stop: () => void;
   setVolume: (value: number) => void;
+  startVolume: number;
+  setStartVolume: (value: number) => void;
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
