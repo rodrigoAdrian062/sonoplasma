@@ -176,6 +176,37 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const clearRamp = useCallback(() => {
+    if (rampIntervalRef.current) {
+      clearInterval(rampIntervalRef.current);
+      rampIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => { rampEnabledRef.current = rampEnabled; }, [rampEnabled]);
+  useEffect(() => { rampSecondsRef.current = rampSeconds; }, [rampSeconds]);
+  useEffect(() => { rampTargetRef.current = rampTarget; }, [rampTarget]);
+
+  const setRampEnabled = useCallback((value: boolean) => {
+    setRampEnabledState(value);
+    rampEnabledRef.current = value;
+    try { window.localStorage.setItem('sonoplastia:rampEnabled', value ? '1' : '0'); } catch { /* noop */ }
+  }, []);
+
+  const setRampSeconds = useCallback((value: number) => {
+    const clamped = Math.min(60, Math.max(1, Math.round(value)));
+    setRampSecondsState(clamped);
+    rampSecondsRef.current = clamped;
+    try { window.localStorage.setItem('sonoplastia:rampSeconds', String(clamped)); } catch { /* noop */ }
+  }, []);
+
+  const setRampTarget = useCallback((value: number) => {
+    const clamped = Math.min(1, Math.max(0, value));
+    setRampTargetState(clamped);
+    rampTargetRef.current = clamped;
+    try { window.localStorage.setItem('sonoplastia:rampTarget', String(clamped)); } catch { /* noop */ }
+  }, []);
+
   // Apply a volume level to whichever player is active (no state change)
   const applyPlayerVolume = useCallback((v: number) => {
     if (audioRef.current) audioRef.current.volume = v;
