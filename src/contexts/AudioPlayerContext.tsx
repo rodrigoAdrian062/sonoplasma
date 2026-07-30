@@ -82,6 +82,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const [status, setStatus] = useState<PlaybackStatus>('idle');
   const [volume, setVolumeState] = useState(0);
+  const [startVolume, setStartVolumeState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.02;
+    const raw = window.localStorage.getItem('sonoplastia:startVolume');
+    const parsed = raw !== null ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? Math.min(0.5, Math.max(0, parsed)) : 0.02;
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
