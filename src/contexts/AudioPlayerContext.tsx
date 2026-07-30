@@ -113,6 +113,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const isYouTubeRef = useRef(false);
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
+  const startVolumeRef = useRef(startVolume);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
