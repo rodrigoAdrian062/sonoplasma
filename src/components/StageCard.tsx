@@ -141,10 +141,13 @@ export function StageCard({
   const hasAudios = audios.length > 0;
   const currentAudio = audios[selectedAudioIndex];
 
+  // Só usa o tempo padrão da etapa se ainda não houver escolha salva do usuário
   useEffect(() => {
+    try {
+      if (localStorage.getItem(timerKey)) return;
+    } catch {}
     setCustomTime(defaultTime);
-    setUseTimerEnabled(true);
-  }, [defaultTime]);
+  }, [defaultTime, timerKey]);
 
   // Mantém a faixa selecionada mesmo quando a lista é reordenada/editada,
   // localizando o mesmo id/url na nova lista. Só reseta se não existir mais.
