@@ -676,7 +676,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     } else {
       doPause();
     }
-  }, [fadeOutThen]);
+  }, [fadeOutThen, clearRamp]);
 
   const resume = useCallback(() => {
     clearFade();
