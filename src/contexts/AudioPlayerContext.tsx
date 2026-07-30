@@ -659,6 +659,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const pause = useCallback(() => {
+    clearRamp();
     const doPause = () => {
       if (isSpotifyRef.current) {
         pauseSpotifyEntity().catch(() => { /* noop */ });
