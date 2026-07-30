@@ -241,8 +241,13 @@ export function StageCard({
   }, [isPlaying, isPaused]);
 
   const handleTimeChange = (minutes: number) => {
-    const seconds = minutes * 60;
+    const clamped = Math.min(180, Math.max(1, Math.round(minutes)));
+    const seconds = clamped * 60;
     setCustomTime(seconds);
+    // Permite alterar o tempo mesmo com a música tocando
+    if (timer.isRunning || timer.isPaused) {
+      timer.setTime(seconds);
+    }
   };
 
   const handleSelectAudio = (index: number) => {
