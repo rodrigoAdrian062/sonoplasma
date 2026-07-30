@@ -473,9 +473,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     clearFade();
     stopCurrentPlayback();
 
-    // Todo play() começa em 0% — usuário sobe manualmente.
-    volumeRef.current = 0;
-    setVolumeState(0);
+    // Todo play() começa no volume inicial configurado (padrão 2%).
+    const initialVol = startVolumeRef.current;
+    volumeRef.current = initialVol;
+    setVolumeState(initialVol);
 
 
 
