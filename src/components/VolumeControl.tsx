@@ -1,13 +1,24 @@
 import { Volume2, VolumeX } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 
 interface VolumeControlProps {
   volume: number;
   onVolumeChange: (value: number) => void;
 }
 
+const START_OPTIONS = Array.from({ length: 51 }, (_, i) => i);
+
 export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
   const isMuted = volume === 0;
+  const { startVolume, setStartVolume } = useUniversalAudioPlayer();
 
   const handleToggleMute = () => {
     onVolumeChange(isMuted ? 0.7 : 0);
@@ -32,6 +43,28 @@ export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
       <span className="text-xs text-muted-foreground w-8 text-right">
         {Math.round(volume * 100)}%
       </span>
+
+      <div className="flex items-center gap-1.5 pl-3 border-l border-border">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+          Iniciar em
+        </span>
+        <Select
+          value={String(Math.round(startVolume * 100))}
+          onValueChange={(v) => setStartVolume(Number(v) / 100)}
+        >
+          <SelectTrigger className="h-8 w-[74px] text-xs" aria-label="Volume inicial ao dar play">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="max-h-64">
+            {START_OPTIONS.map((p) => (
+              <SelectItem key={p} value={String(p)} className="text-xs">
+                {p}%
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
+

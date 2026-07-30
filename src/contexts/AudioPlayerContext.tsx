@@ -40,6 +40,8 @@ interface AudioPlayerContextValue {
   resume: () => void;
   stop: () => void;
   setVolume: (value: number) => void;
+  startVolume: number;
+  setStartVolume: (value: number) => void;
   seekForward: (seconds?: number) => void;
   seekBackward: (seconds?: number) => void;
   seekTo: (seconds: number) => void;
@@ -80,6 +82,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const [status, setStatus] = useState<PlaybackStatus>('idle');
   const [volume, setVolumeState] = useState(0);
+  const [startVolume, setStartVolumeState] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0.02;
+    const raw = window.localStorage.getItem('sonoplastia:startVolume');
+    const parsed = raw !== null ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? Math.min(0.5, Math.max(0, parsed)) : 0.02;
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isYouTube, setIsYouTube] = useState(false);
@@ -105,6 +113,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const isYouTubeRef = useRef(false);
   const isSpotifyRef = useRef(false);
   const volumeRef = useRef(volume);
+  const startVolumeRef = useRef(startVolume);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
@@ -465,9 +474,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     clearFade();
     stopCurrentPlayback();
 
-    // Todo play() começa em 0% — usuário sobe manualmente.
-    volumeRef.current = 0;
-    setVolumeState(0);
+    // Todo play() começa no volume inicial configurado (padrão 2%).
+    const initialVol = startVolumeRef.current;
+    volumeRef.current = initialVol;
+    setVolumeState(initialVol);
 
 
 
@@ -630,6 +640,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setVolumeState(value);
   }, []);
 
+  const setStartVolume = useCallback((value: number) => {
+    const clamped = Math.min(0.5, Math.max(0, value));
+    startVolumeRef.current = clamped;
+    setStartVolumeState(clamped);
+    try {
+      window.localStorage.setItem('sonoplastia:startVolume', String(clamped));
+    } catch { /* noop */ }
+  }, []);
+
+
+
   const seekForward = useCallback((seconds = 10) => {
     if (isSpotifyRef.current) {
       seekSpotifyEntity(currentTime + seconds).catch(() => { /* noop */ });
@@ -692,6 +713,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     resume,
     stop,
     setVolume,
+    startVolume,
+    setStartVolume,
     seekForward,
     seekBackward,
     seekTo,
