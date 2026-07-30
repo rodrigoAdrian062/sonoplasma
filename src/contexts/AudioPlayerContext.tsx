@@ -640,6 +640,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setVolumeState(value);
   }, []);
 
+  const setStartVolume = useCallback((value: number) => {
+    const clamped = Math.min(0.5, Math.max(0, value));
+    startVolumeRef.current = clamped;
+    setStartVolumeState(clamped);
+    try {
+      window.localStorage.setItem('sonoplastia:startVolume', String(clamped));
+    } catch { /* noop */ }
+  }, []);
+
+
+
   const seekForward = useCallback((seconds = 10) => {
     if (isSpotifyRef.current) {
       seekSpotifyEntity(currentTime + seconds).catch(() => { /* noop */ });
