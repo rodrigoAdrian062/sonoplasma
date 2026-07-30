@@ -263,6 +263,7 @@ export function StageCard({
     prevActiveRef.current = isPlaying || isPaused;
   }, [isPlaying, isPaused]);
 
+  const savedToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleTimeChange = (minutes: number) => {
     const clamped = Math.min(180, Math.max(1, Math.round(minutes)));
     const seconds = clamped * 60;
@@ -271,7 +272,15 @@ export function StageCard({
     if (timer.isRunning || timer.isPaused) {
       timer.setTime(seconds);
     }
+    // Aviso curto de que o tempo ficou salvo (debounce para não repetir ao digitar)
+    if (savedToastRef.current) clearTimeout(savedToastRef.current);
+    savedToastRef.current = setTimeout(() => {
+      toast.success(`Tempo salvo: ${clamped} min`, { duration: 1500 });
+    }, 600);
   };
+  useEffect(() => () => {
+    if (savedToastRef.current) clearTimeout(savedToastRef.current);
+  }, []);
 
   const handleSelectAudio = (index: number) => {
     setSelectedAudioIndex(index);
