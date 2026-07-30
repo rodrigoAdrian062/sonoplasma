@@ -123,7 +123,7 @@ export function StageCard({
 
   useEffect(() => {
     setCustomTime(defaultTime);
-    setUseTimerEnabled(defaultTime > 0);
+    setUseTimerEnabled(true);
   }, [defaultTime]);
 
   // Mantém a faixa selecionada mesmo quando a lista é reordenada/editada,
