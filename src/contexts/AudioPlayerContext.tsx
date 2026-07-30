@@ -692,6 +692,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const stop = useCallback(() => {
     const doStop = () => {
+      clearRamp();
       stopCurrentPlayback();
       setStatus('idle');
       setCurrentStageId(null);
