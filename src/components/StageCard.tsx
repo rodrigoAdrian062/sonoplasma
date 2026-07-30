@@ -59,8 +59,28 @@ export function StageCard({
 
   const queryClient = useQueryClient();
   const defaultTime = stage.tempo_padrao || 300;
-  const [customTime, setCustomTime] = useState(defaultTime);
-  const [useTimerEnabled, setUseTimerEnabled] = useState(true);
+  const timerKey = `stage:timerSeconds:${stage.id}`;
+  const timerEnabledKey = `stage:timerEnabled:${stage.id}`;
+  const [customTime, setCustomTime] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem(timerKey));
+      if (Number.isFinite(saved) && saved >= 60 && saved <= 180 * 60) return saved;
+    } catch {}
+    return defaultTime;
+  });
+  const [useTimerEnabled, setUseTimerEnabled] = useState(() => {
+    try {
+      return localStorage.getItem(timerEnabledKey) !== '0';
+    } catch {}
+    return true;
+  });
+  // Persiste as preferências do cronômetro desta etapa
+  useEffect(() => {
+    try { localStorage.setItem(timerKey, String(customTime)); } catch {}
+  }, [customTime, timerKey]);
+  useEffect(() => {
+    try { localStorage.setItem(timerEnabledKey, useTimerEnabled ? '1' : '0'); } catch {}
+  }, [useTimerEnabled, timerEnabledKey]);
   const [loopUntilTimer, setLoopUntilTimer] = useState(false);
   const loopUntilTimerRef = useRef(loopUntilTimer);
   useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
