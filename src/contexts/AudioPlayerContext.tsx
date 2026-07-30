@@ -713,6 +713,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     resume,
     stop,
     setVolume,
+    startVolume,
+    setStartVolume,
     seekForward,
     seekBackward,
     seekTo,
