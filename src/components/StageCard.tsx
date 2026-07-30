@@ -58,9 +58,9 @@ export function StageCard({
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
-  const defaultTime = stage.tempo_padrao || 0;
+  const defaultTime = stage.tempo_padrao || 300;
   const [customTime, setCustomTime] = useState(defaultTime);
-  const [useTimerEnabled, setUseTimerEnabled] = useState(defaultTime > 0);
+  const [useTimerEnabled, setUseTimerEnabled] = useState(true);
   const [loopUntilTimer, setLoopUntilTimer] = useState(false);
   const loopUntilTimerRef = useRef(loopUntilTimer);
   useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
