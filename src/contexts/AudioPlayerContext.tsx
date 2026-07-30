@@ -527,12 +527,36 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const play = useCallback((stageId: string, url: string) => {
     clearFade();
+    clearRamp();
     stopCurrentPlayback();
 
     // Todo play() começa no volume inicial configurado (padrão 2%).
     const initialVol = startVolumeRef.current;
     volumeRef.current = initialVol;
     setVolumeState(initialVol);
+
+    // Rampa suave: sobe do volume inicial até o volume alvo em N segundos.
+    if (rampEnabledRef.current && rampTargetRef.current > initialVol) {
+      const from = initialVol;
+      const to = rampTargetRef.current;
+      const totalMs = Math.max(1, rampSecondsRef.current) * 1000;
+      const tickMs = 100;
+      const steps = Math.max(1, Math.round(totalMs / tickMs));
+      let step = 0;
+      rampIntervalRef.current = setInterval(() => {
+        step++;
+        const v = Math.min(to, from + (to - from) * (step / steps));
+        volumeRef.current = v;
+        setVolumeState(v);
+        if (audioRef.current) audioRef.current.volume = v;
+        if (ytPlayerRef.current && ytPlayerReadyRef.current) {
+          try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
+        }
+        if (step >= steps) clearRamp();
+      }, tickMs);
+    }
+
+
 
 
 
