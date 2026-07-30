@@ -520,14 +520,30 @@ export function StageCard({
             </label>
             {useTimerEnabled && (
               <>
+                <button
+                  type="button"
+                  onClick={() => handleTimeChange(Math.floor(customTime / 60) - 1)}
+                  className="px-1.5 py-0.5 text-xs rounded border border-border/40 bg-secondary/40 text-muted-foreground hover:text-gold hover:border-gold/30 shrink-0"
+                  title="Diminuir 1 minuto"
+                >
+                  −
+                </button>
                 <input
                   type="number"
                   min="1"
-                  max="60"
+                  max="180"
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
                   className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold shrink-0"
                 />
+                <button
+                  type="button"
+                  onClick={() => handleTimeChange(Math.floor(customTime / 60) + 1)}
+                  className="px-1.5 py-0.5 text-xs rounded border border-border/40 bg-secondary/40 text-muted-foreground hover:text-gold hover:border-gold/30 shrink-0"
+                  title="Aumentar 1 minuto"
+                >
+                  +
+                </button>
                 <span className="text-xs text-muted-foreground/60 shrink-0">min</span>
                 <button
                   type="button"
