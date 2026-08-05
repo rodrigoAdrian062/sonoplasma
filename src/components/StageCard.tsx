@@ -743,11 +743,11 @@ export function StageCard({
             </span>
           </div>
         )}
-          </>
-        )}
-      </div>
+        </>
+      )}
     </div>
-  );
+  </div>
+);
 }
 
 function formatTime(seconds: number): string {
