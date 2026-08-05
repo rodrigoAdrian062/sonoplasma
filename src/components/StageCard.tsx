@@ -419,7 +419,8 @@ export function StageCard({
 
         </div>
 
-        {!collapsed && (<>
+        {!collapsed && (
+          <>
 
 
         {/* Audio selector */}
@@ -539,64 +540,80 @@ export function StageCard({
         {/* Timer + Controls row */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Timer inline */}
-          <div className="flex items-center gap-1.5 flex-wrap mr-auto min-w-0">
-            <Clock size={13} className="text-muted-foreground/50 shrink-0" />
-            <label className="flex items-center gap-1.5 text-xs text-muted-foreground/70 shrink-0">
-              <input
-                type="checkbox"
-                checked={useTimerEnabled}
-                onChange={(e) => setUseTimerEnabled(e.target.checked)}
-                className="rounded border-border bg-secondary text-gold focus:ring-gold w-3.5 h-3.5"
-              />
-              Cronômetro
-            </label>
+          <div className="flex flex-col gap-2 w-full mt-1">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-border/40">
+                <Clock size={14} className={cn("transition-colors", useTimerEnabled ? "text-gold" : "text-muted-foreground/40")} />
+                <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground/80 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={useTimerEnabled}
+                    onChange={(e) => setUseTimerEnabled(e.target.checked)}
+                    className="rounded border-border bg-secondary text-gold focus:ring-gold w-4 h-4 transition-all"
+                  />
+                  Cronômetro
+                </label>
+              </div>
+              
+              {!useTimerEnabled && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+                  <Play size={12} fill="currentColor" className="animate-pulse" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Tempo Normal (Sem limite)</span>
+                </div>
+              )}
+            </div>
+
             {useTimerEnabled && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleTimeChange(Math.floor(customTime / 60) - 1)}
-                  className="px-1.5 py-0.5 text-xs rounded border border-border/40 bg-secondary/40 text-muted-foreground hover:text-gold hover:border-gold/30 shrink-0"
-                  title="Diminuir 1 minuto"
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  min="1"
-                  max="180"
-                  value={Math.floor(customTime / 60)}
-                  onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
-                  className="w-12 px-1.5 py-0.5 text-xs bg-secondary/60 border border-border/40 rounded text-foreground focus:border-gold focus:ring-1 focus:ring-gold shrink-0"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleTimeChange(Math.floor(customTime / 60) + 1)}
-                  className="px-1.5 py-0.5 text-xs rounded border border-border/40 bg-secondary/40 text-muted-foreground hover:text-gold hover:border-gold/30 shrink-0"
-                  title="Aumentar 1 minuto"
-                >
-                  +
-                </button>
-                <span className="text-xs text-muted-foreground/60 shrink-0">min</span>
+              <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-1.5 p-1 bg-secondary/40 rounded-lg border border-border/30">
+                  <button
+                    type="button"
+                    onClick={() => handleTimeChange(Math.floor(customTime / 60) - 1)}
+                    className="w-7 h-7 flex items-center justify-center text-sm rounded-md bg-background/50 text-muted-foreground hover:text-gold hover:bg-gold/10 transition-colors"
+                    title="Diminuir 1 minuto"
+                  >
+                    −
+                  </button>
+                  <div className="flex items-center gap-1 px-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="180"
+                      value={Math.floor(customTime / 60)}
+                      onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
+                      className="w-10 text-center font-mono text-xs bg-transparent border-none p-0 focus:ring-0 text-foreground"
+                    />
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground/50">min</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleTimeChange(Math.floor(customTime / 60) + 1)}
+                    className="w-7 h-7 flex items-center justify-center text-sm rounded-md bg-background/50 text-muted-foreground hover:text-gold hover:bg-gold/10 transition-colors"
+                    title="Aumentar 1 minuto"
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setLoopUntilTimer((v) => !v)}
                   className={cn(
-                    'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors border shrink-0',
+                    'flex items-center gap-2 px-3 py-1.5 h-[34px] rounded-lg text-xs font-semibold transition-all duration-300 border shadow-sm',
                     loopUntilTimer
-                      ? 'bg-gold/15 border-gold/40 text-gold'
+                      ? 'bg-gold text-background border-gold shadow-gold/20'
                       : 'bg-secondary/40 border-border/40 text-muted-foreground/70 hover:text-foreground hover:border-gold/30'
                   )}
                   title="Repete a música em loop até o tempo do cronômetro acabar"
                   aria-pressed={loopUntilTimer}
                 >
-                  <Repeat size={10} aria-hidden="true" />
-                  <span className="hidden xs:inline sm:inline">Repetir até o tempo</span>
-                  <span className="xs:hidden sm:hidden">Repetir</span>
+                  <Repeat size={14} className={cn("transition-transform duration-500", loopUntilTimer && "rotate-180")} aria-hidden="true" />
+                  <span>Repetir até o tempo</span>
                 </button>
-              </>
+              </div>
             )}
             {(timer.isRunning || timer.isPaused) && (
-              <div className="flex items-center gap-1 ml-1">
+              <div className="flex items-center gap-1 mt-1">
                 <TimerDisplay 
                   seconds={timer.timeRemaining} 
                   isActive={timer.isRunning && !timer.isPaused}
@@ -604,7 +621,7 @@ export function StageCard({
                 />
                 <button
                   onClick={() => timer.reset()}
-                  className="p-0.5 text-muted-foreground hover:text-gold transition-colors"
+                  className="p-1 text-muted-foreground hover:text-gold transition-colors rounded-md hover:bg-gold/10"
                   aria-label="Resetar cronômetro"
                 >
                   <RotateCcw size={12} />
@@ -726,8 +743,8 @@ export function StageCard({
             </span>
           </div>
         )}
-        </>)}
-      </div>
+        </>
+      )}
     </div>
   );
 }
