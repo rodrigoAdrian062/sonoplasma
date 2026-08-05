@@ -331,6 +331,7 @@ export function StageCard({
           : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10'
       )}
     >
+      <p>TEST</p>
 
       {/* Barra dourada lateral */}
       <span
