@@ -1217,14 +1217,17 @@ export function PresentationMode({
         </div>
       )}
 
-      {/* Keyboard Hints Trigger - Floating help button instead of the bar */}
-      <button
-        onClick={() => setShowShortcuts(true)}
-        className="absolute bottom-6 right-6 p-3 bg-secondary/80 hover:bg-secondary border border-border rounded-full text-muted-foreground hover:text-gold transition-all shadow-lg hover:scale-110 sm:flex hidden"
-        title="Atalhos do teclado"
-      >
-        <Keyboard size={20} />
-      </button>
+      {/* Próxima Etapa no Header para Mobile */}
+      <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
+        {isPlaying && selectedStageIndex < stages.length - 1 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
+            <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
+            <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
+              {stages[selectedStageIndex + 1]?.nome_simbolico}
+            </span>
+          </div>
+        )}
+      </div>
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
