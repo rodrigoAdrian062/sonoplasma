@@ -1198,29 +1198,33 @@ export function PresentationMode({
         </Button>
       </footer>
 
-      {/* Keyboard Hints - hidden on mobile */}
-      <div 
-        className={cn(
-          'absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 hidden sm:block',
-          showKeyboardHints && !focusMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-        )}
-      >
-        <div className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-lg">
-          <Keyboard size={14} className="text-gold mr-2" />
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">Espaço</kbd>
-          <span className="text-[10px] text-muted-foreground mr-2">play</span>
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">← →</kbd>
-          <span className="text-[10px] text-muted-foreground mr-2">etapas</span>
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">↑ ↓</kbd>
-          <span className="text-[10px] text-muted-foreground mr-2">vol</span>
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">M</kbd>
-          <span className="text-[10px] text-muted-foreground mr-2">mudo</span>
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">F</kbd>
-          <span className="text-[10px] text-muted-foreground mr-2">fullscreen</span>
-          <kbd className="px-1.5 py-0.5 bg-secondary rounded text-[10px] text-foreground">ESC</kbd>
-          <span className="text-[10px] text-muted-foreground">sair</span>
+      {/* Next Stage Info - Only when playing and next stage exists */}
+      {isPlaying && selectedStageIndex < stages.length - 1 && (
+        <div 
+          className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in"
+        >
+          <div className="flex items-center gap-3 px-4 py-2 bg-gold/10 backdrop-blur-md rounded-xl border border-gold/30 shadow-lg shadow-black/40">
+            <div className="p-1.5 bg-gold/20 rounded-lg">
+              <ChevronRight size={16} className="text-gold" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gold/60 uppercase tracking-wider font-semibold">Próxima Etapa</span>
+              <span className="text-sm text-foreground font-display font-medium">
+                {stages[selectedStageIndex + 1]?.nome_simbolico}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Keyboard Hints Trigger - Floating help button instead of the bar */}
+      <button
+        onClick={() => setShowShortcuts(true)}
+        className="absolute bottom-6 right-6 p-3 bg-secondary/80 hover:bg-secondary border border-border rounded-full text-muted-foreground hover:text-gold transition-all shadow-lg hover:scale-110 sm:flex hidden"
+        title="Atalhos do teclado"
+      >
+        <Keyboard size={20} />
+      </button>
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
