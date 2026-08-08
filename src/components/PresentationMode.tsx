@@ -1203,16 +1203,34 @@ export function PresentationMode({
         <div 
           className="absolute bottom-[90px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
         >
-          <div className="flex items-center gap-4 px-6 py-3 bg-black/60 backdrop-blur-md rounded-2xl border border-gold/30 shadow-2xl shadow-black/60 scale-110">
-            <div className="p-2 bg-gold/20 rounded-xl">
-              <ChevronRight size={20} className="text-gold" />
+          <div className="flex flex-col gap-2">
+            {/* Próxima */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl border border-gold/30 shadow-2xl shadow-black/60">
+              <div className="p-1.5 bg-gold/20 rounded-lg">
+                <ChevronRight size={16} className="text-gold" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima Etapa</span>
+                <span className="text-sm text-foreground font-display font-medium">
+                  {stages[selectedStageIndex + 1]?.nome_simbolico}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] text-gold/60 uppercase tracking-[0.2em] font-bold">Próxima Etapa</span>
-              <span className="text-lg text-foreground font-display font-semibold tracking-wide">
-                {stages[selectedStageIndex + 1]?.nome_simbolico}
-              </span>
-            </div>
+
+            {/* Segunda Próxima (opcional se houver) */}
+            {selectedStageIndex < stages.length - 2 && (
+              <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-60 scale-95 origin-top">
+                <div className="p-1 bg-gold/10 rounded-md">
+                  <ChevronRight size={12} className="text-gold/50" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold">Em seguida</span>
+                  <span className="text-xs text-foreground/70 font-display">
+                    {stages[selectedStageIndex + 2]?.nome_simbolico}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
