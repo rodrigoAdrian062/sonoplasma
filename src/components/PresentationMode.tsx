@@ -613,7 +613,7 @@ export function PresentationMode({
                 size="icon"
                 onClick={() => setShowShortcuts(true)}
                 title="Ajuda e atalhos"
-                className="h-8 w-8 text-muted-foreground hover:text-gold"
+                className="h-8 w-8 text-gold border border-gold/20 bg-gold/5"
               >
                 <HelpCircle size={16} />
               </Button>
