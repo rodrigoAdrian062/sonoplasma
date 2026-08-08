@@ -1219,7 +1219,7 @@ export function PresentationMode({
 
       {/* Próxima Etapa no Header para Mobile */}
       <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
-        {isPlaying && selectedStageIndex < stages.length - 1 && (
+        {selectedStageIndex < stages.length - 1 && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
             <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
             <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
