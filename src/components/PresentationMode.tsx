@@ -613,7 +613,7 @@ export function PresentationMode({
                 size="icon"
                 onClick={() => setShowShortcuts(true)}
                 title="Ajuda e atalhos"
-                className="h-8 w-8 text-muted-foreground hover:text-gold"
+                className="h-8 w-8 text-gold border border-gold/20 bg-gold/5"
               >
                 <HelpCircle size={16} />
               </Button>
@@ -1198,10 +1198,10 @@ export function PresentationMode({
         </Button>
       </footer>
 
-      {/* Next Stage Info - Only when playing and next stage exists */}
+      {/* Next Stage Info - Only when playing and next stage exists (Desktop) */}
       {isPlaying && selectedStageIndex < stages.length - 1 && (
         <div 
-          className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
         >
           <div className="flex items-center gap-3 px-4 py-2 bg-gold/10 backdrop-blur-md rounded-xl border border-gold/30 shadow-lg shadow-black/40">
             <div className="p-1.5 bg-gold/20 rounded-lg">
@@ -1217,14 +1217,17 @@ export function PresentationMode({
         </div>
       )}
 
-      {/* Keyboard Hints Trigger - Floating help button instead of the bar */}
-      <button
-        onClick={() => setShowShortcuts(true)}
-        className="absolute bottom-6 right-6 p-3 bg-secondary/80 hover:bg-secondary border border-border rounded-full text-muted-foreground hover:text-gold transition-all shadow-lg hover:scale-110 sm:flex hidden"
-        title="Atalhos do teclado"
-      >
-        <Keyboard size={20} />
-      </button>
+      {/* Próxima Etapa no Header para Mobile */}
+      <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
+        {isPlaying && selectedStageIndex < stages.length - 1 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
+            <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
+            <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
+              {stages[selectedStageIndex + 1]?.nome_simbolico}
+            </span>
+          </div>
+        )}
+      </div>
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
