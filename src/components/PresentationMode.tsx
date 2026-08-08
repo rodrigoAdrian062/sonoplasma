@@ -1198,10 +1198,10 @@ export function PresentationMode({
         </Button>
       </footer>
 
-      {/* Next Stage Info - Only when playing and next stage exists */}
+      {/* Next Stage Info - Only when playing and next stage exists (Desktop) */}
       {isPlaying && selectedStageIndex < stages.length - 1 && (
         <div 
-          className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
         >
           <div className="flex items-center gap-3 px-4 py-2 bg-gold/10 backdrop-blur-md rounded-xl border border-gold/30 shadow-lg shadow-black/40">
             <div className="p-1.5 bg-gold/20 rounded-lg">
