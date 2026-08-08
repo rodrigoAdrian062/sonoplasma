@@ -1198,18 +1198,18 @@ export function PresentationMode({
         </Button>
       </footer>
 
-      {/* Next Stage Info - Only when playing and next stage exists (Desktop) */}
-      {isPlaying && selectedStageIndex < stages.length - 1 && (
+      {/* Next Stage Info (Desktop) */}
+      {selectedStageIndex < stages.length - 1 && (
         <div 
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
+          className="absolute bottom-[100px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
         >
-          <div className="flex items-center gap-3 px-4 py-2 bg-gold/10 backdrop-blur-md rounded-xl border border-gold/30 shadow-lg shadow-black/40">
-            <div className="p-1.5 bg-gold/20 rounded-lg">
-              <ChevronRight size={16} className="text-gold" />
+          <div className="flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-md rounded-xl border border-gold/20 shadow-lg">
+            <div className="p-1.5 bg-gold/10 rounded-lg">
+              <ChevronRight size={16} className="text-gold/60" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] text-gold/60 uppercase tracking-wider font-semibold">Próxima Etapa</span>
-              <span className="text-sm text-foreground font-display font-medium">
+              <span className="text-[10px] text-gold/40 uppercase tracking-widest font-bold">Próxima Etapa</span>
+              <span className="text-sm text-foreground/80 font-display font-medium">
                 {stages[selectedStageIndex + 1]?.nome_simbolico}
               </span>
             </div>
