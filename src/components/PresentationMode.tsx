@@ -564,7 +564,6 @@ export function PresentationMode({
             <ElegantClock size="sm" />
             
           </div>
-          <PresentationHeaderBgMusic />
         </div>
 
         
