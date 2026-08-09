@@ -20,6 +20,7 @@ const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
+const Acervo = lazy(() => import("./pages/Acervo"));
 
 
 
@@ -116,6 +117,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ErrorBoundary context="UserManagement"><UserManagement /></ErrorBoundary>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/acervo" 
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="Acervo"><Acervo /></ErrorBoundary>
                 </ProtectedRoute>
               } 
             />
