@@ -38,7 +38,7 @@ import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
-import { PresentationStageBgMusic } from './PresentationStageBgMusic';
+import { BackgroundMusicPlayer } from './BackgroundMusicPlayer';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -1325,18 +1325,16 @@ export function PresentationMode({
         </div>
       )}
 
-      {/* Background Music Panel (Left Side - Desktop) */}
+      {/* Global Background Music Panel (Left Side - Desktop) */}
       <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
         <div className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-4 py-6 shadow-2xl shadow-black/40">
           <div className="flex flex-col items-center gap-1 mb-2">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold">Fundo Específico</span>
-            {currentStage && (
-              <PresentationStageBgMusic stage={currentStage} />
-            )}
+            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold text-center">Música de Fundo Geral</span>
+            <BackgroundMusicPlayer variant="presentation" />
           </div>
           <div className="w-full h-px bg-gold/20" />
           <p className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
-            Músicas de fundo exclusivas para a etapa "{currentStage?.nome_simbolico}"
+            Controle a trilha sonora ambiente global da sessão
           </p>
         </div>
       </div>

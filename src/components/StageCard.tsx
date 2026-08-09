@@ -16,7 +16,7 @@ import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioC
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { Slider } from '@/components/ui/slider';
-import { PresentationStageBgMusic } from './PresentationStageBgMusic';
+
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -505,15 +505,6 @@ export function StageCard({
               />
             </div>
             
-            <div className="mt-2 mb-4 px-1 border-t border-gold/10 pt-4">
-              <div className="flex flex-col items-center gap-2 mb-2">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold self-start">Música de Fundo Específica</span>
-                <PresentationStageBgMusic stage={stage} />
-                <p className="text-[9px] text-muted-foreground italic text-center">
-                  Configure áudios de fundo que tocarão apenas nesta etapa.
-                </p>
-              </div>
-            </div>
           </>
         )}
 
