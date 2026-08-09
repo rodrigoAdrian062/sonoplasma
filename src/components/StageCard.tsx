@@ -504,9 +504,10 @@ export function StageCard({
           </div>
         )}
 
+        )}
+
         {!collapsed && (
-
-
+          <>
         {/* Audio selector */}
         {hasAudios ? (
           <div className="mb-2.5 min-w-0 overflow-hidden">
