@@ -139,6 +139,7 @@ export function PresentationMode({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
+  const [stageVolume, setStageVolume] = useState(0.7);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -180,6 +181,7 @@ export function PresentationMode({
     setRampSeconds,
     rampTarget,
     setRampTarget,
+    setVolume: setGlobalVolume,
   } = useUniversalAudioPlayer();
 
   const currentStage = stages[selectedStageIndex];
@@ -219,6 +221,13 @@ export function PresentationMode({
       const defaultTime = currentStage.tempo_padrao || 0;
       setCustomTime(defaultTime);
       setUseTimerEnabled(defaultTime > 0);
+      
+      const savedVol = localStorage.getItem(`stage:volume:${currentStage.id}`);
+      if (savedVol !== null) {
+        setStageVolume(Number(savedVol));
+      } else {
+        setStageVolume((currentStage as any).volume_config ?? 0.7);
+      }
     }
     // Não reseta o áudio na primeira montagem (preserva a música em reprodução)
     if (didInitRef.current) {
@@ -229,7 +238,11 @@ export function PresentationMode({
   }, [currentStage?.id]);
 
 
-
+  useEffect(() => {
+    if (currentStage) {
+      localStorage.setItem(`stage:volume:${currentStage.id}`, String(stageVolume));
+    }
+  }, [stageVolume, currentStage?.id]);
 
 
   useEffect(() => {
@@ -450,6 +463,11 @@ export function PresentationMode({
 
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
+    
+    // Aplica o volume específico da etapa ou áudio
+    const volumeToUse = (currentAudio as any).volume_config ?? stageVolume;
+    setGlobalVolume(volumeToUse);
+
     if (useTimerEnabled && customTime > 0) timer.start(customTime);
     onPlay(currentStage.id, currentAudio.audio_url);
   };

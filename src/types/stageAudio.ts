@@ -4,6 +4,7 @@ export interface StageAudio {
   nome: string;
   audio_url: string;
   ordem: number;
+  volume_config?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -13,6 +14,7 @@ export interface StageAudioInsert {
   nome: string;
   audio_url: string;
   ordem: number;
+  volume_config?: number | null;
 }
 
 export interface StageAudioUpdate {
@@ -20,4 +22,5 @@ export interface StageAudioUpdate {
   nome?: string;
   audio_url?: string;
   ordem?: number;
+  volume_config?: number | null;
 }

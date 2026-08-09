@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { Slider } from '@/components/ui/slider';
 
 interface StageCardProps {
   stage: CeremonyStage;
@@ -95,6 +96,21 @@ export function StageCard({
     } catch {}
     return 0;
   });
+
+  // Track the custom volume for the current stage (if overridden)
+  const stageVolumeKey = `stage:volume:${stage.id}`;
+  const [stageVolume, setStageVolume] = useState(() => {
+    try {
+      const saved = localStorage.getItem(stageVolumeKey);
+      if (saved !== null) return Number(saved);
+    } catch {}
+    return (stage as any).volume_config ?? 0.7;
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(stageVolumeKey, String(stageVolume)); } catch {}
+  }, [stageVolume, stageVolumeKey]);
+
   // Persist the "armed" (prepared) track per stage.
   useEffect(() => {
     const a = audios[selectedAudioIndex];
@@ -220,9 +236,15 @@ export function StageCard({
 
 
 
+  const { setVolume: setGlobalVolume } = useUniversalAudioPlayer();
+
   const handlePlayWithTimer = () => {
     if (!currentAudio) return;
     
+    // Apply stage or track specific volume
+    const volumeToUse = currentAudio.volume_config ?? stageVolume;
+    setGlobalVolume(volumeToUse);
+
     if (useTimerEnabled && customTime > 0) {
       timer.start(customTime);
     }
@@ -417,6 +439,30 @@ export function StageCard({
           </div>
 
         </div>
+
+        {!collapsed && (
+          <div className="mt-2 mb-4 px-1">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Volume2 size={14} className="text-gold/60" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Volume da Etapa
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-gold font-bold bg-gold/10 px-1.5 py-0.5 rounded">
+                {Math.round(stageVolume * 100)}%
+              </span>
+            </div>
+            <Slider
+              value={[stageVolume * 100]}
+              min={0}
+              max={100}
+              step={1}
+              onValueChange={(vals) => setStageVolume(vals[0] / 100)}
+              className="py-2"
+            />
+          </div>
+        )}
 
         {!collapsed && (
           <>
