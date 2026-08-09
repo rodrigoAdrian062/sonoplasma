@@ -237,7 +237,11 @@ export function PresentationMode({
   }, [currentStage?.id]);
 
 
-
+  useEffect(() => {
+    if (currentStage) {
+      localStorage.setItem(`stage:volume:${currentStage.id}`, String(stageVolume));
+    }
+  }, [stageVolume, currentStage?.id]);
 
 
   useEffect(() => {
