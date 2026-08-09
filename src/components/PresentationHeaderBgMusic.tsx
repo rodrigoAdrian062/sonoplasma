@@ -6,7 +6,7 @@ import { BackgroundMusicPlayer } from '@/components/BackgroundMusicPlayer';
  */
 export function PresentationHeaderBgMusic() {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-2">
       <BackgroundMusicPlayer variant="presentation" compact />
     </div>
   );

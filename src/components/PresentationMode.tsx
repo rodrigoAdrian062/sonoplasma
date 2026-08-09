@@ -814,16 +814,24 @@ export function PresentationMode({
 
 
         {/* Central Card - responsive sizing */}
-        <div className={cn('relative z-10 w-full max-w-2xl bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/40 flex flex-col items-center my-auto', compact ? 'p-3 sm:p-5 md:p-6' : 'p-4 sm:p-6 md:p-10')}>
-          {/* Active Glow */}
-          {isActive && (
-            <>
-              <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-radial from-gold/10 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute -inset-px rounded-2xl sm:rounded-3xl border border-gold/40 pointer-events-none animate-pulse" />
-            </>
+        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center my-auto">
+          {/* Add Background Music option when no stage music is playing */}
+          {(!isActive || !isPlaying) && (
+            <div className="mb-6 animate-fade-in">
+              <PresentationHeaderBgMusic />
+            </div>
           )}
-          {/* Top accent line */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-2/3 bg-gradient-to-r from-transparent via-gold/70 to-transparent rounded-full" />
+
+          <div className={cn('relative w-full bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/40 flex flex-col items-center', compact ? 'p-3 sm:p-5 md:p-6' : 'p-4 sm:p-6 md:p-10')}>
+            {/* Active Glow */}
+            {isActive && (
+              <>
+                <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-radial from-gold/10 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute -inset-px rounded-2xl sm:rounded-3xl border border-gold/40 pointer-events-none animate-pulse" />
+              </>
+            )}
+            {/* Top accent line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-2/3 bg-gradient-to-r from-transparent via-gold/70 to-transparent rounded-full" />
 
           {/* Stage Icon - smaller on mobile */}
           <div
@@ -1112,7 +1120,9 @@ export function PresentationMode({
             </p>
           )}
         </div>
-      </main>
+      </div>
+    </main>
+
 
       {/* Navigation Footer - responsive */}
       <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
@@ -1234,6 +1244,21 @@ export function PresentationMode({
           </div>
         </div>
       )}
+
+      {/* Background Music Panel (Left Side - Desktop) */}
+      <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
+        <div className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-4 py-6 shadow-2xl shadow-black/40">
+          <div className="flex flex-col items-center gap-1 mb-2">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold">Fundo</span>
+            <PresentationHeaderBgMusic />
+          </div>
+          <div className="w-full h-px bg-gold/20" />
+          <p className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
+            Configure e escolha músicas de fundo para o ritual
+          </p>
+        </div>
+      </div>
+
 
       {/* Próxima Etapa no Header para Mobile */}
       <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
