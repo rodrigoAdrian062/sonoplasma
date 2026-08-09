@@ -823,6 +823,7 @@ export function PresentationMode({
           )}
 
           <div className={cn('relative w-full bg-gradient-to-br from-card/90 via-card/70 to-card/40 backdrop-blur-xl border border-gold/20 ring-1 ring-white/5 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/40 flex flex-col items-center', compact ? 'p-3 sm:p-5 md:p-6' : 'p-4 sm:p-6 md:p-10')}>
+
             {/* Active Glow */}
             {isActive && (
               <>
