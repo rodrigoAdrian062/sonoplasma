@@ -489,30 +489,32 @@ export function StageCard({
         )}
 
         {!collapsed && (
-          <div className="mt-2 mb-4 px-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Pencil size={14} className="text-gold/60" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                Detalhes do Ritual
-              </span>
+          <>
+            <div className="mt-2 mb-4 px-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Pencil size={14} className="text-gold/60" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Detalhes do Ritual
+                </span>
+              </div>
+              <textarea
+                value={ritualDetails}
+                onChange={(e) => saveRitualDetails(e.target.value)}
+                placeholder="Escreva aqui as instruções ou detalhes desta etapa do ritual..."
+                className="w-full min-h-[80px] text-xs bg-secondary/30 border border-border/40 rounded-lg p-2.5 focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/40"
+              />
             </div>
-            <textarea
-              value={ritualDetails}
-              onChange={(e) => saveRitualDetails(e.target.value)}
-              placeholder="Escreva aqui as instruções ou detalhes desta etapa do ritual..."
-              className="w-full min-h-[80px] text-xs bg-secondary/30 border border-border/40 rounded-lg p-2.5 focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/40"
-            />
-          </div>
-          
-          <div className="mt-2 mb-4 px-1 border-t border-gold/10 pt-4">
-            <div className="flex flex-col items-center gap-2 mb-2">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold self-start">Música de Fundo Específica</span>
-              <PresentationStageBgMusic stage={stage} />
-              <p className="text-[9px] text-muted-foreground italic text-center">
-                Configure áudios de fundo que tocarão apenas nesta etapa.
-              </p>
+            
+            <div className="mt-2 mb-4 px-1 border-t border-gold/10 pt-4">
+              <div className="flex flex-col items-center gap-2 mb-2">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold self-start">Música de Fundo Específica</span>
+                <PresentationStageBgMusic stage={stage} />
+                <p className="text-[9px] text-muted-foreground italic text-center">
+                  Configure áudios de fundo que tocarão apenas nesta etapa.
+                </p>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {!collapsed && (
