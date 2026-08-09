@@ -181,6 +181,7 @@ export function PresentationMode({
     setRampSeconds,
     rampTarget,
     setRampTarget,
+    setVolume: setGlobalVolume,
   } = useUniversalAudioPlayer();
 
   const currentStage = stages[selectedStageIndex];
