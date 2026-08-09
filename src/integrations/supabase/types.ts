@@ -219,6 +219,7 @@ export type Database = {
           audio_url: string | null
           created_at: string
           descricao: string | null
+          fundo_musicas: Json | null
           icone: string | null
           icone_url: string | null
           id: string
@@ -236,6 +237,7 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           descricao?: string | null
+          fundo_musicas?: Json | null
           icone?: string | null
           icone_url?: string | null
           id?: string
@@ -253,6 +255,7 @@ export type Database = {
           audio_url?: string | null
           created_at?: string
           descricao?: string | null
+          fundo_musicas?: Json | null
           icone?: string | null
           icone_url?: string | null
           id?: string
