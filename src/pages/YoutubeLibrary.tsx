@@ -452,7 +452,9 @@ export default function YoutubeLibraryPage() {
                 <div
                   className={cn(
                     'group rounded-md transition-colors',
-                    isCurrent ? 'bg-red-500/10' : 'hover:bg-muted/60',
+                    showListView ? 'hover:bg-red-500/5' : 'hover:bg-muted/60',
+                    isCurrent ? 'bg-red-500/10' : '',
+                    showListView && 'px-2 py-1',
                   )}
                 >
                   <div className="flex items-center gap-3 px-2 py-1.5">
