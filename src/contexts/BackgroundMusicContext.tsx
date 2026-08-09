@@ -163,7 +163,7 @@ export function BackgroundMusicProvider({
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
-  const { status: mainStatus } = useUniversalAudioPlayer();
+  const { status: mainStatus, volume: mainVolume } = useUniversalAudioPlayer();
 
   const cancelCrossfade = useCallback(() => {
     if (crossfadeRafRef.current) {
@@ -369,8 +369,8 @@ export function BackgroundMusicProvider({
   }, [playlist, storageKey, onPlaylistChange]);
   useEffect(() => {
     safeWrite(VOLUME_KEY, String(volume));
-    if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = volume;
-  }, [volume]);
+    if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = mainVolume;
+  }, [mainVolume]);
   useEffect(() => { safeWrite(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
   useEffect(() => { safeWrite(MODE_KEY, autoMode); }, [autoMode]);
   useEffect(() => { safeWrite(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
@@ -562,7 +562,7 @@ export function BackgroundMusicProvider({
           if (isDuckingRef.current) {
             isDuckingRef.current = false;
             setIsDucking(false);
-            fadeTo(volume, fadeMs);
+            fadeTo(mainVolume, fadeMs);
           }
         } else {
           if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
@@ -578,7 +578,7 @@ export function BackgroundMusicProvider({
               a.volume = 0;
               a.play().then(() => {
                 setIsPlaying(true);
-                fadeTo(volume, fadeMs);
+                fadeTo(mainVolume, fadeMs);
               }).catch(() => {});
             }
           }
@@ -629,7 +629,7 @@ export function BackgroundMusicProvider({
       a.src = track.audio_url;
       a.load();
     }
-    a.volume = isDuckingRef.current ? duckVolume : volume;
+    a.volume = isDuckingRef.current ? duckVolume : mainVolume;
     if (mainStatus === 'playing' && autoPauseEnabled && autoMode === 'pause') {
       a.pause();
       wasAutoPausedRef.current = true;
@@ -747,6 +747,7 @@ export function BackgroundMusicProvider({
   }, []);
 
   const setVolume = useCallback((v: number) => {
+    // Sincroniza o volume global se necessário ou mantém apenas o local
     setVolumeState(Math.max(0, Math.min(1, v)));
   }, []);
   const setAutoPauseEnabled = useCallback((v: boolean) => setAutoPauseEnabledState(v), []);
@@ -762,7 +763,7 @@ export function BackgroundMusicProvider({
     currentIndex,
     currentTrack: playlist[currentIndex] || null,
     isPlaying,
-    volume,
+    volume: mainVolume,
     autoPauseEnabled,
     wasAutoPaused,
     autoMode,
