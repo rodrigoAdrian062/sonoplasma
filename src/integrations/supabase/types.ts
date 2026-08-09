@@ -225,6 +225,7 @@ export type Database = {
           nome_simbolico: string
           ordem: number
           owner_id: string | null
+          ritual_detalhes: string | null
           secao_id: string | null
           tempo_padrao: number | null
           updated_at: string
@@ -241,6 +242,7 @@ export type Database = {
           nome_simbolico: string
           ordem?: number
           owner_id?: string | null
+          ritual_detalhes?: string | null
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
@@ -257,6 +259,7 @@ export type Database = {
           nome_simbolico?: string
           ordem?: number
           owner_id?: string | null
+          ritual_detalhes?: string | null
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
