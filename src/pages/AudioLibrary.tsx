@@ -166,6 +166,9 @@ export default function AudioLibraryPage() {
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
+  const [showListView, setShowListView] = useState(() => {
+    return localStorage.getItem('sonoplastia:library:list-view') === 'true';
+  });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -705,6 +708,20 @@ export default function AudioLibraryPage() {
                     <Filter size={14} className="mr-1" />
                     <span className="hidden sm:inline">{showUnusedOnly ? 'Não usados' : 'Filtrar'}</span>
                   </Button>
+                  <Button
+                    variant={showListView ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const next = !showListView;
+                      setShowListView(next);
+                      localStorage.setItem('sonoplastia:library:list-view', String(next));
+                    }}
+                    className={showListView ? 'bg-gold hover:bg-gold/90 text-background' : ''}
+                    title={showListView ? 'Visualização em grade' : 'Visualização em lista'}
+                  >
+                    <ListPlus size={14} className="mr-1" />
+                    <span className="hidden sm:inline">{showListView ? 'Grade' : 'Lista'}</span>
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setBulkDeleteMode(true)}>
                     <CheckSquare size={14} className="mr-1" />
                     <span className="hidden sm:inline">Selecionar</span>
@@ -967,6 +984,7 @@ export default function AudioLibraryPage() {
               isYouTubeUrl={isYouTubeUrl}
               formatFileSize={formatFileSize}
               audioUsageMap={audioUsageMap}
+              showListView={showListView}
             />
           </AudioDndZone>
         )}
@@ -1000,6 +1018,7 @@ interface VirtualAudioListProps {
   isYouTubeUrl: (url: string) => boolean;
   formatFileSize: (bytes: number | null) => string;
   audioUsageMap: Map<string, Array<{ stageName: string; sectionName: string }>>;
+  showListView?: boolean;
 }
 
 function VirtualAudioList(props: VirtualAudioListProps) {
@@ -1010,6 +1029,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
     deleteAudio, stages, folders, currentFolderId, moveAudioToFolder,
     handleAddToStage, stagesBySection, unassignedStages,
     isYouTubeUrl, formatFileSize, audioUsageMap,
+    showListView,
   } = props;
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -1023,7 +1043,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
 
   const virtualizer = useWindowVirtualizer({
     count: audios.length,
-    estimateSize: () => 84,
+    estimateSize: () => showListView ? 64 : 84,
     overscan: 6,
     scrollMargin,
   });
@@ -1054,6 +1074,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
               <div
                 className={cn(
                   'flex items-center gap-3 p-3 sm:p-4 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors',
+                  showListView && 'p-1.5 sm:p-2',
                   bulkDeleteMode && 'cursor-pointer',
                   bulkDeleteMode && selectedIds.has(audio.id) && 'border-destructive/50 bg-destructive/5'
                 )}
@@ -1068,9 +1089,11 @@ function VirtualAudioList(props: VirtualAudioListProps) {
 
                   />
                 )}
-                <div className="p-2 bg-gold/10 rounded-lg shrink-0">
-                  <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
-                </div>
+                {!showListView && (
+                  <div className="p-2 bg-gold/10 rounded-lg shrink-0">
+                    <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={18} active />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     <p className="font-medium text-sm sm:text-base truncate">{audio.nome}</p>
@@ -1080,21 +1103,25 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                       </span>
                     )}
                   </div>
-                  {isYouTubeUrl(audio.audio_url) ? (
-                    <a
-                      href={audio.audio_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-red-400 hover:text-red-300 truncate block max-w-[260px] sm:max-w-[400px] underline underline-offset-2"
-                      title={audio.audio_url}
-                    >
-                      {audio.audio_url}
-                    </a>
-                  ) : (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
-                    </p>
+                  {!showListView && (
+                    <>
+                      {isYouTubeUrl(audio.audio_url) ? (
+                        <a
+                          href={audio.audio_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs text-red-400 hover:text-red-300 truncate block max-w-[260px] sm:max-w-[400px] underline underline-offset-2"
+                          title={audio.audio_url}
+                        >
+                          {audio.audio_url}
+                        </a>
+                      ) : (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {formatFileSize(audio.tamanho_bytes) || 'Link externo'}
+                        </p>
+                      )}
+                    </>
                   )}
                   {(() => {
                     const usages = audioUsageMap.get(audio.audio_url) || [];
@@ -1125,8 +1152,8 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         <SkipBack size={14} />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePauseResume(audio); }} className="h-8 w-8 sm:h-9 sm:w-9">
-                      {playingId === audio.id && !isPaused ? <Pause size={16} className="text-gold" /> : <Play size={16} className="text-gold" />}
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handlePauseResume(audio); }} className={cn("h-8 w-8 sm:h-9 sm:w-9", showListView && "h-7 w-7")}>
+                      {playingId === audio.id && !isPaused ? <Pause size={showListView ? 14 : 16} className="text-gold" /> : <Play size={showListView ? 14 : 16} className="text-gold" />}
                     </Button>
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Avançar 10s">

@@ -89,6 +89,9 @@ export default function YoutubeLibraryPage() {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [showListView, setShowListView] = useState(() => {
+    return localStorage.getItem('sonoplastia:youtube:list-view') === 'true';
+  });
   const [search, setSearch] = useState('');
   const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
 
@@ -365,6 +368,21 @@ export default function YoutubeLibraryPage() {
 
         {showList && (
           <>
+            <div className="flex justify-end mb-2">
+              <Button
+                variant={showListView ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  const next = !showListView;
+                  setShowListView(next);
+                  localStorage.setItem('sonoplastia:youtube:list-view', String(next));
+                }}
+                className={cn('h-8 gap-1 border-red-500/40 text-red-500', showListView && 'bg-red-500 hover:bg-red-500/90 text-white')}
+              >
+                <ListMusic size={14} />
+                {showListView ? 'Grade' : 'Lista'}
+              </Button>
+            </div>
             {/* Search + filters */}
             <div className="space-y-2">
               <div className="relative">
@@ -415,7 +433,10 @@ export default function YoutubeLibraryPage() {
             onSendToStage={(a, sid) => handleAddToStage(a.nome, a.audio_url, sid)}
             onMoveToFolder={(a, fid) => handleMoveToFolder(a, fid)}
           >
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 pb-24">
+          <div className={cn(
+            "grid gap-x-3 pb-24",
+            showListView ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
+          )}>
             {visibleAudios.map((audio, idx) => {
               const isCurrent = playingId === audio.id;
               const isPlaying = isCurrent && !isPaused;
@@ -431,7 +452,9 @@ export default function YoutubeLibraryPage() {
                 <div
                   className={cn(
                     'group rounded-md transition-colors',
-                    isCurrent ? 'bg-red-500/10' : 'hover:bg-muted/60',
+                    showListView ? 'hover:bg-red-500/5' : 'hover:bg-muted/60',
+                    isCurrent ? 'bg-red-500/10' : '',
+                    showListView && 'px-2 py-1',
                   )}
                 >
                   <div className="flex items-center gap-3 px-2 py-1.5">
@@ -446,9 +469,11 @@ export default function YoutubeLibraryPage() {
                     >
                       {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="fill-current" />}
                     </button>
-                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded bg-red-500/10 flex items-center justify-center">
-                      <YoutubeIcon size={20} />
-                    </div>
+                    {!showListView && (
+                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded bg-red-500/10 flex items-center justify-center">
+                        <YoutubeIcon size={20} />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <p className={cn('font-medium text-sm truncate', isCurrent && 'text-red-500')}>{audio.nome}</p>
