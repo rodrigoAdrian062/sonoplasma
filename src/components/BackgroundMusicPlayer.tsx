@@ -194,17 +194,19 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
             {/* Volume */}
             <div className="flex items-center gap-2">
               <Volume2 size={13} className="text-muted-foreground shrink-0" />
-              <Slider
-                value={[Math.round(volume * 100)]}
-                min={0}
-                max={100}
-                step={1}
-                onValueChange={([v]) => setVolume(v / 100)}
-                className="flex-1"
-              />
-              <span className="text-[10px] font-mono w-8 text-right text-muted-foreground">
-                {Math.round(volume * 100)}%
-              </span>
+              <div className="flex-1 flex items-center gap-2">
+                <Slider
+                  value={[Math.round(volume * 100)]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={([v]) => setVolume(v / 100)}
+                  className="flex-1"
+                />
+                <span className="text-[10px] font-mono w-8 text-right text-muted-foreground">
+                  {Math.round(volume * 100)}%
+                </span>
+              </div>
             </div>
 
             {/* Crossfade entre faixas */}
