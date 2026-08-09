@@ -35,7 +35,7 @@ export function PresentationStageBgMusic({ stage }: PresentationStageBgMusicProp
     try {
       await supabase
         .from('sonoplastia_etapas')
-        .update({ fundo_musicas: newPlaylist })
+        .update({ fundo_musicas: newPlaylist as any })
         .eq('id', stage.id);
     } catch (err) {
       console.error('Erro ao salvar playlist da etapa:', err);
