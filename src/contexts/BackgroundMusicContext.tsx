@@ -78,13 +78,24 @@ function findNextEnabled(pl: BackgroundTrack[], from: number, dir: 1 | -1 = 1): 
   return -1;
 }
 
-export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
+export function BackgroundMusicProvider({ 
+  children,
+  storageKey = STORAGE_KEY,
+  initialPlaylist,
+  onPlaylistChange
+}: { 
+  children: ReactNode;
+  storageKey?: string;
+  initialPlaylist?: BackgroundTrack[];
+  onPlaylistChange?: (pl: BackgroundTrack[]) => void;
+}) {
   const safeRead = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
   };
   const [playlist, setPlaylist] = useState<BackgroundTrack[]>(() => {
+    if (initialPlaylist) return initialPlaylist;
     try {
-      const saved = JSON.parse(safeRead(STORAGE_KEY) || '[]') as BackgroundTrack[];
+      const saved = JSON.parse(safeRead(storageKey) || '[]') as BackgroundTrack[];
       return Array.isArray(saved) ? saved.filter((track) => !!track?.audio_url) : [];
     } catch {
       return [];
@@ -352,7 +363,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const safeWrite = (key: string, value: string) => {
     try { localStorage.setItem(key, value); } catch { /* noop */ }
   };
-  useEffect(() => { safeWrite(STORAGE_KEY, JSON.stringify(playlist)); }, [playlist]);
+  useEffect(() => { 
+    safeWrite(storageKey, JSON.stringify(playlist)); 
+    onPlaylistChange?.(playlist);
+  }, [playlist, storageKey, onPlaylistChange]);
   useEffect(() => {
     safeWrite(VOLUME_KEY, String(volume));
     if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = volume;
