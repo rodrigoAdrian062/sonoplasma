@@ -139,6 +139,7 @@ export function PresentationMode({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [customTime, setCustomTime] = useState(0);
   const [useTimerEnabled, setUseTimerEnabled] = useState(false);
+  const [stageVolume, setStageVolume] = useState(0.7);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -219,6 +220,13 @@ export function PresentationMode({
       const defaultTime = currentStage.tempo_padrao || 0;
       setCustomTime(defaultTime);
       setUseTimerEnabled(defaultTime > 0);
+      
+      const savedVol = localStorage.getItem(`stage:volume:${currentStage.id}`);
+      if (savedVol !== null) {
+        setStageVolume(Number(savedVol));
+      } else {
+        setStageVolume((currentStage as any).volume_config ?? 0.7);
+      }
     }
     // Não reseta o áudio na primeira montagem (preserva a música em reprodução)
     if (didInitRef.current) {
