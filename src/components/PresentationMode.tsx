@@ -1120,7 +1120,9 @@ export function PresentationMode({
             </p>
           )}
         </div>
-      </main>
+      </div>
+    </main>
+
 
       {/* Navigation Footer - responsive */}
       <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
