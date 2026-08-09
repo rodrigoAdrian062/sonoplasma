@@ -462,6 +462,11 @@ export function PresentationMode({
 
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
+    
+    // Aplica o volume específico da etapa ou áudio
+    const volumeToUse = (currentAudio as any).volume_config ?? stageVolume;
+    setVolume(volumeToUse);
+
     if (useTimerEnabled && customTime > 0) timer.start(customTime);
     onPlay(currentStage.id, currentAudio.audio_url);
   };
