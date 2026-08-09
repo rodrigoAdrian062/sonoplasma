@@ -38,7 +38,7 @@ import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
-import { PresentationStageBgMusic } from './PresentationStageBgMusic';
+import { BackgroundMusicPlayer } from './BackgroundMusicPlayer';
 import {
   AlertDialog,
   AlertDialogContent,
