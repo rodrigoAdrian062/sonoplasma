@@ -504,8 +504,6 @@ export function StageCard({
           </div>
         )}
 
-        )}
-
         {!collapsed && (
           <>
         {/* Audio selector */}
