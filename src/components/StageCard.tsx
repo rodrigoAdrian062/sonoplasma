@@ -97,8 +97,9 @@ export function StageCard({
     return 0;
   });
 
-  // Track the custom volume for the current stage (if overridden)
+  // Track the custom volume and ritual details for the current stage
   const stageVolumeKey = `stage:volume:${stage.id}`;
+  const stageRitualDetailsKey = `stage:ritualDetails:${stage.id}`;
   const [stageVolume, setStageVolume] = useState(() => {
     try {
       const saved = localStorage.getItem(stageVolumeKey);
@@ -106,6 +107,28 @@ export function StageCard({
     } catch {}
     return (stage as any).volume_config ?? 0.7;
   });
+  const [ritualDetails, setRitualDetails] = useState(() => {
+    return stage.ritual_detalhes || localStorage.getItem(stageRitualDetailsKey) || '';
+  });
+
+  useEffect(() => {
+    if (stage.ritual_detalhes !== undefined && stage.ritual_detalhes !== null) {
+      setRitualDetails(stage.ritual_detalhes);
+    }
+  }, [stage.ritual_detalhes]);
+
+  const saveRitualDetails = async (text: string) => {
+    setRitualDetails(text);
+    localStorage.setItem(stageRitualDetailsKey, text);
+    try {
+      await supabase
+        .from('sonoplastia_etapas')
+        .update({ ritual_detalhes: text })
+        .eq('id', stage.id);
+    } catch (err) {
+      console.error('Erro ao salvar detalhes do ritual:', err);
+    }
+  };
 
   useEffect(() => {
     try { localStorage.setItem(stageVolumeKey, String(stageVolume)); } catch {}
@@ -465,7 +488,23 @@ export function StageCard({
         )}
 
         {!collapsed && (
-          <>
+          <div className="mt-2 mb-4 px-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Pencil size={14} className="text-gold/60" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                Detalhes do Ritual
+              </span>
+            </div>
+            <textarea
+              value={ritualDetails}
+              onChange={(e) => saveRitualDetails(e.target.value)}
+              placeholder="Escreva aqui as instruções ou detalhes desta etapa do ritual..."
+              className="w-full min-h-[80px] text-xs bg-secondary/30 border border-border/40 rounded-lg p-2.5 focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/40"
+            />
+          </div>
+        )}
+
+        {!collapsed && (
 
 
         {/* Audio selector */}

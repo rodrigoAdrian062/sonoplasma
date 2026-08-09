@@ -154,6 +154,23 @@ export function PresentationMode({
   const stagesById = new Map(stages.map((s) => [s.id, s] as const));
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
 
+  const [ritualDetails, setRitualDetails] = useState('');
+  const [isRitualEditing, setIsRitualEditing] = useState(false);
+
+  const saveRitualDetails = async (text: string) => {
+    if (!currentStage) return;
+    setRitualDetails(text);
+    localStorage.setItem(`stage:ritualDetails:${currentStage.id}`, text);
+    try {
+      await supabase
+        .from('sonoplastia_etapas')
+        .update({ ritual_detalhes: text })
+        .eq('id', currentStage.id);
+    } catch (err) {
+      console.error('Erro ao salvar detalhes do ritual:', err);
+    }
+  };
+
   const handleConfirmDeleteAudio = () => {
     if (!audioToDelete) return;
     if (currentStageId === audioToDelete.etapa_id && currentUrl === audioToDelete.audio_url) {
@@ -233,6 +250,10 @@ export function PresentationMode({
     if (didInitRef.current) {
       didInitRef.current = false;
       return;
+    }
+    if (currentStage) {
+      const savedDetails = currentStage.ritual_detalhes || localStorage.getItem(`stage:ritualDetails:${currentStage.id}`) || '';
+      setRitualDetails(savedDetails);
     }
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
@@ -895,6 +916,50 @@ export function PresentationMode({
               {currentStage.descricao}
             </p>
           )}
+
+          {/* Ritual Details Area */}
+          <div className="w-full mt-2 mb-4 px-4 sm:px-8">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Pencil size={14} className="text-gold/60" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  Instruções do Ritual
+                </span>
+              </div>
+              <button 
+                onClick={() => setIsRitualEditing(!isRitualEditing)}
+                className="text-[10px] text-gold hover:text-gold-glow transition-colors font-medium underline underline-offset-2"
+              >
+                {isRitualEditing ? 'Concluir' : 'Editar'}
+              </button>
+            </div>
+            
+            {isRitualEditing ? (
+              <textarea
+                value={ritualDetails}
+                onChange={(e) => saveRitualDetails(e.target.value)}
+                placeholder="Escreva aqui detalhes importantes para o Mestre de Harmonia..."
+                className="w-full min-h-[100px] text-sm bg-background/50 border border-gold/20 rounded-xl p-4 focus:border-gold/50 focus:ring-1 focus:ring-gold/30 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/30 shadow-inner"
+                autoFocus
+              />
+            ) : (
+              <div 
+                onClick={() => setIsRitualEditing(true)}
+                className={cn(
+                  "w-full min-h-[60px] p-4 rounded-xl border border-dashed border-gold/10 bg-gold/5 cursor-pointer hover:border-gold/30 transition-all",
+                  !ritualDetails && "flex items-center justify-center italic text-muted-foreground/40 text-sm"
+                )}
+              >
+                {ritualDetails ? (
+                  <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed text-center italic">
+                    "{ritualDetails}"
+                  </p>
+                ) : (
+                  "Nenhuma instrução definida para esta etapa. Clique para adicionar detalhes."
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Timer Display */}
           {(timer.isRunning || timer.isPaused) && (
