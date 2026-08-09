@@ -179,6 +179,7 @@ export type Database = {
           ordem: number
           owner_id: string | null
           updated_at: string
+          volume_config: number | null
         }
         Insert: {
           audio_url: string
@@ -189,6 +190,7 @@ export type Database = {
           ordem?: number
           owner_id?: string | null
           updated_at?: string
+          volume_config?: number | null
         }
         Update: {
           audio_url?: string
@@ -199,6 +201,7 @@ export type Database = {
           ordem?: number
           owner_id?: string | null
           updated_at?: string
+          volume_config?: number | null
         }
         Relationships: [
           {
@@ -225,6 +228,7 @@ export type Database = {
           secao_id: string | null
           tempo_padrao: number | null
           updated_at: string
+          volume_config: number | null
         }
         Insert: {
           ativo?: boolean
@@ -240,6 +244,7 @@ export type Database = {
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
+          volume_config?: number | null
         }
         Update: {
           ativo?: boolean
@@ -255,6 +260,7 @@ export type Database = {
           secao_id?: string | null
           tempo_padrao?: number | null
           updated_at?: string
+          volume_config?: number | null
         }
         Relationships: [
           {
