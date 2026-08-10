@@ -1291,34 +1291,26 @@ export function PresentationMode({
       {/* Next Stage Info (Desktop) */}
       {selectedStageIndex < stages.length - 1 && (
         <div 
-          className="absolute bottom-[90px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block"
+          className="absolute bottom-[74px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block max-w-[90vw]"
         >
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             {/* Próxima */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-black/60 backdrop-blur-md rounded-xl border border-gold/30 shadow-2xl shadow-black/60">
-              <div className="p-1.5 bg-gold/20 rounded-lg">
-                <ChevronRight size={16} className="text-gold" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima Etapa</span>
-                <span className="text-sm text-foreground font-display font-medium">
-                  {stages[selectedStageIndex + 1]?.nome_simbolico}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-gold/30 shadow-xl shadow-black/60">
+              <ChevronRight size={14} className="text-gold shrink-0" />
+              <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold shrink-0">Próxima</span>
+              <span className="text-xs text-foreground font-display font-medium truncate max-w-[220px]">
+                {stages[selectedStageIndex + 1]?.nome_simbolico}
+              </span>
             </div>
 
-            {/* Segunda Próxima (opcional se houver) */}
+            {/* Segunda Próxima (ao lado) */}
             {selectedStageIndex < stages.length - 2 && (
-              <div className="flex items-center gap-3 px-4 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-60 scale-95 origin-top">
-                <div className="p-1 bg-gold/10 rounded-md">
-                  <ChevronRight size={12} className="text-gold/50" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold">Em seguida</span>
-                  <span className="text-xs text-foreground/70 font-display">
-                    {stages[selectedStageIndex + 2]?.nome_simbolico}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-70">
+                <ChevronRight size={12} className="text-gold/50 shrink-0" />
+                <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold shrink-0">Em seguida</span>
+                <span className="text-[11px] text-foreground/70 font-display truncate max-w-[180px]">
+                  {stages[selectedStageIndex + 2]?.nome_simbolico}
+                </span>
               </div>
             )}
           </div>
