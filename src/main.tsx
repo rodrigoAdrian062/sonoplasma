@@ -10,5 +10,3 @@ createRoot(document.getElementById("root")!).render(<App />);
 
 // Suporte offline (apenas no app publicado; nunca em dev/preview).
 registerServiceWorker();
-
-}
