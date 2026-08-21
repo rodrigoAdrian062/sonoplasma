@@ -184,7 +184,7 @@ export function BackgroundMusicProvider({
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
-  const { status: mainStatus, volume: mainVolume } = useUniversalAudioPlayer();
+  const { status: mainStatus } = useUniversalAudioPlayer();
 
   const cancelCrossfade = useCallback(() => {
     if (crossfadeRafRef.current) {
@@ -606,7 +606,7 @@ export function BackgroundMusicProvider({
       if (requestId !== playRequestRef.current) return;
       setIsPlaying(false);
     });
-  }, [playlist, currentIndex, volume, duckVolume, mainStatus, mainVolume, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(playlist));

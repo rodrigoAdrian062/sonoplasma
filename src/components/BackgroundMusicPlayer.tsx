@@ -72,7 +72,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
 
           e.preventDefault();
           const delta = e.deltaY < 0 ? 0.01 : -0.01;
-          setVolume(Math.max(0, Math.min(1, volume + delta)));
+          const nextVolume = Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100));
+          setVolume(nextVolume);
         }}
         className={cn(
           'flex items-center gap-1 rounded-full border-2 backdrop-blur-xl transition-colors shadow-lg shadow-black/40 ring-1 ring-gold/20',
