@@ -1355,16 +1355,22 @@ export function PresentationMode({
 
 
       {/* Próxima Etapa no Header para Mobile */}
-      <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
-        {selectedStageIndex < stages.length - 1 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
-            <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
-            <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
-              {stages[selectedStageIndex + 1]?.nome_simbolico}
-            </span>
+      {(() => {
+        const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+        if (nextVisibleIdx === undefined) return null;
+        
+        return (
+          <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
+              <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
+              <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
+                {stages[nextVisibleIdx]?.nome_simbolico}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
+
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
