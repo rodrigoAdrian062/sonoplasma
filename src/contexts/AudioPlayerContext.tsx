@@ -381,6 +381,11 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const [disposed, setDisposed] = useState(false);
+  useEffect(() => {
+    return () => setDisposed(true);
+  }, []);
+
   // Poll YouTube player for time updates — pausa quando a aba está oculta
   // para economizar CPU/bateria (tablets, apresentação em segundo plano).
   useEffect(() => {
@@ -462,6 +467,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     container.appendChild(playerDiv);
 
     const initPlayer = () => {
+      if (disposed) return;
       if (!(window as any).YT || !(window as any).YT.Player) {
         ytInitTimeoutRef.current = window.setTimeout(initPlayer, 100);
         return;
