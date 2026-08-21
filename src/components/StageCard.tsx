@@ -620,6 +620,19 @@ export function StageCard({
                           <Play size={7} fill="currentColor" /> Preparada
                         </span>
                       )}
+                      {audio && isCacheableAudioUrl(audio.audio_url) && (
+                        <span 
+                          className={cn(
+                            "shrink-0 inline-flex items-center gap-0.5 px-1 rounded-full text-[8px]",
+                            (index === selectedAudioIndex ? audioReady : false) // Simplificado: só checamos o selecionado por performance
+                              ? "text-emerald-500/80" 
+                              : "text-muted-foreground/30"
+                          )}
+                          title="Cache status"
+                        >
+                          <CheckCircle2 size={10} />
+                        </span>
+                      )}
                       {continuousPlayback && isPlaying && index === selectedAudioIndex && index < audios.length - 1 && (
                         <span className="text-[9px] uppercase tracking-wider text-gold/80 shrink-0">
                           a seguir ↓
