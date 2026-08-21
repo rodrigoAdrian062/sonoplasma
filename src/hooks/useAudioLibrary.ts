@@ -5,10 +5,12 @@ import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
 // Normaliza uma URL de áudio para comparação de duplicatas.
 // Reduz YouTube ao seu ID único; para o resto, compara a URL limpa.
+import { getYouTubeVideoId } from '@/lib/embedUrl';
+
 function normalizeAudioUrl(url: string): string {
   const u = (url || '').trim().toLowerCase();
-  const yt = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-z0-9_-]{11})/i);
-  if (yt) return `yt:${yt[1]}`;
+  const ytId = getYouTubeVideoId(u);
+  if (ytId) return `yt:${ytId}`;
   return u.replace(/[?#].*$/, '').replace(/\/+$/, '');
 }
 
