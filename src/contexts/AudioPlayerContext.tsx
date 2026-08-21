@@ -230,8 +230,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (step >= steps) {
         clearFade();
         onDone();
-        // restore actual player volume so the next resume/play sounds normal
-        applyPlayerVolume(startVol);
+        // apply global volume to player again, because fadeOut may have left it at 0
+        const v = volumeRef.current;
+        if (audioRef.current) audioRef.current.volume = v;
+        if (ytPlayerRef.current && ytPlayerReadyRef.current) {
+          try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
+        }
       }
     }, totalMs / steps);
   }, [clearFade, applyPlayerVolume]);
