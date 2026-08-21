@@ -49,8 +49,12 @@ export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): stri
   const params = new URLSearchParams();
   if (opts.autoplay) params.set('autoplay', '1');
   params.set('enablejsapi', '1');
-  if (typeof window !== 'undefined') params.set('origin', window.location.origin);
+  if (typeof window !== 'undefined') {
+    params.set('origin', window.location.origin);
+    params.set('widget_referrer', window.location.href);
+  }
   params.set('rel', '0');
   params.set('modestbranding', '1');
+  params.set('mute', '0'); // Garante que não inicie mutado se não solicitado
   return `https://www.youtube.com/embed/${id}?${params.toString()}`;
 }

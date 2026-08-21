@@ -398,7 +398,9 @@ export function BackgroundMusicProvider({
     setStreamFrame((prev) => {
       if (prev?.trackId === track.id) return prev;
       const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
-      return { trackId: track.id, kind: 'youtube', src: withCacheBust };
+      // Adiciona origin explicitamente se toEmbedUrl não o fez (backup)
+      const finalSrc = withCacheBust.includes('origin=') ? withCacheBust : `${withCacheBust}&origin=${encodeURIComponent(window.location.origin)}`;
+      return { trackId: track.id, kind: 'youtube', src: finalSrc };
     });
     return true;
   }, []);
