@@ -22,6 +22,8 @@ export function useStageAudios(etapaId?: string) {
       return data as StageAudio[];
     },
     enabled: !!etapaId,
+    staleTime: 5 * 60_000,
+    gcTime: 24 * 60 * 60_000,
   });
 
   const createAudio = useMutation({
