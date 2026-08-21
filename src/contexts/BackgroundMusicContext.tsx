@@ -15,7 +15,7 @@ export interface BackgroundTrack {
 
 export type AutoDuckMode = 'pause' | 'duck';
 
-interface BackgroundMusicContextValue {
+export interface BackgroundMusicContextValue {
   playlist: BackgroundTrack[];
   currentIndex: number;
   currentTrack: BackgroundTrack | null;
@@ -62,7 +62,26 @@ const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
 const RESUME_DELAY_KEY = 'bg-music-resume-delay-ms-v1';
 const CROSSFADE_KEY = 'bg-music-crossfade-ms-v1';
 
-const Ctx = createContext<BackgroundMusicContextValue | null>(null);
+const GlobalCtx = createContext<BackgroundMusicContextValue | null>(null);
+const PresentationCtx = createContext<BackgroundMusicContextValue | null>(null);
+
+export const useBackgroundMusic = () => {
+  const presentation = useContext(PresentationCtx);
+  const global = useContext(GlobalCtx);
+  return presentation || global || (null as unknown as BackgroundMusicContextValue);
+};
+
+export const useGlobalBackgroundMusic = () => {
+  const global = useContext(GlobalCtx);
+  if (!global) throw new Error('useGlobalBackgroundMusic must be used within BackgroundMusicProvider');
+  return global;
+};
+
+export const usePresentationBackgroundMusic = () => {
+  const presentation = useContext(PresentationCtx);
+  // Não lança erro para permitir uso condicional
+  return presentation;
+};
 
 function isStreamingUrl(url: string): boolean {
   const u = (url || '').toLowerCase();
@@ -82,13 +101,16 @@ export function BackgroundMusicProvider({
   children,
   storageKey = STORAGE_KEY,
   initialPlaylist,
-  onPlaylistChange
+  onPlaylistChange,
+  isPresentation = false
 }: { 
   children: ReactNode;
   storageKey?: string;
   initialPlaylist?: BackgroundTrack[];
   onPlaylistChange?: (pl: BackgroundTrack[]) => void;
+  isPresentation?: boolean;
 }) {
+  const ActiveCtx = isPresentation ? PresentationCtx : GlobalCtx;
   const safeRead = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
   };
