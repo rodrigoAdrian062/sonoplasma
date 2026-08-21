@@ -166,6 +166,8 @@ export function useSections() {
               ativo: true,
               volume_config: stage.volume_config,
               ritual_detalhes: stage.ritual_detalhes,
+              audio_url: stage.audio_url,
+              fundo_musicas: stage.fundo_musicas,
             })
             .select()
             .single();
