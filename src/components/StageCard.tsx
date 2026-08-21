@@ -336,6 +336,23 @@ export function StageCard({
     }
   };
 
+  const handleToggleHidden = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('sonoplastia_etapas')
+        .update({ oculto: !stage.oculto })
+        .eq('id', stage.id);
+
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['stages', stage.secao_id] });
+      toast.success(stage.oculto ? 'Etapa visível no modo apresentação' : 'Etapa oculta no modo apresentação');
+    } catch {
+      toast.error('Erro ao alterar visibilidade da etapa');
+    }
+  };
+
+
   const handlePlayAudio = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const audio = audios[index];
