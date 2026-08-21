@@ -1301,16 +1301,21 @@ export function PresentationMode({
                 >
                   <div
                     className={cn(
-                      'w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all',
+                      'w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all relative',
                       isSelected
                         ? 'bg-gold border-gold scale-125 shadow-[0_0_8px_rgba(212,175,55,0.5)]'
                         : isPlayingStage
                           ? 'bg-gold/50 border-gold/50'
                           : isPast
                             ? 'bg-gold/30 border-gold/40'
-                            : 'bg-secondary border-border group-hover:border-muted-foreground'
+                            : 'bg-secondary border-border group-hover:border-muted-foreground',
+                      stage.oculto && 'opacity-50 ring-1 ring-destructive/30'
                     )}
-                  />
+                  >
+                    {stage.oculto && (
+                      <div className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-destructive rounded-full" title="Etapa oculta" />
+                    )}
+                  </div>
                   <span
                     className={cn(
                       'text-[8px] sm:text-[10px] max-w-[40px] sm:max-w-[60px] truncate transition-colors',
