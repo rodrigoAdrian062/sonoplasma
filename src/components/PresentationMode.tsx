@@ -1110,6 +1110,11 @@ export function PresentationMode({
                           )}
                           {audio.nome || `Áudio ${index + 1}`}
                           <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
+                          {selected && audio && isCacheableAudioUrl(audio.audio_url) && (
+                            <span className={cn("ml-1", audioReady ? "text-emerald-500" : "text-muted-foreground/40")}>
+                              <CheckCircle2 size={10} />
+                            </span>
+                          )}
                         </button>
                         <button
                           onClick={(e) => {
