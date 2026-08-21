@@ -1469,7 +1469,10 @@ function PresentationContent({
         </DialogContent>
       </Dialog>
 
-
+      {/* Floating Background Music (Mobile version or additional toggle could be here) */}
+      <div className="lg:hidden fixed left-4 top-20 z-50">
+        <BackgroundMusicPlayer variant="presentation" compact />
+      </div>
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent className="bg-card border-gold/20">
