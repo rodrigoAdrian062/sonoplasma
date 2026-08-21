@@ -446,7 +446,12 @@ const SectionDetail = () => {
       }
 
       prefetchAudios(cacheableUrls);
-      toast.success(`${cacheableUrls.length} áudios sendo salvos para offline.`, { id: toastId });
+      
+      // Feedback imediato para o usuário enquanto o service worker trabalha
+      toast.success(`${cacheableUrls.length} áudios adicionados à fila de download offline.`, { 
+        id: toastId,
+        description: "Os badges 'Local' aparecerão nas músicas assim que o cache for concluído."
+      });
     } catch (error) {
       toast.error('Erro ao baixar áudios.', { id: toastId });
     } finally {
