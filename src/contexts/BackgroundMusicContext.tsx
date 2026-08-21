@@ -606,6 +606,39 @@ export function BackgroundMusicProvider({
     });
   }, [playlist, currentIndex, volume, duckVolume, mainStatus, mainVolume, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(playlist));
+    onPlaylistChange?.(playlist);
+  }, [playlist, storageKey, onPlaylistChange]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(VOLUME_KEY), String(volume));
+  }, [volume, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(AUTO_KEY), String(autoPauseEnabled));
+  }, [autoPauseEnabled, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(MODE_KEY), autoMode);
+  }, [autoMode, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(DUCK_KEY), String(duckVolume));
+  }, [duckVolume, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(MAX_DUR_KEY), String(maxDurationSec));
+  }, [maxDurationSec, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(RESUME_DELAY_KEY), String(resumeDelayMs));
+  }, [resumeDelayMs, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(getDynamicKey(CROSSFADE_KEY), String(crossfadeMs));
+  }, [crossfadeMs, storageKey]);
+
   const pause = useCallback(() => {
     playRequestRef.current += 1;
     wantsToPlayRef.current = false;
