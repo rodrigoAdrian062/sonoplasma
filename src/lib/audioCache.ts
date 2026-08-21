@@ -81,7 +81,8 @@ export function prefetchAudios(urls: (string | null | undefined)[]): void {
 }
 
 // Máximo de áudios guardados no cache (FIFO). Evita crescimento infinito.
-const MAX_CACHE_ENTRIES = 60;
+// Aumentado para 100 para suportar rituais longos com offline parcial.
+const MAX_CACHE_ENTRIES = 100;
 
 /** Remove os itens mais antigos quando o cache passa do limite. */
 async function trimCache(): Promise<void> {

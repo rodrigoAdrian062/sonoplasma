@@ -7,7 +7,7 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
@@ -31,7 +31,7 @@ import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 
-import { prefetchAudios } from '@/lib/audioCache';
+import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { Download } from 'lucide-react';
@@ -158,6 +158,7 @@ export function PresentationMode({
 
   const [ritualDetails, setRitualDetails] = useState('');
   const [isRitualEditing, setIsRitualEditing] = useState(false);
+  const [audioReady, setAudioReady] = useState(true);
 
   const saveRitualDetails = async (text: string) => {
     if (!currentStage) return;
@@ -212,6 +213,28 @@ export function PresentationMode({
   const isPlaying = currentStageId === currentStage?.id && status === 'playing';
   const isPaused = currentStageId === currentStage?.id && status === 'paused';
   const isMuted = volume === 0;
+
+  // Status de cache do áudio atual
+  useEffect(() => {
+    let active = true;
+    let attempts = 0;
+    const url = currentAudio?.audio_url;
+    if (!url || !isCacheableAudioUrl(url)) {
+      setAudioReady(true);
+      return;
+    }
+    setAudioReady(false);
+    const check = async () => {
+      const ready = await isAudioCached(url);
+      if (!active) return;
+      if (ready) { setAudioReady(true); return; }
+      attempts++;
+      if (attempts >= 15) { setAudioReady(true); return; }
+      setTimeout(check, 800);
+    };
+    check();
+    return () => { active = false; };
+  }, [currentAudio?.audio_url]);
 
   const timer = useTimer(() => {
     onStop();
@@ -919,6 +942,23 @@ export function PresentationMode({
             </div>
           )}
 
+          {currentAudio && isCacheableAudioUrl(currentAudio.audio_url) && (
+            <div className="flex justify-center mb-4">
+              <span 
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
+                  audioReady 
+                    ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20" 
+                    : "text-muted-foreground/60 bg-secondary/80 border border-border/40"
+                )}
+                title={audioReady ? "Áudio disponível localmente" : "Baixando para uso offline..."}
+              >
+                {audioReady ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
+                {audioReady ? 'Disponível Offline' : 'Cacheando...'}
+              </span>
+            </div>
+          )}
+
 
           {/* Description */}
           {currentStage.descricao && !compact && (
@@ -1070,6 +1110,11 @@ export function PresentationMode({
                           )}
                           {audio.nome || `Áudio ${index + 1}`}
                           <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
+                          {selected && audio && isCacheableAudioUrl(audio.audio_url) && (
+                            <span className={cn("ml-1", audioReady ? "text-emerald-500" : "text-muted-foreground/40")}>
+                              <CheckCircle2 size={10} />
+                            </span>
+                          )}
                         </button>
                         <button
                           onClick={(e) => {

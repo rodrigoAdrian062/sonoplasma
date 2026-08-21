@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX, Eye, EyeOff } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -563,6 +563,20 @@ export function StageCard({
                       <Play size={7} fill="currentColor" /> Preparada
                     </span>
                   )}
+                  {currentAudio && isCacheableAudioUrl(currentAudio.audio_url) && (
+                    <span 
+                      className={cn(
+                        "shrink-0 inline-flex items-center gap-0.5 px-1 rounded-full text-[8px] transition-colors",
+                        audioReady 
+                          ? "text-emerald-500/80 bg-emerald-500/5" 
+                          : "text-muted-foreground/40 bg-secondary/50"
+                      )}
+                      title={audioReady ? "Pronto para offline" : "Baixando para cache..."}
+                    >
+                      {audioReady ? <CheckCircle2 size={10} /> : <Loader2 size={10} className="animate-spin" />}
+                      <span className="uppercase tracking-tighter">{audioReady ? 'Local' : 'Cache'}</span>
+                    </span>
+                  )}
                 </p>
                 {audios.length > 1 && (
                   <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
@@ -604,6 +618,19 @@ export function StageCard({
                           title="Faixa preparada"
                         >
                           <Play size={7} fill="currentColor" /> Preparada
+                        </span>
+                      )}
+                      {audio && isCacheableAudioUrl(audio.audio_url) && (
+                        <span 
+                          className={cn(
+                            "shrink-0 inline-flex items-center gap-0.5 px-1 rounded-full text-[8px]",
+                            (index === selectedAudioIndex ? audioReady : false) // Simplificado: só checamos o selecionado por performance
+                              ? "text-emerald-500/80" 
+                              : "text-muted-foreground/30"
+                          )}
+                          title="Cache status"
+                        >
+                          <CheckCircle2 size={10} />
                         </span>
                       )}
                       {continuousPlayback && isPlaying && index === selectedAudioIndex && index < audios.length - 1 && (
