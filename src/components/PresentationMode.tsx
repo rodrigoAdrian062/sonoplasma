@@ -1342,12 +1342,12 @@ export function PresentationMode({
 
         <Button
           onClick={handleNextStage}
-          disabled={selectedStageIndex === stages.length - 1}
+          disabled={!stages.slice(selectedStageIndex + 1).some(s => !s.oculto || s.id === currentStageId)}
           variant="ghost"
           size="sm"
           className={cn(
             'gap-1 sm:gap-2 px-2 sm:px-6',
-            selectedStageIndex === stages.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
+            !stages.slice(selectedStageIndex + 1).some(s => !s.oculto || s.id === currentStageId) ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
           )}
         >
           <span className="hidden sm:inline">Próxima</span>
