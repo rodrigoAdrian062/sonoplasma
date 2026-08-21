@@ -184,7 +184,7 @@ export function BackgroundMusicProvider({
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
-  const { status: mainStatus, volume: mainVolume } = useUniversalAudioPlayer();
+  const { status: mainStatus } = useUniversalAudioPlayer();
 
   const cancelCrossfade = useCallback(() => {
     if (crossfadeRafRef.current) {
