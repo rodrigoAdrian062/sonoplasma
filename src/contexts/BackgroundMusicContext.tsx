@@ -737,7 +737,13 @@ export function BackgroundMusicProvider({
     setResumeDelayMs,
     currentTime,
     duration,
-    seek,
+    seek: (sec: number) => {
+      const a = audioRef.current;
+      if (a && isFinite(sec)) {
+        a.currentTime = sec;
+        setCurrentTime(sec);
+      }
+    },
   };
 
   return (
