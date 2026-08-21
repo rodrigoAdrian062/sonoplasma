@@ -17,7 +17,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2, Download } from 'lucide-react';
+import { prefetchAudios } from '@/lib/audioCache';
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
 import { toast } from 'sonner';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
