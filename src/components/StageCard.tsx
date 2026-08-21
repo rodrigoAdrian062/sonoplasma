@@ -563,6 +563,20 @@ export function StageCard({
                       <Play size={7} fill="currentColor" /> Preparada
                     </span>
                   )}
+                  {currentAudio && isCacheableAudioUrl(currentAudio.audio_url) && (
+                    <span 
+                      className={cn(
+                        "shrink-0 inline-flex items-center gap-0.5 px-1 rounded-full text-[8px] transition-colors",
+                        audioReady 
+                          ? "text-emerald-500/80 bg-emerald-500/5" 
+                          : "text-muted-foreground/40 bg-secondary/50"
+                      )}
+                      title={audioReady ? "Pronto para offline" : "Baixando para cache..."}
+                    >
+                      {audioReady ? <CheckCircle2 size={10} /> : <Loader2 size={10} className="animate-spin" />}
+                      <span className="uppercase tracking-tighter">{audioReady ? 'Local' : 'Cache'}</span>
+                    </span>
+                  )}
                 </p>
                 {audios.length > 1 && (
                   <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
