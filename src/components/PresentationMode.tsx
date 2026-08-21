@@ -31,7 +31,7 @@ import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 
-import { prefetchAudios } from '@/lib/audioCache';
+import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { Download } from 'lucide-react';
