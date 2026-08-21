@@ -1265,12 +1265,12 @@ export function PresentationMode({
       <footer className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
         <Button
           onClick={handlePrevStage}
-          disabled={selectedStageIndex === 0}
+          disabled={!stages.slice(0, selectedStageIndex).some(s => !s.oculto || s.id === currentStageId)}
           variant="ghost"
           size="sm"
           className={cn(
             'gap-1 sm:gap-2 px-2 sm:px-6',
-            selectedStageIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
+            !stages.slice(0, selectedStageIndex).some(s => !s.oculto || s.id === currentStageId) ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
           )}
         >
           <ChevronLeft size={18} className="sm:hidden" />
@@ -1288,6 +1288,8 @@ export function PresentationMode({
             const isPlayingStage = currentStageId === stage.id && status !== 'idle';
             const isPast = index < selectedStageIndex;
 
+            // Encontra a próxima etapa visível para saber se desenha a linha
+            const hasNextVisible = stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId);
 
             return (
               <div key={stage.id} className="flex items-center shrink-0">
@@ -1325,7 +1327,7 @@ export function PresentationMode({
                     {index + 1}
                   </span>
                 </button>
-                {index < stages.length - 1 && stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId) && (
+                {index < stages.length - 1 && hasNextVisible && (
                   <div
                     className={cn(
                       'w-4 sm:w-6 h-0.5 mx-0.5 transition-colors',
@@ -1340,12 +1342,12 @@ export function PresentationMode({
 
         <Button
           onClick={handleNextStage}
-          disabled={selectedStageIndex === stages.length - 1}
+          disabled={!stages.slice(selectedStageIndex + 1).some(s => !s.oculto || s.id === currentStageId)}
           variant="ghost"
           size="sm"
           className={cn(
             'gap-1 sm:gap-2 px-2 sm:px-6',
-            selectedStageIndex === stages.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
+            !stages.slice(selectedStageIndex + 1).some(s => !s.oculto || s.id === currentStageId) ? 'opacity-30 cursor-not-allowed' : 'hover:text-gold'
           )}
         >
           <span className="hidden sm:inline">Próxima</span>
