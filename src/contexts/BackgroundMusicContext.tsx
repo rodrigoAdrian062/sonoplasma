@@ -112,6 +112,8 @@ export function BackgroundMusicProvider({
   const safeRead = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
   };
+  const getDynamicKey = (base: string) => `${storageKey}:${base}`;
+
   const [playlist, setPlaylist] = useState<BackgroundTrack[]>(() => {
     if (initialPlaylist) return initialPlaylist;
     try {
@@ -124,31 +126,31 @@ export function BackgroundMusicProvider({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolumeState] = useState<number>(() => {
-    const v = parseFloat(safeRead(VOLUME_KEY) || '0.25');
+    const v = parseFloat(safeRead(getDynamicKey(VOLUME_KEY)) || '0.25');
     return isNaN(v) ? 0.25 : v;
   });
   const [autoPauseEnabled, setAutoPauseEnabledState] = useState<boolean>(() => {
-    return safeRead(AUTO_KEY) !== 'false';
+    return safeRead(getDynamicKey(AUTO_KEY)) !== 'false';
   });
   const [autoMode, setAutoModeState] = useState<AutoDuckMode>(() => {
-    const m = safeRead(MODE_KEY);
+    const m = safeRead(getDynamicKey(MODE_KEY));
     return m === 'duck' ? 'duck' : 'pause';
   });
   const [duckVolume, setDuckVolumeState] = useState<number>(() => {
-    const v = parseFloat(safeRead(DUCK_KEY) || '0.08');
+    const v = parseFloat(safeRead(getDynamicKey(DUCK_KEY)) || '0.08');
     return isNaN(v) ? 0.08 : v;
   });
   const [fadeMs, setFadeMsState] = useState<number>(0);
   const [maxDurationSec, setMaxDurationSecState] = useState<number>(() => {
-    const v = parseInt(safeRead(MAX_DUR_KEY) || '0', 10);
+    const v = parseInt(safeRead(getDynamicKey(MAX_DUR_KEY)) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
   const [resumeDelayMs, setResumeDelayMsState] = useState<number>(() => {
-    const v = parseInt(safeRead(RESUME_DELAY_KEY) || '0', 10);
+    const v = parseInt(safeRead(getDynamicKey(RESUME_DELAY_KEY)) || '0', 10);
     return isNaN(v) ? 0 : v;
   });
   const [crossfadeMs, setCrossfadeMsState] = useState<number>(() => {
-    const v = parseInt(safeRead(CROSSFADE_KEY) || '3000', 10);
+    const v = parseInt(safeRead(getDynamicKey(CROSSFADE_KEY)) || '3000', 10);
     return isNaN(v) ? 3000 : v;
   });
   const [wasAutoPaused, setWasAutoPaused] = useState(false);
