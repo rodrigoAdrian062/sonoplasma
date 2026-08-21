@@ -164,6 +164,7 @@ export function useSections() {
               icone_url: stage.icone_url,
               ordem: stage.ordem,
               ativo: true,
+              oculto: stage.oculto,
               volume_config: stage.volume_config,
               ritual_detalhes: stage.ritual_detalhes,
               audio_url: stage.audio_url,

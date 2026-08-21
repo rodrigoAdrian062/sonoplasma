@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX, Eye, EyeOff } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -439,6 +439,17 @@ export function StageCard({
           </div>
 
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleToggleHidden}
+              className={cn(
+                "p-1.5 transition-colors rounded-md hover:bg-gold/10",
+                stage.oculto ? "text-destructive" : "text-muted-foreground/60 hover:text-gold"
+              )}
+              title={stage.oculto ? "Oculta na apresentação" : "Visível na apresentação"}
+              aria-label={stage.oculto ? "Tornar visível" : "Ocultar etapa"}
+            >
+              {stage.oculto ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
             <button
               onClick={onEdit}
               className="p-1.5 text-muted-foreground/60 hover:text-gold transition-colors rounded-md hover:bg-gold/10"

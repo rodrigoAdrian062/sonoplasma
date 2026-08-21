@@ -7,7 +7,7 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
@@ -203,6 +203,8 @@ export function PresentationMode({
     setVolume: setGlobalVolume,
   } = useUniversalAudioPlayer();
 
+  // Filtra etapas ocultas apenas para navegação/exibição se não for a etapa atual forçada
+  const visibleStages = stages.filter(s => !s.oculto || s.id === currentStageId);
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
   const currentAudio = audios[selectedAudioIndex];
