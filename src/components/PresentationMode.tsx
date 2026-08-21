@@ -1239,6 +1239,9 @@ export function PresentationMode({
             if (stage.oculto && stage.id !== currentStageId) return null;
             
             const isSelected = index === selectedStageIndex;
+            const isPlayingStage = currentStageId === stage.id && status !== 'idle';
+            const isPast = index < selectedStageIndex;
+
 
             return (
               <div key={stage.id} className="flex items-center shrink-0">
