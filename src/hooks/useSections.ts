@@ -18,7 +18,8 @@ export function useSections() {
       if (error) throw error;
       return data as CeremonySection[];
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 24 * 60 * 60_000,
   });
 
   const createSection = useMutation({
