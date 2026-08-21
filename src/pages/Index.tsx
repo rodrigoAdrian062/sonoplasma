@@ -13,7 +13,7 @@ import { useSections } from '@/hooks/useSections';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
-import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Copy } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
@@ -24,7 +24,7 @@ const Index = () => {
   useThemeColor(settings?.cor_tema);
   
   const { stages, isLoading: stagesLoading } = useStages();
-  const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection } = useSections();
+  const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection, cloneSection } = useSections();
 
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
   const [isNewSectionModal, setIsNewSectionModal] = useState(false);
@@ -164,6 +164,20 @@ const Index = () => {
                           aria-label={`Editar seção ${section.nome}`}
                         >
                           <Edit2 size={14} aria-hidden="true" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => cloneSection.mutate(section.id)}
+                          disabled={cloneSection.isPending}
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-gold hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                          aria-label={`Clonar seção ${section.nome}`}
+                        >
+                          {cloneSection.isPending ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Copy size={14} aria-hidden="true" />
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
