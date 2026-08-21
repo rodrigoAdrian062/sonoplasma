@@ -29,18 +29,15 @@ export function isSpotifyUrl(_url: string): boolean {
 }
 
 // --- YouTube ---
+export function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/|live\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
 function ytId(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('/')[0] || null;
-    if (u.searchParams.get('v')) return u.searchParams.get('v');
-    const parts = u.pathname.split('/').filter(Boolean);
-    const i = parts.findIndex((p) => p === 'embed' || p === 'shorts');
-    if (i >= 0 && parts[i + 1]) return parts[i + 1];
-    return null;
-  } catch {
-    return null;
-  }
+  return getYouTubeVideoId(url);
 }
 
 export function toEmbedUrl(url: string, opts: { autoplay?: boolean } = {}): string | null {

@@ -20,14 +20,14 @@ import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
+import { getYouTubeVideoId as getYTId } from '@/lib/embedUrl';
+
 function getYouTubeVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = (url || '').match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+  return getYTId(url);
 }
 
 function isYouTubeUrl(url: string): boolean {
-  return getYouTubeVideoId(url) !== null && ((url || '').includes('youtube.com') || (url || '').includes('youtu.be'));
+  return getYouTubeVideoId(url) !== null;
 }
 
 // Load the YouTube IFrame API once.

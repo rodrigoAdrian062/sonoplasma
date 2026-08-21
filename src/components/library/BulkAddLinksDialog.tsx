@@ -46,10 +46,12 @@ const PLATFORM_META = {
   },
 };
 
+import { getYouTubeVideoId } from '@/lib/embedUrl';
+
 function normalize(url: string): string {
   const u = (url || '').trim().toLowerCase();
-  const yt = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([a-z0-9_-]{11})/i);
-  if (yt) return `yt:${yt[1]}`;
+  const ytId = getYouTubeVideoId(u);
+  if (ytId) return `yt:${ytId}`;
   const sp = u.match(/(?:spotify[:/])+(track|album|playlist|episode|show)[:/]([a-z0-9]+)/i);
   if (sp) return `sp:${sp[1]}:${sp[2]}`;
   return u.replace(/[?#].*$/, '').replace(/\/+$/, '');
