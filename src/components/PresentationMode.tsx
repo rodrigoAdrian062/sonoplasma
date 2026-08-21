@@ -437,7 +437,8 @@ function PresentationContent({
   const handleVolumeWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY < 0 ? 0.01 : -0.01;
-    onVolumeChange(Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100)));
+    const newVolume = Math.max(0, Math.min(1, Math.round((volume + delta) * 100) / 100));
+    onVolumeChange(newVolume);
   };
 
   useEffect(() => {
