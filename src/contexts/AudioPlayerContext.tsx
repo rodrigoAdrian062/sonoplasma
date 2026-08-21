@@ -544,6 +544,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const initialVol = startVolumeRef.current;
     volumeRef.current = initialVol;
     setVolumeState(initialVol);
+    applyPlayerVolume(initialVol);
 
     // Rampa suave: sobe do volume inicial até o volume alvo em N segundos.
     if (rampEnabledRef.current && rampTargetRef.current > initialVol) {
