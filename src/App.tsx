@@ -69,7 +69,10 @@ const RouteFallback = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider 
+    client={queryClient} 
+    persistOptions={{ persister }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
