@@ -90,14 +90,21 @@ interface PresentationModeProps {
   onEQChange?: (settings: Partial<EQSettings>) => void;
 }
 
-export function PresentationMode({
+export function PresentationMode(props: PresentationModeProps) {
+  return (
+    <BackgroundMusicProvider isPresentation storageKey={`presentation-bg-music-${props.secaoId || 'default'}`}>
+      <PresentationContent {...props} />
+    </BackgroundMusicProvider>
+  );
+}
+
+function PresentationContent({
   stages,
   audiosByStageId,
   currentStageId,
   currentUrl,
   secaoId,
   secaoNome,
-
   status,
   volume,
   onVolumeChange,
