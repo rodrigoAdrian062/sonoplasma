@@ -376,9 +376,11 @@ export function BackgroundMusicProvider({
   }, [playlist, storageKey, onPlaylistChange]);
   
   useEffect(() => {
-    safeWrite(VOLUME_KEY, String(volume));
-    if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = mainVolume;
-  }, [mainVolume]);
+    safeWrite(getDynamicKey(VOLUME_KEY), String(volume));
+    if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume, storageKey]);
 
   useEffect(() => { safeWrite(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
   useEffect(() => { safeWrite(MODE_KEY, autoMode); }, [autoMode]);
@@ -518,7 +520,7 @@ export function BackgroundMusicProvider({
         if (autoMode === 'duck' && isDuckingRef.current) {
           isDuckingRef.current = false;
           setIsDucking(false);
-          fadeTo(mainVolume, fadeMs);
+          fadeTo(volumeRef.current, fadeMs);
         } else if (autoMode === 'pause' && wasAutoPausedRef.current) {
           wasAutoPausedRef.current = false;
           setWasAutoPaused(false);
@@ -535,7 +537,7 @@ export function BackgroundMusicProvider({
                 a.volume = 0;
                 a.play().then(() => {
                   setIsPlaying(true);
-                  fadeTo(mainVolume, fadeMs);
+                  fadeTo(volumeRef.current, fadeMs);
                 }).catch(() => {});
               }
             }
@@ -549,7 +551,7 @@ export function BackgroundMusicProvider({
         return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, mainVolume, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
@@ -586,7 +588,7 @@ export function BackgroundMusicProvider({
       a.src = track.audio_url;
       a.load();
     }
-    a.volume = isDuckingRef.current ? duckVolume : mainVolume;
+    a.volume = isDuckingRef.current ? duckVolume : volume;
     if (mainStatus === 'playing' && autoPauseEnabled && autoMode === 'pause') {
       a.pause();
       wasAutoPausedRef.current = true;
@@ -743,7 +745,7 @@ export function BackgroundMusicProvider({
     currentIndex,
     currentTrack: playlist[currentIndex] || null,
     isPlaying,
-    volume: mainVolume,
+    volume,
     autoPauseEnabled,
     wasAutoPaused,
     autoMode,
