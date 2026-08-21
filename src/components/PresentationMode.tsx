@@ -1304,33 +1304,40 @@ export function PresentationMode({
       </footer>
 
       {/* Next Stage Info (Desktop) */}
-      {selectedStageIndex < stages.length - 1 && (
-        <div 
-          className="absolute bottom-[74px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block max-w-[90vw]"
-        >
-          <div className="flex items-center gap-2">
-            {/* Próxima */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-gold/30 shadow-xl shadow-black/60">
-              <ChevronRight size={14} className="text-gold shrink-0" />
-              <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold shrink-0">Próxima</span>
-              <span className="text-xs text-foreground font-display font-medium truncate max-w-[220px]">
-                {stages[selectedStageIndex + 1]?.nome_simbolico}
-              </span>
-            </div>
+      {(() => {
+        const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+        if (nextVisibleIdx === undefined) return null;
+        const nextNextVisibleIdx = [...Array(stages.length).keys()].slice(nextVisibleIdx + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
 
-            {/* Segunda Próxima (ao lado) */}
-            {selectedStageIndex < stages.length - 2 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-70">
-                <ChevronRight size={12} className="text-gold/50 shrink-0" />
-                <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold shrink-0">Em seguida</span>
-                <span className="text-[11px] text-foreground/70 font-display truncate max-w-[180px]">
-                  {stages[selectedStageIndex + 2]?.nome_simbolico}
+        return (
+          <div 
+            className="absolute bottom-[74px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block max-w-[90vw]"
+          >
+            <div className="flex items-center gap-2">
+              {/* Próxima */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-gold/30 shadow-xl shadow-black/60">
+                <ChevronRight size={14} className="text-gold shrink-0" />
+                <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold shrink-0">Próxima</span>
+                <span className="text-xs text-foreground font-display font-medium truncate max-w-[220px]">
+                  {stages[nextVisibleIdx]?.nome_simbolico}
                 </span>
               </div>
-            )}
+
+              {/* Segunda Próxima (ao lado) */}
+              {nextNextVisibleIdx !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-70">
+                  <ChevronRight size={12} className="text-gold/50 shrink-0" />
+                  <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold shrink-0">Em seguida</span>
+                  <span className="text-[11px] text-foreground/70 font-display truncate max-w-[180px]">
+                    {stages[nextNextVisibleIdx]?.nome_simbolico}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
 
       {/* Global Background Music Panel (Left Side - Desktop) */}
       <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
