@@ -131,11 +131,9 @@ export function useSections() {
           descricao: originalSection.descricao,
           icone: originalSection.icone,
           icone_url: originalSection.icone_url,
-          cor_tema: originalSection.cor_tema,
           ordem: sections.length + 1,
           ativo: true,
           reproducao_continua: originalSection.reproducao_continua,
-          volume_padrao: originalSection.volume_padrao,
         })
         .select()
         .single();
