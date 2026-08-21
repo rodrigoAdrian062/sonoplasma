@@ -145,6 +145,8 @@ export function useAllStageAudios() {
       if (error) throw error;
       return data as StageAudio[];
     },
+    staleTime: 5 * 60_000,
+    gcTime: 24 * 60 * 60_000,
   });
 
   // Group audios by stage id — memoizado para preservar identidade entre renders
