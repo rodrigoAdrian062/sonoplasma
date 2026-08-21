@@ -95,6 +95,7 @@ const SectionDetail = () => {
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const { toggles } = useUiToggles();
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const pendingNavRef = useRef<(() => void) | null>(null);
 
   const isAudioActive = status === 'playing' || status === 'paused';
