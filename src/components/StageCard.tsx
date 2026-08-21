@@ -12,6 +12,7 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { TrackHzBadge } from '@/components/TrackHzBadge';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useStages } from '@/hooks/useStages';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
