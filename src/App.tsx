@@ -57,6 +57,11 @@ const queryClient = new QueryClient({
   },
 });
 
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "SONOPLASMA_QUERY_CACHE",
+});
+
 const RouteFallback = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
     <Loader2 className="w-8 h-8 text-gold animate-spin" />
