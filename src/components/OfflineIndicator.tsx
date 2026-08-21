@@ -30,12 +30,12 @@ export function OfflineIndicator() {
           className={cn(
             "flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-500",
             isOnline 
-              ? "text-emerald-500/40 bg-emerald-500/5 hover:text-emerald-500 hover:bg-emerald-500/10" 
-              : "text-amber-500 bg-amber-500/10 border border-amber-500/20 animate-pulse"
+              ? "text-emerald-500/60 bg-emerald-500/5 hover:text-emerald-500 hover:bg-emerald-500/10" 
+              : "text-amber-500 bg-amber-500/15 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)] animate-pulse"
           )}
         >
-          {isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
-          <span className={cn("hidden xs:inline", !isOnline && "inline")}>
+          {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+          <span className={cn("hidden sm:inline", !isOnline && "inline")}>
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
