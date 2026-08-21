@@ -528,6 +528,18 @@ const SectionDetail = () => {
 
 
             <Button
+              onClick={handleDownloadSection}
+              disabled={isDownloading}
+              size="sm"
+              className="gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 shrink-0"
+              variant="outline"
+              title="Baixar todos os áudios locais para uso offline"
+            >
+              {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              <span className="hidden sm:inline">Offline</span>
+            </Button>
+
+            <Button
               onClick={() => setIsNewStageModal(true)}
               size="sm"
               className="gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 hover:border-gold/50 shrink-0"
