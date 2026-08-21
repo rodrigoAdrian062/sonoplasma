@@ -188,6 +188,7 @@ export function useSections() {
               nome: a.nome,
               audio_url: a.audio_url,
               ordem: a.ordem,
+              volume_config: a.volume_config,
             }));
             
             const { error: insertAudiosError } = await supabase
