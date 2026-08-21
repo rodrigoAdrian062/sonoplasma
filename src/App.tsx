@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
@@ -55,6 +57,11 @@ const queryClient = new QueryClient({
   },
 });
 
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "SONOPLASMA_QUERY_CACHE",
+});
+
 const RouteFallback = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
     <Loader2 className="w-8 h-8 text-gold animate-spin" />
@@ -62,7 +69,10 @@ const RouteFallback = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider 
+    client={queryClient} 
+    persistOptions={{ persister }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -144,7 +154,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;

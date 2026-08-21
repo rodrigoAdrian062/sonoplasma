@@ -946,9 +946,9 @@ export function PresentationMode({
             <div className="flex justify-center mb-4">
               <span 
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm",
                   audioReady 
-                    ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20" 
+                    ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/30" 
                     : "text-muted-foreground/60 bg-secondary/80 border border-border/40"
                 )}
                 title={audioReady ? "Áudio disponível localmente" : "Baixando para uso offline..."}

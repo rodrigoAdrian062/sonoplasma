@@ -118,6 +118,8 @@ export function clearAudioBlobCache(): void {
 /** Indica se o áudio já está pronto em cache (para UI de status). */
 export async function isAudioCached(url: string | null | undefined): Promise<boolean> {
   if (!isCacheableAudioUrl(url) || !cacheSupported()) return false;
+  // URLs de blob são, por definição, locais/cacheados em memória.
+  if (url?.startsWith('blob:')) return true;
   try {
     const cache = await caches.open(CACHE_NAME);
     const res = await cache.match(url as string);

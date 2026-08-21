@@ -60,9 +60,14 @@ export function MasonicFooter() {
       >
         "{MASONIC_QUOTES[quoteIndex]}"
       </p>
-      <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
-        Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
-      </p>
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+          Desenvolvido com <span className="text-red-500">❤</span> pelo Ir∴ Rodrigo Adriano
+        </p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground/30 font-bold">
+          Modo Offline Habilitado
+        </p>
+      </div>
     </footer>
   );
 }

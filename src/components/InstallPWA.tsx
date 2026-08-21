@@ -51,19 +51,27 @@ export function InstallPWA({ compact = false }: { compact?: boolean }) {
   };
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          onClick={handleInstall}
-          variant="ghost"
-          size="icon"
-          className={`text-muted-foreground hover:text-gold ${compact ? 'h-8 w-8' : ''}`}
-          aria-label="Instalar app"
-        >
-          <Download size={compact ? 18 : 20} />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>Instalar app</TooltipContent>
-    </Tooltip>
+    <div className={compact ? "" : "fixed bottom-20 left-4 z-[60] sm:static"}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={handleInstall}
+            variant={compact ? "ghost" : "default"}
+            size={compact ? "icon" : "default"}
+            className={cn(
+              "text-muted-foreground hover:text-gold transition-all duration-300",
+              compact ? "h-8 w-8" : "bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 shadow-[0_0_15px_-3px_rgba(212,175,55,0.3)] animate-pulse-gold gap-2 px-4 rounded-full"
+            )}
+            aria-label="Instalar aplicativo"
+          >
+            <Download size={compact ? 18 : 20} />
+            {!compact && <span className="text-xs font-bold uppercase tracking-wider">Instalar App</span>}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">Instalar para uso offline</TooltipContent>
+      </Tooltip>
+    </div>
   );
 }
+
+import { cn } from "@/lib/utils";

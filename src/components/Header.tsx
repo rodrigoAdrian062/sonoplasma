@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { InstallPWA } from '@/components/InstallPWA';
 import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
 import { Frequency432Indicator } from '@/components/Frequency432Indicator';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 // Modal pesado — só carrega quando o usuário abre as configurações.
 const SettingsModal = lazy(() =>
@@ -71,7 +72,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-center">
-              
+              <OfflineIndicator />
               <Frequency432Indicator compact />
               <InstallPWA compact />
               <HeaderAudioOutputButton compact />
@@ -175,7 +176,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
             </div>
             
             <div className="flex items-center gap-2">
-              
+              <OfflineIndicator />
               <Frequency432Indicator />
               <InstallPWA />
               <HeaderAudioOutputButton />

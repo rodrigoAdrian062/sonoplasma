@@ -17,7 +17,8 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2, Download } from 'lucide-react';
+import { prefetchAudios } from '@/lib/audioCache';
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
 import { toast } from 'sonner';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
@@ -94,6 +95,7 @@ const SectionDetail = () => {
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const { toggles } = useUiToggles();
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const pendingNavRef = useRef<(() => void) | null>(null);
 
   const isAudioActive = status === 'playing' || status === 'paused';
@@ -421,6 +423,42 @@ const SectionDetail = () => {
     play(stageId, audioUrl);
   };
 
+  const handleDownloadSection = async () => {
+    if (sectionStages.length === 0) return;
+    setIsDownloading(true);
+    const toastId = toast.loading('Preparando áudios para uso offline...');
+    
+    try {
+      const allUrls: string[] = [];
+      sectionStages.forEach(stage => {
+        const audios = audiosByStageId[stage.id] || [];
+        audios.forEach(a => allUrls.push(a.audio_url));
+      });
+      
+      // Filtra apenas URLs que podem ser cacheadas (não YouTube)
+      const cacheableUrls = allUrls.filter(url => 
+        url && !url.includes('youtube.com') && !url.includes('youtu.be')
+      );
+      
+      if (cacheableUrls.length === 0) {
+        toast.info('Nenhum áudio local encontrado nesta seção para download.', { id: toastId });
+        return;
+      }
+
+      prefetchAudios(cacheableUrls);
+      
+      // Feedback imediato para o usuário enquanto o service worker trabalha
+      toast.success(`${cacheableUrls.length} áudios adicionados à fila de download offline.`, { 
+        id: toastId,
+        description: "Os badges 'Local' aparecerão nas músicas assim que o cache for concluído."
+      });
+    } catch (error) {
+      toast.error('Erro ao baixar áudios.', { id: toastId });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (isPresentationMode) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
@@ -493,6 +531,18 @@ const SectionDetail = () => {
               </Button>
             )}
 
+
+            <Button
+              onClick={handleDownloadSection}
+              disabled={isDownloading}
+              size="sm"
+              className="gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 shrink-0"
+              variant="outline"
+              title="Baixar todos os áudios locais para uso offline"
+            >
+              {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              <span className="hidden sm:inline">Offline</span>
+            </Button>
 
             <Button
               onClick={() => setIsNewStageModal(true)}
