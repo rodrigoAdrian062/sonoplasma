@@ -509,7 +509,7 @@ export function BackgroundMusicProvider({
         setIsDucking(true);
         fadeTo(duckVolume, fadeMs);
       }
-    } else if (mainStatus === 'paused' || mainStatus === 'idle') {
+    } else if (mainStatus === 'paused' || (mainStatus as any) === 'idle') {
       const delay = resumeDelayMs;
       const doResume = () => {
         if (mainStatus === 'playing') return;
