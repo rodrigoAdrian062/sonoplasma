@@ -13,7 +13,7 @@ import { useSections } from '@/hooks/useSections';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
-import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2 } from 'lucide-react';
+import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Copy } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
