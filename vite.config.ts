@@ -52,6 +52,22 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          {
+            // Cache para áudios (arquivos diretos do storage)
+            urlPattern: ({ request }) => request.destination === "audio",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "audio-files",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 dias
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+              rangeRequests: true, // Importante para streaming parcial de áudio
+            },
+          },
         ],
       },
     }),
