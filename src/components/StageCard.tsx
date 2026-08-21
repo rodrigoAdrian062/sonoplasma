@@ -385,7 +385,8 @@ export function StageCard({
         'group relative rounded-2xl border transition-all duration-300 overflow-hidden backdrop-blur-sm',
         isActive
           ? 'bg-gradient-to-br from-gold/10 to-card/40 border-gold/40 ring-1 ring-gold/40 shadow-[0_0_28px_-6px_hsl(var(--gold)/0.25)]'
-          : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10'
+          : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10',
+        stage.oculto && !isActive && 'opacity-60 grayscale-[0.5]'
       )}
     >
       {/* Barra dourada lateral */}
