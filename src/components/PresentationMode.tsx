@@ -422,10 +422,16 @@ export function PresentationMode({
       setShowKeyboardHints(true);
       switch (e.key) {
         case 'ArrowLeft':
-          if (selectedStageIndex > 0) setSelectedStageIndex(prev => prev - 1);
+          if (selectedStageIndex > 0) {
+            const prevVisibleIdx = [...Array(selectedStageIndex).keys()].reverse().find(i => !stages[i].oculto || stages[i].id === currentStageId);
+            if (prevVisibleIdx !== undefined) setSelectedStageIndex(prevVisibleIdx);
+          }
           break;
         case 'ArrowRight':
-          if (selectedStageIndex < stages.length - 1) setSelectedStageIndex(prev => prev + 1);
+          if (selectedStageIndex < stages.length - 1) {
+            const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+            if (nextVisibleIdx !== undefined) setSelectedStageIndex(nextVisibleIdx);
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -513,16 +519,18 @@ export function PresentationMode({
   };
 
   const handlePrevStage = () => {
-    if (selectedStageIndex > 0) {
+    const prevVisibleIdx = [...Array(selectedStageIndex).keys()].reverse().find(i => !stages[i].oculto || stages[i].id === currentStageId);
+    if (prevVisibleIdx !== undefined) {
       if (isActive) handleStop();
-      setSelectedStageIndex(prev => prev - 1);
+      setSelectedStageIndex(prevVisibleIdx);
     }
   };
 
   const handleNextStage = () => {
-    if (selectedStageIndex < stages.length - 1) {
+    const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+    if (nextVisibleIdx !== undefined) {
       if (isActive) handleStop();
-      setSelectedStageIndex(prev => prev + 1);
+      setSelectedStageIndex(nextVisibleIdx);
     }
   };
 
@@ -1228,9 +1236,9 @@ export function PresentationMode({
         {/* Timeline - scrollable */}
         <div className="flex items-center gap-0 overflow-x-auto max-w-[55vw] sm:max-w-[60vw] py-1 sm:py-2 scrollbar-none">
           {stages.map((stage, index) => {
+            if (stage.oculto && stage.id !== currentStageId) return null;
+            
             const isSelected = index === selectedStageIndex;
-            const isPlayingStage = currentStageId === stage.id && status !== 'idle';
-            const isPast = index < selectedStageIndex;
 
             return (
               <div key={stage.id} className="flex items-center shrink-0">
@@ -1263,7 +1271,7 @@ export function PresentationMode({
                     {index + 1}
                   </span>
                 </button>
-                {index < stages.length - 1 && (
+                {index < stages.length - 1 && stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId) && (
                   <div
                     className={cn(
                       'w-4 sm:w-6 h-0.5 mx-0.5 transition-colors',
