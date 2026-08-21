@@ -39,6 +39,7 @@ import { Download } from 'lucide-react';
 import presentationBanner from '@/assets/presentation-banner.png';
 import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
 import { BackgroundMusicPlayer } from './BackgroundMusicPlayer';
+import { BackgroundMusicProvider } from '@/contexts/BackgroundMusicContext';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -89,14 +90,21 @@ interface PresentationModeProps {
   onEQChange?: (settings: Partial<EQSettings>) => void;
 }
 
-export function PresentationMode({
+export function PresentationMode(props: PresentationModeProps) {
+  return (
+    <BackgroundMusicProvider isPresentation storageKey={`presentation-bg-music-${props.secaoId || 'default'}`}>
+      <PresentationContent {...props} />
+    </BackgroundMusicProvider>
+  );
+}
+
+function PresentationContent({
   stages,
   audiosByStageId,
   currentStageId,
   currentUrl,
   secaoId,
   secaoNome,
-
   status,
   volume,
   onVolumeChange,
@@ -1396,12 +1404,12 @@ export function PresentationMode({
       <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
         <div className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-4 py-6 shadow-2xl shadow-black/40">
           <div className="flex flex-col items-center gap-1 mb-2">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold text-center">Música de Fundo Geral</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold text-center">Música de Fundo Apresentação</span>
             <BackgroundMusicPlayer variant="presentation" />
           </div>
           <div className="w-full h-px bg-gold/20" />
           <p className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
-            Controle a trilha sonora ambiente global da sessão
+            Controle a trilha sonora ambiente específica desta apresentação
           </p>
         </div>
       </div>

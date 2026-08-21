@@ -15,7 +15,7 @@ export interface BackgroundTrack {
 
 export type AutoDuckMode = 'pause' | 'duck';
 
-interface BackgroundMusicContextValue {
+export interface BackgroundMusicContextValue {
   playlist: BackgroundTrack[];
   currentIndex: number;
   currentTrack: BackgroundTrack | null;
@@ -62,7 +62,24 @@ const MAX_DUR_KEY = 'bg-music-max-duration-sec-v1';
 const RESUME_DELAY_KEY = 'bg-music-resume-delay-ms-v1';
 const CROSSFADE_KEY = 'bg-music-crossfade-ms-v1';
 
-const Ctx = createContext<BackgroundMusicContextValue | null>(null);
+const GlobalCtx = createContext<BackgroundMusicContextValue | null>(null);
+const PresentationCtx = createContext<BackgroundMusicContextValue | null>(null);
+
+export const useBackgroundMusic = () => {
+  const presentation = useContext(PresentationCtx);
+  const global = useContext(GlobalCtx);
+  return presentation || global || (null as unknown as BackgroundMusicContextValue);
+};
+
+export const useGlobalBackgroundMusic = () => {
+  const global = useContext(GlobalCtx);
+  if (!global) throw new Error('useGlobalBackgroundMusic must be used within BackgroundMusicProvider');
+  return global;
+};
+
+export const usePresentationBackgroundMusic = () => {
+  return useContext(PresentationCtx);
+};
 
 function isStreamingUrl(url: string): boolean {
   const u = (url || '').toLowerCase();
@@ -82,13 +99,16 @@ export function BackgroundMusicProvider({
   children,
   storageKey = STORAGE_KEY,
   initialPlaylist,
-  onPlaylistChange
+  onPlaylistChange,
+  isPresentation = false
 }: { 
   children: ReactNode;
   storageKey?: string;
   initialPlaylist?: BackgroundTrack[];
   onPlaylistChange?: (pl: BackgroundTrack[]) => void;
+  isPresentation?: boolean;
 }) {
+  const ActiveCtx = isPresentation ? PresentationCtx : GlobalCtx;
   const safeRead = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
   };
@@ -141,7 +161,6 @@ export function BackgroundMusicProvider({
     src: string;
   } | null>(null);
 
-  // Dois elementos de áudio para crossfade. audioRef aponta para o "ativo".
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -171,13 +190,8 @@ export function BackgroundMusicProvider({
       crossfadeRafRef.current = null;
     }
     crossfadingRef.current = false;
-    // Pause the inactive one to prevent double playback
     const inactive = audioRef.current === audioARef.current ? audioBRef.current : audioARef.current;
     try { inactive?.pause(); } catch { /* noop */ }
-  }, []);
-
-  const swapActive = useCallback(() => {
-    audioRef.current = audioRef.current === audioARef.current ? audioBRef.current : audioARef.current;
   }, []);
 
   const startCrossfade = useCallback((toIdx: number) => {
@@ -214,7 +228,6 @@ export function BackgroundMusicProvider({
         crossfadeRafRef.current = null;
         try { active.pause(); active.currentTime = 0; } catch { /* noop */ }
         try { active.volume = volumeRef.current; } catch { /* noop */ }
-        // Swap
         audioRef.current = other;
         currentIndexRef.current = toIdx;
         setCurrentIndex(toIdx);
@@ -224,7 +237,6 @@ export function BackgroundMusicProvider({
     crossfadeRafRef.current = requestAnimationFrame(step);
   }, [duckVolume]);
 
-  // Init audio elements
   useEffect(() => {
     const makeAudio = () => {
       const a = new Audio();
@@ -241,7 +253,6 @@ export function BackgroundMusicProvider({
     audioBRef.current = b;
     audioRef.current = a;
 
-    // Web Audio pipeline para suportar 432Hz nos dois elementos (A e B).
     let ctx: AudioContext | null = null;
     let disposed = false;
     let cleanupPitchSub: (() => void) | null = null;
@@ -256,13 +267,10 @@ export function BackgroundMusicProvider({
     const onLoadStart = (e: Event) => applyForEl(e.target as HTMLAudioElement);
     try {
       ctx = new AudioContext();
-      const setupElement = (el: HTMLAudioElement) => {
-        const source = ctx!.createMediaElementSource(el);
-        source.connect(ctx!.destination);
-        return source;
-      };
-      const sourceA = setupElement(a);
-      const sourceB = setupElement(b);
+      const sourceA = ctx.createMediaElementSource(a);
+      const sourceB = ctx.createMediaElementSource(b);
+      sourceA.connect(ctx.destination);
+      sourceB.connect(ctx.destination);
 
       ensure432Registered(ctx)
         .then(() => {
@@ -292,10 +300,8 @@ export function BackgroundMusicProvider({
       console.warn('[bg-audio] AudioContext indisponível, seguindo sem 432Hz:', err);
     }
 
-
     const handleEnded = (e: Event) => {
       const el = e.target as HTMLAudioElement;
-      // Se este elemento não é mais o ativo (crossfade concluiu), ignore.
       if (el !== audioRef.current) return;
       const pl = playlistRef.current;
       if (pl.length === 0) return;
@@ -357,7 +363,6 @@ export function BackgroundMusicProvider({
       if (crossfadeRafRef.current) cancelAnimationFrame(crossfadeRafRef.current);
       try { ctx?.close(); } catch { /* noop */ }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const safeWrite = (key: string, value: string) => {
@@ -367,10 +372,12 @@ export function BackgroundMusicProvider({
     safeWrite(storageKey, JSON.stringify(playlist)); 
     onPlaylistChange?.(playlist);
   }, [playlist, storageKey, onPlaylistChange]);
+  
   useEffect(() => {
     safeWrite(VOLUME_KEY, String(volume));
     if (audioRef.current && !isDuckingRef.current && !crossfadingRef.current) audioRef.current.volume = mainVolume;
   }, [mainVolume]);
+
   useEffect(() => { safeWrite(AUTO_KEY, String(autoPauseEnabled)); }, [autoPauseEnabled]);
   useEffect(() => { safeWrite(MODE_KEY, autoMode); }, [autoMode]);
   useEffect(() => { safeWrite(DUCK_KEY, String(duckVolume)); }, [duckVolume]);
@@ -398,18 +405,15 @@ export function BackgroundMusicProvider({
     setStreamFrame((prev) => {
       if (prev?.trackId === track.id) return prev;
       const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
-      // Adiciona origin explicitamente se toEmbedUrl não o fez (backup)
       const finalSrc = withCacheBust.includes('origin=') ? withCacheBust : `${withCacheBust}&origin=${encodeURIComponent(window.location.origin)}`;
       return { trackId: track.id, kind: 'youtube', src: finalSrc };
     });
     return true;
   }, []);
 
-  // Enforce max duration cutoff & crossfade trigger
   const maxDurationRef = useRef(maxDurationSec);
   useEffect(() => { maxDurationRef.current = maxDurationSec; }, [maxDurationSec]);
   useEffect(() => {
-    const els = [audioARef.current, audioBRef.current].filter(Boolean) as HTMLAudioElement[];
     const onTimeUpdate = (e: Event) => {
       const el = e.target as HTMLAudioElement;
       if (el !== audioRef.current) return;
@@ -420,7 +424,6 @@ export function BackgroundMusicProvider({
       const dur = isFinite(el.duration) ? el.duration : 0;
       const enabled = pl.filter((t) => !t.disabled).length;
 
-      // Corte manual (maxDuration): hard cut, avança/reinicia
       if (limit > 0 && wantsToPlayRef.current && !el.paused && el.currentTime >= limit) {
         if (enabled <= 1) {
           try { el.currentTime = 0; el.play().catch(() => undefined); } catch { /* noop */ }
@@ -438,97 +441,46 @@ export function BackgroundMusicProvider({
         return;
       }
 
-      // Crossfade: quando faltar < xfade e houver próxima faixa habilitada
       if (
         xfade > 0 && dur > 0 && enabled > 1 && !crossfadingRef.current &&
         wantsToPlayRef.current && !el.paused &&
         (dur - el.currentTime) * 1000 <= xfade
       ) {
         const nextIdx = findNextEnabled(pl, currentIndexRef.current, 1);
-        if (nextIdx >= 0 && nextIdx !== currentIndexRef.current) {
-          startCrossfade(nextIdx);
-        }
+        if (nextIdx >= 0) startCrossfade(nextIdx);
       }
     };
-    const onLoaded = (e: Event) => {
+    const onDurationChange = (e: Event) => {
       const el = e.target as HTMLAudioElement;
-      if (el !== audioRef.current) return;
-      setDuration(isFinite(el.duration) ? el.duration : 0);
+      if (el === audioRef.current) setDuration(el.duration || 0);
     };
-    els.forEach((el) => {
-      el.addEventListener('timeupdate', onTimeUpdate);
-      el.addEventListener('loadedmetadata', onLoaded);
-      el.addEventListener('durationchange', onLoaded);
+    [audioARef.current, audioBRef.current].forEach((el) => {
+      el?.addEventListener('timeupdate', onTimeUpdate);
+      el?.addEventListener('durationchange', onDurationChange);
     });
     return () => {
-      els.forEach((el) => {
-        el.removeEventListener('timeupdate', onTimeUpdate);
-        el.removeEventListener('loadedmetadata', onLoaded);
-        el.removeEventListener('durationchange', onLoaded);
+      [audioARef.current, audioBRef.current].forEach((el) => {
+        el?.removeEventListener('timeupdate', onTimeUpdate);
+        el?.removeEventListener('durationchange', onDurationChange);
       });
     };
-  }, [startCrossfade]);
+  }, [maxDurationSec, startCrossfade]);
 
-  const seek = useCallback((sec: number) => {
+  const fadeTo = useCallback((targetVol: number, ms: number) => {
     const a = audioRef.current;
-    if (!a) return;
-    try { a.currentTime = Math.max(0, sec); setCurrentTime(a.currentTime); } catch { /* noop */ }
-  }, []);
-
-  // Load current track src when track changes (does NOT touch playback state)
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (crossfadingRef.current) return; // crossfade gerencia o src do outro elemento
-    const track = playlist[currentIndex];
-    if (!track) {
-      a.pause();
-      a.removeAttribute('src');
-      setStreamFrame(null);
-      return;
-    }
-
-    if (isStreamingUrl(track.audio_url)) {
-      a.pause();
-      a.removeAttribute('src');
-      a.load();
-      if (streamFrameRef.current && streamFrameRef.current.trackId !== track.id) {
-        setStreamFrame(null);
-      }
-      setCurrentTime(0);
-      setDuration(0);
-      return;
-    }
-
-    if (a.src !== track.audio_url) {
-      setStreamFrame(null);
-      a.src = track.audio_url;
-      a.load();
-    }
-  }, [currentIndex, playlist]);
-
-
-  const fadeTo = useCallback((target: number, duration: number, onDone?: () => void) => {
-    const a = audioRef.current;
-    if (!a) return;
+    if (!a || isStreamingUrl(a.currentSrc || a.src)) return;
     if (fadeRafRef.current) cancelAnimationFrame(fadeRafRef.current);
-    if (duration <= 0) {
-      a.volume = Math.max(0, Math.min(1, target));
-      onDone?.();
+    if (ms <= 0) {
+      a.volume = targetVol;
       return;
     }
-    const start = a.volume;
-    const delta = target - start;
+    const startVol = a.volume;
     const t0 = performance.now();
     const step = (now: number) => {
-      const p = Math.min(1, (now - t0) / duration);
-      a.volume = Math.max(0, Math.min(1, start + delta * p));
-      if (p < 1) {
-        fadeRafRef.current = requestAnimationFrame(step);
-      } else {
-        fadeRafRef.current = null;
-        onDone?.();
-      }
+      const p = Math.min(1, (now - t0) / ms);
+      a.volume = startVol + (targetVol - startVol) * p;
+      if (p < 1) fadeRafRef.current = requestAnimationFrame(step);
+      else fadeRafRef.current = null;
     };
     fadeRafRef.current = requestAnimationFrame(step);
   }, []);
@@ -536,52 +488,54 @@ export function BackgroundMusicProvider({
   useEffect(() => {
     if (!autoPauseEnabled) return;
     const a = audioRef.current;
-    if (!a) return;
-
     if (mainStatus === 'playing') {
-      if (autoMode === 'duck') {
-        if (isPlaying && !isDuckingRef.current) {
-          isDuckingRef.current = true;
-          setIsDucking(true);
-          fadeTo(duckVolume, fadeMs);
-        }
-      } else {
-        if (isPlaying) {
-          fadeTo(0, fadeMs, () => {
-            postStreamCommand('pause');
-            a.pause();
-            setIsPlaying(false);
-            wasAutoPausedRef.current = true;
-            setWasAutoPaused(true);
-            a.volume = volume;
-          });
-        }
-      }
-    } else if (mainStatus === 'idle') {
-      const delay = Math.max(0, resumeDelayMs);
-      const doResume = () => {
-        if (autoMode === 'duck') {
-          if (isDuckingRef.current) {
-            isDuckingRef.current = false;
-            setIsDucking(false);
-            fadeTo(mainVolume, fadeMs);
-          }
+      if (autoMode === 'pause' && isPlaying) {
+        wasAutoPausedRef.current = true;
+        setWasAutoPaused(true);
+        if (isStreamingUrl(a?.currentSrc || a?.src || '')) {
+          postStreamCommand('pause');
+          setIsPlaying(false);
         } else {
-          if (wasAutoPausedRef.current && playlistRef.current.length > 0) {
-            wasAutoPausedRef.current = false;
-            setWasAutoPaused(false);
-            const track = playlistRef.current[currentIndexRef.current];
-            if (track && isStreamingUrl(track.audio_url)) {
-              ensureStreamFrame(track, false);
-              wantsToPlayRef.current = true;
-              setIsPlaying(true);
-              window.setTimeout(() => postStreamCommand('play'), 300);
-            } else {
-              a.volume = 0;
-              a.play().then(() => {
+          fadeTo(0, fadeMs);
+          setTimeout(() => {
+            if (wasAutoPausedRef.current) {
+              a?.pause();
+              setIsPlaying(false);
+            }
+          }, fadeMs + 50);
+        }
+      } else if (autoMode === 'duck') {
+        isDuckingRef.current = true;
+        setIsDucking(true);
+        fadeTo(duckVolume, fadeMs);
+      }
+    } else if (mainStatus === 'paused' || (mainStatus as any) === 'idle') {
+      const delay = resumeDelayMs;
+      const doResume = () => {
+        if ((mainStatus as any) === 'playing') return;
+        if (autoMode === 'duck' && isDuckingRef.current) {
+          isDuckingRef.current = false;
+          setIsDucking(false);
+          fadeTo(mainVolume, fadeMs);
+        } else if (autoMode === 'pause' && wasAutoPausedRef.current) {
+          wasAutoPausedRef.current = false;
+          setWasAutoPaused(false);
+          const pl = playlistRef.current;
+          const track = pl[currentIndexRef.current];
+          if (track) {
+            if (isStreamingUrl(track.audio_url)) {
+              if (ensureStreamFrame(track, true)) {
                 setIsPlaying(true);
-                fadeTo(mainVolume, fadeMs);
-              }).catch(() => {});
+                window.setTimeout(() => postStreamCommand('play'), 300);
+              }
+            } else {
+              if (a) {
+                a.volume = 0;
+                a.play().then(() => {
+                  setIsPlaying(true);
+                  fadeTo(mainVolume, fadeMs);
+                }).catch(() => {});
+              }
             }
           }
         }
@@ -593,14 +547,13 @@ export function BackgroundMusicProvider({
         return () => clearTimeout(t);
       }
     }
-  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, volume, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
+  }, [mainStatus, autoPauseEnabled, autoMode, duckVolume, fadeMs, mainVolume, isPlaying, playlist.length, resumeDelayMs, fadeTo, ensureStreamFrame, postStreamCommand]);
 
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
     if (!a || playlist.length === 0) return;
     cancelCrossfade();
     let targetIdx = index !== undefined ? index : currentIndex;
-    // Se a faixa alvo está desativada, pula para próxima habilitada
     if (playlist[targetIdx]?.disabled) {
       const nextIdx = findNextEnabled(playlist, targetIdx - 1, 1);
       if (nextIdx < 0) {
@@ -637,10 +590,6 @@ export function BackgroundMusicProvider({
       wasAutoPausedRef.current = true;
       setWasAutoPaused(true);
       setIsPlaying(false);
-      toast({
-        title: 'Música de fundo pausada',
-        description: 'Ela volta automaticamente quando a música da etapa parar.',
-      });
       return;
     }
     a.play().then(() => {
@@ -652,13 +601,8 @@ export function BackgroundMusicProvider({
       console.warn('BG music play failed:', err);
       if (requestId !== playRequestRef.current) return;
       setIsPlaying(false);
-      toast({
-        title: 'O player de fundo não conseguiu iniciar',
-        description: 'Toque novamente após escolher um arquivo de áudio válido da biblioteca.',
-        variant: 'destructive',
-      });
     });
-  }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
+  }, [playlist, currentIndex, volume, duckVolume, mainStatus, mainVolume, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
   const pause = useCallback(() => {
     playRequestRef.current += 1;
@@ -749,7 +693,6 @@ export function BackgroundMusicProvider({
   }, []);
 
   const setVolume = useCallback((v: number) => {
-    // Sincroniza o volume global se necessário ou mantém apenas o local
     setVolumeState(Math.max(0, Math.min(1, v)));
   }, []);
   const setAutoPauseEnabled = useCallback((v: boolean) => setAutoPauseEnabledState(v), []);
@@ -794,11 +737,17 @@ export function BackgroundMusicProvider({
     setResumeDelayMs,
     currentTime,
     duration,
-    seek,
+    seek: (sec: number) => {
+      const a = audioRef.current;
+      if (a && isFinite(sec)) {
+        a.currentTime = sec;
+        setCurrentTime(sec);
+      }
+    },
   };
 
   return (
-    <Ctx.Provider value={value}>
+    <ActiveCtx.Provider value={value}>
       {children}
       {streamFrame && (
         <div
@@ -816,22 +765,12 @@ export function BackgroundMusicProvider({
         >
           <iframe
             ref={streamIframeRef}
-            key={streamFrame.trackId}
             src={streamFrame.src}
-            title="Player de música de fundo"
-            style={{ width: '100%', height: '100%', border: 0 }}
-            allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
+            title="Background Audio Stream"
+            allow="autoplay; encrypted-media"
           />
         </div>
       )}
-    </Ctx.Provider>
+    </ActiveCtx.Provider>
   );
-}
-
-export function useBackgroundMusic(): BackgroundMusicContextValue {
-  const c = useContext(Ctx);
-  if (!c) throw new Error('useBackgroundMusic must be used within BackgroundMusicProvider');
-  return c;
 }
