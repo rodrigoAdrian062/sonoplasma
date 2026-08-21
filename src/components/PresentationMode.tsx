@@ -1288,6 +1288,8 @@ export function PresentationMode({
             const isPlayingStage = currentStageId === stage.id && status !== 'idle';
             const isPast = index < selectedStageIndex;
 
+            // Encontra a próxima etapa visível para saber se desenha a linha
+            const hasNextVisible = stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId);
 
             return (
               <div key={stage.id} className="flex items-center shrink-0">
@@ -1325,7 +1327,7 @@ export function PresentationMode({
                     {index + 1}
                   </span>
                 </button>
-                {index < stages.length - 1 && stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId) && (
+                {index < stages.length - 1 && hasNextVisible && (
                   <div
                     className={cn(
                       'w-4 sm:w-6 h-0.5 mx-0.5 transition-colors',
