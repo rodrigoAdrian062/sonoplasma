@@ -12,6 +12,7 @@ import { AudioSourceIcon } from '@/components/AudioSourceIcon';
 import { TrackHzBadge } from '@/components/TrackHzBadge';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useStages } from '@/hooks/useStages';
 import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioCache';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
@@ -60,6 +61,7 @@ export function StageCard({
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
+  const { toggleStageVisibility } = useStages();
   const defaultTime = stage.tempo_padrao || 300;
   const timerKey = `stage:timerSeconds:${stage.id}`;
   const timerEnabledKey = `stage:timerEnabled:${stage.id}`;
@@ -338,18 +340,10 @@ export function StageCard({
 
   const handleToggleHidden = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const { error } = await supabase
-        .from('sonoplastia_etapas')
-        .update({ oculto: !stage.oculto })
-        .eq('id', stage.id);
-
-      if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['stages', stage.secao_id] });
-      toast.success(stage.oculto ? 'Etapa visível no modo apresentação' : 'Etapa oculta no modo apresentação');
-    } catch {
-      toast.error('Erro ao alterar visibilidade da etapa');
-    }
+    toggleStageVisibility.mutate({ 
+      id: stage.id, 
+      oculto: !stage.oculto 
+    });
   };
 
 
@@ -391,7 +385,8 @@ export function StageCard({
         'group relative rounded-2xl border transition-all duration-300 overflow-hidden backdrop-blur-sm',
         isActive
           ? 'bg-gradient-to-br from-gold/10 to-card/40 border-gold/40 ring-1 ring-gold/40 shadow-[0_0_28px_-6px_hsl(var(--gold)/0.25)]'
-          : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10'
+          : 'bg-gradient-to-br from-card/80 to-card/30 border-border/40 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-xl hover:shadow-gold/10',
+        stage.oculto && !isActive && 'opacity-60 grayscale-[0.5]'
       )}
     >
       {/* Barra dourada lateral */}
@@ -459,13 +454,22 @@ export function StageCard({
             <button
               onClick={handleToggleHidden}
               className={cn(
-                "p-1.5 transition-colors rounded-md hover:bg-gold/10",
-                stage.oculto ? "text-destructive" : "text-muted-foreground/60 hover:text-gold"
+                "p-1.5 transition-all rounded-md flex items-center gap-1",
+                stage.oculto 
+                  ? "text-destructive bg-destructive/10 hover:bg-destructive/20" 
+                  : "text-muted-foreground/60 hover:text-gold hover:bg-gold/10"
               )}
-              title={stage.oculto ? "Oculta na apresentação" : "Visível na apresentação"}
+              title={stage.oculto ? "Etapa Oculta (Não aparece na apresentação)" : "Etapa Visível"}
               aria-label={stage.oculto ? "Tornar visível" : "Ocultar etapa"}
             >
-              {stage.oculto ? <EyeOff size={14} /> : <Eye size={14} />}
+              {stage.oculto ? (
+                <>
+                  <EyeOff size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Oculto</span>
+                </>
+              ) : (
+                <Eye size={14} />
+              )}
             </button>
             <button
               onClick={onEdit}

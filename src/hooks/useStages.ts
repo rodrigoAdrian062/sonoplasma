@@ -165,6 +165,34 @@ export function useStages() {
     },
   });
 
+  const toggleStageVisibility = useMutation({
+    mutationFn: async ({ id, oculto }: { id: string; oculto: boolean }) => {
+      const { data, error } = await supabase
+        .from('sonoplastia_etapas')
+        .update({ oculto })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['stages'] });
+      // Also invalidate section-specific stages if needed
+      if (data.secao_id) {
+        queryClient.invalidateQueries({ queryKey: ['stages', data.secao_id] });
+      }
+      toast({ 
+        title: data.oculto ? 'Etapa oculta' : 'Etapa visível',
+        description: data.oculto ? 'A etapa não aparecerá na apresentação.' : 'A etapa aparecerá na apresentação.'
+      });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao alterar visibilidade', description: error.message, variant: 'destructive' });
+    },
+  });
+
   return {
     stages,
     isLoading,
@@ -174,5 +202,6 @@ export function useStages() {
     deleteStage,
     reorderStages,
     copyStageToSection,
+    toggleStageVisibility,
   };
 }
