@@ -42,9 +42,11 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            // Assets versionados do build
+            // Assets versionados do build e fontes externas (Google Fonts)
             urlPattern: ({ request, sameOrigin }) =>
-              sameOrigin && ["script", "style", "font", "image"].includes(request.destination),
+              (sameOrigin && ["script", "style", "font", "image"].includes(request.destination)) ||
+              request.url.includes("fonts.googleapis.com") ||
+              request.url.includes("fonts.gstatic.com"),
             handler: "CacheFirst",
             options: {
               cacheName: "static-assets",
