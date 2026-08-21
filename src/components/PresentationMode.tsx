@@ -1281,7 +1281,8 @@ export function PresentationMode({
         {/* Timeline - scrollable */}
         <div className="flex items-center gap-0 overflow-x-auto max-w-[55vw] sm:max-w-[60vw] py-1 sm:py-2 scrollbar-none">
           {stages.map((stage, index) => {
-            if (stage.oculto && stage.id !== currentStageId) return null;
+            const isOculto = stage.oculto && stage.id !== currentStageId;
+            if (isOculto) return null;
             
             const isSelected = index === selectedStageIndex;
             const isPlayingStage = currentStageId === stage.id && status !== 'idle';
