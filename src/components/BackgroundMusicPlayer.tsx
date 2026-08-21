@@ -66,6 +66,10 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
     <>
       <div
         onWheel={(e) => {
+          const target = e.target as HTMLElement | null;
+          // Impede a rolagem de volume se estiver rolando dentro do popover ou menus
+          if (target?.closest('[role="dialog"],[role="menu"],[role="listbox"],.max-h-40')) return;
+
           e.preventDefault();
           const delta = e.deltaY < 0 ? 0.01 : -0.01;
           setVolume(Math.max(0, Math.min(1, volume + delta)));
@@ -126,7 +130,7 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                 Nenhuma música na fila. Clique em "Adicionar" para escolher da biblioteca.
               </p>
             ) : (
-              <div className="max-h-40 overflow-y-auto space-y-0.5 -mx-1">
+              <div className="max-h-40 overflow-y-auto space-y-0.5 -mx-1 scrollbar-thin" data-allow-scroll="true">
                 {playlist.map((t, i) => (
                   <div
                     key={t.id}
