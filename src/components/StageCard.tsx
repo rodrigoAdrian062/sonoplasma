@@ -454,13 +454,22 @@ export function StageCard({
             <button
               onClick={handleToggleHidden}
               className={cn(
-                "p-1.5 transition-colors rounded-md hover:bg-gold/10",
-                stage.oculto ? "text-destructive" : "text-muted-foreground/60 hover:text-gold"
+                "p-1.5 transition-all rounded-md flex items-center gap-1",
+                stage.oculto 
+                  ? "text-destructive bg-destructive/10 hover:bg-destructive/20" 
+                  : "text-muted-foreground/60 hover:text-gold hover:bg-gold/10"
               )}
-              title={stage.oculto ? "Oculta na apresentação" : "Visível na apresentação"}
+              title={stage.oculto ? "Etapa Oculta (Não aparece na apresentação)" : "Etapa Visível"}
               aria-label={stage.oculto ? "Tornar visível" : "Ocultar etapa"}
             >
-              {stage.oculto ? <EyeOff size={14} /> : <Eye size={14} />}
+              {stage.oculto ? (
+                <>
+                  <EyeOff size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-tighter">Oculto</span>
+                </>
+              ) : (
+                <Eye size={14} />
+              )}
             </button>
             <button
               onClick={onEdit}
