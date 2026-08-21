@@ -7,7 +7,7 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Check, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
@@ -203,6 +203,8 @@ export function PresentationMode({
     setVolume: setGlobalVolume,
   } = useUniversalAudioPlayer();
 
+  // Filtra etapas ocultas apenas para navegação/exibição se não for a etapa atual forçada
+  const visibleStages = stages.filter(s => !s.oculto || s.id === currentStageId);
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
   const currentAudio = audios[selectedAudioIndex];
@@ -420,10 +422,16 @@ export function PresentationMode({
       setShowKeyboardHints(true);
       switch (e.key) {
         case 'ArrowLeft':
-          if (selectedStageIndex > 0) setSelectedStageIndex(prev => prev - 1);
+          if (selectedStageIndex > 0) {
+            const prevVisibleIdx = [...Array(selectedStageIndex).keys()].reverse().find(i => !stages[i].oculto || stages[i].id === currentStageId);
+            if (prevVisibleIdx !== undefined) setSelectedStageIndex(prevVisibleIdx);
+          }
           break;
         case 'ArrowRight':
-          if (selectedStageIndex < stages.length - 1) setSelectedStageIndex(prev => prev + 1);
+          if (selectedStageIndex < stages.length - 1) {
+            const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+            if (nextVisibleIdx !== undefined) setSelectedStageIndex(nextVisibleIdx);
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -511,16 +519,18 @@ export function PresentationMode({
   };
 
   const handlePrevStage = () => {
-    if (selectedStageIndex > 0) {
+    const prevVisibleIdx = [...Array(selectedStageIndex).keys()].reverse().find(i => !stages[i].oculto || stages[i].id === currentStageId);
+    if (prevVisibleIdx !== undefined) {
       if (isActive) handleStop();
-      setSelectedStageIndex(prev => prev - 1);
+      setSelectedStageIndex(prevVisibleIdx);
     }
   };
 
   const handleNextStage = () => {
-    if (selectedStageIndex < stages.length - 1) {
+    const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+    if (nextVisibleIdx !== undefined) {
       if (isActive) handleStop();
-      setSelectedStageIndex(prev => prev + 1);
+      setSelectedStageIndex(nextVisibleIdx);
     }
   };
 
@@ -1226,9 +1236,12 @@ export function PresentationMode({
         {/* Timeline - scrollable */}
         <div className="flex items-center gap-0 overflow-x-auto max-w-[55vw] sm:max-w-[60vw] py-1 sm:py-2 scrollbar-none">
           {stages.map((stage, index) => {
+            if (stage.oculto && stage.id !== currentStageId) return null;
+            
             const isSelected = index === selectedStageIndex;
             const isPlayingStage = currentStageId === stage.id && status !== 'idle';
             const isPast = index < selectedStageIndex;
+
 
             return (
               <div key={stage.id} className="flex items-center shrink-0">
@@ -1261,7 +1274,7 @@ export function PresentationMode({
                     {index + 1}
                   </span>
                 </button>
-                {index < stages.length - 1 && (
+                {index < stages.length - 1 && stages.slice(index + 1).some(s => !s.oculto || s.id === currentStageId) && (
                   <div
                     className={cn(
                       'w-4 sm:w-6 h-0.5 mx-0.5 transition-colors',
@@ -1291,33 +1304,40 @@ export function PresentationMode({
       </footer>
 
       {/* Next Stage Info (Desktop) */}
-      {selectedStageIndex < stages.length - 1 && (
-        <div 
-          className="absolute bottom-[74px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block max-w-[90vw]"
-        >
-          <div className="flex items-center gap-2">
-            {/* Próxima */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-gold/30 shadow-xl shadow-black/60">
-              <ChevronRight size={14} className="text-gold shrink-0" />
-              <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold shrink-0">Próxima</span>
-              <span className="text-xs text-foreground font-display font-medium truncate max-w-[220px]">
-                {stages[selectedStageIndex + 1]?.nome_simbolico}
-              </span>
-            </div>
+      {(() => {
+        const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+        if (nextVisibleIdx === undefined) return null;
+        const nextNextVisibleIdx = [...Array(stages.length).keys()].slice(nextVisibleIdx + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
 
-            {/* Segunda Próxima (ao lado) */}
-            {selectedStageIndex < stages.length - 2 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-70">
-                <ChevronRight size={12} className="text-gold/50 shrink-0" />
-                <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold shrink-0">Em seguida</span>
-                <span className="text-[11px] text-foreground/70 font-display truncate max-w-[180px]">
-                  {stages[selectedStageIndex + 2]?.nome_simbolico}
+        return (
+          <div 
+            className="absolute bottom-[74px] left-1/2 -translate-x-1/2 transition-all duration-300 animate-fade-in hidden sm:block max-w-[90vw]"
+          >
+            <div className="flex items-center gap-2">
+              {/* Próxima */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-lg border border-gold/30 shadow-xl shadow-black/60">
+                <ChevronRight size={14} className="text-gold shrink-0" />
+                <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold shrink-0">Próxima</span>
+                <span className="text-xs text-foreground font-display font-medium truncate max-w-[220px]">
+                  {stages[nextVisibleIdx]?.nome_simbolico}
                 </span>
               </div>
-            )}
+
+              {/* Segunda Próxima (ao lado) */}
+              {nextNextVisibleIdx !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-lg border border-gold/10 opacity-70">
+                  <ChevronRight size={12} className="text-gold/50 shrink-0" />
+                  <span className="text-[8px] text-gold/40 uppercase tracking-widest font-bold shrink-0">Em seguida</span>
+                  <span className="text-[11px] text-foreground/70 font-display truncate max-w-[180px]">
+                    {stages[nextNextVisibleIdx]?.nome_simbolico}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
 
       {/* Global Background Music Panel (Left Side - Desktop) */}
       <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
@@ -1335,16 +1355,22 @@ export function PresentationMode({
 
 
       {/* Próxima Etapa no Header para Mobile */}
-      <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
-        {selectedStageIndex < stages.length - 1 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
-            <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
-            <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
-              {stages[selectedStageIndex + 1]?.nome_simbolico}
-            </span>
+      {(() => {
+        const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
+        if (nextVisibleIdx === undefined) return null;
+        
+        return (
+          <div className="fixed top-[52px] left-0 right-0 z-[60] px-4 py-2 sm:hidden flex justify-center animate-fade-in">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-card/80 backdrop-blur-md rounded-lg border border-gold/20 shadow-lg">
+              <span className="text-[9px] text-gold/60 uppercase tracking-widest font-bold">Próxima:</span>
+              <span className="text-xs text-foreground font-medium truncate max-w-[150px]">
+                {stages[nextVisibleIdx]?.nome_simbolico}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
+
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
