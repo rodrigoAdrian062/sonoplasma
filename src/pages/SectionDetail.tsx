@@ -423,6 +423,37 @@ const SectionDetail = () => {
     play(stageId, audioUrl);
   };
 
+  const handleDownloadSection = async () => {
+    if (sectionStages.length === 0) return;
+    setIsDownloading(true);
+    const toastId = toast.loading('Preparando áudios para uso offline...');
+    
+    try {
+      const allUrls: string[] = [];
+      sectionStages.forEach(stage => {
+        const audios = audiosByStageId[stage.id] || [];
+        audios.forEach(a => allUrls.push(a.audio_url));
+      });
+      
+      // Filtra apenas URLs que podem ser cacheadas (não YouTube)
+      const cacheableUrls = allUrls.filter(url => 
+        url && !url.includes('youtube.com') && !url.includes('youtu.be')
+      );
+      
+      if (cacheableUrls.length === 0) {
+        toast.info('Nenhum áudio local encontrado nesta seção para download.', { id: toastId });
+        return;
+      }
+
+      prefetchAudios(cacheableUrls);
+      toast.success(`${cacheableUrls.length} áudios sendo salvos para offline.`, { id: toastId });
+    } catch (error) {
+      toast.error('Erro ao baixar áudios.', { id: toastId });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (isPresentationMode) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
