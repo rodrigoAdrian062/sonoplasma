@@ -61,6 +61,7 @@ export function StageCard({
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
+  const { toggleStageVisibility } = useStages();
   const defaultTime = stage.tempo_padrao || 300;
   const timerKey = `stage:timerSeconds:${stage.id}`;
   const timerEnabledKey = `stage:timerEnabled:${stage.id}`;
