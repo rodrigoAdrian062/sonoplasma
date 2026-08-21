@@ -224,6 +224,7 @@ export type Database = {
           icone_url: string | null
           id: string
           nome_simbolico: string
+          oculto: boolean | null
           ordem: number
           owner_id: string | null
           ritual_detalhes: string | null
@@ -242,6 +243,7 @@ export type Database = {
           icone_url?: string | null
           id?: string
           nome_simbolico: string
+          oculto?: boolean | null
           ordem?: number
           owner_id?: string | null
           ritual_detalhes?: string | null
@@ -260,6 +262,7 @@ export type Database = {
           icone_url?: string | null
           id?: string
           nome_simbolico?: string
+          oculto?: boolean | null
           ordem?: number
           owner_id?: string | null
           ritual_detalhes?: string | null
