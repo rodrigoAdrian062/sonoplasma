@@ -942,6 +942,23 @@ export function PresentationMode({
             </div>
           )}
 
+          {currentAudio && isCacheableAudioUrl(currentAudio.audio_url) && (
+            <div className="flex justify-center mb-4">
+              <span 
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
+                  audioReady 
+                    ? "text-emerald-500 bg-emerald-500/10 border border-emerald-500/20" 
+                    : "text-muted-foreground/60 bg-secondary/80 border border-border/40"
+                )}
+                title={audioReady ? "Áudio disponível localmente" : "Baixando para uso offline..."}
+              >
+                {audioReady ? <CheckCircle2 size={12} /> : <Loader2 size={12} className="animate-spin" />}
+                {audioReady ? 'Disponível Offline' : 'Cacheando...'}
+              </span>
+            </div>
+          )}
+
 
           {/* Description */}
           {currentStage.descricao && !compact && (
