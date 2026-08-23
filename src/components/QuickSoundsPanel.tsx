@@ -152,7 +152,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   }, [audios, search]);
 
   const handleWheel = (e: React.WheelEvent) => {
+    // Volume isolado: nunca deixa o handler global da apresentação alterar o volume principal
     e.preventDefault();
+    e.stopPropagation();
     const delta = e.deltaY < 0 ? 0.01 : -0.01;
     setVolume((v) => Math.min(1, Math.max(0, Math.round((v + delta) * 100) / 100)));
   };
@@ -202,8 +204,13 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   if (compact) {
     return (
-      <div className="flex flex-col gap-2 bg-card/80 backdrop-blur-md border border-gold/30 rounded-2xl p-2 shadow-xl shadow-black/40 max-w-[164px]">
+      <div
+        data-quick-sounds
+        onWheel={handleWheel}
+        className="flex flex-col gap-2 bg-card/80 backdrop-blur-md border border-gold/30 rounded-2xl p-2 shadow-xl shadow-black/40 max-w-[164px]"
+      >
         <span className="text-[9px] uppercase tracking-[0.18em] text-gold/70 font-bold text-center">Sons rápidos</span>
+
         <div className="grid grid-cols-2 gap-1.5">
           {sounds.map((s) => (
             <div key={s.id} className="relative">
@@ -248,6 +255,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   return (
     <div
+      data-quick-sounds
       onWheel={handleWheel}
       className={cn(
         'flex flex-col gap-3 bg-card/70 backdrop-blur-md border-gold/20 shadow-2xl shadow-black/40',

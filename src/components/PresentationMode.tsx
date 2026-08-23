@@ -500,7 +500,7 @@ function PresentationContent({
       // elemento (modais, listas, atalhos, dropdowns). Agora respeitamos
       // qualquer container marcado com data-allow-scroll, o painel do
       // roteiro e qualquer elemento com overflow rolável real.
-      if (target.closest('[data-roteiro-scroll],[data-allow-scroll],[role="dialog"],[role="menu"],[role="listbox"],input,textarea,select')) return;
+      if (target.closest('[data-quick-sounds],[data-roteiro-scroll],[data-allow-scroll],[role="dialog"],[role="menu"],[role="listbox"],input,textarea,select')) return;
       // Verifica se algum ancestral tem overflow rolável nativo.
       let el: HTMLElement | null = target;
       while (el && el !== document.body) {
