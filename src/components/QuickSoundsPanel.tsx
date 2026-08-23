@@ -206,20 +206,31 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         <span className="text-[9px] uppercase tracking-[0.18em] text-gold/70 font-bold text-center">Sons rápidos</span>
         <div className="grid grid-cols-2 gap-1.5">
           {sounds.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => trigger(s)}
-              title={s.nome}
-              className={cn(
-                'flex items-center justify-center gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
-                playingId === s.id
-                  ? 'bg-gold text-background border-gold'
-                  : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
-              )}
-            >
-              {playingId === s.id ? <Square size={10} /> : <Play size={10} />}
-              <span className="truncate">{s.nome}</span>
-            </button>
+            <div key={s.id} className="relative">
+              <button
+                onClick={() => trigger(s)}
+                title={s.nome}
+                className={cn(
+                  'w-full flex items-center justify-center gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
+                  playingId === s.id
+                    ? 'bg-gold text-background border-gold'
+                    : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
+                )}
+              >
+                {playingId === s.id ? <Square size={10} /> : <Play size={10} />}
+                <span className="truncate">{s.nome}</span>
+              </button>
+              <button
+                onClick={() => toggleLoop(s.id)}
+                title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
+                className={cn(
+                  'absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center border border-background',
+                  s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                <Repeat size={8} />
+              </button>
+            </div>
           ))}
           {sounds.length < MAX_SLOTS && (
             <button
