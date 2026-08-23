@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -16,12 +16,13 @@ import {
 
 const STORAGE_KEY = 'sonoplastia:quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
-const MAX_SLOTS = 10;
+const MAX_SLOTS = 20;
 
 export interface QuickSound {
   id: string;
   nome: string;
   url: string;
+  loop?: boolean;
 }
 
 function loadSounds(): QuickSound[] {
@@ -95,7 +96,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     el.preload = 'auto';
     el.src = sound.url;
     el.volume = volume;
-    el.onended = () => setPlayingId((cur) => (cur === sound.id ? null : cur));
+    el.loop = !!sound.loop;
+    el.onended = () => {
+      if (sound.loop) return;
+      setPlayingId((cur) => (cur === sound.id ? null : cur));
+    };
     el.onerror = () => {
       setPlayingId((cur) => (cur === sound.id ? null : cur));
       toast.error(`Não foi possível tocar "${sound.nome}". Verifique o formato do arquivo.`);
@@ -111,7 +116,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const addSound = (nome: string, url: string) => {
     setSounds((prev) => {
       if (prev.length >= MAX_SLOTS || prev.some((s) => s.url === url)) return prev;
-      return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url }];
+      return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url, loop: false }];
     });
   };
 
@@ -119,10 +124,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     setSounds((prev) => prev.map((s) => (s.id === id ? { ...s, nome } : s)));
   };
 
+  const toggleLoop = (id: string) => {
+    setSounds((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, loop: !s.loop } : s));
+      const target = next.find((s) => s.id === id);
+      if (target && playingId === id && audioRef.current) {
+        audioRef.current.loop = !!target.loop;
+      }
+      toast.success(target?.loop ? `Loop ativado: ${target.nome}` : `Loop desativado: ${target?.nome}`);
+      return next;
+    });
+  };
+
   const removeSound = (id: string) => {
     setSounds((prev) => prev.filter((s) => s.id !== id));
     if (playingId === id) stop();
   };
+
 
   const playableAudios = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -188,20 +206,31 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         <span className="text-[9px] uppercase tracking-[0.18em] text-gold/70 font-bold text-center">Sons rápidos</span>
         <div className="grid grid-cols-2 gap-1.5">
           {sounds.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => trigger(s)}
-              title={s.nome}
-              className={cn(
-                'flex items-center justify-center gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
-                playingId === s.id
-                  ? 'bg-gold text-background border-gold'
-                  : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
-              )}
-            >
-              {playingId === s.id ? <Square size={10} /> : <Play size={10} />}
-              <span className="truncate">{s.nome}</span>
-            </button>
+            <div key={s.id} className="relative">
+              <button
+                onClick={() => trigger(s)}
+                title={s.nome}
+                className={cn(
+                  'w-full flex items-center justify-center gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
+                  playingId === s.id
+                    ? 'bg-gold text-background border-gold'
+                    : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
+                )}
+              >
+                {playingId === s.id ? <Square size={10} /> : <Play size={10} />}
+                <span className="truncate">{s.nome}</span>
+              </button>
+              <button
+                onClick={() => toggleLoop(s.id)}
+                title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
+                className={cn(
+                  'absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center border border-background',
+                  s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                <Repeat size={8} />
+              </button>
+            </div>
           ))}
           {sounds.length < MAX_SLOTS && (
             <button
@@ -285,9 +314,20 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 >
                   <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
                   {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
-                  <span className={cn('font-medium truncate', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
+                  <span className={cn('font-medium truncate flex-1', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
+                  {s.loop && <Repeat size={10} className="shrink-0 opacity-80" />}
                 </button>
                 <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => toggleLoop(s.id)}
+                    className={cn(
+                      'h-4 w-4 rounded-full flex items-center justify-center',
+                      s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                    )}
+                    title={s.loop ? 'Loop ativo (tocar infinito)' : 'Ativar loop infinito'}
+                  >
+                    <Repeat size={8} />
+                  </button>
                   <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"
@@ -303,6 +343,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                     <X size={9} />
                   </button>
                 </div>
+
               </>
             )}
           </div>
