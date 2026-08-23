@@ -16,12 +16,13 @@ import {
 
 const STORAGE_KEY = 'sonoplastia:quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
-const MAX_SLOTS = 10;
+const MAX_SLOTS = 20;
 
 export interface QuickSound {
   id: string;
   nome: string;
   url: string;
+  loop?: boolean;
 }
 
 function loadSounds(): QuickSound[] {
