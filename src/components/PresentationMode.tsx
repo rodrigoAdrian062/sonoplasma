@@ -1395,10 +1395,11 @@ function PresentationContent({
       })()}
 
 
-      {/* Painel de Sons Rápidos (Left Side - Desktop) */}
-      <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
-        <QuickSoundsPanel />
+      {/* Painel de Sons Rápidos (coluna lateral esquerda em tela cheia) */}
+      <div className="hidden lg:flex fixed left-0 top-[52px] bottom-0 w-[240px] z-30 animate-fade-in">
+        <QuickSoundsPanel fullHeight />
       </div>
+
 
 
 
