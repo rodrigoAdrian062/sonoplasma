@@ -152,7 +152,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   }, [audios, search]);
 
   const handleWheel = (e: React.WheelEvent) => {
+    // Volume isolado: nunca deixa o handler global da apresentação alterar o volume principal
     e.preventDefault();
+    e.stopPropagation();
     const delta = e.deltaY < 0 ? 0.01 : -0.01;
     setVolume((v) => Math.min(1, Math.max(0, Math.round((v + delta) * 100) / 100)));
   };
@@ -253,6 +255,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   return (
     <div
+      data-quick-sounds
       onWheel={handleWheel}
       className={cn(
         'flex flex-col gap-3 bg-card/70 backdrop-blur-md border-gold/20 shadow-2xl shadow-black/40',
