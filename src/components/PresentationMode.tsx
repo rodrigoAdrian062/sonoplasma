@@ -37,9 +37,7 @@ import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
-import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
-import { BackgroundMusicPlayer } from './BackgroundMusicPlayer';
-import { BackgroundMusicProvider } from '@/contexts/BackgroundMusicContext';
+import { QuickSoundsPanel } from './QuickSoundsPanel';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -91,11 +89,7 @@ interface PresentationModeProps {
 }
 
 export function PresentationMode(props: PresentationModeProps) {
-  return (
-    <BackgroundMusicProvider isPresentation storageKey={`presentation-bg-music-${props.secaoId || 'default'}`}>
-      <PresentationContent {...props} />
-    </BackgroundMusicProvider>
-  );
+  return <PresentationContent {...props} />;
 }
 
 function PresentationContent({
@@ -1401,19 +1395,11 @@ function PresentationContent({
       })()}
 
 
-      {/* Global Background Music Panel (Left Side - Desktop) */}
+      {/* Painel de Sons Rápidos (Left Side - Desktop) */}
       <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 flex-col items-center animate-fade-in">
-        <div className="flex flex-col items-center gap-4 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-4 py-6 shadow-2xl shadow-black/40">
-          <div className="flex flex-col items-center gap-1 mb-2">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-gold/60 font-bold text-center">Música de Fundo Apresentação</span>
-            <BackgroundMusicPlayer variant="presentation" />
-          </div>
-          <div className="w-full h-px bg-gold/20" />
-          <p className="text-[9px] text-muted-foreground text-center max-w-[80px] leading-tight">
-            Controle a trilha sonora ambiente específica desta apresentação
-          </p>
-        </div>
+        <QuickSoundsPanel />
       </div>
+
 
 
       {/* Próxima Etapa no Header para Mobile */}
@@ -1470,9 +1456,9 @@ function PresentationContent({
         </DialogContent>
       </Dialog>
 
-      {/* Floating Background Music (Mobile version or additional toggle could be here) */}
-      <div className="lg:hidden fixed left-4 top-20 z-50">
-        <BackgroundMusicPlayer variant="presentation" compact />
+      {/* Sons rápidos (mobile) */}
+      <div className="lg:hidden fixed left-3 bottom-24 z-50">
+        <QuickSoundsPanel compact />
       </div>
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
