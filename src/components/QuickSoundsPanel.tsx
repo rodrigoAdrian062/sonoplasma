@@ -92,7 +92,6 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
       return;
     }
     const el = audioRef.current && !audioRef.current.src ? audioRef.current : new Audio();
-    el.crossOrigin = 'anonymous';
     el.preload = 'auto';
     el.src = sound.url;
     el.volume = volume;
