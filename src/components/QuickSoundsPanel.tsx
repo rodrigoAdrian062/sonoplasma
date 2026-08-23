@@ -303,9 +303,20 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 >
                   <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
                   {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
-                  <span className={cn('font-medium truncate', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
+                  <span className={cn('font-medium truncate flex-1', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
+                  {s.loop && <Repeat size={10} className="shrink-0 opacity-80" />}
                 </button>
                 <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => toggleLoop(s.id)}
+                    className={cn(
+                      'h-4 w-4 rounded-full flex items-center justify-center',
+                      s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                    )}
+                    title={s.loop ? 'Loop ativo (tocar infinito)' : 'Ativar loop infinito'}
+                  >
+                    <Repeat size={8} />
+                  </button>
                   <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"
@@ -321,6 +332,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                     <X size={9} />
                   </button>
                 </div>
+
               </>
             )}
           </div>
