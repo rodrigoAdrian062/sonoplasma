@@ -46,7 +46,7 @@ function loadVolume(): number {
 }
 
 /** Sons rápidos (soundboard) — atalhos de play para efeitos curtos. */
-export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
+export function QuickSoundsPanel({ compact = false, fullHeight = false }: { compact?: boolean; fullHeight?: boolean }) {
   const { audios } = useAudioLibrary();
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
@@ -220,7 +220,12 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
   return (
     <div
       onWheel={handleWheel}
-      className="flex flex-col gap-3 bg-card/70 backdrop-blur-md border border-gold/20 rounded-3xl px-4 py-5 shadow-2xl shadow-black/40 w-[184px]"
+      className={cn(
+        'flex flex-col gap-3 bg-card/70 backdrop-blur-md border-gold/20 shadow-2xl shadow-black/40',
+        fullHeight
+          ? 'w-full h-full border-r px-4 py-5 overflow-y-auto scrollbar-thin'
+          : 'w-[184px] border rounded-3xl px-4 py-5'
+      )}
     >
       <div className="flex flex-col items-center gap-1">
         <Zap size={16} className="text-gold" />
@@ -231,7 +236,7 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
 
       <div className="w-full h-px bg-gold/20" />
 
-      <div className="flex flex-col gap-1.5">
+      <div className={cn('flex flex-col gap-1.5', fullHeight && 'flex-1')}>
         {sounds.length === 0 && (
           <p className="text-[9px] text-muted-foreground text-center leading-tight py-2">
             Adicione atalhos para tocar efeitos curtos com um clique.
@@ -271,7 +276,8 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
                   onClick={() => trigger(s)}
                   title={s.nome}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left transition-all',
+                    'w-full flex items-center gap-2 px-2.5 rounded-xl border text-left transition-all',
+                    fullHeight ? 'py-3' : 'py-2',
                     playingId === s.id
                       ? 'bg-gold text-background border-gold shadow-lg shadow-gold/20'
                       : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50 hover:bg-gold/5'
@@ -279,7 +285,7 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
                 >
                   <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
                   {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
-                  <span className="text-[11px] font-medium truncate">{s.nome}</span>
+                  <span className={cn('font-medium truncate', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
                 </button>
                 <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
