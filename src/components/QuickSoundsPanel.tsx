@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
 import {
   Dialog,
@@ -31,6 +32,12 @@ function loadSounds(): QuickSound[] {
   } catch {
     return [];
   }
+}
+
+/** Formatos que o navegador não reproduz (ex.: WMA). */
+function isUnsupportedFormat(url: string): boolean {
+  const clean = (url || '').split('?')[0].toLowerCase();
+  return /\.(wma|wmv|asf|ra|rm|aiff?)$/.test(clean);
 }
 
 function loadVolume(): number {
@@ -80,13 +87,26 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
       return;
     }
     stop();
-    const el = new Audio(sound.url);
+    if (isUnsupportedFormat(sound.url)) {
+      toast.error('Formato não suportado pelo navegador (WMA). Use MP3, M4A, OGG ou WAV.');
+      return;
+    }
+    const el = audioRef.current && !audioRef.current.src ? audioRef.current : new Audio();
+    el.crossOrigin = 'anonymous';
+    el.preload = 'auto';
+    el.src = sound.url;
     el.volume = volume;
     el.onended = () => setPlayingId((cur) => (cur === sound.id ? null : cur));
-    el.onerror = () => setPlayingId((cur) => (cur === sound.id ? null : cur));
+    el.onerror = () => {
+      setPlayingId((cur) => (cur === sound.id ? null : cur));
+      toast.error(`Não foi possível tocar "${sound.nome}". Verifique o formato do arquivo.`);
+    };
     audioRef.current = el;
     setPlayingId(sound.id);
-    void el.play().catch(() => setPlayingId(null));
+    el.play().catch((err) => {
+      setPlayingId(null);
+      toast.error(`Falha ao tocar "${sound.nome}": ${err?.message || 'erro desconhecido'}`);
+    });
   };
 
   const addSound = (nome: string, url: string) => {
@@ -109,6 +129,7 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
     const term = search.trim().toLowerCase();
     return (audios || [])
       .filter((a) => a.audio_url && !getYouTubeVideoId(a.audio_url) && !a.audio_url.includes('spotify'))
+      .filter((a) => !isUnsupportedFormat(a.audio_url!))
       .filter((a) => (term ? (a.nome || '').toLowerCase().includes(term) : true))
       .slice(0, 60);
   }, [audios, search]);
@@ -139,7 +160,7 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
         <div className="max-h-[320px] overflow-y-auto scrollbar-thin space-y-1 pr-1">
           {playableAudios.length === 0 && (
             <p className="text-xs text-muted-foreground py-6 text-center">
-              Nenhum áudio de arquivo encontrado na biblioteca.
+              Nenhum áudio compatível encontrado (arquivos WMA e links do YouTube/Spotify não podem ser usados como som rápido).
             </p>
           )}
           {playableAudios.map((a) => (
