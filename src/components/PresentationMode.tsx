@@ -1103,14 +1103,8 @@ function PresentationContent({
                             compact ? 'pl-2.5 pr-1 py-1' : 'pl-3 pr-1 py-1.5 sm:pl-4 sm:py-2'
                           )}
                         >
-                          {selected ? (
-                            <Check size={14} className="shrink-0" />
-                          ) : (
-                            <>
-                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={false} />
-                              <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={false} />
-                            </>
-                          )}
+                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={selected} />
+                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={selected} />
                           {audio.nome || `Áudio ${index + 1}`}
                           <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
                           {selected && audio && isCacheableAudioUrl(audio.audio_url) && (
