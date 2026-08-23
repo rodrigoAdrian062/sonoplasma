@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
