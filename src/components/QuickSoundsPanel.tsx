@@ -96,7 +96,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     el.preload = 'auto';
     el.src = sound.url;
     el.volume = volume;
-    el.onended = () => setPlayingId((cur) => (cur === sound.id ? null : cur));
+    el.loop = !!sound.loop;
+    el.onended = () => {
+      if (sound.loop) return;
+      setPlayingId((cur) => (cur === sound.id ? null : cur));
+    };
     el.onerror = () => {
       setPlayingId((cur) => (cur === sound.id ? null : cur));
       toast.error(`Não foi possível tocar "${sound.nome}". Verifique o formato do arquivo.`);
@@ -112,7 +116,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const addSound = (nome: string, url: string) => {
     setSounds((prev) => {
       if (prev.length >= MAX_SLOTS || prev.some((s) => s.url === url)) return prev;
-      return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url }];
+      return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url, loop: false }];
     });
   };
 
@@ -120,10 +124,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     setSounds((prev) => prev.map((s) => (s.id === id ? { ...s, nome } : s)));
   };
 
+  const toggleLoop = (id: string) => {
+    setSounds((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, loop: !s.loop } : s));
+      const target = next.find((s) => s.id === id);
+      if (target && playingId === id && audioRef.current) {
+        audioRef.current.loop = !!target.loop;
+      }
+      toast.success(target?.loop ? `Loop ativado: ${target.nome}` : `Loop desativado: ${target?.nome}`);
+      return next;
+    });
+  };
+
   const removeSound = (id: string) => {
     setSounds((prev) => prev.filter((s) => s.id !== id));
     if (playingId === id) stop();
   };
+
 
   const playableAudios = useMemo(() => {
     const term = search.trim().toLowerCase();
