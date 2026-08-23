@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import {
 
 const STORAGE_KEY = 'sonoplastia:quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
-const MAX_SLOTS = 8;
+const MAX_SLOTS = 10;
 
 export interface QuickSound {
   id: string;
@@ -46,6 +46,8 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -92,6 +94,10 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
       if (prev.length >= MAX_SLOTS || prev.some((s) => s.url === url)) return prev;
       return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url }];
     });
+  };
+
+  const renameSound = (id: string, nome: string) => {
+    setSounds((prev) => prev.map((s) => (s.id === id ? { ...s, nome } : s)));
   };
 
   const removeSound = (id: string) => {
@@ -213,27 +219,66 @@ export function QuickSoundsPanel({ compact = false }: { compact?: boolean }) {
         )}
         {sounds.map((s, i) => (
           <div key={s.id} className="group relative">
-            <button
-              onClick={() => trigger(s)}
-              title={s.nome}
-              className={cn(
-                'w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left transition-all',
-                playingId === s.id
-                  ? 'bg-gold text-background border-gold shadow-lg shadow-gold/20'
-                  : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50 hover:bg-gold/5'
-              )}
-            >
-              <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
-              {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
-              <span className="text-[11px] font-medium truncate">{s.nome}</span>
-            </button>
-            <button
-              onClick={() => removeSound(s.id)}
-              className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-              title="Remover atalho"
-            >
-              <X size={9} />
-            </button>
+            {editingId === s.id ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  autoFocus
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      renameSound(s.id, editingName.trim() || s.nome);
+                      setEditingId(null);
+                    }
+                    if (e.key === 'Escape') setEditingId(null);
+                  }}
+                  className="h-8 text-[11px] px-2"
+                />
+                <button
+                  onClick={() => {
+                    renameSound(s.id, editingName.trim() || s.nome);
+                    setEditingId(null);
+                  }}
+                  className="h-8 w-7 rounded-lg bg-gold/20 text-gold flex items-center justify-center"
+                  title="Salvar nome"
+                >
+                  <Check size={12} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => trigger(s)}
+                  title={s.nome}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left transition-all',
+                    playingId === s.id
+                      ? 'bg-gold text-background border-gold shadow-lg shadow-gold/20'
+                      : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50 hover:bg-gold/5'
+                  )}
+                >
+                  <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
+                  {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
+                  <span className="text-[11px] font-medium truncate">{s.nome}</span>
+                </button>
+                <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
+                    className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"
+                    title="Editar nome do botão"
+                  >
+                    <Pencil size={8} />
+                  </button>
+                  <button
+                    onClick={() => removeSound(s.id)}
+                    className="h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                    title="Remover atalho"
+                  >
+                    <X size={9} />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
