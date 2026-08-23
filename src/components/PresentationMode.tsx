@@ -37,9 +37,7 @@ import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
-import { PresentationHeaderBgMusic } from './PresentationHeaderBgMusic';
-import { BackgroundMusicPlayer } from './BackgroundMusicPlayer';
-import { BackgroundMusicProvider } from '@/contexts/BackgroundMusicContext';
+import { QuickSoundsPanel } from './QuickSoundsPanel';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -91,11 +89,7 @@ interface PresentationModeProps {
 }
 
 export function PresentationMode(props: PresentationModeProps) {
-  return (
-    <BackgroundMusicProvider isPresentation storageKey={`presentation-bg-music-${props.secaoId || 'default'}`}>
-      <PresentationContent {...props} />
-    </BackgroundMusicProvider>
-  );
+  return <PresentationContent {...props} />;
 }
 
 function PresentationContent({
@@ -1462,9 +1456,9 @@ function PresentationContent({
         </DialogContent>
       </Dialog>
 
-      {/* Floating Background Music (Mobile version or additional toggle could be here) */}
-      <div className="lg:hidden fixed left-4 top-20 z-50">
-        <BackgroundMusicPlayer variant="presentation" compact />
+      {/* Sons rápidos (mobile) */}
+      <div className="lg:hidden fixed left-3 bottom-24 z-50">
+        <QuickSoundsPanel compact />
       </div>
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
