@@ -1032,6 +1032,9 @@ function VirtualAudioList(props: VirtualAudioListProps) {
     showListView,
   } = props;
 
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
