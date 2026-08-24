@@ -63,6 +63,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   useEffect(() => {
     const syncSounds = () => {
+      console.log('Sincronizando sons rápidos (evento quickSoundsUpdated)');
       setSounds(loadSounds());
     };
 
