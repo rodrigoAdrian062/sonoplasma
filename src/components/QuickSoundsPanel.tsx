@@ -93,8 +93,14 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
       setSounds(newSounds);
       
-      // Notificar outras instâncias do componente (ex: no header e na sidebar)
+      // Notificar todas as instâncias e outras abas
       window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+      
+      // Também dispara um evento de storage manual para garantir que outras abas ou componentes escutem
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: STORAGE_KEY,
+        newValue: JSON.stringify(newSounds)
+      }));
       
       toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
