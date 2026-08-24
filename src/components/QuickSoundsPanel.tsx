@@ -63,7 +63,34 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   useEffect(() => {
     const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
       const { nome, url } = e.detail;
-      addSound(nome, url);
+      console.log('Recebido evento sonoplastia:addQuickSound:', { nome, url });
+      
+      // Update sounds directly
+      setSounds((prev) => {
+        if (prev.length >= MAX_SLOTS) {
+          toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
+          return prev;
+        }
+        if (prev.some((s) => s.url === url)) {
+          toast.info(`"${nome}" já está nos sons rápidos.`);
+          return prev;
+        }
+        
+        const newSound: QuickSound = { 
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, 
+          nome, 
+          url, 
+          loop: false 
+        };
+        
+        const newSounds = [...prev, newSound];
+        // Persist immediately since setSounds state update might not trigger the other effect in time
+        // if the component is mounted/unmounted quickly, although here it should stay mounted.
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+        
+        toast.success(`"${nome}" adicionado aos sons rápidos!`);
+        return newSounds;
+      });
     };
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
