@@ -107,8 +107,13 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   }, []);
 
   useEffect(() => {
-    // Apenas persistir se o estado mudar via UI interna (como remoção ou renomeação)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sounds));
+    // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
+    const currentStored = localStorage.getItem(STORAGE_KEY);
+    const newStored = JSON.stringify(sounds);
+    if (currentStored !== newStored) {
+      localStorage.setItem(STORAGE_KEY, newStored);
+      window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+    }
   }, [sounds]);
 
   useEffect(() => {
