@@ -186,7 +186,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   const trigger = (sound: QuickSound) => {
     if (playingId === sound.id) {
-      stop();
+      stop(sound.id);
       return;
     }
     stop();
