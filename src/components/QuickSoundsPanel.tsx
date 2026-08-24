@@ -160,7 +160,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   const picker = (
     <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-      <DialogContent className="bg-card border-gold/20 max-w-lg">
+      <DialogContent className="bg-card border-gold/20 max-w-2xl w-[90vw]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-gold">
             <Zap size={18} /> Adicionar som rápido
@@ -175,24 +175,29 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
             className="pl-9"
           />
         </div>
-        <div className="max-h-[320px] overflow-y-auto scrollbar-thin space-y-1 pr-1">
+        <div className="max-h-[60vh] overflow-y-auto scrollbar-thin pr-1">
           {playableAudios.length === 0 && (
-            <p className="text-xs text-muted-foreground py-6 text-center">
+            <p className="text-xs text-muted-foreground py-10 text-center">
               Nenhum áudio compatível encontrado (links do YouTube/Spotify não podem ser usados como som rápido).
             </p>
           )}
-          {playableAudios.map((a) => (
-            <button
-              key={a.id}
-              onClick={() => {
-                addSound(a.nome, a.audio_url!);
-                setPickerOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg border border-border/60 hover:border-gold/40 hover:bg-gold/5 transition-colors text-sm text-foreground truncate"
-            >
-              {a.nome}
-            </button>
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-4">
+            {playableAudios.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => {
+                  addSound(a.nome, a.audio_url!);
+                  setPickerOpen(false);
+                }}
+                className="w-full text-left px-3 py-3 rounded-xl border border-gold/10 bg-black/20 hover:border-gold/40 hover:bg-gold/5 transition-all group flex items-center justify-between gap-2"
+              >
+                <span className="text-sm text-foreground truncate font-medium group-hover:text-gold transition-colors">
+                  {a.nome}
+                </span>
+                <Plus size={14} className="text-gold/40 group-hover:text-gold shrink-0" />
+              </button>
+            ))}
+          </div>
         </div>
         <p className="text-[10px] text-muted-foreground">
           Máximo de {MAX_SLOTS} atalhos. Apenas áudios de arquivo podem ser usados como som rápido.
