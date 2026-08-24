@@ -525,6 +525,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                     <Repeat size={8} />
                   </button>
                   <button
+                    onClick={() => toggleFadeStop(s.id)}
+                    className={cn(
+                      'h-4 w-4 rounded-full flex items-center justify-center',
+                      s.fadeStop ? 'bg-blue-500 text-white' : 'bg-secondary text-muted-foreground'
+                    )}
+                    title={s.fadeStop ? 'Fade-out ativo (parar suave)' : 'Ativar fade-out ao parar'}
+                  >
+                    <Volume2 size={8} />
+                  </button>
+                  <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"
                     title="Editar nome do botão"
