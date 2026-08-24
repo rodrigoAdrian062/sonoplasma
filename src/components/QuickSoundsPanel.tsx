@@ -246,9 +246,18 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     });
   };
 
+  const toggleFadeStop = (id: string) => {
+    setSounds((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, fadeStop: !s.fadeStop } : s));
+      const target = next.find((s) => s.id === id);
+      toast.success(target?.fadeStop ? `Fade-out ativado: ${target.nome}` : `Fade-out desativado: ${target?.nome}`);
+      return next;
+    });
+  };
+
   const removeSound = (id: string) => {
     setSounds((prev) => prev.filter((s) => s.id !== id));
-    if (playingId === id) stop();
+    if (playingId === id) stop(id);
   };
 
 
