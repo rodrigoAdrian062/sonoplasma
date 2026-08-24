@@ -161,7 +161,15 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   const addSound = (nome: string, url: string) => {
     setSounds((prev) => {
-      if (prev.length >= MAX_SLOTS || prev.some((s) => s.url === url)) return prev;
+      if (prev.length >= MAX_SLOTS) {
+        toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
+        return prev;
+      }
+      if (prev.some((s) => s.url === url)) {
+        toast.info(`"${nome}" já está nos sons rápidos.`);
+        return prev;
+      }
+      toast.success(`"${nome}" adicionado aos sons rápidos!`);
       return [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, nome, url, loop: false }];
     });
   };
