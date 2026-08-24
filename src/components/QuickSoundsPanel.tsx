@@ -146,9 +146,8 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     const term = search.trim().toLowerCase();
     return (audios || [])
       .filter((a) => a.audio_url && !getYouTubeVideoId(a.audio_url) && !a.audio_url.includes('spotify'))
-      .filter((a) => !isUnsupportedFormat(a.audio_url!))
       .filter((a) => (term ? (a.nome || '').toLowerCase().includes(term) : true))
-      .slice(0, 60);
+      .slice(0, 100);
   }, [audios, search]);
 
   const handleWheel = (e: React.WheelEvent) => {
