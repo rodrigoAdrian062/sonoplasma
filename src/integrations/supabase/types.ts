@@ -44,6 +44,7 @@ export type Database = {
       sonoplastia_audios_biblioteca: {
         Row: {
           audio_url: string
+          clima: string | null
           created_at: string
           duracao_segundos: number | null
           id: string
@@ -56,6 +57,7 @@ export type Database = {
         }
         Insert: {
           audio_url: string
+          clima?: string | null
           created_at?: string
           duracao_segundos?: number | null
           id?: string
@@ -68,6 +70,7 @@ export type Database = {
         }
         Update: {
           audio_url?: string
+          clima?: string | null
           created_at?: string
           duracao_segundos?: number | null
           id?: string

@@ -18,7 +18,7 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap
+  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap, Thermometer
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
@@ -43,6 +43,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
+import { ClimaSelector } from '@/components/library/ClimaSelector';
+import { CLIMAS, getClima } from '@/lib/climas';
 
 
 
@@ -167,6 +169,7 @@ export default function AudioLibraryPage() {
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
+  const [climaFilter, setClimaFilter] = useState<string | null>(null);
   const [showListView, setShowListView] = useState(() => {
     return localStorage.getItem('sonoplastia:library:list-view') === 'true';
   });
@@ -225,6 +228,7 @@ export default function AudioLibraryPage() {
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
+    if (climaFilter && ((a as any).clima || null) !== climaFilter) return false;
     return true;
   });
 
@@ -944,6 +948,52 @@ export default function AudioLibraryPage() {
           )}
         </div>
 
+        {/* Filtro por clima ritual */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <Thermometer size={14} className="text-gold" /> Clima ritual
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setClimaFilter(null)}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                climaFilter === null ? 'border-gold/60 bg-gold/15 text-gold' : 'border-border/50 text-muted-foreground hover:bg-muted/50',
+              )}
+            >
+              Todos ({audios.length})
+            </button>
+            {CLIMAS.map((c) => {
+              const CIcon = c.icone;
+              const count = audios.filter((a) => (a as any).clima === c.id).length;
+              const active = climaFilter === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setClimaFilter(active ? null : c.id)}
+                  title={c.momentos.join(' · ')}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
+                    !active && 'border-border/50 text-muted-foreground hover:bg-muted/50',
+                  )}
+                  style={active ? { background: `${c.cor}22`, borderColor: `${c.cor}77`, color: c.cor } : undefined}
+                >
+                  <CIcon size={13} style={{ color: c.cor }} />
+                  {c.ordem}. {c.label}
+                  <span className="opacity-70">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+          {climaFilter && (
+            <p className="text-[11px] text-muted-foreground">
+              {getClima(climaFilter)?.momentos.join(' · ')}
+            </p>
+          )}
+        </div>
+
         {/* Audio List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -1170,6 +1220,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                       </Button>
                     )}
                     <TrackHzSelector url={audio.audio_url} />
+                    <ClimaSelector audioId={audio.id} clima={audio.clima} compact={showListView} />
                     {stages.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

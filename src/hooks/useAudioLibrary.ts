@@ -109,11 +109,28 @@ export function useAudioLibrary() {
     },
   });
 
+  const setClima = useMutation({
+    mutationFn: async ({ id, clima }: { id: string; clima: string | null }) => {
+      const { error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .update({ clima } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao definir clima', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const uploadAndAddAudio = async (file: File, name: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Não autenticado');
     const duracao = await probeAudioDuration(URL.createObjectURL(file)).catch(() => null);
     const fileName = `${user.id}/library-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
     
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('stage-audios')
@@ -145,5 +162,6 @@ export function useAudioLibrary() {
     deleteAudio,
     uploadAndAddAudio,
     setDuration,
+    setClima,
   };
 }
