@@ -1235,7 +1235,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                           window.dispatchEvent(new CustomEvent('sonoplastia:addQuickSound', { 
                             detail: { nome: audio.nome, url: audio.audio_url || '' } 
                           }));
-                          toast.success(`"${audio.nome}" enviado para sons rápidos`);
+                          sonnerToast.success(`"${audio.nome}" enviado para sons rápidos`);
                         }} 
                         className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
                         title="Adicionar aos Sons Rápidos"
