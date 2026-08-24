@@ -36,6 +36,7 @@ interface AudioPlayerContextValue {
   setLoopEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
   preload: (urls: (string | null | undefined)[]) => void;
+  prefetchNextStages: (currentStageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -803,7 +804,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     loopEnabled,
     setLoopEnabled,
     play,
-    preload,
+        preload,
+        prefetchNextStages,
     pause,
     resume,
     stop,
