@@ -61,6 +61,18 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   useEffect(() => {
+    const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
+      const { nome, url } = e.detail;
+      addSound(nome, url);
+    };
+
+    window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+    return () => {
+      window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sounds));
   }, [sounds]);
 
