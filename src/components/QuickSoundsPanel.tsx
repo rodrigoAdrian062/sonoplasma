@@ -178,7 +178,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         <div className="max-h-[320px] overflow-y-auto scrollbar-thin space-y-1 pr-1">
           {playableAudios.length === 0 && (
             <p className="text-xs text-muted-foreground py-6 text-center">
-              Nenhum áudio compatível encontrado (arquivos WMA e links do YouTube/Spotify não podem ser usados como som rápido).
+              Nenhum áudio compatível encontrado (links do YouTube/Spotify não podem ser usados como som rápido).
             </p>
           )}
           {playableAudios.map((a) => (
