@@ -90,16 +90,22 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       previewAudioRef.current.pause();
     }
 
-    const el = new Audio(url);
+    const el = new Audio();
+    el.crossOrigin = "anonymous";
+    el.src = url;
     el.volume = volume;
     el.onended = () => setPreviewingId(null);
-    el.onerror = () => {
+    el.onerror = (e) => {
+      console.error("Erro no carregamento do áudio de prévia:", e);
       setPreviewingId(null);
-      toast.error("Erro ao carregar prévia");
+      toast.error("Erro ao carregar prévia: verifique o formato do arquivo ou conexão.");
     };
     previewAudioRef.current = el;
     setPreviewingId(id);
-    el.play().catch(() => setPreviewingId(null));
+    el.play().catch((err) => {
+      console.error("Erro ao dar play na prévia:", err);
+      setPreviewingId(null);
+    });
   };
 
   const stop = () => {
