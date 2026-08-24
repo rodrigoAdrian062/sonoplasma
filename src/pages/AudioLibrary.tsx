@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { toast as sonnerToast } from 'sonner';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -1232,8 +1233,9 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                           e.stopPropagation(); 
                           console.log('Disparando evento sonoplastia:addQuickSound para:', audio.nome);
                           window.dispatchEvent(new CustomEvent('sonoplastia:addQuickSound', { 
-                            detail: { nome: audio.nome, url: audio.audio_url } 
+                            detail: { nome: audio.nome, url: audio.audio_url || '' } 
                           }));
+                          sonnerToast.success(`"${audio.nome}" enviado para sons rápidos`);
                         }} 
                         className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
                         title="Adicionar aos Sons Rápidos"
