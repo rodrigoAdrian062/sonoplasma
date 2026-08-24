@@ -49,7 +49,7 @@ function loadVolume(): number {
 
 /** Sons rápidos (soundboard) — atalhos de play para efeitos curtos. */
 export function QuickSoundsPanel({ compact = false, fullHeight = false }: { compact?: boolean; fullHeight?: boolean }) {
-  const { audios } = useAudioLibrary();
+  const { audios, isLoading } = useAudioLibrary();
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -63,6 +63,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   useEffect(() => {
     const syncSounds = () => {
+      console.log('Sincronizando sons rápidos (evento quickSoundsUpdated)');
       setSounds(loadSounds());
     };
 
@@ -92,19 +93,40 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
       setSounds(newSounds);
       
-      // Notificar outras instâncias do componente (ex: no header e na sidebar)
+      // Notificar todas as instâncias e outras abas
       window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+      
+      // Também dispara um evento de storage manual para garantir que outras abas ou componentes escutem
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: STORAGE_KEY,
+        newValue: JSON.stringify(newSounds)
+      }));
       
       toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
     window.addEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        syncSounds();
+      }
+    });
+    
     return () => {
       window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
       window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
+      window.removeEventListener('storage', syncSounds);
     };
   }, []);
+
+  // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
+  useEffect(() => {
+    if (!isLoading) {
+      console.log('useAudioLibrary carregou, sincronizando sons rápidos');
+      setSounds(loadSounds());
+    }
+  }, [isLoading, audios]);
 
   useEffect(() => {
     // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)

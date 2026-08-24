@@ -1232,9 +1232,31 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         onClick={(e) => { 
                           e.stopPropagation(); 
                           console.log('Disparando evento sonoplastia:addQuickSound para:', audio.nome);
+                          
+                          // Dispara o evento para o componente montado
                           window.dispatchEvent(new CustomEvent('sonoplastia:addQuickSound', { 
                             detail: { nome: audio.nome, url: audio.audio_url || '' } 
                           }));
+                          
+                          // Garante persistência imediata mesmo se o componente não estiver montado
+                          const STORAGE_KEY = 'sonoplastia:quickSounds';
+                          const MAX_SLOTS = 20;
+                          const raw = localStorage.getItem(STORAGE_KEY);
+                          let current = [];
+                          try { current = raw ? JSON.parse(raw) : []; } catch {}
+                          
+                          if (current.length < MAX_SLOTS && !current.some((s: any) => s.url === audio.audio_url)) {
+                            const newSounds = [...current, { 
+                              id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, 
+                              nome: audio.nome, 
+                              url: audio.audio_url, 
+                              loop: false 
+                            }];
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+                            // Notifica outras abas/componentes via evento customizado
+                            window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+                          }
+                          
                           sonnerToast.success(`"${audio.nome}" enviado para sons rápidos`);
                         }} 
                         className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
