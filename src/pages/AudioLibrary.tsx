@@ -20,7 +20,7 @@ import {
   Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
-import { AudioSourceIcon } from '@/components/AudioSourceIcon';
+import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
