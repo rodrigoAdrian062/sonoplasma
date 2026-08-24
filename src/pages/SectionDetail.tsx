@@ -161,6 +161,24 @@ const SectionDetail = () => {
   }, [sections, sectionId]);
   const sectionStages = useMemo(() => stages.filter(s => s.secao_id === section?.id), [stages, section]);
 
+  // Pre-carregamento automático de todos os áudios da seção ao entrar no detalhe
+  useEffect(() => {
+    if (sectionStages.length > 0 && Object.keys(audiosByStageId).length > 0) {
+      const allUrls: string[] = [];
+      sectionStages.forEach(stage => {
+        const audios = audiosByStageId[stage.id] || [];
+        audios.forEach(a => {
+          if (a.audio_url && !a.audio_url.includes('youtube.com') && !a.audio_url.includes('youtu.be')) {
+            allUrls.push(a.audio_url);
+          }
+        });
+      });
+      if (allUrls.length > 0) {
+        prefetchAudios(allUrls);
+      }
+    }
+  }, [sectionStages, audiosByStageId]);
+
   const activeStage = useMemo(() => {
     return stages.find(s => s.id === currentStageId) || null;
   }, [stages, currentStageId]);

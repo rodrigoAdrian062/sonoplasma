@@ -36,6 +36,7 @@ interface AudioPlayerContextValue {
   setLoopEnabled: (value: boolean) => void;
   play: (stageId: string, url: string) => void;
   preload: (urls: (string | null | undefined)[]) => void;
+  prefetchNextStages: (currentStageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -666,7 +667,30 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [stopCurrentPlayback, createYouTubePlayer]);
 
   const preload = useCallback((urls: (string | null | undefined)[]) => {
-    prefetchAudios(urls);
+    const valid = urls.filter((u): u is string => !!u && isCacheableAudioUrl(u));
+    if (valid.length > 0) prefetchAudios(valid);
+  }, []);
+
+  const prefetchNextStages = useCallback((stageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => {
+    const currentIndex = sectionStages.findIndex(s => s.id === stageId);
+    if (currentIndex === -1) return;
+
+    // Pega as próximas 2 etapas
+    const nextStages = sectionStages.slice(currentIndex + 1, currentIndex + 3);
+    const urlsToPrefetch: string[] = [];
+
+    nextStages.forEach(s => {
+      const audios = audiosByStageId[s.id] || [];
+      audios.forEach(a => {
+        if (a.audio_url && isCacheableAudioUrl(a.audio_url)) {
+          urlsToPrefetch.push(a.audio_url);
+        }
+      });
+    });
+
+    if (urlsToPrefetch.length > 0) {
+      prefetchAudios(urlsToPrefetch);
+    }
   }, []);
 
   const pause = useCallback(() => {
@@ -803,7 +827,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     loopEnabled,
     setLoopEnabled,
     play,
-    preload,
+        preload,
+        prefetchNextStages,
     pause,
     resume,
     stop,
