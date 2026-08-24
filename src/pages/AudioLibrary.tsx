@@ -17,7 +17,7 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
+  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
