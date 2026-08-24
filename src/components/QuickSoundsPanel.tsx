@@ -106,6 +106,13 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     };
   }, []);
 
+  // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
+  useEffect(() => {
+    if (!isLoading) {
+      setSounds(loadSounds());
+    }
+  }, [isLoading]);
+
   useEffect(() => {
     // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
     const currentStored = localStorage.getItem(STORAGE_KEY);
