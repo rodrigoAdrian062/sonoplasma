@@ -162,5 +162,6 @@ export function useAudioLibrary() {
     deleteAudio,
     uploadAndAddAudio,
     setDuration,
+    setClima,
   };
 }
