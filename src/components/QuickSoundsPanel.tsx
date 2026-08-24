@@ -101,9 +101,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
     window.addEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY) {
+        syncSounds();
+      }
+    });
+    
     return () => {
       window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
       window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
+      window.removeEventListener('storage', syncSounds);
     };
   }, []);
 
