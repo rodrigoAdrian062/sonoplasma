@@ -62,17 +62,15 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   useEffect(() => {
+    const syncSounds = () => {
+      setSounds(loadSounds());
+    };
+
     const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
       const { nome, url } = e.detail;
       console.log('Recebido evento sonoplastia:addQuickSound:', { nome, url });
       
-      const currentRaw = localStorage.getItem(STORAGE_KEY);
-      let currentSounds: QuickSound[] = [];
-      try {
-        currentSounds = currentRaw ? JSON.parse(currentRaw) : [];
-      } catch (err) {
-        console.error('Erro ao ler localStorage em handleAddExternal:', err);
-      }
+      const currentSounds = loadSounds();
 
       if (currentSounds.length >= MAX_SLOTS) {
         toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
@@ -94,18 +92,28 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
       setSounds(newSounds);
       
+      // Notificar outras instâncias do componente (ex: no header e na sidebar)
+      window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+      
       toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+    window.addEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
     return () => {
       window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+      window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
     };
   }, []);
 
   useEffect(() => {
-    // Apenas persistir se o estado mudar via UI interna (como remoção ou renomeação)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sounds));
+    // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
+    const currentStored = localStorage.getItem(STORAGE_KEY);
+    const newStored = JSON.stringify(sounds);
+    if (currentStored !== newStored) {
+      localStorage.setItem(STORAGE_KEY, newStored);
+      window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+    }
   }, [sounds]);
 
   useEffect(() => {
