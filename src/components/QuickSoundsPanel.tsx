@@ -73,8 +73,34 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
+      previewAudioRef.current?.pause();
+      previewAudioRef.current = null;
     };
   }, []);
+
+  const togglePreview = (id: string, url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (previewingId === id) {
+      previewAudioRef.current?.pause();
+      setPreviewingId(null);
+      return;
+    }
+
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+    }
+
+    const el = new Audio(url);
+    el.volume = volume;
+    el.onended = () => setPreviewingId(null);
+    el.onerror = () => {
+      setPreviewingId(null);
+      toast.error("Erro ao carregar prévia");
+    };
+    previewAudioRef.current = el;
+    setPreviewingId(id);
+    el.play().catch(() => setPreviewingId(null));
+  };
 
   const stop = () => {
     if (audioRef.current) {
