@@ -49,7 +49,7 @@ function loadVolume(): number {
 
 /** Sons rápidos (soundboard) — atalhos de play para efeitos curtos. */
 export function QuickSoundsPanel({ compact = false, fullHeight = false }: { compact?: boolean; fullHeight?: boolean }) {
-  const { audios } = useAudioLibrary();
+  const { audios, isLoading } = useAudioLibrary();
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
