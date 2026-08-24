@@ -65,32 +65,35 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       const { nome, url } = e.detail;
       console.log('Recebido evento sonoplastia:addQuickSound:', { nome, url });
       
-      // Update sounds directly
-      setSounds((prev) => {
-        if (prev.length >= MAX_SLOTS) {
-          toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
-          return prev;
-        }
-        if (prev.some((s) => s.url === url)) {
-          toast.info(`"${nome}" já está nos sons rápidos.`);
-          return prev;
-        }
-        
-        const newSound: QuickSound = { 
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, 
-          nome, 
-          url, 
-          loop: false 
-        };
-        
-        const newSounds = [...prev, newSound];
-        // Persist immediately since setSounds state update might not trigger the other effect in time
-        // if the component is mounted/unmounted quickly, although here it should stay mounted.
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
-        
-        toast.success(`"${nome}" adicionado aos sons rápidos!`);
-        return newSounds;
-      });
+      const currentRaw = localStorage.getItem(STORAGE_KEY);
+      let currentSounds: QuickSound[] = [];
+      try {
+        currentSounds = currentRaw ? JSON.parse(currentRaw) : [];
+      } catch (err) {
+        console.error('Erro ao ler localStorage em handleAddExternal:', err);
+      }
+
+      if (currentSounds.length >= MAX_SLOTS) {
+        toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
+        return;
+      }
+      if (currentSounds.some((s) => s.url === url)) {
+        toast.info(`"${nome}" já está nos sons rápidos.`);
+        return;
+      }
+      
+      const newSound: QuickSound = { 
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, 
+        nome, 
+        url, 
+        loop: false 
+      };
+      
+      const newSounds = [...currentSounds, newSound];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+      setSounds(newSounds);
+      
+      toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
@@ -100,6 +103,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   }, []);
 
   useEffect(() => {
+    // Apenas persistir se o estado mudar via UI interna (como remoção ou renomeação)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sounds));
   }, [sounds]);
 
