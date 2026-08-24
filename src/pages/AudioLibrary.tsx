@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { toast as sonnerToast } from 'sonner';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
