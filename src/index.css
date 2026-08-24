@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  @keyframes music-bar {
+    0%, 100% { height: 40%; }
+    50% { height: 100%; }
+  }
+}
+
 @layer base {
   :root {
     --background: 220 20% 10%;
