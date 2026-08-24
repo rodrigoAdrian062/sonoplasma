@@ -17,7 +17,7 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass
+  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon } from '@/components/AudioSourceIcon';
@@ -1032,6 +1032,9 @@ function VirtualAudioList(props: VirtualAudioListProps) {
     showListView,
   } = props;
 
+  const isSpotifyUrl = (url: string) =>
+    url.includes('open.spotify.com') || url.startsWith('spotify:');
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
@@ -1220,6 +1223,22 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    )}
+                    {!isYouTubeUrl(audio.audio_url) && !isSpotifyUrl(audio.audio_url) && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          window.dispatchEvent(new CustomEvent('sonoplastia:addQuickSound', { 
+                            detail: { nome: audio.nome, url: audio.audio_url } 
+                          }));
+                        }} 
+                        className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
+                        title="Adicionar aos Sons Rápidos"
+                      >
+                        <Zap size={16} />
+                      </Button>
                     )}
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteAudio.mutate(audio.id); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
                       <Trash2 size={16} />
