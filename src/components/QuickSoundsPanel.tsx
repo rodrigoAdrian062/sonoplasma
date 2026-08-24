@@ -374,32 +374,6 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         </span>
       </div>
 
-      {playingId && !compact && (
-        <div className="px-2 py-1.5 bg-gold/10 border border-gold/20 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="flex gap-0.5 items-end h-3 shrink-0">
-              <div className="w-0.5 bg-gold animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
-              <div className="w-0.5 bg-gold animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-[60%]" />
-              <div className="w-0.5 bg-gold animate-[music-bar_0.7s_ease-in-out_infinite_0.2s] h-[80%]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[9px] text-gold font-bold truncate leading-none mb-0.5">
-                {sounds.find(s => s.id === playingId)?.nome}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[8px] text-gold/60 uppercase font-medium">Tocando</span>
-                {sounds.find(s => s.id === playingId)?.loop && (
-                  <div className="flex items-center gap-0.5 px-1 bg-gold/20 rounded text-[7px] text-gold font-bold uppercase">
-                    <Repeat size={6} />
-                    <span>Loop</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="w-full h-px bg-gold/20" />
 
       <div className={cn('flex flex-col gap-1.5', fullHeight && 'flex-1')}>
