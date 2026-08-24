@@ -560,7 +560,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       </div>
 
       {playingId && (
-        <Button variant="outline" size="sm" onClick={stop} className="h-7 text-[10px] border-gold/30">
+        <Button variant="outline" size="sm" onClick={() => stop()} className="h-7 text-[10px] border-gold/30">
           <Square size={10} className="mr-1" /> Parar som
         </Button>
       )}
