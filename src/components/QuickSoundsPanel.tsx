@@ -387,16 +387,28 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 )}
                 <span className="truncate">{s.nome}</span>
               </button>
-              <button
-                onClick={() => toggleLoop(s.id)}
-                title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
-                className={cn(
-                  'absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center border border-background',
-                  s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
-                )}
-              >
-                <Repeat size={8} />
-              </button>
+              <div className="absolute -top-1 -right-1 flex flex-col gap-0.5 pointer-events-auto">
+                <button
+                  onClick={() => toggleLoop(s.id)}
+                  title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
+                  className={cn(
+                    'h-4 w-4 rounded-full flex items-center justify-center border border-background shadow-sm',
+                    s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  <Repeat size={8} />
+                </button>
+                <button
+                  onClick={() => toggleFadeStop(s.id)}
+                  title={s.fadeStop ? 'Fade-out ativo' : 'Ativar fade-out ao parar'}
+                  className={cn(
+                    'h-4 w-4 rounded-full flex items-center justify-center border border-background shadow-sm',
+                    s.fadeStop ? 'bg-blue-500 text-white' : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  <Volume2 size={8} />
+                </button>
+              </div>
             </div>
           ))}
           {sounds.length < MAX_SLOTS && (
