@@ -152,12 +152,36 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     });
   };
 
-  const stop = () => {
+  const stop = (soundId?: string) => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      const currentSound = sounds.find(s => s.id === (soundId || playingId));
+      
+      if (currentSound?.fadeStop && !audioRef.current.paused) {
+        const audio = audioRef.current;
+        const initialVolume = audio.volume;
+        const fadeOutDuration = 1500; // 1.5 seconds
+        const interval = 50;
+        const step = initialVolume / (fadeOutDuration / interval);
+
+        const fadeOut = setInterval(() => {
+          if (audio.volume > step) {
+            audio.volume -= step;
+          } else {
+            audio.volume = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            clearInterval(fadeOut);
+            setPlayingId(null);
+          }
+        }, interval);
+      } else {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setPlayingId(null);
+      }
+    } else {
+      setPlayingId(null);
     }
-    setPlayingId(null);
   };
 
   const trigger = (sound: QuickSound) => {
