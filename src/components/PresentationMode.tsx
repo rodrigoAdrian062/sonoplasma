@@ -246,18 +246,12 @@ function PresentationContent({
   // das N próximas etapas para que o start seja quase instantâneo. Não
   // toca nada — só popula o cache. Respeita o toggle do usuário.
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
+  const { prefetchNextStages } = useUniversalAudioPlayer();
+
   useEffect(() => {
-    if (!prefetchOn) return;
-    const urls: string[] = [];
-    for (let i = 1; i <= PREFETCH_LOOKAHEAD; i++) {
-      const next = stages[selectedStageIndex + i];
-      if (!next) break;
-      (audiosByStageId[next.id] || []).forEach((a) => {
-        if (a.audio_url) urls.push(a.audio_url);
-      });
-    }
-    if (urls.length > 0) prefetchAudios(urls);
-  }, [prefetchOn, selectedStageIndex, stages, audiosByStageId]);
+    if (!prefetchOn || !currentStage) return;
+    prefetchNextStages(currentStage.id, stages, audiosByStageId);
+  }, [prefetchOn, currentStage?.id, stages, audiosByStageId, prefetchNextStages]);
 
 
 
