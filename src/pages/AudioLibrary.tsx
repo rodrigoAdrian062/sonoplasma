@@ -20,7 +20,7 @@ import {
   Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
-import { AudioSourceIcon } from '@/components/AudioSourceIcon';
+import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
@@ -1224,12 +1224,13 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                    {!isYouTubeUrl(audio.audio_url) && !isSpotifyUrl(audio.audio_url) && (
+                    {getAudioSource(audio.audio_url, audio.tipo) === 'file' && (
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         onClick={(e) => { 
                           e.stopPropagation(); 
+                          console.log('Disparando evento sonoplastia:addQuickSound para:', audio.nome);
                           window.dispatchEvent(new CustomEvent('sonoplastia:addQuickSound', { 
                             detail: { nome: audio.nome, url: audio.audio_url } 
                           }));
