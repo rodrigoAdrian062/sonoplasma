@@ -123,9 +123,10 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
   useEffect(() => {
     if (!isLoading) {
+      console.log('useAudioLibrary carregou, sincronizando sons rápidos');
       setSounds(loadSounds());
     }
-  }, [isLoading]);
+  }, [isLoading, audios]);
 
   useEffect(() => {
     // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
