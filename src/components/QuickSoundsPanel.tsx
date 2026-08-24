@@ -285,13 +285,21 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 onClick={() => trigger(s)}
                 title={s.nome}
                 className={cn(
-                  'w-full flex items-center justify-center gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
+                  'w-full flex items-center justify-start gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
                   playingId === s.id
                     ? 'bg-gold text-background border-gold'
                     : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
                 )}
               >
-                {playingId === s.id ? <Square size={10} /> : <Play size={10} />}
+                {playingId === s.id ? (
+                  <div className="flex gap-0.5 items-end h-2.5 shrink-0 mr-0.5">
+                    <div className="w-0.5 bg-background animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
+                    <div className="w-0.5 bg-background animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-[60%]" />
+                    <div className="w-0.5 bg-background animate-[music-bar_0.7s_ease-in-out_infinite_0.2s] h-[80%]" />
+                  </div>
+                ) : (
+                  <Play size={10} className="shrink-0" />
+                )}
                 <span className="truncate">{s.nome}</span>
               </button>
               <button
@@ -346,7 +354,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         </span>
       </div>
 
-      {playingId && (
+      {playingId && !compact && (
         <div className="px-2 py-1.5 bg-gold/10 border border-gold/20 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300">
           <div className="flex items-center gap-2 overflow-hidden">
             <div className="flex gap-0.5 items-end h-3 shrink-0">
@@ -422,7 +430,15 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                   )}
                 >
                   <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
-                  {playingId === s.id ? <Square size={12} className="shrink-0" /> : <Play size={12} className="shrink-0" />}
+                  {playingId === s.id ? (
+                    <div className="flex gap-0.5 items-end h-3 shrink-0">
+                      <div className="w-0.5 bg-background animate-[music-bar_0.6s_ease-in-out_infinite] h-full" />
+                      <div className="w-0.5 bg-background animate-[music-bar_0.8s_ease-in-out_infinite_0.1s] h-[60%]" />
+                      <div className="w-0.5 bg-background animate-[music-bar_0.7s_ease-in-out_infinite_0.2s] h-[80%]" />
+                    </div>
+                  ) : (
+                    <Play size={12} className="shrink-0" />
+                  )}
                   <span className={cn('font-medium truncate flex-1', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
                   {s.loop && <Repeat size={10} className="shrink-0 opacity-80" />}
                 </button>
