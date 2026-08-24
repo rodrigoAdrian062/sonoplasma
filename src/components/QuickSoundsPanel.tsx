@@ -211,19 +211,48 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-4">
             {playableAudios.map((a) => (
-              <button
+              <div
                 key={a.id}
-                onClick={() => {
-                  addSound(a.nome, a.audio_url!);
-                  setPickerOpen(false);
-                }}
-                className="w-full text-left px-3 py-3 rounded-xl border border-gold/10 bg-black/20 hover:border-gold/40 hover:bg-gold/5 transition-all group flex items-center justify-between gap-2"
+                className="w-full flex items-center gap-2 p-1.5 rounded-xl border border-gold/10 bg-black/20 hover:border-gold/30 transition-all group"
               >
-                <span className="text-sm text-foreground truncate font-medium group-hover:text-gold transition-colors">
-                  {a.nome}
-                </span>
-                <Plus size={14} className="text-gold/40 group-hover:text-gold shrink-0" />
-              </button>
+                <button
+                  onClick={(e) => togglePreview(a.id, a.audio_url!, e)}
+                  className={cn(
+                    "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
+                    previewingId === a.id ? "bg-gold text-background" : "bg-gold/10 text-gold hover:bg-gold/20"
+                  )}
+                  title={previewingId === a.id ? "Parar prévia" : "Ouvir prévia"}
+                >
+                  {previewingId === a.id ? <Square size={14} /> : <Play size={14} />}
+                </button>
+                
+                <button
+                  onClick={() => {
+                    addSound(a.nome, a.audio_url!);
+                    setPickerOpen(false);
+                    if (previewAudioRef.current) previewAudioRef.current.pause();
+                    setPreviewingId(null);
+                  }}
+                  className="flex-1 text-left py-2 group-hover:text-gold transition-colors truncate"
+                >
+                  <span className="text-sm font-medium truncate block">
+                    {a.nome}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    addSound(a.nome, a.audio_url!);
+                    setPickerOpen(false);
+                    if (previewAudioRef.current) previewAudioRef.current.pause();
+                    setPreviewingId(null);
+                  }}
+                  className="h-9 w-9 rounded-lg flex items-center justify-center bg-gold/5 text-gold/40 hover:bg-gold/20 hover:text-gold transition-all"
+                  title="Adicionar"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
             ))}
           </div>
         </div>
