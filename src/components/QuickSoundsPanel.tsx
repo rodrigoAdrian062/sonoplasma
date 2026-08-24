@@ -23,6 +23,7 @@ export interface QuickSound {
   nome: string;
   url: string;
   loop?: boolean;
+  fadeStop?: boolean;
 }
 
 function loadSounds(): QuickSound[] {
