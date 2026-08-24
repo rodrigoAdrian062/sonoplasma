@@ -23,6 +23,7 @@ export interface QuickSound {
   nome: string;
   url: string;
   loop?: boolean;
+  fadeStop?: boolean;
 }
 
 function loadSounds(): QuickSound[] {
@@ -151,17 +152,41 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     });
   };
 
-  const stop = () => {
+  const stop = (soundId?: string) => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      const currentSound = sounds.find(s => s.id === (soundId || playingId));
+      
+      if (currentSound?.fadeStop && !audioRef.current.paused) {
+        const audio = audioRef.current;
+        const initialVolume = audio.volume;
+        const fadeOutDuration = 1500; // 1.5 seconds
+        const interval = 50;
+        const step = initialVolume / (fadeOutDuration / interval);
+
+        const fadeOut = setInterval(() => {
+          if (audio.volume > step) {
+            audio.volume -= step;
+          } else {
+            audio.volume = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            clearInterval(fadeOut);
+            setPlayingId(null);
+          }
+        }, interval);
+      } else {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setPlayingId(null);
+      }
+    } else {
+      setPlayingId(null);
     }
-    setPlayingId(null);
   };
 
   const trigger = (sound: QuickSound) => {
     if (playingId === sound.id) {
-      stop();
+      stop(sound.id);
       return;
     }
     stop();
@@ -221,9 +246,18 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     });
   };
 
+  const toggleFadeStop = (id: string) => {
+    setSounds((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, fadeStop: !s.fadeStop } : s));
+      const target = next.find((s) => s.id === id);
+      toast.success(target?.fadeStop ? `Fade-out ativado: ${target.nome}` : `Fade-out desativado: ${target?.nome}`);
+      return next;
+    });
+  };
+
   const removeSound = (id: string) => {
     setSounds((prev) => prev.filter((s) => s.id !== id));
-    if (playingId === id) stop();
+    if (playingId === id) stop(id);
   };
 
 
@@ -353,16 +387,28 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 )}
                 <span className="truncate">{s.nome}</span>
               </button>
-              <button
-                onClick={() => toggleLoop(s.id)}
-                title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
-                className={cn(
-                  'absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center border border-background',
-                  s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
-                )}
-              >
-                <Repeat size={8} />
-              </button>
+              <div className="absolute -top-1 -right-1 flex flex-col gap-0.5 pointer-events-auto">
+                <button
+                  onClick={() => toggleLoop(s.id)}
+                  title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
+                  className={cn(
+                    'h-4 w-4 rounded-full flex items-center justify-center border border-background shadow-sm',
+                    s.loop ? 'bg-gold text-background' : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  <Repeat size={8} />
+                </button>
+                <button
+                  onClick={() => toggleFadeStop(s.id)}
+                  title={s.fadeStop ? 'Fade-out ativo' : 'Ativar fade-out ao parar'}
+                  className={cn(
+                    'h-4 w-4 rounded-full flex items-center justify-center border border-background shadow-sm',
+                    s.fadeStop ? 'bg-blue-500 text-white' : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  <Volume2 size={8} />
+                </button>
+              </div>
             </div>
           ))}
           {sounds.length < MAX_SLOTS && (
@@ -479,6 +525,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                     <Repeat size={8} />
                   </button>
                   <button
+                    onClick={() => toggleFadeStop(s.id)}
+                    className={cn(
+                      'h-4 w-4 rounded-full flex items-center justify-center',
+                      s.fadeStop ? 'bg-blue-500 text-white' : 'bg-secondary text-muted-foreground'
+                    )}
+                    title={s.fadeStop ? 'Fade-out ativo (parar suave)' : 'Ativar fade-out ao parar'}
+                  >
+                    <Volume2 size={8} />
+                  </button>
+                  <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"
                     title="Editar nome do botão"
@@ -526,7 +582,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       </div>
 
       {playingId && (
-        <Button variant="outline" size="sm" onClick={stop} className="h-7 text-[10px] border-gold/30">
+        <Button variant="outline" size="sm" onClick={() => stop()} className="h-7 text-[10px] border-gold/30">
           <Square size={10} className="mr-1" /> Parar som
         </Button>
       )}
