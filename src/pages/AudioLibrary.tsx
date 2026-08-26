@@ -56,7 +56,7 @@ const FOLDER_COLORS = [
 
 const FOLDER_ICONS: Record<string, React.ComponentType<any>> = {
   Folder, Music, Headphones, Radio, Mic, Star, Heart, Flame,
-  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass,
+  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, BookOpen,
 };
 
 function FolderIcon({ name, size = 20, className = '' }: { name?: string | null; size?: number; className?: string }) {
