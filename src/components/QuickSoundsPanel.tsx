@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { VolumePresets } from './VolumePresets';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';

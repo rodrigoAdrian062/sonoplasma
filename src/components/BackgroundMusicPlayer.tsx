@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Plus, Volume2, Music2, X, ListMusic, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { VolumePresets } from './VolumePresets';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useBackgroundMusic } from '@/contexts/BackgroundMusicContext';

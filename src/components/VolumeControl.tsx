@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { VolumePresets } from './VolumePresets';
 
 interface VolumeControlProps {
   volume: number;
