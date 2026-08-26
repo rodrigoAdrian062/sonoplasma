@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Plus, Volume2, Music2, X, ListMusic, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { VolumePresets } from './VolumePresets';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { useBackgroundMusic } from '@/contexts/BackgroundMusicContext';
@@ -213,6 +214,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                 </span>
               </div>
             </div>
+            <VolumePresets volume={volume} onVolumeChange={setVolume} compact />
+
 
             {/* Crossfade entre faixas */}
             <div className="space-y-1 pt-2 border-t border-border/40">

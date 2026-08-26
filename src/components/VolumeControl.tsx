@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { VolumePresets } from './VolumePresets';
 
 interface VolumeControlProps {
   volume: number;
@@ -55,6 +56,11 @@ export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
       <span className="text-xs text-muted-foreground w-8 text-right">
         {Math.round(volume * 100)}%
       </span>
+
+      <div className="w-40 pl-3 border-l border-border">
+        <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+      </div>
+
 
       <div className="flex items-center gap-1.5 pl-3 border-l border-border">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">

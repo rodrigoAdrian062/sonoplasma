@@ -18,6 +18,7 @@ import { EqualizerPanel } from './EqualizerPanel';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { VolumePresets } from './VolumePresets';
 import { setPresentationActive } from '@/lib/presentationState';
 import { cn } from '@/lib/utils';
 import type { EQSettings } from '@/hooks/useUniversalAudioPlayer';
@@ -743,6 +744,12 @@ function PresentationContent({
             </span>
           </div>
         )}
+        {showVolume && (
+          <div className="w-full px-1 pb-1 sm:hidden animate-fade-in">
+            <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+          </div>
+        )}
+
 
         {/* Header Progress Bar */}
         {isActive && audioDuration > 0 && (
@@ -827,6 +834,10 @@ function PresentationContent({
             >
               {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
             </button>
+            <div className="w-full pt-3 border-t border-gold/20">
+              <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+            </div>
+
             <div className="flex flex-col items-center gap-1 pt-3 border-t border-gold/20 w-full">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Iniciar em
