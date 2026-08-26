@@ -517,6 +517,8 @@ export function StageCard({
               onValueChange={(vals) => setStageVolume(vals[0] / 100)}
               className="py-2"
             />
+            <VolumePresets volume={stageVolume} onVolumeChange={setStageVolume} className="mt-1" />
+
           </div>
         )}
 
