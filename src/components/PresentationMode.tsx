@@ -834,6 +834,10 @@ function PresentationContent({
             >
               {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
             </button>
+            <div className="w-full pt-3 border-t border-gold/20">
+              <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+            </div>
+
             <div className="flex flex-col items-center gap-1 pt-3 border-t border-gold/20 w-full">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Iniciar em
