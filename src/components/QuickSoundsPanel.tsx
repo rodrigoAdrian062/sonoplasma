@@ -610,6 +610,8 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         />
         <span className="text-[9px] text-gold/70 w-7 text-right">{Math.round(volume * 100)}%</span>
       </div>
+      <VolumePresets volume={volume} onVolumeChange={setVolume} compact />
+
 
       {playingId && (
         <Button variant="outline" size="sm" onClick={() => stop()} className="h-7 text-[10px] border-gold/30">
