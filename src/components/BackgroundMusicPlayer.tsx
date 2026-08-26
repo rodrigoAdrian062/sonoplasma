@@ -213,6 +213,8 @@ export function BackgroundMusicPlayer({ variant = 'header', compact = false }: B
                 </span>
               </div>
             </div>
+            <VolumePresets volume={volume} onVolumeChange={setVolume} compact />
+
 
             {/* Crossfade entre faixas */}
             <div className="space-y-1 pt-2 border-t border-border/40">
