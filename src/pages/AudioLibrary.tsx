@@ -130,7 +130,7 @@ function TrackHzSelector({ url }: { url: string }) {
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
-  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
 
   const { stages } = useStages();
   const { sections } = useSections();
