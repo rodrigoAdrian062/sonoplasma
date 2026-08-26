@@ -744,6 +744,12 @@ function PresentationContent({
             </span>
           </div>
         )}
+        {showVolume && (
+          <div className="w-full px-1 pb-1 sm:hidden animate-fade-in">
+            <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+          </div>
+        )}
+
 
         {/* Header Progress Bar */}
         {isActive && audioDuration > 0 && (
