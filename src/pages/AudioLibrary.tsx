@@ -866,15 +866,31 @@ export default function AudioLibraryPage() {
                 </Button>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewFolderInput(true)}
-                className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
-              >
-                <FolderPlus size={14} className="mr-1" /> Nova pasta
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewFolderInput(true)}
+                  className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
+                >
+                  <FolderPlus size={14} className="mr-1" /> Nova pasta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => createDefaultFolders.mutate()}
+                  disabled={createDefaultFolders.isPending}
+                  className="border-dashed border-gold/30 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                  title="Cria as 9 pastas oficiais: 01 Entrada → 09 Saída"
+                >
+                  {createDefaultFolders.isPending
+                    ? <Loader2 className="animate-spin mr-1" size={14} />
+                    : <Sparkles size={14} className="mr-1" />}
+                  Criar estrutura ritual (9 pastas)
+                </Button>
+              </div>
             )}
+
           </div>
         )}
 
