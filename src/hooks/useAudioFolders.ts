@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { PASTAS_PADRAO } from '@/lib/pastasPadrao';
 
 export interface AudioFolder {
   id: string;
@@ -112,5 +113,34 @@ export function useAudioFolders() {
     },
   });
 
-  return { folders, isLoading, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder };
+  const createDefaultFolders = useMutation({
+    mutationFn: async () => {
+      const existentes = new Set(folders.map((f) => f.nome.trim().toLowerCase()));
+      const novas = PASTAS_PADRAO.filter((p) => !existentes.has(p.nome.toLowerCase()));
+      if (novas.length === 0) return 0;
+      const { error } = await supabase.from('sonoplastia_audios_pastas').insert(
+        novas.map((p, i) => ({
+          nome: p.nome,
+          icone: p.icone,
+          cor: p.cor,
+          ordem: folders.length + i,
+        })),
+      );
+      if (error) throw error;
+      return novas.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      toast({
+        title: count ? `${count} pasta(s) padrão criada(s)` : 'Estrutura já está completa',
+        description: count ? 'Estrutura ritual 01 Entrada → 09 Saída pronta.' : undefined,
+      });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao criar estrutura padrão', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  return { folders, isLoading, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders };
 }
+

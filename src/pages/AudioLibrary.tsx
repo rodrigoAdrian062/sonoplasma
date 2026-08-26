@@ -18,7 +18,7 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, Zap, Thermometer
+  Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
@@ -56,7 +56,7 @@ const FOLDER_COLORS = [
 
 const FOLDER_ICONS: Record<string, React.ComponentType<any>> = {
   Folder, Music, Headphones, Radio, Mic, Star, Heart, Flame,
-  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass,
+  Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, BookOpen,
 };
 
 function FolderIcon({ name, size = 20, className = '' }: { name?: string | null; size?: number; className?: string }) {
@@ -130,7 +130,7 @@ function TrackHzSelector({ url }: { url: string }) {
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
-  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder } = useAudioFolders();
+  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
 
   const { stages } = useStages();
   const { sections } = useSections();
@@ -866,15 +866,31 @@ export default function AudioLibraryPage() {
                 </Button>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewFolderInput(true)}
-                className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
-              >
-                <FolderPlus size={14} className="mr-1" /> Nova pasta
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewFolderInput(true)}
+                  className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
+                >
+                  <FolderPlus size={14} className="mr-1" /> Nova pasta
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => createDefaultFolders.mutate()}
+                  disabled={createDefaultFolders.isPending}
+                  className="border-dashed border-gold/30 text-muted-foreground hover:text-gold hover:bg-gold/10"
+                  title="Cria as 9 pastas oficiais: 01 Entrada → 09 Saída"
+                >
+                  {createDefaultFolders.isPending
+                    ? <Loader2 className="animate-spin mr-1" size={14} />
+                    : <Sparkles size={14} className="mr-1" />}
+                  Criar estrutura ritual (9 pastas)
+                </Button>
+              </div>
             )}
+
           </div>
         )}
 
