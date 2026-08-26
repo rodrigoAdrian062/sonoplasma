@@ -56,6 +56,11 @@ export function VolumeControl({ volume, onVolumeChange }: VolumeControlProps) {
         {Math.round(volume * 100)}%
       </span>
 
+      <div className="w-40 pl-3 border-l border-border">
+        <VolumePresets volume={volume} onVolumeChange={onVolumeChange} compact />
+      </div>
+
+
       <div className="flex items-center gap-1.5 pl-3 border-l border-border">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground whitespace-nowrap">
           Iniciar em
