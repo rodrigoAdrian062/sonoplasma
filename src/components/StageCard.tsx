@@ -17,6 +17,7 @@ import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioC
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { Slider } from '@/components/ui/slider';
+import { VolumePresets } from './VolumePresets';
 
 
 interface StageCardProps {
