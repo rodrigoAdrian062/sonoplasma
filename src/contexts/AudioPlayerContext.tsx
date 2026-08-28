@@ -636,11 +636,20 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         // Ignora se o usuário já trocou de áudio nesse meio tempo.
         if (currentUrlRef.current !== url) return;
         audio.src = cachedUrl || url;
+        audio.load();
         const attemptPlay = (retry = 0) => {
           audio.play().catch((err) => {
-            // Autoplay bloqueado ou erro de rede: 1 retry rápido e depois notifica.
+            // Trocou de áudio nesse meio tempo ou play interrompido: ignora.
+            if (currentUrlRef.current !== url) return;
+            if (err?.name === 'AbortError' || /interrupt/i.test(err?.message || '')) return;
+            // Autoplay bloqueado ou erro de rede: tenta a URL remota e depois notifica.
             if (retry === 0 && err?.name !== 'NotAllowedError') {
-              setTimeout(() => attemptPlay(1), 500);
+              setTimeout(() => {
+                if (currentUrlRef.current !== url) return;
+                // Se o blob do cache falhou, tenta direto da origem.
+                if (cachedUrl && audio.src !== url) { audio.src = url; audio.load(); }
+                attemptPlay(1);
+              }, 500);
               return;
             }
             // eslint-disable-next-line no-console
