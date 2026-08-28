@@ -154,6 +154,28 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     };
   }, []);
 
+  /** Erros de interrupção (troca rápida de faixa) não são falhas reais. */
+  const isAbortError = (err: any) =>
+    err?.name === 'AbortError' || /interrupt/i.test(err?.message || '');
+
+  /** Mensagem clara conforme o código de erro do elemento de mídia. */
+  const mediaErrorText = (el: HTMLAudioElement) => {
+    switch (el.error?.code) {
+      case 1: return 'reprodução cancelada.';
+      case 2: return 'falha de rede ao baixar o arquivo.';
+      case 3: return 'arquivo de áudio corrompido.';
+      case 4: return 'formato não suportado pelo navegador.';
+      default: return 'erro desconhecido.';
+    }
+  };
+
+  const clearFade = () => {
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+  };
+
   const togglePreview = (id: string, url: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (previewingId === id) {
@@ -163,52 +185,63 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     }
 
     if (previewAudioRef.current) {
+      previewAudioRef.current.onerror = null;
+      previewAudioRef.current.onended = null;
       previewAudioRef.current.pause();
     }
 
     const el = new Audio();
-    el.crossOrigin = "anonymous";
+    el.preload = 'auto';
     el.src = url;
     el.volume = volume;
     el.onended = () => setPreviewingId(null);
-    el.onerror = (e) => {
-      console.error("Erro no carregamento do áudio de prévia:", e);
+    el.onerror = () => {
+      if (previewAudioRef.current !== el) return;
       setPreviewingId(null);
-      toast.error("Erro ao carregar prévia: verifique o formato do arquivo ou conexão.");
+      toast.error(`Não foi possível ouvir a prévia: ${mediaErrorText(el)}`);
     };
     previewAudioRef.current = el;
     setPreviewingId(id);
     el.play().catch((err) => {
-      console.error("Erro ao dar play na prévia:", err);
+      if (previewAudioRef.current !== el || isAbortError(err)) return;
       setPreviewingId(null);
+      toast.error('Toque na tela para liberar o áudio e tente novamente.');
     });
   };
 
   const stop = (soundId?: string) => {
+    clearFade();
     if (audioRef.current) {
       const currentSound = sounds.find(s => s.id === (soundId || playingId));
-      
+
       if (currentSound?.fadeStop && !audioRef.current.paused) {
         const audio = audioRef.current;
         const initialVolume = audio.volume;
-        const fadeOutDuration = 1500; // 1.5 seconds
+        const fadeOutDuration = 1500; // 1.5 segundos
         const interval = 50;
         const step = initialVolume / (fadeOutDuration / interval);
 
-        const fadeOut = setInterval(() => {
+        fadeIntervalRef.current = setInterval(() => {
+          // Se outro som assumiu o elemento, encerra o fade sem interferir.
+          if (audioRef.current !== audio) {
+            clearFade();
+            return;
+          }
           if (audio.volume > step) {
-            audio.volume -= step;
+            audio.volume = Math.max(0, audio.volume - step);
           } else {
             audio.volume = 0;
             audio.pause();
             audio.currentTime = 0;
-            clearInterval(fadeOut);
+            audio.volume = volume;
+            clearFade();
             setPlayingId(null);
           }
         }, interval);
       } else {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
+        audioRef.current.volume = volume;
         setPlayingId(null);
       }
     } else {
@@ -222,29 +255,53 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       return;
     }
     stop();
+    // Um fade em andamento não pode continuar baixando/pausando o novo som.
+    clearFade();
     if (isUnsupportedFormat(sound.url)) {
       toast.error('Formato não suportado pelo navegador (WMA). Use MP3, M4A, OGG ou WAV.');
       return;
     }
-    const el = audioRef.current && !audioRef.current.src ? audioRef.current : new Audio();
+    // Reutiliza sempre o mesmo elemento, totalmente reiniciado.
+    const el = audioRef.current ?? new Audio();
+    el.onended = null;
+    el.onerror = null;
+    try { el.pause(); } catch { /* noop */ }
+    el.crossOrigin = null;
     el.preload = 'auto';
-    el.src = sound.url;
-    el.volume = volume;
     el.loop = !!sound.loop;
+    el.volume = volume;
+    el.src = sound.url;
+    el.currentTime = 0;
+    el.load();
     el.onended = () => {
       if (sound.loop) return;
       setPlayingId((cur) => (cur === sound.id ? null : cur));
     };
     el.onerror = () => {
+      if (audioRef.current !== el) return;
       setPlayingId((cur) => (cur === sound.id ? null : cur));
-      toast.error(`Não foi possível tocar "${sound.nome}". Verifique o formato do arquivo.`);
+      toast.error(`Não foi possível tocar "${sound.nome}": ${mediaErrorText(el)}`);
     };
     audioRef.current = el;
     setPlayingId(sound.id);
-    el.play().catch((err) => {
-      setPlayingId(null);
-      toast.error(`Falha ao tocar "${sound.nome}": ${err?.message || 'erro desconhecido'}`);
-    });
+
+    const attempt = (retry = 0) => {
+      el.play().catch((err) => {
+        // Troca rápida de faixa: ignora, o novo som assume.
+        if (audioRef.current !== el || isAbortError(err)) return;
+        if (retry === 0 && err?.name !== 'NotAllowedError') {
+          setTimeout(() => attempt(1), 400);
+          return;
+        }
+        setPlayingId(null);
+        toast.error(
+          err?.name === 'NotAllowedError'
+            ? 'Toque na tela para liberar o áudio e tente novamente.'
+            : `Falha ao tocar "${sound.nome}": ${err?.message || 'erro desconhecido'}`
+        );
+      });
+    };
+    attempt();
   };
 
   const addSound = (nome: string, url: string) => {
