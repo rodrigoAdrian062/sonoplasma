@@ -5,9 +5,14 @@ import { getYouTubeVideoId, parseSpotify } from '@/lib/embedUrl';
 
 export type LinkKind = 'youtube' | 'spotify' | 'direct';
 
-export type NormalizeResult =
-  | { ok: true; kind: LinkKind; url: string; tipo: string; corrected: boolean }
-  | { ok: false; error: string };
+export type NormalizeResult = {
+  ok: boolean;
+  kind?: LinkKind;
+  url?: string;
+  tipo?: string;
+  corrected?: boolean;
+  error?: string;
+};
 
 /** Limpa lixo comum: espaços, aspas, markdown, pontuação final, texto colado junto. */
 export function cleanRawLink(raw: string): string {
