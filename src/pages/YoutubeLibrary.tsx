@@ -21,6 +21,7 @@ import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 import { getYouTubeVideoId as getYTId } from '@/lib/embedUrl';
+import { normalizeMediaUrl } from '@/lib/linkNormalize';
 
 function getYouTubeVideoId(url: string): string | null {
   return getYTId(url);

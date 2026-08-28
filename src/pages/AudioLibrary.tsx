@@ -24,6 +24,7 @@ import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffec
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { normalizeMediaUrl } from '@/lib/linkNormalize';
 import {
   destroySpotifyPlayer,
   pauseSpotifyEntity,
