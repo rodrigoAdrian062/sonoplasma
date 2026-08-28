@@ -47,38 +47,38 @@ export function normalizeMediaUrl(
   opts: { expect?: 'youtube' | 'spotify'; allowDirect?: boolean } = {},
 ): NormalizeResult {
   const cleaned = cleanRawLink(raw);
-  if (!cleaned) return { ok: false, error: 'Cole um link válido.' };
+  if (!cleaned) return fail('Cole um link válido.');
 
   const ytId = getYouTubeVideoId(cleaned);
   if (ytId) {
-    if (opts.expect === 'spotify') return { ok: false, error: 'Este é um link do YouTube, não do Spotify.' };
+    if (opts.expect === 'spotify') return fail('Este é um link do YouTube, não do Spotify.');
     const url = `https://www.youtube.com/watch?v=${ytId}`;
-    return { ok: true, kind: 'youtube', url, tipo: 'youtube', corrected: url !== raw.trim() };
+    return { ok: true, kind: 'youtube', url, tipo: 'youtube', corrected: url !== raw.trim(), error: '' };
   }
 
   const sp = parseSpotify(cleaned);
   if (sp) {
-    if (opts.expect === 'youtube') return { ok: false, error: 'Este é um link do Spotify, não do YouTube.' };
+    if (opts.expect === 'youtube') return fail('Este é um link do Spotify, não do YouTube.');
     const url = `https://open.spotify.com/${sp.type}/${sp.id}`;
-    return { ok: true, kind: 'spotify', url, tipo: 'spotify', corrected: url !== raw.trim() };
+    return { ok: true, kind: 'spotify', url, tipo: 'spotify', corrected: url !== raw.trim(), error: '' };
   }
 
   // Parece YouTube/Spotify mas está incompleto/inválido.
   const low = cleaned.toLowerCase();
-  if (low.includes('youtu')) return { ok: false, error: 'Link do YouTube inválido ou incompleto.' };
-  if (low.includes('spotify')) return { ok: false, error: 'Link do Spotify inválido ou incompleto.' };
+  if (low.includes('youtu')) return fail('Link do YouTube inválido ou incompleto.');
+  if (low.includes('spotify')) return fail('Link do Spotify inválido ou incompleto.');
 
-  if (opts.expect === 'youtube') return { ok: false, error: 'Cole um link de vídeo do YouTube.' };
-  if (opts.expect === 'spotify') return { ok: false, error: 'Cole um link de faixa/álbum/playlist do Spotify.' };
+  if (opts.expect === 'youtube') return fail('Cole um link de vídeo do YouTube.');
+  if (opts.expect === 'spotify') return fail('Cole um link de faixa/álbum/playlist do Spotify.');
 
-  if (opts.allowDirect === false) return { ok: false, error: 'Link não reconhecido.' };
+  if (opts.allowDirect === false) return fail('Link não reconhecido.');
 
   try {
     const u = new URL(cleaned.startsWith('http') ? cleaned : `https://${cleaned}`);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('bad');
     const url = u.toString();
-    return { ok: true, kind: 'direct', url, tipo: 'external', corrected: url !== raw.trim() };
+    return { ok: true, kind: 'direct', url, tipo: 'external', corrected: url !== raw.trim(), error: '' };
   } catch {
-    return { ok: false, error: 'URL inválida.' };
+    return fail('URL inválida.');
   }
 }
