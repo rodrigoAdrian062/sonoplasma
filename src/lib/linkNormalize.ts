@@ -7,12 +7,18 @@ export type LinkKind = 'youtube' | 'spotify' | 'direct';
 
 export type NormalizeResult = {
   ok: boolean;
-  kind?: LinkKind;
-  url?: string;
-  tipo?: string;
-  corrected?: boolean;
-  error?: string;
+  /** URL canônica (vazia quando inválida). */
+  url: string;
+  kind: LinkKind | null;
+  tipo: string;
+  corrected: boolean;
+  /** Mensagem de erro (vazia quando válida). */
+  error: string;
 };
+
+function fail(error: string): NormalizeResult {
+  return { ok: false, url: '', kind: null, tipo: '', corrected: false, error };
+}
 
 /** Limpa lixo comum: espaços, aspas, markdown, pontuação final, texto colado junto. */
 export function cleanRawLink(raw: string): string {
