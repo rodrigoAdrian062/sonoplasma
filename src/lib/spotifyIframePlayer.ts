@@ -67,9 +67,10 @@ function emitPlayback(data: SpotifyPlaybackData) {
 
 function configureSpotifyIframe() {
   if (typeof window === 'undefined') return;
+  // Não forçamos "locale": o embed do Spotify rejeita alguns formatos
+  // ("Incorrect locale information provided") e para de tocar.
   window.SpotifyIframeConfig = {
     ...(window.SpotifyIframeConfig || {}),
-    locale: SPOTIFY_LOCALE,
     referrer: window.location.origin,
   };
 }
