@@ -471,10 +471,21 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     container.innerHTML = '';
     container.appendChild(playerDiv);
 
-    const initPlayer = () => {
+    const initPlayer = (attempts = 0) => {
       if (disposed) return;
       if (!(window as any).YT || !(window as any).YT.Player) {
-        ytInitTimeoutRef.current = window.setTimeout(initPlayer, 100);
+        // A API pode demorar em redes lentas; avisa só depois de ~15s.
+        if (attempts > 150) {
+          console.error('[YouTube] API não carregou');
+          try {
+            import('sonner').then(({ toast }) =>
+              toast.error('Não foi possível carregar o player do YouTube. Verifique a internet.'),
+            );
+          } catch { /* noop */ }
+          setStatus('idle');
+          return;
+        }
+        ytInitTimeoutRef.current = window.setTimeout(() => initPlayer(attempts + 1), 100);
         return;
       }
       ytInitTimeoutRef.current = null;
@@ -482,6 +493,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         height: '1',
         width: '1',
         videoId: videoId,
+        host: 'https://www.youtube.com',
         playerVars: {
           autoplay: 1,
           controls: 0,
@@ -489,13 +501,28 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           fs: 0,
           modestbranding: 1,
           rel: 0,
+          playsinline: 1,
+          enablejsapi: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (event: any) => {
             ytPlayerReadyRef.current = true;
             event.target.setVolume(volumeRef.current * 100);
+            event.target.unMute?.();
             event.target.playVideo();
             pendingPlayRef.current = null;
+            // Se o autoplay não engatar (comum em tablets), tenta de novo.
+            window.setTimeout(() => {
+              try {
+                const YT = (window as any).YT;
+                const p = ytPlayerRef.current;
+                if (!p || !YT) return;
+                if (p.getPlayerState?.() !== YT.PlayerState.PLAYING) {
+                  p.playVideo();
+                }
+              } catch { /* noop */ }
+            }, 1200);
           },
           onStateChange: (event: any) => {
             const YT = (window as any).YT;
@@ -514,7 +541,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               setIsYouTube(false);
               setYoutubeVideoId(null);
               currentUrlRef.current = null;
-      setCurrentUrl(null);
+              setCurrentUrl(null);
             } else if (event.data === YT.PlayerState.PLAYING) {
               setStatus('playing');
             } else if (event.data === YT.PlayerState.PAUSED) {
@@ -522,19 +549,31 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             }
           },
           onError: (event: any) => {
-            console.error('YouTube player error:', event.data);
+            const code = event?.data;
+            console.error('YouTube player error:', code, { videoId });
+            const motivo =
+              code === 2 ? 'link inválido.' :
+              code === 5 ? 'este vídeo não toca neste navegador.' :
+              code === 100 ? 'vídeo removido ou privado.' :
+              (code === 101 || code === 150) ? 'o autor não permite tocar fora do YouTube.' :
+              'erro desconhecido.';
+            try {
+              import('sonner').then(({ toast }) =>
+                toast.error(`Faixa do YouTube indisponível: ${motivo}`),
+              );
+            } catch { /* noop */ }
             setStatus('idle');
             setCurrentStageId(null);
             setIsYouTube(false);
             setYoutubeVideoId(null);
             currentUrlRef.current = null;
-      setCurrentUrl(null);
+            setCurrentUrl(null);
           },
         },
       });
     };
     initPlayer();
-  }, []);
+  }, [disposed]);
 
   const play = useCallback((stageId: string, url: string) => {
     clearFade();
