@@ -47,6 +47,7 @@ const PLATFORM_META = {
 };
 
 import { getYouTubeVideoId } from '@/lib/embedUrl';
+import { normalizeMediaUrl } from '@/lib/linkNormalize';
 
 function normalize(url: string): string {
   const u = (url || '').trim().toLowerCase();
@@ -127,18 +128,21 @@ export function BulkAddLinksDialog({
     // Dedup within paste
     const seen = new Set<string>();
     const initial: Row[] = [];
-    for (const { url, hint } of lines) {
+    for (const { url: rawUrl, hint } of lines) {
+      // Valida e normaliza (corrige formatos comuns) antes de qualquer coisa.
+      const res = normalizeMediaUrl(rawUrl, { expect: platform });
+      const url = res.ok ? res.url : rawUrl;
       const key = normalize(url);
       if (seen.has(key)) continue;
       seen.add(key);
-      const valid = isValidUrl(url);
+      const valid = res.ok && isValidUrl(url);
       const dup = existingSet.has(key);
       initial.push({
         id: crypto.randomUUID(),
         url,
         title: hint || '',
         status: !valid ? 'invalid' : dup ? 'duplicate' : hint ? 'ready' : 'pending',
-        message: !valid ? 'Link inválido' : dup ? 'Já está na biblioteca' : undefined,
+        message: !valid ? (res.ok ? 'Link inválido' : res.error) : dup ? 'Já está na biblioteca' : undefined,
       });
     }
     setRows(initial);

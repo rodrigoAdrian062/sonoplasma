@@ -21,6 +21,7 @@ import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 import { getYouTubeVideoId as getYTId } from '@/lib/embedUrl';
+import { normalizeMediaUrl } from '@/lib/linkNormalize';
 
 function getYouTubeVideoId(url: string): string | null {
   return getYTId(url);
@@ -219,17 +220,18 @@ export default function YoutubeLibraryPage() {
 
   const handleAdd = async () => {
     if (!newUrl.trim()) return;
-    if (!isYouTubeUrl(newUrl)) {
-      toast({ title: 'Link do YouTube inválido', description: 'Cole um link de vídeo do YouTube.', variant: 'destructive' });
+    const res = normalizeMediaUrl(newUrl, { expect: 'youtube' });
+    if (!res.ok) {
+      toast({ title: 'Link do YouTube inválido', description: res.error, variant: 'destructive' });
       return;
     }
     let finalName = newName.trim();
     if (!finalName) {
       const { fetchLinkTitle } = await import('@/lib/fetchLinkTitle');
-      finalName = (await fetchLinkTitle(newUrl.trim())) || 'Vídeo do YouTube';
+      finalName = (await fetchLinkTitle(res.url)) || 'Vídeo do YouTube';
     }
     try {
-      await addAudio.mutateAsync({ nome: finalName, audio_url: newUrl.trim(), tipo: 'youtube' });
+      await addAudio.mutateAsync({ nome: finalName, audio_url: res.url, tipo: 'youtube' });
       setNewName(''); setNewUrl(''); setNameEdited(false);
       setShowAddForm(false);
     } catch { /* handled by hook */ }

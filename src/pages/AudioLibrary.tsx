@@ -24,6 +24,7 @@ import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffec
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { normalizeMediaUrl } from '@/lib/linkNormalize';
 import {
   destroySpotifyPlayer,
   pauseSpotifyEntity,
@@ -219,12 +220,13 @@ export default function AudioLibraryPage() {
   }, [audios]);
 
 
-  // Filter audios by current folder and usage filter (YouTube tem aba própria)
+  // Filter audios by current folder and usage filter (YouTube/Spotify têm abas próprias)
   const filteredAudios = audios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
+    const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = (a as any).pasta_id;
-    // Fora de pastas (raiz): esconde YouTube — tem aba própria.
-    if (!currentFolderId && isYt) return false;
+    // Fora de pastas (raiz): esconde YouTube/Spotify — têm abas próprias.
+    if (!currentFolderId && (isYt || isSp)) return false;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
@@ -499,11 +501,16 @@ export default function AudioLibraryPage() {
 
   const handleAddUrl = async () => {
     if (!newAudioUrl.trim() || !newAudioName.trim()) return;
+    const res = normalizeMediaUrl(newAudioUrl);
+    if (!res.ok) {
+      toast({ title: 'Link inválido', description: res.error, variant: 'destructive' });
+      return;
+    }
     try {
       const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
-        audio_url: newAudioUrl.trim(),
-        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        audio_url: res.url,
+        tipo: res.tipo,
       });
       if (currentFolderId && result?.id) {
         await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
@@ -676,6 +683,16 @@ export default function AudioLibraryPage() {
               >
                 <YoutubeIcon size={14} className="mr-1" />
                 <span className="hidden sm:inline">YouTube</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/spotify')}
+                className="shrink-0"
+                style={{ borderColor: '#1DB95499', color: '#1DB954' }}
+              >
+                <SpotifyIcon size={14} className="mr-1" />
+                <span className="hidden sm:inline">Spotify</span>
               </Button>
             </>
           )}
