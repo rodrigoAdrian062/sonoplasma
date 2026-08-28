@@ -500,11 +500,16 @@ export default function AudioLibraryPage() {
 
   const handleAddUrl = async () => {
     if (!newAudioUrl.trim() || !newAudioName.trim()) return;
+    const res = normalizeMediaUrl(newAudioUrl);
+    if (!res.ok) {
+      toast({ title: 'Link inválido', description: res.error, variant: 'destructive' });
+      return;
+    }
     try {
       const result = await addAudio.mutateAsync({
         nome: newAudioName.trim(),
-        audio_url: newAudioUrl.trim(),
-        tipo: isYouTubeUrl(newAudioUrl) ? 'youtube' : 'external',
+        audio_url: res.url,
+        tipo: res.tipo,
       });
       if (currentFolderId && result?.id) {
         await moveAudioToFolder.mutateAsync({ audioId: result.id, folderId: currentFolderId });
