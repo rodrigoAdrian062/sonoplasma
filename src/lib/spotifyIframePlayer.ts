@@ -52,7 +52,6 @@ let controllerPromise: Promise<SpotifyEmbedController> | null = null;
 let controller: SpotifyEmbedController | null = null;
 let loadedUri: string | null = null;
 
-const SPOTIFY_LOCALE = 'pt-BR';
 
 const playbackListeners = new Set<(data: SpotifyPlaybackData) => void>();
 
