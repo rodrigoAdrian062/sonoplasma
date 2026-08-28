@@ -645,7 +645,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         currentUrlRef.current = null;
         setCurrentUrl(null);
         try {
-          import('sonner').then(({ toast }) => toast.error('Não foi possível iniciar o Spotify.'));
+          import('sonner').then(({ toast }) => toast.error(
+            'Não foi possível iniciar o Spotify. Entre em open.spotify.com neste navegador (Premium toca a faixa inteira; sem Premium são 30s de prévia).',
+          ));
         } catch { /* noop */ }
       });
     } else if (isYT) {
