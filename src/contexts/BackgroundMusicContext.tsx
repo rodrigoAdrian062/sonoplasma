@@ -182,11 +182,13 @@ export function BackgroundMusicProvider({
   const wantsToPlayRef = useRef(false);
   const crossfadeMsRef = useRef(crossfadeMs);
   const volumeRef = useRef(volume);
+  const duckVolumeRef = useRef(duckVolume);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { duckVolumeRef.current = duckVolume; }, [duckVolume]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   const cancelCrossfade = useCallback(() => {
