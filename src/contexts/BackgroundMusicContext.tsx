@@ -269,6 +269,7 @@ export function BackgroundMusicProvider({
     const onLoadStart = (e: Event) => applyForEl(e.target as HTMLAudioElement);
     try {
       ctx = new AudioContext();
+      audioCtxRef.current = ctx;
       const sourceA = ctx.createMediaElementSource(a);
       const sourceB = ctx.createMediaElementSource(b);
       sourceA.connect(ctx.destination);
