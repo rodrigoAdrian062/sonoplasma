@@ -203,7 +203,7 @@ export function BackgroundMusicProvider({
 
   const startCrossfade = useCallback((toIdx: number) => {
     const active = audioRef.current;
-    if (!active) return;
+    if (!active || active === audioFallbackRef.current) return;
     const pl = playlistRef.current;
     const track = pl[toIdx];
     if (!track || isStreamingUrl(track.audio_url)) return;
