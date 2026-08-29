@@ -641,6 +641,10 @@ export function BackgroundMusicProvider({
       wasAutoPausedRef.current = true;
       setWasAutoPaused(true);
       setIsPlaying(false);
+      toast({
+        title: 'Fundo em espera',
+        description: 'A música da etapa está tocando. O fundo volta automaticamente ao pausar a etapa.',
+      });
       return;
     }
     a.play().then(() => {
@@ -652,7 +656,13 @@ export function BackgroundMusicProvider({
       console.warn('BG music play failed:', err);
       if (requestId !== playRequestRef.current) return;
       setIsPlaying(false);
+      toast({
+        title: 'Não foi possível iniciar a música de fundo',
+        description: 'Toque novamente no botão de play para autorizar o áudio.',
+        variant: 'destructive',
+      });
     });
+
   }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
   useEffect(() => {
