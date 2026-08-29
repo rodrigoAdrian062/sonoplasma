@@ -166,6 +166,9 @@ export function BackgroundMusicProvider({
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioFallbackRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const corsRetryRef = useRef<Set<string>>(new Set());
   const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
   const streamFrameRef = useRef<typeof streamFrame>(null);
   const wasAutoPausedRef = useRef(false);
@@ -179,11 +182,13 @@ export function BackgroundMusicProvider({
   const wantsToPlayRef = useRef(false);
   const crossfadeMsRef = useRef(crossfadeMs);
   const volumeRef = useRef(volume);
+  const duckVolumeRef = useRef(duckVolume);
   useEffect(() => { playlistRef.current = playlist; }, [playlist]);
   useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { streamFrameRef.current = streamFrame; }, [streamFrame]);
   useEffect(() => { crossfadeMsRef.current = crossfadeMs; }, [crossfadeMs]);
   useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { duckVolumeRef.current = duckVolume; }, [duckVolume]);
   const { status: mainStatus } = useUniversalAudioPlayer();
 
   const cancelCrossfade = useCallback(() => {
@@ -198,7 +203,7 @@ export function BackgroundMusicProvider({
 
   const startCrossfade = useCallback((toIdx: number) => {
     const active = audioRef.current;
-    if (!active) return;
+    if (!active || active === audioFallbackRef.current) return;
     const pl = playlistRef.current;
     const track = pl[toIdx];
     if (!track || isStreamingUrl(track.audio_url)) return;
@@ -240,19 +245,21 @@ export function BackgroundMusicProvider({
   }, [duckVolume]);
 
   useEffect(() => {
-    const makeAudio = () => {
+    const makeAudio = (withCors = true) => {
       const a = new Audio();
       a.loop = false;
       a.preload = 'auto';
-      a.crossOrigin = 'anonymous';
+      if (withCors) a.crossOrigin = 'anonymous';
       a.volume = volume;
       registerAudioElement(a);
       return a;
     };
     const a = makeAudio();
     const b = makeAudio();
+    const f = makeAudio(false);
     audioARef.current = a;
     audioBRef.current = b;
+    audioFallbackRef.current = f;
     audioRef.current = a;
 
     let ctx: AudioContext | null = null;
@@ -269,6 +276,7 @@ export function BackgroundMusicProvider({
     const onLoadStart = (e: Event) => applyForEl(e.target as HTMLAudioElement);
     try {
       ctx = new AudioContext();
+      audioCtxRef.current = ctx;
       const sourceA = ctx.createMediaElementSource(a);
       const sourceB = ctx.createMediaElementSource(b);
       sourceA.connect(ctx.destination);
@@ -335,15 +343,37 @@ export function BackgroundMusicProvider({
       setIsPlaying(false);
     };
     const handleError = (e: Event) => {
-      if ((e.target as HTMLAudioElement) !== audioRef.current) return;
+      const el = e.target as HTMLAudioElement;
+      if (el !== audioRef.current) return;
+      const src = el.currentSrc || el.src || '';
+      const fb = audioFallbackRef.current;
+
+      // Muitas falhas vêm de CORS (crossOrigin=anonymous exigido pelo 432Hz).
+      // Tenta de novo num elemento simples, fora do grafo Web Audio.
+      if (src && fb && el !== fb && !corsRetryRef.current.has(src)) {
+        corsRetryRef.current.add(src);
+        console.warn('[bg-audio] falha ao carregar, tentando fallback sem CORS:', src);
+        try {
+          audioRef.current = fb;
+          fb.volume = isDuckingRef.current ? duckVolumeRef.current : volumeRef.current;
+          fb.src = src;
+          fb.load();
+          if (wantsToPlayRef.current) {
+            fb.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          }
+          return;
+        } catch { /* segue para o aviso */ }
+      }
+
       setIsPlaying(false);
       toast({
         title: 'Não foi possível tocar a música de fundo',
-        description: 'Use um arquivo de áudio da biblioteca ou um link do YouTube.',
+        description: 'Verifique o arquivo/link da faixa. Use um áudio da biblioteca ou um link do YouTube (links do Spotify não tocam como música de fundo).',
         variant: 'destructive',
       });
     };
-    [a, b].forEach((el) => {
+
+    [a, b, f].forEach((el) => {
       el.addEventListener('ended', handleEnded);
       el.addEventListener('play', handlePlay);
       el.addEventListener('pause', handlePause);
@@ -353,7 +383,7 @@ export function BackgroundMusicProvider({
     return () => {
       disposed = true;
       cleanupPitchSub?.();
-      [a, b].forEach((el) => {
+      [a, b, f].forEach((el) => {
         el.removeEventListener('ended', handleEnded);
         el.removeEventListener('play', handlePlay);
         el.removeEventListener('pause', handlePause);
@@ -458,12 +488,12 @@ export function BackgroundMusicProvider({
       const el = e.target as HTMLAudioElement;
       if (el === audioRef.current) setDuration(el.duration || 0);
     };
-    [audioARef.current, audioBRef.current].forEach((el) => {
+    [audioARef.current, audioBRef.current, audioFallbackRef.current].forEach((el) => {
       el?.addEventListener('timeupdate', onTimeUpdate);
       el?.addEventListener('durationchange', onDurationChange);
     });
     return () => {
-      [audioARef.current, audioBRef.current].forEach((el) => {
+      [audioARef.current, audioBRef.current, audioFallbackRef.current].forEach((el) => {
         el?.removeEventListener('timeupdate', onTimeUpdate);
         el?.removeEventListener('durationchange', onDurationChange);
       });
@@ -556,6 +586,12 @@ export function BackgroundMusicProvider({
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
     if (!a || playlist.length === 0) return;
+    // Navegadores suspendem o AudioContext até haver interação: retomar aqui
+    // evita a "falha" de tocar sem som ao iniciar no modo apresentação.
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => undefined);
+    }
     cancelCrossfade();
     let targetIdx = index !== undefined ? index : currentIndex;
     if (playlist[targetIdx]?.disabled) {
@@ -572,6 +608,15 @@ export function BackgroundMusicProvider({
     }
     const track = playlist[targetIdx];
     if (!track) return;
+    if (detectStream(track.audio_url) === 'spotify') {
+      setIsPlaying(false);
+      toast({
+        title: 'Faixa do Spotify não funciona como música de fundo',
+        description: 'Use um áudio da biblioteca (MP3) ou um link do YouTube nesta faixa.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
       if (!ensureStreamFrame(track, true)) {
@@ -584,16 +629,22 @@ export function BackgroundMusicProvider({
       return;
     }
     const requestId = ++playRequestRef.current;
+    wantsToPlayRef.current = true;
     if (a.src !== track.audio_url) {
       a.src = track.audio_url;
       a.load();
     }
+
     a.volume = isDuckingRef.current ? duckVolume : volume;
     if (mainStatus === 'playing' && autoPauseEnabled && autoMode === 'pause') {
       a.pause();
       wasAutoPausedRef.current = true;
       setWasAutoPaused(true);
       setIsPlaying(false);
+      toast({
+        title: 'Fundo em espera',
+        description: 'A música da etapa está tocando. O fundo volta automaticamente ao pausar a etapa.',
+      });
       return;
     }
     a.play().then(() => {
@@ -605,7 +656,13 @@ export function BackgroundMusicProvider({
       console.warn('BG music play failed:', err);
       if (requestId !== playRequestRef.current) return;
       setIsPlaying(false);
+      toast({
+        title: 'Não foi possível iniciar a música de fundo',
+        description: 'Toque novamente no botão de play para autorizar o áudio.',
+        variant: 'destructive',
+      });
     });
+
   }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
 
   useEffect(() => {
@@ -648,6 +705,7 @@ export function BackgroundMusicProvider({
     postStreamCommand('pause');
     audioARef.current?.pause();
     audioBRef.current?.pause();
+    audioFallbackRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
     setWasAutoPaused(false);
@@ -723,6 +781,7 @@ export function BackgroundMusicProvider({
   const clearPlaylist = useCallback(() => {
     audioARef.current?.pause();
     audioBRef.current?.pause();
+    audioFallbackRef.current?.pause();
     setStreamFrame(null);
     setPlaylist([]);
     setCurrentIndex(0);
