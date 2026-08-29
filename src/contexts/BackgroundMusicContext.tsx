@@ -338,14 +338,36 @@ export function BackgroundMusicProvider({
       setIsPlaying(false);
     };
     const handleError = (e: Event) => {
-      if ((e.target as HTMLAudioElement) !== audioRef.current) return;
+      const el = e.target as HTMLAudioElement;
+      if (el !== audioRef.current) return;
+      const src = el.currentSrc || el.src || '';
+      const fb = audioFallbackRef.current;
+
+      // Muitas falhas vêm de CORS (crossOrigin=anonymous exigido pelo 432Hz).
+      // Tenta de novo num elemento simples, fora do grafo Web Audio.
+      if (src && fb && el !== fb && !corsRetryRef.current.has(src)) {
+        corsRetryRef.current.add(src);
+        console.warn('[bg-audio] falha ao carregar, tentando fallback sem CORS:', src);
+        try {
+          audioRef.current = fb;
+          fb.volume = isDuckingRef.current ? duckVolumeRef.current : volumeRef.current;
+          fb.src = src;
+          fb.load();
+          if (wantsToPlayRef.current) {
+            fb.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          }
+          return;
+        } catch { /* segue para o aviso */ }
+      }
+
       setIsPlaying(false);
       toast({
         title: 'Não foi possível tocar a música de fundo',
-        description: 'Use um arquivo de áudio da biblioteca ou um link do YouTube.',
+        description: 'Verifique o arquivo/link da faixa. Use um áudio da biblioteca ou um link do YouTube (links do Spotify não tocam como música de fundo).',
         variant: 'destructive',
       });
     };
+
     [a, b].forEach((el) => {
       el.addEventListener('ended', handleEnded);
       el.addEventListener('play', handlePlay);
