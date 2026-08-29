@@ -245,19 +245,21 @@ export function BackgroundMusicProvider({
   }, [duckVolume]);
 
   useEffect(() => {
-    const makeAudio = () => {
+    const makeAudio = (withCors = true) => {
       const a = new Audio();
       a.loop = false;
       a.preload = 'auto';
-      a.crossOrigin = 'anonymous';
+      if (withCors) a.crossOrigin = 'anonymous';
       a.volume = volume;
       registerAudioElement(a);
       return a;
     };
     const a = makeAudio();
     const b = makeAudio();
+    const f = makeAudio(false);
     audioARef.current = a;
     audioBRef.current = b;
+    audioFallbackRef.current = f;
     audioRef.current = a;
 
     let ctx: AudioContext | null = null;
