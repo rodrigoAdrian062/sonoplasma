@@ -480,6 +480,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               { key: 'btn_apresentar', label: 'Botão "Apresentar" (modo apresentação)' },
               { key: 'nav_biblioteca', label: 'Atalho rápido: Biblioteca' },
               { key: 'nav_youtube', label: 'Atalho rápido: YouTube' },
+              { key: 'nav_spotify', label: 'Atalho rápido: Spotify' },
+
               
             ] as const).map((item) => (
               <div key={item.key} className="flex items-center justify-between gap-3">
