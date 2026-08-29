@@ -166,6 +166,7 @@ export function BackgroundMusicProvider({
   const audioARef = useRef<HTMLAudioElement | null>(null);
   const audioBRef = useRef<HTMLAudioElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioFallbackRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const corsRetryRef = useRef<Set<string>>(new Set());
   const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
