@@ -1337,6 +1337,8 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                               loop: false 
                             }];
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+                            // Persiste no banco para sobreviver a um F5
+                            void saveCloudState('quickSounds', newSounds);
                             // Notifica outras abas/componentes via evento customizado
                             window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
                           }
