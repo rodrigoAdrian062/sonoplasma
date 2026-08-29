@@ -373,7 +373,7 @@ export function BackgroundMusicProvider({
       });
     };
 
-    [a, b].forEach((el) => {
+    [a, b, f].forEach((el) => {
       el.addEventListener('ended', handleEnded);
       el.addEventListener('play', handlePlay);
       el.addEventListener('pause', handlePause);
@@ -383,7 +383,7 @@ export function BackgroundMusicProvider({
     return () => {
       disposed = true;
       cleanupPitchSub?.();
-      [a, b].forEach((el) => {
+      [a, b, f].forEach((el) => {
         el.removeEventListener('ended', handleEnded);
         el.removeEventListener('play', handlePlay);
         el.removeEventListener('pause', handlePause);
@@ -488,12 +488,12 @@ export function BackgroundMusicProvider({
       const el = e.target as HTMLAudioElement;
       if (el === audioRef.current) setDuration(el.duration || 0);
     };
-    [audioARef.current, audioBRef.current].forEach((el) => {
+    [audioARef.current, audioBRef.current, audioFallbackRef.current].forEach((el) => {
       el?.addEventListener('timeupdate', onTimeUpdate);
       el?.addEventListener('durationchange', onDurationChange);
     });
     return () => {
-      [audioARef.current, audioBRef.current].forEach((el) => {
+      [audioARef.current, audioBRef.current, audioFallbackRef.current].forEach((el) => {
         el?.removeEventListener('timeupdate', onTimeUpdate);
         el?.removeEventListener('durationchange', onDurationChange);
       });
