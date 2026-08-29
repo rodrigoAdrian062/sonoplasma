@@ -586,6 +586,12 @@ export function BackgroundMusicProvider({
   const play = useCallback((index?: number) => {
     const a = audioRef.current;
     if (!a || playlist.length === 0) return;
+    // Navegadores suspendem o AudioContext até haver interação: retomar aqui
+    // evita a "falha" de tocar sem som ao iniciar no modo apresentação.
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => undefined);
+    }
     cancelCrossfade();
     let targetIdx = index !== undefined ? index : currentIndex;
     if (playlist[targetIdx]?.disabled) {
@@ -602,6 +608,15 @@ export function BackgroundMusicProvider({
     }
     const track = playlist[targetIdx];
     if (!track) return;
+    if (detectStream(track.audio_url) === 'spotify') {
+      setIsPlaying(false);
+      toast({
+        title: 'Faixa do Spotify não funciona como música de fundo',
+        description: 'Use um áudio da biblioteca (MP3) ou um link do YouTube nesta faixa.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
       if (!ensureStreamFrame(track, true)) {
@@ -614,10 +629,12 @@ export function BackgroundMusicProvider({
       return;
     }
     const requestId = ++playRequestRef.current;
+    wantsToPlayRef.current = true;
     if (a.src !== track.audio_url) {
       a.src = track.audio_url;
       a.load();
     }
+
     a.volume = isDuckingRef.current ? duckVolume : volume;
     if (mainStatus === 'playing' && autoPauseEnabled && autoMode === 'pause') {
       a.pause();
