@@ -1,6 +1,16 @@
 import { SVGProps } from 'react';
 
-// Stub: Spotify foi removido do sistema. Componente mantido apenas para compatibilidade.
-export function SpotifyIcon(_props: SVGProps<SVGSVGElement> & { size?: number }) {
-  return null;
+export function SpotifyIcon({ size = 18, ...props }: SVGProps<SVGSVGElement> & { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.52 17.28a.75.75 0 0 1-1.03.25c-2.82-1.72-6.36-2.11-10.54-1.16a.75.75 0 1 1-.33-1.46c4.56-1.04 8.48-.59 11.64 1.34.35.22.46.68.26 1.03zm1.47-3.27a.94.94 0 0 1-1.29.31c-3.23-1.98-8.15-2.56-11.97-1.4a.94.94 0 1 1-.54-1.8c4.36-1.32 9.78-.68 13.49 1.6.44.27.58.85.31 1.29zm.13-3.41C15.25 8.3 8.9 8.08 5.2 9.21a1.12 1.12 0 1 1-.65-2.15c4.25-1.29 11.26-1.04 15.7 1.6a1.12 1.12 0 0 1-1.13 1.94z" />
+    </svg>
+  );
 }
