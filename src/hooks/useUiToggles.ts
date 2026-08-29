@@ -8,6 +8,7 @@ export type UiToggleKey =
   | 'btn_apresentar'
   | 'nav_biblioteca'
   | 'nav_youtube'
+  | 'nav_spotify'
   | 'nav_conversor';
 
 const STORAGE_KEY = 'sonoplastia:uiToggles';
@@ -17,8 +18,10 @@ const DEFAULTS: Record<UiToggleKey, boolean> = {
   btn_apresentar: true,
   nav_biblioteca: true,
   nav_youtube: true,
+  nav_spotify: true,
   nav_conversor: true,
 };
+
 
 
 function read(): Record<UiToggleKey, boolean> {
