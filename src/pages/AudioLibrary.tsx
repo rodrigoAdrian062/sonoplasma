@@ -46,6 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
 import { ClimaSelector } from '@/components/library/ClimaSelector';
 import { CLIMAS, getClima } from '@/lib/climas';
+import { saveCloudState } from '@/lib/cloudState';
 
 
 
@@ -1337,6 +1338,8 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                               loop: false 
                             }];
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+                            // Persiste no banco para sobreviver a um F5
+                            void saveCloudState('quickSounds', newSounds);
                             // Notifica outras abas/componentes via evento customizado
                             window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
                           }

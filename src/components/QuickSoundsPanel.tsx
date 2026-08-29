@@ -15,7 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
+
 const STORAGE_KEY = 'sonoplastia:quickSounds';
+const CLOUD_KEY = 'quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
 const MAX_SLOTS = 20;
 
@@ -62,6 +65,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     const syncSounds = () => {
@@ -122,6 +126,28 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     };
   }, []);
 
+  // Hidrata do banco ao montar (garante persistência após F5 / outro dispositivo)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const remote = await loadCloudState<QuickSound[]>(CLOUD_KEY);
+      if (cancelled || !Array.isArray(remote)) return;
+      const local = loadSounds();
+      // Se o banco tem dados, ele é a fonte da verdade na entrada.
+      if (remote.length > 0 || local.length === 0) {
+        const next = remote.slice(0, MAX_SLOTS);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        setSounds(next);
+        window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+      } else if (local.length > 0) {
+        // Primeira migração: envia o que existe localmente para o banco.
+        void saveCloudState(CLOUD_KEY, local);
+      }
+      hydratedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
   useEffect(() => {
     if (!isLoading) {
@@ -138,7 +164,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       localStorage.setItem(STORAGE_KEY, newStored);
       window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
     }
+    if (hydratedRef.current) saveCloudStateDebounced(CLOUD_KEY, sounds);
   }, [sounds]);
+
 
   useEffect(() => {
     localStorage.setItem(VOLUME_KEY, String(volume));

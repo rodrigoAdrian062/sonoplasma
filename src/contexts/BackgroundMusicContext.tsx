@@ -5,6 +5,7 @@ import { registerAudioElement } from '@/lib/audioOutput';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequency432, subscribeTrackHz } from '@/lib/pitch432';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
+import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 
 export interface BackgroundTrack {
   id: string;
@@ -400,10 +401,31 @@ export function BackgroundMusicProvider({
   const safeWrite = (key: string, value: string) => {
     try { localStorage.setItem(key, value); } catch { /* noop */ }
   };
+
+  // Hidrata a playlist do banco (sobrevive a F5 e a outros dispositivos)
+  const cloudPlaylistKey = `bgMusic:${storageKey}`;
+  const cloudHydratedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const remote = await loadCloudState<BackgroundTrack[]>(cloudPlaylistKey);
+      if (cancelled) return;
+      if (Array.isArray(remote) && remote.length > 0) {
+        setPlaylist(remote.filter((t) => !!t?.audio_url));
+      } else {
+        const local = JSON.parse(safeRead(storageKey) || '[]');
+        if (Array.isArray(local) && local.length > 0) void saveCloudState(cloudPlaylistKey, local);
+      }
+      cloudHydratedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [cloudPlaylistKey, storageKey]);
+
   useEffect(() => { 
     safeWrite(storageKey, JSON.stringify(playlist)); 
     onPlaylistChange?.(playlist);
-  }, [playlist, storageKey, onPlaylistChange]);
+    if (cloudHydratedRef.current) saveCloudStateDebounced(cloudPlaylistKey, playlist);
+  }, [playlist, storageKey, onPlaylistChange, cloudPlaylistKey]);
   
   useEffect(() => {
     safeWrite(getDynamicKey(VOLUME_KEY), String(volume));
