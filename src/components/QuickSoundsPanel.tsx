@@ -65,6 +65,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     const syncSounds = () => {
