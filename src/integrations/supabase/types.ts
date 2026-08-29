@@ -172,6 +172,33 @@ export type Database = {
         }
         Relationships: []
       }
+      sonoplastia_estado: {
+        Row: {
+          chave: string
+          created_at: string
+          id: string
+          owner_id: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
       sonoplastia_etapa_audios: {
         Row: {
           audio_url: string
