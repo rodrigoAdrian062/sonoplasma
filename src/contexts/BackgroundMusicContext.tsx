@@ -705,6 +705,7 @@ export function BackgroundMusicProvider({
     postStreamCommand('pause');
     audioARef.current?.pause();
     audioBRef.current?.pause();
+    audioFallbackRef.current?.pause();
     setIsPlaying(false);
     wasAutoPausedRef.current = false;
     setWasAutoPaused(false);
@@ -780,6 +781,7 @@ export function BackgroundMusicProvider({
   const clearPlaylist = useCallback(() => {
     audioARef.current?.pause();
     audioBRef.current?.pause();
+    audioFallbackRef.current?.pause();
     setStreamFrame(null);
     setPlaylist([]);
     setCurrentIndex(0);
