@@ -15,7 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
+
 const STORAGE_KEY = 'sonoplastia:quickSounds';
+const CLOUD_KEY = 'quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
 const MAX_SLOTS = 20;
 
