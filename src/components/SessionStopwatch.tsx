@@ -28,13 +28,50 @@ function readMinutes(): number {
   return DEFAULT_MINUTES;
 }
 
+const STATE_KEY = 'sonoplastia:timerState';
+
+type PersistedState = { remaining: number; isRunning: boolean; savedAt: number };
+
+function readState(minutes: number): { remaining: number; isRunning: boolean } {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw) as PersistedState;
+      if (Number.isFinite(s?.remaining) && Number.isFinite(s?.savedAt)) {
+        const elapsed = s.isRunning ? Math.floor((Date.now() - s.savedAt) / 1000) : 0;
+        const remaining = Math.max(0, Math.round(s.remaining) - elapsed);
+        return { remaining, isRunning: !!s.isRunning && remaining > 0 };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return { remaining: minutes * 60, isRunning: false };
+}
+
+function writeState(remaining: number, isRunning: boolean) {
+  try {
+    localStorage.setItem(
+      STATE_KEY,
+      JSON.stringify({ remaining, isRunning, savedAt: Date.now() } satisfies PersistedState)
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 export function SessionStopwatch() {
   const [minutes, setMinutes] = useState<number>(() => readMinutes());
-  const [remaining, setRemaining] = useState<number>(() => readMinutes() * 60);
-  const [isRunning, setIsRunning] = useState(false);
+  const [remaining, setRemaining] = useState<number>(() => readState(readMinutes()).remaining);
+  const [isRunning, setIsRunning] = useState(() => readState(readMinutes()).isRunning);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    writeState(remaining, isRunning);
+  }, [remaining, isRunning]);
+
 
   useEffect(() => {
     if (isRunning) {
