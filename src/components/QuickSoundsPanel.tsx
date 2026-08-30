@@ -285,6 +285,40 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     stop();
     // Um fade em andamento não pode continuar baixando/pausando o novo som.
     clearFade();
+
+    const kind = quickSoundKind(sound.url);
+
+    // YouTube e Spotify usam players próprios (isolados das etapas).
+    if (kind !== 'file') {
+      try { audioRef.current?.pause(); } catch { /* noop */ }
+      stopQuickYouTube();
+      void pauseSpotifyEntity();
+
+      if (kind === 'youtube') {
+        setPlayingId(sound.id);
+        playQuickYouTube(sound.url, {
+          volume,
+          loop: !!sound.loop,
+          onEnded: () => setPlayingId((cur) => (cur === sound.id ? null : cur)),
+          onError: (msg) => {
+            setPlayingId((cur) => (cur === sound.id ? null : cur));
+            toast.error(`Não foi possível tocar "${sound.nome}": ${msg}`);
+          },
+        }).catch((err) => {
+          setPlayingId((cur) => (cur === sound.id ? null : cur));
+          toast.error(err?.message || 'Falha ao iniciar o vídeo do YouTube.');
+        });
+        return;
+      }
+
+      setPlayingId(sound.id);
+      playSpotifyEntity(sound.url).catch((err) => {
+        setPlayingId((cur) => (cur === sound.id ? null : cur));
+        toast.error(err?.message || 'Falha ao iniciar a faixa do Spotify.');
+      });
+      return;
+    }
+
     if (isUnsupportedFormat(sound.url)) {
       toast.error('Formato não suportado pelo navegador (WMA). Use MP3, M4A, OGG ou WAV.');
       return;
@@ -331,6 +365,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     };
     attempt();
   };
+
 
   const addSound = (nome: string, url: string) => {
     setSounds((prev) => {
