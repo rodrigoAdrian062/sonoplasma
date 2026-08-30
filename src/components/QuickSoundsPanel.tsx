@@ -239,7 +239,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   const stop = (soundId?: string) => {
     clearFade();
+    // Encerra também players de stream (YouTube/Spotify), se ativos.
+    const target = sounds.find((s) => s.id === (soundId || playingId));
+    if (target && quickSoundKind(target.url) !== 'file') {
+      if (quickSoundKind(target.url) === 'youtube') stopQuickYouTube();
+      else void pauseSpotifyEntity();
+      setPlayingId((cur) => (cur === target.id ? null : cur));
+      return;
+    }
     if (audioRef.current) {
+
       const currentSound = sounds.find(s => s.id === (soundId || playingId));
 
       if (currentSound?.fadeStop && !audioRef.current.paused) {
