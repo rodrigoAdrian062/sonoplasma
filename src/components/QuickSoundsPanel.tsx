@@ -8,6 +8,10 @@ import { cn } from '@/lib/utils';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
+import { quickSoundKind } from '@/lib/quickSounds';
+import { playQuickYouTube, stopQuickYouTube, setQuickYouTubeVolume, destroyQuickYouTube } from '@/lib/quickYoutubePlayer';
+import { playSpotifyEntity, pauseSpotifyEntity } from '@/lib/spotifyIframePlayer';
+
 import {
   Dialog,
   DialogContent,
