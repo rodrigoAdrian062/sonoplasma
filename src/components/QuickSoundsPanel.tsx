@@ -8,9 +8,12 @@ import { cn } from '@/lib/utils';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { quickSoundKind } from '@/lib/quickSounds';
 import { playQuickYouTube, stopQuickYouTube, setQuickYouTubeVolume, destroyQuickYouTube } from '@/lib/quickYoutubePlayer';
 import { playSpotifyEntity, pauseSpotifyEntity } from '@/lib/spotifyIframePlayer';
+
 
 import {
   Dialog,
