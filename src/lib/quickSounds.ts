@@ -41,9 +41,11 @@ export function persistQuickSounds(sounds: QuickSoundData[]) {
   window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
 }
 
-export type AddQuickSoundResult =
-  | { ok: true }
-  | { ok: false; reason: 'limit' | 'duplicate' | 'invalid' };
+export type AddQuickSoundResult = {
+  ok: boolean;
+  reason?: 'limit' | 'duplicate' | 'invalid';
+};
+
 
 /** Adiciona um áudio (arquivo, YouTube ou Spotify) aos sons rápidos. */
 export function addQuickSound(nome: string, url: string): AddQuickSoundResult {
