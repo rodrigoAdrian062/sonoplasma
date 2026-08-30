@@ -432,10 +432,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const playableAudios = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (audios || [])
-      .filter((a) => a.audio_url && !getYouTubeVideoId(a.audio_url) && !a.audio_url.includes('spotify'))
+      .filter((a) => !!a.audio_url)
       .filter((a) => (term ? (a.nome || '').toLowerCase().includes(term) : true))
-      .slice(0, 100);
+      .slice(0, 200);
   }, [audios, search]);
+
 
   const handleWheel = (e: React.WheelEvent) => {
     // Volume isolado: nunca deixa o handler global da apresentação alterar o volume principal
