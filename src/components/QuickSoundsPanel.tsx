@@ -8,6 +8,13 @@ import { cn } from '@/lib/utils';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
+import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
+import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { quickSoundKind } from '@/lib/quickSounds';
+import { playQuickYouTube, stopQuickYouTube, setQuickYouTubeVolume, destroyQuickYouTube } from '@/lib/quickYoutubePlayer';
+import { playSpotifyEntity, pauseSpotifyEntity } from '@/lib/spotifyIframePlayer';
+
+
 import {
   Dialog,
   DialogContent,
@@ -171,6 +178,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   useEffect(() => {
     localStorage.setItem(VOLUME_KEY, String(volume));
     if (audioRef.current) audioRef.current.volume = volume;
+    setQuickYouTubeVolume(volume);
   }, [volume]);
 
   useEffect(() => {
@@ -179,8 +187,10 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       audioRef.current = null;
       previewAudioRef.current?.pause();
       previewAudioRef.current = null;
+      destroyQuickYouTube();
     };
   }, []);
+
 
   /** Erros de interrupção (troca rápida de faixa) não são falhas reais. */
   const isAbortError = (err: any) =>
@@ -239,7 +249,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   const stop = (soundId?: string) => {
     clearFade();
+    // Encerra também players de stream (YouTube/Spotify), se ativos.
+    const target = sounds.find((s) => s.id === (soundId || playingId));
+    if (target && quickSoundKind(target.url) !== 'file') {
+      if (quickSoundKind(target.url) === 'youtube') stopQuickYouTube();
+      else void pauseSpotifyEntity();
+      setPlayingId((cur) => (cur === target.id ? null : cur));
+      return;
+    }
     if (audioRef.current) {
+
       const currentSound = sounds.find(s => s.id === (soundId || playingId));
 
       if (currentSound?.fadeStop && !audioRef.current.paused) {
@@ -285,6 +304,40 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     stop();
     // Um fade em andamento não pode continuar baixando/pausando o novo som.
     clearFade();
+
+    const kind = quickSoundKind(sound.url);
+
+    // YouTube e Spotify usam players próprios (isolados das etapas).
+    if (kind !== 'file') {
+      try { audioRef.current?.pause(); } catch { /* noop */ }
+      stopQuickYouTube();
+      void pauseSpotifyEntity();
+
+      if (kind === 'youtube') {
+        setPlayingId(sound.id);
+        playQuickYouTube(sound.url, {
+          volume,
+          loop: !!sound.loop,
+          onEnded: () => setPlayingId((cur) => (cur === sound.id ? null : cur)),
+          onError: (msg) => {
+            setPlayingId((cur) => (cur === sound.id ? null : cur));
+            toast.error(`Não foi possível tocar "${sound.nome}": ${msg}`);
+          },
+        }).catch((err) => {
+          setPlayingId((cur) => (cur === sound.id ? null : cur));
+          toast.error(err?.message || 'Falha ao iniciar o vídeo do YouTube.');
+        });
+        return;
+      }
+
+      setPlayingId(sound.id);
+      playSpotifyEntity(sound.url).catch((err) => {
+        setPlayingId((cur) => (cur === sound.id ? null : cur));
+        toast.error(err?.message || 'Falha ao iniciar a faixa do Spotify.');
+      });
+      return;
+    }
+
     if (isUnsupportedFormat(sound.url)) {
       toast.error('Formato não suportado pelo navegador (WMA). Use MP3, M4A, OGG ou WAV.');
       return;
@@ -331,6 +384,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     };
     attempt();
   };
+
 
   const addSound = (nome: string, url: string) => {
     setSounds((prev) => {
@@ -381,10 +435,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const playableAudios = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (audios || [])
-      .filter((a) => a.audio_url && !getYouTubeVideoId(a.audio_url) && !a.audio_url.includes('spotify'))
+      .filter((a) => !!a.audio_url)
       .filter((a) => (term ? (a.nome || '').toLowerCase().includes(term) : true))
-      .slice(0, 100);
+      .slice(0, 200);
   }, [audios, search]);
+
 
   const handleWheel = (e: React.WheelEvent) => {
     // Volume isolado: nunca deixa o handler global da apresentação alterar o volume principal
@@ -414,26 +469,37 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         <div className="max-h-[60vh] overflow-y-auto scrollbar-thin pr-1">
           {playableAudios.length === 0 && (
             <p className="text-xs text-muted-foreground py-10 text-center">
-              Nenhum áudio compatível encontrado (links do YouTube/Spotify não podem ser usados como som rápido).
+              Nenhum áudio encontrado na biblioteca.
             </p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-4">
-            {playableAudios.map((a) => (
+            {playableAudios.map((a) => {
+              const kind = quickSoundKind(a.audio_url!);
+              return (
               <div
                 key={a.id}
                 className="w-full flex items-center gap-2 p-1.5 rounded-xl border border-gold/10 bg-black/20 hover:border-gold/30 transition-all group"
               >
-                <button
-                  onClick={(e) => togglePreview(a.id, a.audio_url!, e)}
-                  className={cn(
-                    "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
-                    previewingId === a.id ? "bg-gold text-background" : "bg-gold/10 text-gold hover:bg-gold/20"
-                  )}
-                  title={previewingId === a.id ? "Parar prévia" : "Ouvir prévia"}
-                >
-                  {previewingId === a.id ? <Square size={14} /> : <Play size={14} />}
-                </button>
-                
+                {kind === 'file' ? (
+                  <button
+                    onClick={(e) => togglePreview(a.id, a.audio_url!, e)}
+                    className={cn(
+                      "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
+                      previewingId === a.id ? "bg-gold text-background" : "bg-gold/10 text-gold hover:bg-gold/20"
+                    )}
+                    title={previewingId === a.id ? "Parar prévia" : "Ouvir prévia"}
+                  >
+                    {previewingId === a.id ? <Square size={14} /> : <Play size={14} />}
+                  </button>
+                ) : (
+                  <div
+                    className="h-9 w-9 rounded-lg flex items-center justify-center bg-black/30"
+                    title={kind === 'youtube' ? 'Faixa do YouTube' : 'Faixa do Spotify'}
+                  >
+                    {kind === 'youtube' ? <YoutubeIcon size={16} /> : <SpotifyIcon size={16} />}
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     addSound(a.nome, a.audio_url!);
@@ -461,11 +527,13 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                   <Plus size={16} />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Máximo de {MAX_SLOTS} atalhos. Apenas áudios de arquivo podem ser usados como som rápido.
+          Máximo de {MAX_SLOTS} atalhos. Arquivos, YouTube e Spotify são aceitos.
+
         </p>
       </DialogContent>
     </Dialog>
