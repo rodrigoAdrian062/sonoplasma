@@ -175,6 +175,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   useEffect(() => {
     localStorage.setItem(VOLUME_KEY, String(volume));
     if (audioRef.current) audioRef.current.volume = volume;
+    setQuickYouTubeVolume(volume);
   }, [volume]);
 
   useEffect(() => {
@@ -183,8 +184,10 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       audioRef.current = null;
       previewAudioRef.current?.pause();
       previewAudioRef.current = null;
+      destroyQuickYouTube();
     };
   }, []);
+
 
   /** Erros de interrupção (troca rápida de faixa) não são falhas reais. */
   const isAbortError = (err: any) =>
