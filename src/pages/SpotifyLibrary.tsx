@@ -415,12 +415,28 @@ export default function SpotifyLibraryPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  onClick={() => {
+                                    const res = addQuickSound(audio.nome, audio.audio_url || '');
+                                    if (res.ok) toast({ title: `"${audio.nome}" enviado para sons rápidos` });
+                                    else if (res.reason === 'duplicate') toast({ title: `"${audio.nome}" já está nos sons rápidos` });
+                                    else if (res.reason === 'limit') toast({ title: 'Limite de 20 sons rápidos atingido', variant: 'destructive' });
+                                    else toast({ title: 'Link inválido', variant: 'destructive' });
+                                  }}
+                                  className="h-8 w-8 text-muted-foreground hover:text-gold"
+                                  title="Adicionar aos Sons Rápidos"
+                                >
+                                  <Zap size={16} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => { if (isCurrent) handleStop(); deleteAudio.mutate(audio.id); }}
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                   title="Remover"
                                 >
                                   <Trash2 size={16} />
                                 </Button>
+
                               </div>
                             </div>
                             {isCurrent && (
