@@ -466,26 +466,37 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         <div className="max-h-[60vh] overflow-y-auto scrollbar-thin pr-1">
           {playableAudios.length === 0 && (
             <p className="text-xs text-muted-foreground py-10 text-center">
-              Nenhum áudio compatível encontrado (links do YouTube/Spotify não podem ser usados como som rápido).
+              Nenhum áudio encontrado na biblioteca.
             </p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-4">
-            {playableAudios.map((a) => (
+            {playableAudios.map((a) => {
+              const kind = quickSoundKind(a.audio_url!);
+              return (
               <div
                 key={a.id}
                 className="w-full flex items-center gap-2 p-1.5 rounded-xl border border-gold/10 bg-black/20 hover:border-gold/30 transition-all group"
               >
-                <button
-                  onClick={(e) => togglePreview(a.id, a.audio_url!, e)}
-                  className={cn(
-                    "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
-                    previewingId === a.id ? "bg-gold text-background" : "bg-gold/10 text-gold hover:bg-gold/20"
-                  )}
-                  title={previewingId === a.id ? "Parar prévia" : "Ouvir prévia"}
-                >
-                  {previewingId === a.id ? <Square size={14} /> : <Play size={14} />}
-                </button>
-                
+                {kind === 'file' ? (
+                  <button
+                    onClick={(e) => togglePreview(a.id, a.audio_url!, e)}
+                    className={cn(
+                      "h-9 w-9 rounded-lg flex items-center justify-center transition-colors",
+                      previewingId === a.id ? "bg-gold text-background" : "bg-gold/10 text-gold hover:bg-gold/20"
+                    )}
+                    title={previewingId === a.id ? "Parar prévia" : "Ouvir prévia"}
+                  >
+                    {previewingId === a.id ? <Square size={14} /> : <Play size={14} />}
+                  </button>
+                ) : (
+                  <div
+                    className="h-9 w-9 rounded-lg flex items-center justify-center bg-black/30"
+                    title={kind === 'youtube' ? 'Faixa do YouTube' : 'Faixa do Spotify'}
+                  >
+                    {kind === 'youtube' ? <YoutubeIcon size={16} /> : <SpotifyIcon size={16} />}
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     addSound(a.nome, a.audio_url!);
@@ -513,11 +524,13 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                   <Plus size={16} />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Máximo de {MAX_SLOTS} atalhos. Apenas áudios de arquivo podem ser usados como som rápido.
+          Máximo de {MAX_SLOTS} atalhos. Arquivos, YouTube e Spotify são aceitos.
+
         </p>
       </DialogContent>
     </Dialog>
