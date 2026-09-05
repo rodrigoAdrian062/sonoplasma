@@ -1,73 +1,203 @@
-# Welcome to your Lovable project
+# Sono plasma Plenitude
 
-## Project info
+Sistema de Sonoplastia Maçônica – Áudio Externo + Cronômetro
+🎯 Objetivo do Projeto
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Criar um sistema web de sonoplastia cerimonial maçônica, simples, silencioso e funcional, voltado ao controle de músicas instrumentais externas, com cronômetro automático por etapa, uso em tablet e celular, e nomes simbólicos nos controles.
 
-## How can I edit this code?
+O sistema deve ser respeitoso, discreto e confiável, ideal para uso durante os trabalhos.
 
-There are several ways of editing your application.
+🔊 Integração com Áudio Externo
 
-**Use Lovable**
+O sistema deve permitir tocar áudios externos via URL, como por exemplo:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+MP3 hospedado em servidor próprio
 
-Changes made via Lovable will be committed automatically to this repo.
+CDN
 
-**Use your preferred IDE**
+Google Drive (link direto)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+S3
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Outro storage externo
 
-Follow these steps:
+Regras:
+
+Apenas 1 áudio pode tocar por vez
+
+Ao iniciar outro áudio:
+
+O anterior para automaticamente
+
+Controles disponíveis:
+
+▶ Iniciar
+
+⏸ Pausar
+
+⏹ Parar
+
+Controle de volume geral
+
+Indicador visual discreto de áudio ativo
+
+🧠 Nomes Simbólicos dos Botões (UI)
+
+Cada etapa deve usar nomes simbólicos, não técnicos:
+
+Etapa Técnica	Nome Simbólico
+Abertura	Acendimento das Luzes
+Entrada	Marcha ao Oriente
+Reflexão	Silêncio Interior
+Trabalhos	Coluna em Harmonia
+Encerramento	Fechamento dos Trabalhos
+Ambiente	Véu do Silêncio
+
+Os botões devem exibir:
+
+Nome simbólico
+
+Ícone simples (luz, coluna, compasso abstrato – sem símbolos explícitos)
+
+⏱️ Modo Cronômetro Automático
+
+Cada etapa deve possuir um tempo configurável, com opção de execução automática.
+
+Funcionalidades:
+
+Campo para definir duração (em minutos)
+
+Cronômetro regressivo visível
+
+Ao terminar o tempo:
+
+Parar o áudio automaticamente
+
+(Opcional) Avançar para a próxima etapa
+
+Botão:
+
+▶ Iniciar com tempo
+
+⏸ Pausar tempo
+
+⏹ Resetar
+
+Exemplo de tempos padrão:
+
+Acendimento das Luzes: 3 min
+
+Marcha ao Oriente: 2 min
+
+Silêncio Interior: 5 min
+
+Coluna em Harmonia: tempo livre
+
+Fechamento dos Trabalhos: 3 min
+
+Véu do Silêncio: contínuo
+
+🗄️ Estrutura de Banco de Dados
+
+Criar banco relacional simples.
+
+📄 Tabela: sonoplastia_etapas
+Campo	Tipo
+id	int (PK)
+nome_simbolico	varchar
+descricao	text
+audio_url	varchar
+tempo_padrao	int (minutos)
+ordem	int
+ativo	boolean
+📄 Tabela: sonoplastia_execucao
+Campo	Tipo
+id	int (PK)
+etapa_id	int (FK)
+inicio	datetime
+fim	datetime
+tempo_executado	int
+status	varchar
+📱 Interface para Tablet / Celular (Templo)
+Layout:
+
+Responsivo (mobile-first)
+
+Botões grandes (uso rápido)
+
+Fonte legível à distância
+
+Interface em modo escuro
+
+Contraste alto
+
+Nada de menus escondidos
+
+Organização:
+
+Lista vertical de etapas
+
+Cada etapa em um card
+
+Cronômetro visível dentro do card
+
+Destaque visual apenas na etapa ativa
+
+🎨 Identidade Visual
+
+Fundo: grafite / azul profundo
+
+Texto: cinza claro
+
+Destaques: dourado discreto
+
+Sem animações chamativas
+
+Transições suaves e silenciosas
+
+⚙️ Regras de Funcionamento
+
+Nunca tocar dois áudios simultaneamente
+
+Sempre parar o áudio anterior ao iniciar outro
+
+Sistema deve funcionar:
+
+Sem login
+
+Offline parcial (se áudio já carregado)
+
+Ideal para:
+
+Tablet
+
+Celular
+
+Notebook conectado a caixa de som
+
+🧩 Objetivo Final
+
+Servir como central cerimonial de sonoplastia, garantindo ordem, fluidez, silêncio respeitoso e ambientação simbólica adequada aos trabalhos.
+
+This project was built with [Lovable](https://lovable.dev).
+
+**Live app**: https://sonoplasma.lovable.app
+
+## Build with Lovable
+
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ae9a8ecc-beed-48ec-b8b2-c9ee4925660d).
+
+- **Ship faster**: describe what you want to build and Lovable handles the code.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+
+## Development
+
+Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
+git clone <this-repository-url>
+cd <repository-name>
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
