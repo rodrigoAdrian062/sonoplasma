@@ -21,6 +21,8 @@ const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Auth = lazy(() => import("./pages/Auth"));
+
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const Acervo = lazy(() => import("./pages/Acervo"));
 
