@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
@@ -14,7 +14,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
-import Auth from "./pages/Auth";
 
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
