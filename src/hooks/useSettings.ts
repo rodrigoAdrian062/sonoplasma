@@ -13,22 +13,21 @@ export function useSettings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_configuracoes')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       const rows = (data || []) as AppSettings[];
       // Prefer the user's own settings; fall back to the shared model row.
-      const own = rows.find((r) => (r as any).owner_id === user?.id);
+      const own = user?.id ? rows.find((r) => (r as any).owner_id === user.id) : undefined;
       return (own ?? rows[0] ?? null) as AppSettings | null;
     },
   });
 
   const updateSettings = useMutation({
     mutationFn: async (updates: Partial<AppSettings>) => {
-      const isOwn = settings && (settings as any).owner_id === user?.id;
-
-      // Editing own settings (or shared row as super admin) -> update in place.
-      if (settings?.id && (isOwn || (settings as any).owner_id == null)) {
+      // Always update the row currently in use (avoids creating duplicates).
+      if (settings?.id) {
         const { data, error } = await supabase
           .from('sonoplastia_configuracoes')
           .update(updates)
@@ -39,21 +38,16 @@ export function useSettings() {
         return data;
       }
 
-      // Regular user without own settings -> create a personal copy.
-      const base: any = { ...(settings || {}) };
-      delete base.id;
-      delete base.owner_id;
-      delete base.created_at;
-      delete base.updated_at;
-
+      // No settings row yet -> create the first one.
       const { data, error } = await supabase
         .from('sonoplastia_configuracoes')
-        .insert({ ...base, ...updates })
+        .insert({ ...updates } as any)
         .select()
         .single();
       if (error) throw error;
       return data;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
       toast.success('Configurações salvas!');
