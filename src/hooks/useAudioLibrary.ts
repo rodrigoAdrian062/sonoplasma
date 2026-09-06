@@ -126,10 +126,8 @@ export function useAudioLibrary() {
   });
 
   const uploadAndAddAudio = async (file: File, name: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Não autenticado');
     const duracao = await probeAudioDuration(URL.createObjectURL(file)).catch(() => null);
-    const fileName = `${user.id}/library-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const fileName = `publico/library-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
     
     const { data: uploadData, error: uploadError } = await supabase.storage

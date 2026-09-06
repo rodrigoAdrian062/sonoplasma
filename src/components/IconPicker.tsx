@@ -91,9 +91,7 @@ export function IconPicker({
     setIsUploading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Não autenticado');
-      const fileName = `${user.id}/icon-${Date.now()}.jpg`;
+      const fileName = `publico/icon-${Date.now()}.jpg`;
       const file = new File([croppedBlob], `icon-${Date.now()}.jpg`, { type: 'image/jpeg' });
 
       const { error: uploadError } = await supabase.storage
