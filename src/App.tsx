@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
@@ -21,6 +21,8 @@ const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Auth = lazy(() => import("./pages/Auth"));
+
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const Acervo = lazy(() => import("./pages/Acervo"));
 
@@ -85,8 +87,8 @@ const App = () => (
           <Suspense fallback={<RouteFallback />}>
           <ErrorBoundary context="routes">
           <Routes>
-            {/* Login desativado — qualquer acesso a /auth vai direto para a home */}
-            <Route path="/auth" element={<Navigate to="/" replace />} />
+            <Route path="/auth" element={<ErrorBoundary context="Auth"><Auth /></ErrorBoundary>} />
+
             <Route 
               path="/" 
               element={

@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, Presentation, FolderPlus, Library, Users } from 'lucide-react';
+import { Sparkles, Plus, Settings, Presentation, FolderPlus, Library, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InstallPWA } from '@/components/InstallPWA';
 import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
@@ -14,6 +14,7 @@ const SettingsModal = lazy(() =>
 
 
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useUiToggles } from '@/hooks/useUiToggles';
 import {
@@ -35,6 +36,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const { settings } = useSettings();
   const { isSuperAdmin } = useUserRole();
   const { toggles } = useUiToggles();
+  const { signOut } = useAuth();
 
   return (
     <>
@@ -106,6 +108,15 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 aria-label="Configurações"
               >
                 <Settings size={18} aria-hidden="true" />
+              </Button>
+              <Button
+                onClick={() => signOut()}
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive h-8 w-8"
+                aria-label="Sair"
+              >
+                <LogOut size={18} aria-hidden="true" />
               </Button>
               {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Button
@@ -198,6 +209,20 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               >
                 <Settings size={20} aria-hidden="true" />
               </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => signOut()}
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="Sair"
+                  >
+                    <LogOut size={20} aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sair</TooltipContent>
+              </Tooltip>
               {toggles.btn_apresentar && hasStages && onPresentationMode && (
                 <Tooltip>
                   <TooltipTrigger asChild>
