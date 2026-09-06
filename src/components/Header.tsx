@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, LogOut, Presentation, FolderPlus, Library, Users } from 'lucide-react';
+import { Sparkles, Plus, Settings, Presentation, FolderPlus, Library, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InstallPWA } from '@/components/InstallPWA';
 import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
@@ -14,7 +14,6 @@ const SettingsModal = lazy(() =>
 
 
 import { useSettings } from '@/hooks/useSettings';
-import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useUiToggles } from '@/hooks/useUiToggles';
 import {
@@ -34,13 +33,8 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
-  const { signOut } = useAuth();
   const { isSuperAdmin } = useUserRole();
   const { toggles } = useUiToggles();
-
-  const handleLogout = async () => {
-    await signOut();
-  };
 
   return (
     <>
@@ -76,19 +70,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Frequency432Indicator compact />
               <InstallPWA compact />
               <HeaderAudioOutputButton compact />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLogout}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive h-8 w-8"
-                  >
-                    <LogOut size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sair</TooltipContent>
-              </Tooltip>
               {isSuperAdmin && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -180,19 +161,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Frequency432Indicator />
               <InstallPWA />
               <HeaderAudioOutputButton />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleLogout}
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <LogOut size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sair</TooltipContent>
-              </Tooltip>
               {isSuperAdmin && (
                 <Tooltip>
                   <TooltipTrigger asChild>
