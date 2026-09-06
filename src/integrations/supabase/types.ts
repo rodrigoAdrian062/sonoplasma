@@ -177,7 +177,7 @@ export type Database = {
           chave: string
           created_at: string
           id: string
-          owner_id: string
+          owner_id: string | null
           updated_at: string
           valor: Json
         }
@@ -185,7 +185,7 @@ export type Database = {
           chave: string
           created_at?: string
           id?: string
-          owner_id?: string
+          owner_id?: string | null
           updated_at?: string
           valor?: Json
         }
@@ -193,7 +193,7 @@ export type Database = {
           chave?: string
           created_at?: string
           id?: string
-          owner_id?: string
+          owner_id?: string | null
           updated_at?: string
           valor?: Json
         }
@@ -397,7 +397,7 @@ export type Database = {
           created_at: string
           id: string
           is_template: boolean
-          owner_id: string
+          owner_id: string | null
           secao_id: string | null
           titulo: string
           updated_at: string
@@ -407,7 +407,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_template?: boolean
-          owner_id?: string
+          owner_id?: string | null
           secao_id?: string | null
           titulo?: string
           updated_at?: string
@@ -417,7 +417,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_template?: boolean
-          owner_id?: string
+          owner_id?: string | null
           secao_id?: string | null
           titulo?: string
           updated_at?: string

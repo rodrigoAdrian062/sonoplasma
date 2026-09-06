@@ -8,6 +8,13 @@
       "when": 1788032434564,
       "tag": "0000_create_sonoplastia_estado",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788659669438,
+      "tag": "0001_acesso_sem_login_politicas_publicas",
+      "breakpoints": true
     }
   ]
 }
