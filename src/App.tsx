@@ -86,7 +86,8 @@ const App = () => (
           <Suspense fallback={<RouteFallback />}>
           <ErrorBoundary context="routes">
           <Routes>
-            <Route path="/auth" element={<Auth />} />
+            {/* Login desativado — qualquer acesso a /auth vai direto para a home */}
+            <Route path="/auth" element={<Navigate to="/" replace />} />
             <Route 
               path="/" 
               element={
