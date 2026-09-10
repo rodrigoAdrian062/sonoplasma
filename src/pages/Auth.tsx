@@ -277,23 +277,6 @@ export default function Auth() {
           </div>
         </div>
 
-        {/* Alternar entre entrar e cadastrar */}
-        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-background/60 border border-gold/20 backdrop-blur-sm">
-          {(['entrar', 'cadastrar'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => { setModo(m); setErrorMessage(null); }}
-              className={cn(
-                'py-2 text-sm rounded-md transition-colors',
-                modo === m ? 'bg-gold text-background font-medium' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {m === 'entrar' ? 'Entrar' : 'Fazer cadastro'}
-            </button>
-          ))}
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMessage && (
@@ -331,8 +314,8 @@ export default function Auth() {
                 type={showSenha ? 'text' : 'password'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                placeholder={modo === 'cadastrar' ? 'Crie sua senha (mín. 6)' : 'Digite sua senha'}
-                autoComplete={modo === 'cadastrar' ? 'new-password' : 'current-password'}
+                placeholder="Digite sua senha"
+                autoComplete="current-password"
                 className="pl-10 pr-10 bg-background/60 backdrop-blur-sm"
                 required
               />
