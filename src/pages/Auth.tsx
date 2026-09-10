@@ -319,6 +319,23 @@ export default function Auth() {
           </div>
         </div>
 
+        {/* Alternar entre entrar e cadastrar */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-background/60 border border-gold/20 backdrop-blur-sm">
+          {(['entrar', 'cadastrar'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => { setModo(m); setErrorMessage(null); }}
+              className={cn(
+                'py-2 text-sm rounded-md transition-colors',
+                modo === m ? 'bg-gold text-background font-medium' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {m === 'entrar' ? 'Entrar' : 'Fazer cadastro'}
+            </button>
+          ))}
+        </div>
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMessage && (
@@ -356,8 +373,8 @@ export default function Auth() {
                 type={showSenha ? 'text' : 'password'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                placeholder="Digite sua senha"
-                autoComplete="current-password"
+                placeholder={modo === 'cadastrar' ? 'Crie sua senha (mín. 6)' : 'Digite sua senha'}
+                autoComplete={modo === 'cadastrar' ? 'new-password' : 'current-password'}
                 className="pl-10 pr-10 bg-background/60 backdrop-blur-sm"
                 required
               />
@@ -372,6 +389,25 @@ export default function Auth() {
             </div>
           </div>
 
+          {modo === 'cadastrar' && (
+            <div className="space-y-2">
+              <Label htmlFor="confirmar" className="text-foreground/90">Confirmar senha</Label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="confirmar"
+                  type={showSenha ? 'text' : 'password'}
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  placeholder="Repita a senha"
+                  autoComplete="new-password"
+                  className="pl-10 bg-background/60 backdrop-blur-sm"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           <Button
             type="submit"
             className="w-full bg-gold hover:bg-gold-glow text-background shadow-lg shadow-gold/20"
@@ -380,19 +416,21 @@ export default function Auth() {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Entrando...
+                {modo === 'cadastrar' ? 'Criando...' : 'Entrando...'}
               </>
             ) : (
               <>
-                <LogIn className="w-4 h-4 mr-2" />
-                Entrar
+                {modo === 'cadastrar' ? <Sparkles className="w-4 h-4 mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
+                {modo === 'cadastrar' ? 'Criar cadastro' : 'Entrar'}
               </>
             )}
           </Button>
         </form>
 
         <p className="text-center text-xs text-muted-foreground/70 drop-shadow-sm">
-          Credenciais fornecidas pelo administrador
+          {modo === 'cadastrar'
+            ? 'Escolha um nome sem espaços e uma senha de no mínimo 6 caracteres'
+            : 'Credenciais fornecidas pelo administrador'}
         </p>
       </div>
 
