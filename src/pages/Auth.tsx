@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, signIn } = useAuth();
+  const { user, isLoading: authLoading, signIn, signUp } = useAuth();
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
 
@@ -26,6 +26,8 @@ export default function Auth() {
   const [nome, setNome] = useState('');
   const [senha, setSenha] = useState('');
   const [showSenha, setShowSenha] = useState(false);
+  const [modo, setModo] = useState<'entrar' | 'cadastrar'>('entrar');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   // Track mouse movement for eye following effect
   const handleMouseMove = useCallback((e: MouseEvent) => {
