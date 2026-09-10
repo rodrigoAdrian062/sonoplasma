@@ -82,46 +82,6 @@ export default function Auth() {
     const email = `${username}@plenitude.app`;
 
     try {
-      if (modo === 'cadastrar') {
-        if (!/^[a-z0-9._-]{3,}$/.test(username)) {
-          const msg = 'Use ao menos 3 caracteres, sem espaços ou acentos';
-          setErrorMessage(msg);
-          triggerShake();
-          toast.error(msg);
-          setIsSubmitting(false);
-          return;
-        }
-        if (senha.length < 6) {
-          const msg = 'A senha deve ter no mínimo 6 caracteres';
-          setErrorMessage(msg);
-          triggerShake();
-          toast.error(msg);
-          setIsSubmitting(false);
-          return;
-        }
-        if (senha !== confirmarSenha) {
-          const msg = 'As senhas não coincidem';
-          setErrorMessage(msg);
-          triggerShake();
-          toast.error(msg);
-          setIsSubmitting(false);
-          return;
-        }
-
-        const { error } = await signUp(email, senha, username);
-        if (error) {
-          const already = /already|registered|exists/i.test(error.message);
-          const msg = already ? 'Este nome já está em uso' : 'Não foi possível criar o acesso';
-          setErrorMessage(msg);
-          triggerShake();
-          toast.error(msg);
-        } else {
-          toast.success('Cadastro concluído! Bem-vindo!');
-        }
-        setIsSubmitting(false);
-        return;
-      }
-
       const { error } = await signIn(email, senha);
 
       if (error) {
