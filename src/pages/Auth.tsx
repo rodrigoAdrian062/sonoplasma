@@ -338,21 +338,19 @@ export default function Auth() {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                {modo === 'cadastrar' ? 'Criando...' : 'Entrando...'}
+                Entrando...
               </>
             ) : (
               <>
-                {modo === 'cadastrar' ? <Sparkles className="w-4 h-4 mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
-                {modo === 'cadastrar' ? 'Criar cadastro' : 'Entrar'}
+                <LogIn className="w-4 h-4 mr-2" />
+                Entrar
               </>
             )}
           </Button>
         </form>
 
         <p className="text-center text-xs text-muted-foreground/70 drop-shadow-sm">
-          {modo === 'cadastrar'
-            ? 'Escolha um nome sem espaços e uma senha de no mínimo 6 caracteres'
-            : 'Credenciais fornecidas pelo administrador'}
+          Credenciais fornecidas pelo administrador
         </p>
       </div>
 
