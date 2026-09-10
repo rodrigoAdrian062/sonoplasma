@@ -330,25 +330,6 @@ export default function Auth() {
             </div>
           </div>
 
-          {modo === 'cadastrar' && (
-            <div className="space-y-2">
-              <Label htmlFor="confirmar" className="text-foreground/90">Confirmar senha</Label>
-              <div className="relative">
-                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="confirmar"
-                  type={showSenha ? 'text' : 'password'}
-                  value={confirmarSenha}
-                  onChange={(e) => setConfirmarSenha(e.target.value)}
-                  placeholder="Repita a senha"
-                  autoComplete="new-password"
-                  className="pl-10 bg-background/60 backdrop-blur-sm"
-                  required
-                />
-              </div>
-            </div>
-          )}
-
           <Button
             type="submit"
             className="w-full bg-gold hover:bg-gold-glow text-background shadow-lg shadow-gold/20"
