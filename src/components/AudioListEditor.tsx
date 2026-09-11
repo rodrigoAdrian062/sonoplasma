@@ -195,7 +195,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       toast.success('Áudio carregado com sucesso!');
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload: ' + error.message);
+      toast.error(mensagemUpload(error));
     } finally {
       setUploadingIndex(null);
     }

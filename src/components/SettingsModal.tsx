@@ -198,7 +198,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       return publicUrl;
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload da imagem');
+      toast.error(mensagemUpload(error));
       return null;
     }
   };
