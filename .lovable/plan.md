@@ -1,21 +1,28 @@
-# Corrigir o erro ao entrar
+# Corrigir o erro "new row violates row-level security policy"
 
-## O que está acontecendo
+## Situação atual (verificada agora)
 
-O sistema tem apenas duas contas cadastradas. A principal é **plenitude**, e ela conseguiu entrar hoje às 03:01. As tentativas seguintes foram recusadas com "credenciais inválidas" — ou seja, o nome de usuário ou a senha digitados não correspondem a nenhuma conta existente. Não é falha de conexão nem do app.
+Consultei as regras do banco e do armazenamento:
 
-Como o cadastro na tela de entrada foi removido, qualquer nome diferente de "plenitude" é recusado.
+- As três pastas de arquivos (imagens do topo, ícones e áudios) estão públicas e têm uma regra de acesso liberada para visitantes e usuários logados.
+- Todas as tabelas do sistema (seções, etapas, áudios, biblioteca, configurações) também estão liberadas.
+- As tabelas de **perfis** e **papéis de usuário** só permitem leitura — nenhuma gravação direta pelo app.
 
-## O que eu vou fazer
+Ou seja: com as regras como estão hoje, enviar imagem ou áudio deveria funcionar. Por isso não vou afirmar uma causa sem antes reproduzir o erro. A mensagem pode ser antiga (de antes do ajuste das regras) ou vir de uma tela específica que ainda grava em algo bloqueado.
 
-1. Definir uma senha nova e conhecida para a conta **plenitude**, para você entrar com certeza.
-   - Usuário: `plenitude`
-   - Senha temporária: `Plenitude@2026`
-2. Deixar uma mensagem de erro mais clara na tela de entrada, dizendo "usuário ou senha incorretos" em vez do texto técnico atual.
+## O que vou fazer
 
-Depois de entrar, você pode trocar essa senha e criar outros acessos na página de usuários.
+1. **Reproduzir o erro** no app rodando: tentar enviar uma imagem e um áudio e capturar a mensagem exata e a origem dela.
+2. **Corrigir conforme o resultado**:
+   - Se o bloqueio for no envio de arquivos: criar regras explícitas de enviar, ler, atualizar e excluir para cada uma das três pastas, em vez da regra genérica atual.
+   - Se o bloqueio for em perfis/papéis: passar essa gravação para a função protegida do servidor, que já tem permissão, em vez de gravar direto do app.
+3. **Melhorar a mensagem** mostrada na tela: em vez do texto técnico em inglês, algo claro como "Sem permissão para enviar este arquivo. Entre novamente e tente de novo."
+4. Testar novamente envio de imagem, ícone e áudio até funcionar.
 
 ## Detalhes técnicos
 
-- Atualização da senha do usuário `plenitude@plenitude.app` via API de administração de autenticação (não é migração de banco).
-- Ajuste do tratamento de erro em `src/pages/Auth.tsx` para traduzir `invalid_credentials`.
+- Verificado: `pg_policies` em `storage.objects` (1 política PERMISSIVE ALL para `anon, authenticated` nos buckets `logos`, `stage-icons`, `stage-audios`), políticas de `public.*` (ALL true), e privilégios INSERT/SELECT presentes para `anon`/`authenticated` em `storage.objects`.
+- `profiles` e `user_roles` não têm políticas de INSERT/UPDATE/DELETE — gravações nessas tabelas só via edge functions (`create-user`, `update-user`, `delete-user`).
+- Reprodução com Playwright em `http://localhost:8080`, capturando console e respostas de rede do endpoint de storage.
+- Eventual migração: políticas separadas por comando em `storage.objects` por bucket; nenhuma alteração destrutiva.
+- Tratamento de erro nos pontos de upload: `EditableBanner.tsx`, `IconPicker.tsx`, `SettingsModal.tsx`, `AudioListEditor.tsx`, `useAudioLibrary.ts`.
