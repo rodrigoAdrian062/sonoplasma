@@ -41,9 +41,28 @@ function traduzirErro(raw: string): string {
   if (m.includes("permission") || m.includes("not allowed")) return "Permissão negada.";
   if (m.includes("not found") || m.includes("404")) return "Recurso não encontrado.";
   if (m.includes("jwt") || m.includes("unauthorized") || m.includes("401")) return "Sessão expirada. Faça login novamente.";
-  if (m.includes("row-level security") || m.includes("policy")) return "Acesso não autorizado a este dado.";
+  if (m.includes("row-level security") || m.includes("policy")) return "Sem permissão para esta ação. Entre novamente e tente de novo.";
   if (m.includes("duplicate key") || m.includes("unique")) return "Este item já existe.";
   return raw.length > 160 ? "Ocorreu um erro. Tente novamente." : raw;
+}
+
+/** Mensagem pt-BR amigável para falhas de envio de arquivo (imagens/áudios). */
+export function mensagemUpload(err: unknown): string {
+  const raw = extractMessage(err);
+  const m = raw.toLowerCase();
+  if (m.includes("row-level security") || m.includes("policy") || m.includes("unauthorized") || m.includes("403")) {
+    return "Sem permissão para enviar este arquivo. Entre novamente e tente de novo.";
+  }
+  if (m.includes("payload too large") || m.includes("413") || m.includes("exceeded the maximum")) {
+    return "Arquivo muito grande. Escolha um menor.";
+  }
+  if (m.includes("failed to fetch") || m.includes("networkerror")) {
+    return "Falha de conexão ao enviar. Verifique sua internet.";
+  }
+  if (m.includes("already exists") || m.includes("duplicate")) {
+    return "Já existe um arquivo com esse nome. Tente novamente.";
+  }
+  return "Não foi possível enviar o arquivo. Tente novamente.";
 }
 
 export interface RetryOptions {
