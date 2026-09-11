@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
 import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
+import { mensagemUpload } from '@/lib/errorHandler';
 // Normaliza uma URL de áudio para comparação de duplicatas.
 // Reduz YouTube ao seu ID único; para o resto, compara a URL limpa.
 import { getYouTubeVideoId } from '@/lib/embedUrl';
@@ -135,7 +136,7 @@ export function useAudioLibrary() {
       .upload(fileName, file);
 
     if (uploadError) {
-      toast({ title: 'Erro ao fazer upload', description: uploadError.message, variant: 'destructive' });
+      toast({ title: 'Não foi possível enviar', description: mensagemUpload(uploadError), variant: 'destructive' });
       throw uploadError;
     }
 
