@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettings } from '@/hooks/useSettings';
 import { resizeImage } from '@/lib/imageUtils';
+import { mensagemUpload } from '@/lib/errorHandler';
 import { Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import masonicBanner from '@/assets/masonic-banner.png';
@@ -52,7 +53,7 @@ export function EditableBanner() {
       updateSettings.mutate({ banner_url: publicUrl });
     } catch (error) {
       console.error('Banner upload error:', error);
-      toast.error('Erro ao enviar imagem');
+      toast.error(mensagemUpload(error));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

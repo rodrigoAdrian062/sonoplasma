@@ -24,6 +24,7 @@ import { useUiToggles } from '@/hooks/useUiToggles';
 import { useFrequency432, useHealingHz } from '@/hooks/useFrequency432';
 import { HEALING_FREQUENCIES } from '@/lib/pitch432';
 import { Download, Eye, Music2 } from 'lucide-react';
+import { mensagemUpload } from '@/lib/errorHandler';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -198,7 +199,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       return publicUrl;
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload da imagem');
+      toast.error(mensagemUpload(error));
       return null;
     }
   };

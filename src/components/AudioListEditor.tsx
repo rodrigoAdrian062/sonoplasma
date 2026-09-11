@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryModal } from './AudioLibraryModal';
+import { mensagemUpload } from '@/lib/errorHandler';
 
 
 interface AudioItem {
@@ -195,7 +196,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       toast.success('Áudio carregado com sucesso!');
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Erro ao fazer upload: ' + error.message);
+      toast.error(mensagemUpload(error));
     } finally {
       setUploadingIndex(null);
     }

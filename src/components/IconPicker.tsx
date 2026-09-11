@@ -10,6 +10,7 @@ import { MASONIC_SYMBOLS } from '@/lib/masonicSymbols';
 import { Landmark, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { mensagemUpload } from '@/lib/errorHandler';
 
 // Import gallery images
 import galleryChalice from '@/assets/gallery/chalice.jpg';
@@ -108,7 +109,7 @@ export function IconPicker({
       toast.success('Imagem enviada com sucesso');
     } catch (error) {
       console.error('Error uploading icon:', error);
-      toast.error('Erro ao enviar imagem');
+      toast.error(mensagemUpload(error));
     } finally {
       setIsUploading(false);
       if (tempImageSrc) {
