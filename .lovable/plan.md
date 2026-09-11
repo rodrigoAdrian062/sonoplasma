@@ -1,27 +1,21 @@
-# Corrigir erro de upload: "new row violates row-level security policy"
+# Corrigir o erro ao entrar
 
-## O que é o erro
-O banco de dados bloqueou a gravação do arquivo enviado porque a regra de segurança (RLS) do armazenamento não cobria explicitamente a operação de inserção. Não é problema no arquivo nem no código do app.
+## O que está acontecendo
 
-## Diagnóstico (confirmado)
-- A política única "Arquivos do app - acesso publico" existe em `storage.objects` para os buckets `logos`, `stage-icons` e `stage-audios`, com `cmd:ALL`.
-- Os toasts "Erro ao fazer upload" vêm de `src/hooks/useAudioLibrary.ts` (upload ao bucket `stage-audios`) e `src/components/AudioListEditor.tsx` (mesmo bucket).
-- Mesmo com `ALL`, o erro aparece — provável causa: política genérica criada após versões antigas do app, ou rejeição no `INSERT` específico do storage. A correção é criar políticas explícitas por operação.
+O sistema tem apenas duas contas cadastradas. A principal é **plenitude**, e ela conseguiu entrar hoje às 03:01. As tentativas seguintes foram recusadas com "credenciais inválidas" — ou seja, o nome de usuário ou a senha digitados não correspondem a nenhuma conta existente. Não é falha de conexão nem do app.
 
-## Correção
-1. Migration no banco: remover a política genérica e criar políticas explícitas em `storage.objects` para cada operação (SELECT, INSERT, UPDATE, DELETE) nos buckets `logos`, `stage-icons` e `stage-audios`, para `anon` e `authenticated`:
-   ```sql
-   drop policy if exists "Arquivos do app - acesso publico" on storage.objects;
-   create policy "upload publico insert" on storage.objects for insert to anon, authenticated
-     with check (bucket_id in ('logos','stage-icons','stage-audios'));
-   create policy "upload publico select" on storage.objects for select to anon, authenticated
-     using (bucket_id in ('logos','stage-icons','stage-audios'));
-   create policy "upload publico update" on storage.objects for update to anon, authenticated
-     using (bucket_id in ('logos','stage-icons','stage-audios'));
-   create policy "upload publico delete" on storage.objects for delete to anon, authenticated
-     using (bucket_id in ('logos','stage-icons','stage-audios'));
-   ```
-2. Verificar o build e testar um upload de áudio na biblioteca.
+Como o cadastro na tela de entrada foi removido, qualquer nome diferente de "plenitude" é recusado.
 
-## Resultado esperado
-Upload de áudios e imagens volta a funcionar, sem o aviso vermelho de RLS.
+## O que eu vou fazer
+
+1. Definir uma senha nova e conhecida para a conta **plenitude**, para você entrar com certeza.
+   - Usuário: `plenitude`
+   - Senha temporária: `Plenitude@2026`
+2. Deixar uma mensagem de erro mais clara na tela de entrada, dizendo "usuário ou senha incorretos" em vez do texto técnico atual.
+
+Depois de entrar, você pode trocar essa senha e criar outros acessos na página de usuários.
+
+## Detalhes técnicos
+
+- Atualização da senha do usuário `plenitude@plenitude.app` via API de administração de autenticação (não é migração de banco).
+- Ajuste do tratamento de erro em `src/pages/Auth.tsx` para traduzir `invalid_credentials`.
