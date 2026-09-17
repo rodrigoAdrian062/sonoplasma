@@ -4,8 +4,14 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+const packageVersion = process.env.npm_package_version || "0.0.0";
+const buildVersion = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || packageVersion;
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(buildVersion),
+  },
   server: {
     host: "::",
     port: 8080,

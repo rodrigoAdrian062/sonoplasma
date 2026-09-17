@@ -67,6 +67,9 @@ export function MasonicFooter() {
         <p className="text-[9px] uppercase tracking-widest text-muted-foreground/30 font-bold">
           Modo Offline Habilitado
         </p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground/30 font-bold">
+          Versão {__APP_VERSION__}
+        </p>
       </div>
     </footer>
   );
