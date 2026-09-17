@@ -190,6 +190,10 @@ export default function AudioLibraryPage() {
   const [editingFolderName, setEditingFolderName] = useState('');
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
+  const parentFolder = currentFolder?.parent_id
+    ? folders.find(f => f.id === currentFolder.parent_id) || null
+    : null;
+  const visibleFolders = folders.filter((folder) => folder.parent_id === currentFolderId);
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
@@ -589,7 +593,7 @@ export default function AudioLibraryPage() {
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
-    await addFolder.mutateAsync(newFolderName.trim());
+    await addFolder.mutateAsync({ nome: newFolderName.trim(), parentId: currentFolderId });
     setNewFolderName('');
     setShowNewFolderInput(false);
   };
@@ -655,7 +659,7 @@ export default function AudioLibraryPage() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => {
-            if (currentFolderId) { setCurrentFolderId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
+            if (currentFolderId) { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
             else navigate('/');
           }}>
             <ArrowLeft size={20} />
@@ -664,7 +668,7 @@ export default function AudioLibraryPage() {
           <div className="flex items-center gap-1 flex-1 min-w-0">
             <h1
               className={cn("font-display text-lg sm:text-xl font-semibold text-foreground truncate", currentFolderId && "cursor-pointer hover:text-gold transition-colors")}
-              onClick={currentFolderId ? () => { setCurrentFolderId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); } : undefined}
+              onClick={currentFolderId ? () => { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); } : undefined}
             >
               Biblioteca
             </h1>
@@ -764,13 +768,13 @@ export default function AudioLibraryPage() {
 
       {/* Content */}
       <main className="container py-4 sm:py-6 space-y-4 max-w-3xl mx-auto">
-        {/* Folders Section (only at root level) */}
-        {!currentFolderId && (
+        {/* Folder Section: root folders at the library root, child folders inside each parent */}
+        {(
           <div className="space-y-2">
             {/* Folder list */}
-            {folders.length > 0 && (
+            {visibleFolders.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {folders.map((folder) => {
+                {visibleFolders.map((folder) => {
                   const color = folder.cor || 'hsl(var(--gold))';
                   return (
                   <div
@@ -871,7 +875,7 @@ export default function AudioLibraryPage() {
             {showNewFolderInput ? (
               <div className="flex gap-2">
                 <Input
-                  placeholder="Nome da pasta"
+                  placeholder={currentFolderId ? 'Nome da subpasta' : 'Nome da pasta principal'}
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setShowNewFolderInput(false); }}
@@ -893,7 +897,7 @@ export default function AudioLibraryPage() {
                   onClick={() => setShowNewFolderInput(true)}
                   className="border-dashed border-gold/50 text-gold hover:bg-gold/10"
                 >
-                  <FolderPlus size={14} className="mr-1" /> Nova pasta
+                  <FolderPlus size={14} className="mr-1" /> {currentFolderId ? 'Nova subpasta' : 'Nova pasta principal'}
                 </Button>
                 <Button
                   variant="outline"

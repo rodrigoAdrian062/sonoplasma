@@ -123,14 +123,29 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
   // Pastas da biblioteca
   const pastaMap = new Map<string, string>();
   for (const p of data.pastas || []) {
+    const payload: any = stripMeta(p);
+    // Insere primeiro sem pai para permitir backups em qualquer ordem.
+    payload.parent_id = null;
     const { data: ins, error } = await supabase
       .from('sonoplastia_audios_pastas')
-      .insert(stripMeta(p))
+      .insert(payload)
       .select('id')
       .single();
     if (error) throw error;
     pastaMap.set(p.id, ins.id);
     result.pastas++;
+  }
+
+  for (const p of data.pastas || []) {
+    if (!p.parent_id) continue;
+    const newParentId = pastaMap.get(p.parent_id);
+    const newId = pastaMap.get(p.id);
+    if (!newParentId || !newId) continue;
+    const { error } = await supabase
+      .from('sonoplastia_audios_pastas')
+      .update({ parent_id: newParentId })
+      .eq('id', newId);
+    if (error) throw error;
   }
 
   // Biblioteca (religa pasta_id)

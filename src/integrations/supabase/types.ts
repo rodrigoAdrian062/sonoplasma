@@ -100,6 +100,7 @@ export type Database = {
           nome: string
           ordem: number
           owner_id: string | null
+          parent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -110,6 +111,7 @@ export type Database = {
           nome: string
           ordem?: number
           owner_id?: string | null
+          parent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -120,6 +122,7 @@ export type Database = {
           nome?: string
           ordem?: number
           owner_id?: string | null
+          parent_id?: string | null
           updated_at?: string
         }
         Relationships: []

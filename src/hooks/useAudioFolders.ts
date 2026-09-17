@@ -6,6 +6,7 @@ import { PASTAS_PADRAO } from '@/lib/pastasPadrao';
 export interface AudioFolder {
   id: string;
   nome: string;
+  parent_id: string | null;
   icone: string | null;
   cor: string | null;
   ordem: number;
@@ -30,10 +31,10 @@ export function useAudioFolders() {
   });
 
   const addFolder = useMutation({
-    mutationFn: async (nome: string) => {
+    mutationFn: async ({ nome, parentId }: { nome: string; parentId?: string | null }) => {
       const { data, error } = await supabase
         .from('sonoplastia_audios_pastas')
-        .insert({ nome, ordem: folders.length })
+        .insert({ nome, parent_id: parentId ?? null, ordem: folders.length })
         .select()
         .single();
       if (error) throw error;
@@ -123,6 +124,7 @@ export function useAudioFolders() {
           nome: p.nome,
           icone: p.icone,
           cor: p.cor,
+          parent_id: null,
           ordem: folders.length + i,
         })),
       );
