@@ -17,7 +17,6 @@ import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Copy } from 'lucide-r
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
-import { WelcomeReloadPrompt } from '@/components/WelcomeReloadPrompt';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -81,7 +80,6 @@ const Index = () => {
       />
       
       <main className="container px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
-        <WelcomeReloadPrompt />
         {/* Banner principal editável */}
         <EditableBanner />
 

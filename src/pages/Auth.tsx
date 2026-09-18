@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, LogIn, AlertCircle, User, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { markWelcomeReloadRequired } from '@/components/WelcomeReloadPrompt';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -88,7 +87,6 @@ export default function Auth() {
         triggerShake();
         toast.error(msg);
       } else {
-        markWelcomeReloadRequired();
         toast.success("Bem-vindo!");
         // Navigation is handled by the useEffect that watches user state
       }
