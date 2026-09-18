@@ -17,9 +17,9 @@ import {
 
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
 import { toast } from '@/hooks/use-toast';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 interface AudioLibraryModalProps {
   isOpen: boolean;
@@ -46,6 +46,9 @@ function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtub
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
   const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
+  const { access } = useUserAccess();
+  const canUploadAudio = hasPermission(access, 'canUploadAudio');
+  const canUsePremiumLibrary = hasPermission(access, 'canUsePremiumLibrary');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [folderFilter, setFolderFilter] = useState<string | 'all'>('all');
@@ -244,6 +247,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
     setIsDownloadingAll(true);
     try {
+      const [{ default: JSZip }, { saveAs }] = await Promise.all([
+        import('jszip'),
+        import('file-saver'),
+      ]);
+
       const zip = new JSZip();
       let count = 0;
 
@@ -370,10 +378,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadAll}
-                      disabled={isDownloadingAll}
+                      disabled={isDownloadingAll || !canUsePremiumLibrary}
+                      title={canUsePremiumLibrary ? 'Baixar biblioteca' : 'Disponível apenas no plano Premium'}
                     >
                       {isDownloadingAll ? <Loader2 className="animate-spin mr-1" size={14} /> : <Download size={14} className="mr-1" />}
-                      {isDownloadingAll ? 'Baixando...' : 'Baixar'}
+                      {isDownloadingAll ? 'Baixando...' : canUsePremiumLibrary ? 'Baixar' : 'Premium'}
                     </Button>
                   </>
                 )}
@@ -386,7 +395,11 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           {/* Add Audio Section */}
           {!selectionMode && (
             <div className="border border-border rounded-lg p-3">
-              {!showAddForm ? (
+              {!canUploadAudio ? (
+                <div className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
+                  Biblioteca premium: faça upgrade para adicionar ou importar áudios.
+                </div>
+              ) : !showAddForm ? (
                 <Button
                   variant="outline"
                   onClick={() => setShowAddForm(true)}

@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, Youtube, Search, Plus, ExternalLink, Check } from 'lucide-react';
+import { Loader2, Sparkles, Youtube, Search, Plus, ExternalLink, Check, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 interface Suggestion {
   nome: string;
@@ -30,6 +32,8 @@ interface Props {
 
 export function YoutubeAiSuggestionsModal({ isOpen, onClose, stageTitle, stageDescription, onAddToStage }: Props) {
   const { addAudio } = useAudioLibrary();
+  const { access } = useUserAccess();
+  const canUseAI = hasPermission(access, 'canUseAI');
   const [hint, setHint] = useState('');
   const [sessionType, setSessionType] = useState('');
   const [loading, setLoading] = useState(false);
@@ -95,6 +99,27 @@ export function YoutubeAiSuggestionsModal({ isOpen, onClose, stageTitle, stageDe
     setAdded((p) => ({ ...p, [s.nome]: 'stage' }));
     toast.success('Adicionado à etapa');
   };
+
+  if (!canUseAI) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-md">
+          <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
+            <div className="rounded-full bg-gold/10 p-3 text-gold">
+              <Lock className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Recurso exclusivo do plano Premium</h3>
+            <p className="text-sm text-muted-foreground">
+              A sugestão de músicas com IA está bloqueada para usuários gratuitos.
+            </p>
+            <Button variant="outline" className="border-gold/60 text-gold hover:bg-gold/10" onClick={onClose}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>

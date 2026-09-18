@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ACCESS_PERMISSION_KEYS, buildPermissions, normalizePermissions, type AccessPlan, type AccessPermissionKey } from '@/lib/access';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,8 @@ interface ManagedUser {
   username: string;
   password: string | null;
   created_at: string;
+  plan: AccessPlan;
+  permissions: Record<AccessPermissionKey, boolean>;
 }
 
 export default function UserManagement() {
@@ -46,6 +49,7 @@ export default function UserManagement() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [savingAccess, setSavingAccess] = useState<Record<string, boolean>>({});
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['managed-users'],
@@ -53,13 +57,46 @@ export default function UserManagement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, username, password, created_at')
+        .select('user_id, username, password, created_at, plan, permissions')
         .neq('user_id', user!.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as ManagedUser[];
+
+      return (data || []).map((item: any) => ({
+        user_id: item.user_id,
+        username: item.username,
+        password: item.password ?? null,
+        created_at: item.created_at,
+        plan: (item.plan as AccessPlan | undefined) ?? 'free',
+        permissions: normalizePermissions(item.permissions ?? buildPermissions((item.plan as AccessPlan | undefined) ?? 'free')),
+      })) as ManagedUser[];
     },
   });
+
+  useEffect(() => {
+    if (!users.length) return;
+  }, [users]);
+
+  const updateUserAccess = async (managedUser: ManagedUser) => {
+    setSavingAccess((prev) => ({ ...prev, [managedUser.user_id]: true }));
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          plan: managedUser.plan,
+          permissions: managedUser.permissions,
+        })
+        .eq('user_id', managedUser.user_id);
+
+      if (error) throw error;
+      toast.success(`Acesso de "${managedUser.username}" atualizado!`);
+      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+    } catch {
+      toast.error('Erro ao atualizar permissão do usuário');
+    } finally {
+      setSavingAccess((prev) => ({ ...prev, [managedUser.user_id]: false }));
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +290,7 @@ export default function UserManagement() {
                     key={u.user_id}
                     className="rounded-lg border border-border bg-card p-3"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-foreground">{u.username}</p>
                         {isEditing ? (
@@ -283,16 +320,56 @@ export default function UserManagement() {
                             </Button>
                           </div>
                         ) : (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            Senha: <span className="font-mono">{pwVisible ? (u.password || '—') : '••••••'}</span>
-                            <button
-                              type="button"
-                              onClick={() => setVisiblePasswords((p) => ({ ...p, [u.user_id]: !p[u.user_id] }))}
-                              className="ml-2 align-middle text-muted-foreground hover:text-foreground"
-                            >
-                              {pwVisible ? <EyeOff size={13} /> : <Eye size={13} />}
-                            </button>
-                          </p>
+                          <>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              Senha: <span className="font-mono">{pwVisible ? (u.password || '—') : '••••••'}</span>
+                              <button
+                                type="button"
+                                onClick={() => setVisiblePasswords((p) => ({ ...p, [u.user_id]: !p[u.user_id] }))}
+                                className="ml-2 align-middle text-muted-foreground hover:text-foreground"
+                              >
+                                {pwVisible ? <EyeOff size={13} /> : <Eye size={13} />}
+                              </button>
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              {(['free', 'premium', 'admin'] as const).map((plan) => (
+                                <button
+                                  key={plan}
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextUser = { ...u, plan };
+                                    const nextPermissions = plan === 'admin'
+                                      ? buildPermissions('admin')
+                                      : plan === 'premium'
+                                        ? buildPermissions('premium')
+                                        : buildPermissions('free');
+                                    await updateUserAccess({ ...nextUser, permissions: nextPermissions });
+                                  }}
+                                  className={`rounded-full border px-2 py-1 text-[10px] font-medium uppercase tracking-wide transition-colors ${u.plan === plan ? 'border-gold bg-gold/10 text-gold' : 'border-border bg-secondary text-muted-foreground hover:text-foreground'}`}
+                                >
+                                  {plan}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                              {ACCESS_PERMISSION_KEYS.map((permissionKey) => (
+                                <label key={permissionKey} className="flex items-center gap-2 rounded-md border border-border bg-secondary/40 px-2 py-1.5 text-[11px] text-muted-foreground">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!u.permissions[permissionKey]}
+                                    onChange={async () => {
+                                      const nextPermissions = {
+                                        ...u.permissions,
+                                        [permissionKey]: !u.permissions[permissionKey],
+                                      };
+                                      await updateUserAccess({ ...u, permissions: nextPermissions });
+                                    }}
+                                  />
+                                  {permissionKey}
+                                </label>
+                              ))}
+                            </div>
+                          </>
                         )}
                       </div>
 

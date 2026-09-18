@@ -76,13 +76,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
   useEffect(() => {
     const syncSounds = () => {
-      console.log('Sincronizando sons rápidos (evento quickSoundsUpdated)');
       setSounds(loadSounds());
     };
 
     const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
       const { nome, url } = e.detail;
-      console.log('Recebido evento sonoplastia:addQuickSound:', { nome, url });
       
       const currentSounds = loadSounds();
 
@@ -158,7 +156,6 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
   useEffect(() => {
     if (!isLoading) {
-      console.log('useAudioLibrary carregou, sincronizando sons rápidos');
       setSounds(loadSounds());
     }
   }, [isLoading, audios]);

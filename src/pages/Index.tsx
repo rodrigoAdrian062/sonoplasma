@@ -17,10 +17,15 @@ import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Copy } from 'lucide-r
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 const Index = () => {
   const navigate = useNavigate();
   const { settings } = useSettings();
+  const { access } = useUserAccess();
+  const canCreateUnlimitedSections = hasPermission(access, 'canCreateUnlimitedSections');
+  const sectionLimitReached = !canCreateUnlimitedSections && sections.length >= 3;
   useThemeColor(settings?.cor_tema);
   
   const { stages, isLoading: stagesLoading } = useStages();
@@ -89,11 +94,15 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">Nenhuma seção cadastrada</p>
             <Button
               onClick={() => setIsNewSectionModal(true)}
-              className="bg-gold hover:bg-gold/90 text-background gap-2"
+              disabled={sectionLimitReached}
+              className="bg-gold hover:bg-gold/90 text-background gap-2 disabled:opacity-60"
             >
               <FolderPlus size={18} />
               Criar primeira seção
             </Button>
+            {sectionLimitReached && (
+              <p className="mt-3 text-xs text-muted-foreground">Seu plano gratuito permite até 3 seções. Atualize para Premium para criar mais.</p>
+            )}
           </div>
         ) : (
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
@@ -169,8 +178,8 @@ const Index = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => cloneSection.mutate(section.id)}
-                          disabled={cloneSection.isPending}
-                          className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-gold hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                          disabled={cloneSection.isPending || sectionLimitReached}
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-gold hover:bg-gold/10 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 transition-all disabled:opacity-50"
                           aria-label={`Clonar seção ${section.nome}`}
                         >
                           {cloneSection.isPending ? (

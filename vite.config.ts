@@ -92,17 +92,17 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        // Chunks conservadores: qualquer coisa que dependa de React fica junto
-        // do próprio React para evitar "createContext is undefined" no bundle
-        // publicado por ordem de carregamento entre chunks.
+        // Mantém apenas divisões estáveis e sem ciclos entre chunks.
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return;
-          if (id.includes("@supabase")) return "vendor-supabase";
-          if (id.includes("lucide-react")) return "vendor-icons";
-          // Todo o resto (react, react-dom, react-router, radix, tanstack,
-          // dnd-kit, scheduler, react-is, use-sync-external-store, etc.)
-          // fica no mesmo chunk para preservar a ordem de inicialização.
-          return "vendor";
+
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("@dnd-kit")) return "dnd";
+          if (id.includes("react-router-dom")) return "router";
+          if (id.includes("@radix-ui") || id.includes("@floating-ui") || id.includes("cmdk")) return "ui";
+          if (id.includes("@tanstack") || id.includes("react-query")) return "data";
+          if (id.includes("three") || id.includes("@react-three")) return "three";
         },
       },
     },

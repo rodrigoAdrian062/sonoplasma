@@ -2,9 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
 import { toast } from '@/hooks/use-toast';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 export function useSections() {
   const queryClient = useQueryClient();
+  const { access } = useUserAccess();
+  const canCreateUnlimitedSections = hasPermission(access, 'canCreateUnlimitedSections');
+
+  const ensureSectionQuota = (count: number) => {
+    if (!canCreateUnlimitedSections && count >= 3) {
+      throw new Error('Seu plano gratuito permite até 3 seções. Atualize para Premium para criar mais.');
+    }
+  };
 
   const { data: sections = [], isLoading, error } = useQuery({
     queryKey: ['sections'],
@@ -24,6 +34,8 @@ export function useSections() {
 
   const createSection = useMutation({
     mutationFn: async (section: CeremonySectionInsert) => {
+      ensureSectionQuota(sections.length);
+
       const { data, error } = await supabase
         .from('sonoplastia_secoes')
         .insert(section)
@@ -115,6 +127,8 @@ export function useSections() {
   
   const cloneSection = useMutation({
     mutationFn: async (id: string) => {
+      ensureSectionQuota(sections.length);
+
       // 1. Fetch original section
       const { data: originalSection, error: sectionError } = await supabase
         .from('sonoplastia_secoes')

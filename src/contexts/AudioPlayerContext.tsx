@@ -382,7 +382,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
     }
     (window as any).onYouTubeIframeAPIReady = () => {
-      console.log('YouTube IFrame API ready');
+      // API de YouTube carregada.
     };
   }, []);
 

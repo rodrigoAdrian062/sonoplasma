@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 import { supabase } from '@/integrations/supabase/client';
 import {
   destroySpotifyPlayer,
@@ -96,6 +98,8 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
 export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity, stageTitle, stageDescription }: AudioDragPickerProps) {
   const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
+  const { access } = useUserAccess();
+  const canUseAI = hasPermission(access, 'canUseAI');
 
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'upload' | 'youtube' | 'spotify'>('all');
@@ -213,6 +217,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
   const [isAutoPicking, setIsAutoPicking] = useState(false);
   const autoPickSix = async () => {
+    if (!canUseAI) {
+      toast.error('Este recurso é exclusivo do plano Premium');
+      return;
+    }
     if (!stageTitle) return;
     if (atMax) { toast.info('Etapa já está no máximo de áudios'); return; }
     setIsAutoPicking(true);
@@ -268,6 +276,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
   const [isAutoPickingAll, setIsAutoPickingAll] = useState(false);
   const autoPickAllYtSp = async () => {
+    if (!canUseAI) {
+      toast.error('Este recurso é exclusivo do plano Premium');
+      return;
+    }
     if (!stageTitle) return;
     if (atMax) { toast.info('Etapa já está no máximo de áudios'); return; }
     setIsAutoPickingAll(true);
@@ -556,58 +568,68 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
             </span>
             {stageTitle && (
               <div className="ml-auto flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={autoPickSix}
-                  disabled={isAutoPicking || atMax}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                    'border-gold/60 bg-gold text-background hover:bg-gold/90 disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                  title="A IA escolhe 6 áudios: 3 pelo nome + 3 pela análise da etapa"
-                >
-                  {isAutoPicking ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                  {isAutoPicking ? 'Selecionando...' : 'IA escolher 6 áudios'}
-                </button>
-                <button
-                  type="button"
-                  onClick={autoPickAllYtSp}
-                  disabled={isAutoPickingAll || atMax}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                    'border-[#1DB954]/60 bg-gradient-to-r from-red-500/90 to-[#1DB954]/90 text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                  title="A IA seleciona TODAS as músicas relevantes do YouTube + Spotify de todas as pastas"
-                >
-                  {isAutoPickingAll ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                  {isAutoPickingAll ? 'Analisando YT + Spotify...' : 'IA: todas do YouTube + Spotify'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowYtAi(true)}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                    'border-red-500/60 bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                  )}
-                  title="A IA sugere músicas instrumentais reais do YouTube para esta etapa"
-                >
-                  <Youtube size={12} />
-                  Sugerir do YouTube (IA)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSuggestMode((v) => !v)}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
-                    suggestMode
-                      ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
-                      : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
-                  )}
-                  title={`Sugere músicas conforme "${stageTitle}"`}
-                >
-                  {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                  {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
-                </button>
+                {canUseAI && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={autoPickSix}
+                      disabled={isAutoPicking || atMax}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        'border-gold/60 bg-gold text-background hover:bg-gold/90 disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                      title="A IA escolhe 6 áudios: 3 pelo nome + 3 pela análise da etapa"
+                    >
+                      {isAutoPicking ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                      {isAutoPicking ? 'Selecionando...' : 'IA escolher 6 áudios'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={autoPickAllYtSp}
+                      disabled={isAutoPickingAll || atMax}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        'border-[#1DB954]/60 bg-gradient-to-r from-red-500/90 to-[#1DB954]/90 text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed'
+                      )}
+                      title="A IA seleciona TODAS as músicas relevantes do YouTube + Spotify de todas as pastas"
+                    >
+                      {isAutoPickingAll ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                      {isAutoPickingAll ? 'Analisando YT + Spotify...' : 'IA: todas do YouTube + Spotify'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowYtAi(true)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        'border-red-500/60 bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                      )}
+                      title="A IA sugere músicas instrumentais reais do YouTube para esta etapa"
+                    >
+                      <Youtube size={12} />
+                      Sugerir do YouTube (IA)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSuggestMode((v) => !v)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all',
+                        suggestMode
+                          ? 'border-gold/60 bg-gold/15 text-gold shadow-sm shadow-gold/20'
+                          : 'border-border bg-secondary text-muted-foreground hover:text-gold hover:border-gold/40'
+                      )}
+                      title={`Sugere músicas conforme "${stageTitle}"`}
+                    >
+                      {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                      {isSuggesting ? 'IA analisando...' : suggestMode ? 'Sugestões IA ativas' : 'Sugerir com IA'}
+                    </button>
+                  </>
+                )}
+                {!canUseAI && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-muted-foreground/30 bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground">
+                    <Wand2 size={12} />
+                    Premium para usar IA
+                  </span>
+                )}
               </div>
             )}
           </DialogTitle>

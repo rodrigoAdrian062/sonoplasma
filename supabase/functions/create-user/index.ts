@@ -264,7 +264,42 @@ Deno.serve(async (req) => {
     }
 
     // --------------------------------------------------------
-    // 13. RESPOSTA DE SUCESSO
+    // 13. GARANTIR PERFIL PADRÃO COM PLANO GRATUITO
+    // --------------------------------------------------------
+
+    const defaultPermissions = {
+      canCreateUnlimitedSections: false,
+      canCreateUnlimitedStages: false,
+      canUsePremiumLibrary: false,
+      canUploadAudio: false,
+      canUseBackup: false,
+      canExportContent: false,
+      canUseAI: false,
+      canManageUsers: false,
+      canManagePermissions: false,
+      canUseAdvancedThemes: false,
+      canUseAdvancedPresentation: false,
+      canAccessEverything: false,
+    };
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          user_id: data.user.id,
+          username: username,
+          plan: "free",
+          permissions: defaultPermissions,
+        },
+        { onConflict: "user_id" },
+      );
+
+    if (profileError) {
+      console.error("Erro ao criar perfil do usuário:", profileError);
+    }
+
+    // --------------------------------------------------------
+    // 14. RESPOSTA DE SUCESSO
     // --------------------------------------------------------
 
     return new Response(

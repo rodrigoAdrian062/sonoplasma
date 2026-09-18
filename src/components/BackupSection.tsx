@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Download, Upload, Loader2, DatabaseBackup } from 'lucide-react';
+import { Download, Upload, Loader2, DatabaseBackup, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportBackup, downloadBackup, importBackup, BackupData } from '@/lib/backup';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 export function BackupSection() {
+  const { access } = useUserAccess();
+  const canUseBackup = hasPermission(access, 'canUseBackup');
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -45,6 +49,20 @@ export function BackupSection() {
       setIsImporting(false);
     }
   };
+
+  if (!canUseBackup) {
+    return (
+      <div className="space-y-2 border-t border-border pt-5">
+        <Label className="flex items-center gap-2 text-muted-foreground">
+          <Lock size={16} className="text-gold" />
+          Backup dos dados
+        </Label>
+        <div className="rounded-lg border border-dashed border-border bg-secondary/40 p-3 text-sm text-muted-foreground">
+          Esse recurso está bloqueado no plano atual.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 border-t border-border pt-5">

@@ -15,6 +15,10 @@ import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
 
+const MiniPlayer = lazy(() => import("@/components/MiniPlayer").then((module) => ({ default: module.MiniPlayer })));
+const QuickNav = lazy(() => import("@/components/QuickNav").then((module) => ({ default: module.QuickNav })));
+const FloatingBackgroundMusic = lazy(() => import("@/components/FloatingBackgroundMusic").then((module) => ({ default: module.FloatingBackgroundMusic })));
+
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
@@ -25,14 +29,6 @@ const Auth = lazy(() => import("./pages/Auth"));
 
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const Acervo = lazy(() => import("./pages/Acervo"));
-
-
-
-import { MiniPlayer } from "@/components/MiniPlayer";
-import { QuickNav } from "@/components/QuickNav";
-import { FloatingBackgroundMusic } from "@/components/FloatingBackgroundMusic";
-
-
 
 // Dados de cerimônia/áudio são majoritariamente estáticos entre navegações.
 // Evita refetch em cada mount / focus da aba.

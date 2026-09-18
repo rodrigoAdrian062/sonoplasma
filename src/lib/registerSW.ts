@@ -3,7 +3,6 @@
 // ou quando a URL tem ?sw=off. Nesses casos, remove registros antigos.
 
 const SW_URL = "/sw.js";
-const SW_RELOAD_KEY = "sonoplasma:sw-controller-reload";
 
 function isBlockedContext(): boolean {
   if (!import.meta.env.PROD) return true;
@@ -49,32 +48,9 @@ export function registerServiceWorker(): void {
     return;
   }
 
-  // Um novo service worker pode assumir o controle enquanto a página ainda
-  // está usando arquivos da versão anterior. Isso é especialmente problemático
-  // para os AudioWorklets: o player fica com módulos de versões diferentes até
-  // o usuário atualizar manualmente. Recarregamos uma única vez por aba quando
-  // o controller muda, garantindo que HTML, JS e worklets venham do mesmo build.
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    try {
-      if (window.sessionStorage.getItem(SW_RELOAD_KEY)) return;
-      window.sessionStorage.setItem(SW_RELOAD_KEY, "1");
-    } catch {
-      // Se o storage não estiver disponível, ainda é seguro atualizar uma vez.
-    }
-    window.location.reload();
-  }, { once: true });
-
   void import("virtual:pwa-register")
     .then(({ registerSW }) => {
-      registerSW({
-        immediate: true,
-        onRegisteredSW: (_swUrl: string, registration?: ServiceWorkerRegistration) => {
-          // Força a checagem da versão publicada na entrada do sistema, sem
-          // depender do intervalo padrão do navegador.
-          void registration?.update().catch(() => {});
-        },
-        onRegisterError: () => {},
-      });
+      registerSW({ immediate: true, onRegisterError: () => {} });
     })
     .catch(() => {});
 }
