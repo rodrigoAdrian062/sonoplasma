@@ -11,6 +11,7 @@ import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ReloadNotice } from "@/components/ReloadNotice";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
@@ -75,6 +76,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ReloadNotice>
         <AuthProvider>
           <AudioPlayerProvider>
           <BackgroundMusicProvider>
@@ -159,6 +161,7 @@ const App = () => (
 
           </AudioPlayerProvider>
         </AuthProvider>
+        </ReloadNotice>
       </BrowserRouter>
     </TooltipProvider>
   </PersistQueryClientProvider>
