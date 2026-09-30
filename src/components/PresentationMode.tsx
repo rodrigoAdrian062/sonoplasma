@@ -1516,7 +1516,19 @@ function PresentationContent({
       </Dialog>
 
       {/* Sons rápidos (mobile) */}
-      <div className="lg:hidden fixed left-3 bottom-24 z-50">
+      <div
+        className="lg:hidden fixed z-50 touch-none"
+        style={{ left: '12px', bottom: '96px' }}
+        draggable
+        onDragEnd={(event) => {
+          const panel = event.currentTarget;
+          const left = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, event.clientX - panel.offsetWidth / 2));
+          const top = Math.max(56, Math.min(window.innerHeight - panel.offsetHeight, event.clientY - panel.offsetHeight / 2));
+          panel.style.left = `${left}px`;
+          panel.style.top = `${top}px`;
+          panel.style.bottom = 'auto';
+        }}
+      >
         <QuickSoundsPanel compact />
       </div>
 

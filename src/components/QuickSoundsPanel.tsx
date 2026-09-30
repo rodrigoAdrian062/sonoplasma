@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -64,6 +64,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [compactVertical, setCompactVertical] = useState(() => localStorage.getItem('sonoplastia:quickSoundsVertical') === 'true');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -543,9 +544,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         onWheel={handleWheel}
         className="flex flex-col gap-2 bg-card/80 backdrop-blur-md border border-gold/30 rounded-2xl p-2 shadow-xl shadow-black/40 max-w-[164px]"
       >
-        <span className="text-[9px] uppercase tracking-[0.18em] text-gold/70 font-bold text-center">Sons rápidos</span>
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-[9px] uppercase tracking-[0.18em] text-gold/70 font-bold text-center">Sons rápidos</span>
+          <button
+            type="button"
+            onClick={() => setCompactVertical((vertical) => {
+              localStorage.setItem('sonoplastia:quickSoundsVertical', String(!vertical));
+              return !vertical;
+            })}
+            className="h-6 w-6 shrink-0 rounded-md text-gold/70 hover:bg-gold/10 hover:text-gold flex items-center justify-center"
+            title={compactVertical ? 'Organizar sons na horizontal' : 'Organizar sons na vertical'}
+            aria-label={compactVertical ? 'Organizar sons na horizontal' : 'Organizar sons na vertical'}
+          >
+            {compactVertical ? <Rows3 size={13} /> : <Columns3 size={13} />}
+          </button>
+        </div>
 
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className={cn('grid gap-1.5', compactVertical ? 'grid-cols-1' : 'grid-cols-2')}>
           {sounds.map((s) => (
             <div key={s.id} className="relative">
               <button
