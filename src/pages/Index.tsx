@@ -25,11 +25,11 @@ const Index = () => {
   const { settings } = useSettings();
   const { access } = useUserAccess();
   const canCreateUnlimitedSections = hasPermission(access, 'canCreateUnlimitedSections');
-  const sectionLimitReached = !canCreateUnlimitedSections && sections.length >= 3;
   useThemeColor(settings?.cor_tema);
   
   const { stages, isLoading: stagesLoading } = useStages();
   const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection, cloneSection } = useSections();
+  const sectionLimitReached = !canCreateUnlimitedSections && sections.length >= 3;
 
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
   const [isNewSectionModal, setIsNewSectionModal] = useState(false);
