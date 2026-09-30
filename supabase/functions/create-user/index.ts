@@ -296,6 +296,17 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error("Erro ao criar perfil do usuário:", profileError);
+      await supabaseAdmin.auth.admin.deleteUser(data.user.id);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Não foi possível salvar o perfil do acesso criado.",
+        }),
+        {
+          status: 500,
+          headers: corsHeaders,
+        },
+      );
     }
 
     // --------------------------------------------------------
