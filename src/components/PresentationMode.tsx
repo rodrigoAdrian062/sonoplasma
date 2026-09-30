@@ -18,6 +18,14 @@ import { EqualizerPanel } from './EqualizerPanel';
 import { useTimer } from '@/hooks/useTimer';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { VolumePresets } from './VolumePresets';
 import { setPresentationActive } from '@/lib/presentationState';
 import { cn } from '@/lib/utils';
@@ -736,6 +744,50 @@ function PresentationContent({
               >
                 <Keyboard size={16} />
               </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2 text-xs border-gold/30 text-gold"
+                    aria-label="Abrir painel de contingência"
+                  >
+                    <SlidersHorizontal size={14} />
+                    <span className="hidden sm:inline">Contingência</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-[70vh] w-64 overflow-y-auto">
+                  <DropdownMenuLabel>Ações rápidas</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    disabled={!currentAudio || !isActive}
+                    onSelect={() => onSeekTo?.(0)}
+                  >
+                    <RotateCcw size={14} className="mr-2" /> Reiniciar áudio da etapa atual
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={handleToggleMute}>
+                    {isMuted ? <Volume2 size={14} className="mr-2" /> : <VolumeX size={14} className="mr-2" />}
+                    {isMuted ? 'Reativar som' : 'Silenciar temporariamente'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Pular para uma etapa</DropdownMenuLabel>
+                  {visibleStages.map((stage, index) => {
+                    const stageIndex = stages.findIndex((item) => item.id === stage.id);
+                    return (
+                      <DropdownMenuItem
+                        key={stage.id}
+                        disabled={stageIndex === selectedStageIndex}
+                        onSelect={() => {
+                          if (isActive) handleStop();
+                          setSelectedStageIndex(stageIndex);
+                        }}
+                      >
+                        {index + 1}. {stage.nome_simbolico}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Button
                 variant="ghost"
