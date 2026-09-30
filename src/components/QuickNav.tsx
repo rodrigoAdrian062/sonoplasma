@@ -23,7 +23,7 @@ const LINKS: Array<{ to: string; label: string; icon: any; activeClass: string; 
 
 
 
-export function QuickNav() {
+export function QuickNav({ presentationOverlay = false }: { presentationOverlay?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentStageId, currentUrl, status } = useUniversalAudioPlayer();
@@ -34,7 +34,7 @@ export function QuickNav() {
   const { toggles } = useUiToggles();
 
   // Hide on the auth page
-  if (location.pathname === '/auth') return null;
+  if (location.pathname === '/auth' || (isPresentation && !presentationOverlay)) return null;
 
   const links = LINKS.filter((l) => !l.toggleKey || toggles[l.toggleKey]);
 
