@@ -161,39 +161,65 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
           <DialogTitle className="font-display text-lg sm:text-xl text-foreground flex items-center gap-2">
             {isNew ? (
               <>
-                <Sparkles className="text-gold" size={20} />
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/20">
+                  <Sparkles className="text-gold" size={18} />
+                </span>
                 Nova Etapa
               </>
             ) : (
               'Editar Etapa'
             )}
           </DialogTitle>
+          <p className="text-left text-sm text-muted-foreground">
+            {isNew ? 'Configure os detalhes em poucos passos.' : 'Atualize os detalhes da etapa.'}
+          </p>
         </DialogHeader>
 
         {/* Step Indicator - always shown */}
-        <div className="flex items-center justify-center gap-1 px-4 sm:px-6 py-2">
-          {steps.map((step, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => {
-                if (index === 0 || formData.nome_simbolico.trim()) {
-                  setCurrentStep(index);
-                }
-              }}
-              className={cn(
-                'flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full text-xs transition-all',
-                currentStep === index
-                  ? 'bg-gold text-background font-medium'
-                  : index < currentStep
-                  ? 'bg-gold/20 text-gold'
-                  : 'bg-secondary text-muted-foreground'
-              )}
-            >
-              <step.icon size={12} />
-              <span className="hidden sm:inline">{step.title}</span>
-            </button>
-          ))}
+        <div className="space-y-2 px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between gap-1">
+            {steps.map((step, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Etapa ${index + 1}: ${step.title}`}
+                aria-current={currentStep === index ? 'step' : undefined}
+                onClick={() => {
+                  if (index === 0 || formData.nome_simbolico.trim()) {
+                    setCurrentStep(index);
+                  }
+                }}
+                className={cn(
+                  'flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-1.5 sm:px-3 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
+                  currentStep === index
+                    ? 'bg-gold text-background font-semibold shadow-sm'
+                    : index < currentStep
+                    ? 'bg-gold/15 text-gold hover:bg-gold/25'
+                    : 'bg-secondary/70 text-muted-foreground hover:bg-secondary'
+                )}
+              >
+                <step.icon size={14} />
+                <span className="hidden sm:inline">{step.title}</span>
+                <span className="sr-only">{index + 1} de {steps.length}</span>
+              </button>
+            ))}
+          </div>
+          <div
+            className="h-1 overflow-hidden rounded-full bg-secondary"
+            role="progressbar"
+            aria-label="Progresso de preenchimento"
+            aria-valuemin={1}
+            aria-valuemax={steps.length}
+            aria-valuenow={currentStep + 1}
+          >
+            <div
+              className="h-full rounded-full bg-gold transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Passo {currentStep + 1} de {steps.length} · {steps[currentStep].title}
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 space-y-4">
@@ -454,7 +480,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
               <Button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 bg-gold hover:bg-gold-glow text-background"
+                className="flex-1 bg-gold text-background shadow-sm transition-all hover:bg-gold-glow hover:shadow-md"
               >
                 Próximo
               </Button>
