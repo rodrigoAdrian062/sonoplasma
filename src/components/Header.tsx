@@ -89,14 +89,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button onClick={() => navigate('/mesa-dj')} variant="ghost" size="icon" className="text-muted-foreground hover:text-gold h-8 w-8" aria-label="Mesa DJ">
-                    <Sparkles size={18} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Mesa DJ</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
                   <Button
                     onClick={() => navigate('/biblioteca')}
                     variant="ghost"
@@ -195,14 +187,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                   <TooltipContent>Gerenciar acessos</TooltipContent>
                 </Tooltip>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button onClick={() => navigate('/mesa-dj')} variant="ghost" size="icon" className="text-muted-foreground hover:text-gold" aria-label="Mesa DJ">
-                    <Sparkles size={20} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Mesa DJ</TooltipContent>
-              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
