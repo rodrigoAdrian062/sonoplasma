@@ -236,7 +236,8 @@ export default function AudioLibraryPage() {
     // Fora de pastas (raiz): esconde YouTube/Spotify — têm abas próprias.
     if (!currentFolderId && (isYt || isSp)) return false;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
-    if (!folderMatch) return false;
+    // Ao buscar, pesquisa em toda a biblioteca e não apenas na pasta atual.
+    if (!searchQuery.trim() && !folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
     if (searchQuery.trim() && !a.nome.toLocaleLowerCase('pt-BR').includes(searchQuery.trim().toLocaleLowerCase('pt-BR'))) return false;
     if (climaFilter && ((a as any).clima || null) !== climaFilter) return false;
