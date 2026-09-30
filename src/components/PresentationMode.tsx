@@ -702,7 +702,7 @@ function PresentationContent({
                 className={cn('h-8 gap-1.5 px-2 text-xs', midiEnabled ? 'border-gold/50 text-gold' : 'text-muted-foreground')}
               >
                 <SlidersHorizontal size={14} />
-                <span className="hidden sm:inline">{midiEnabled ? (midiConnected ? 'MIDI ativo' : 'MIDI aguardando') : 'Conectar mesa'}</span>
+                <span>{midiEnabled ? (midiConnected ? 'MIDI ativo' : 'MIDI aguardando') : 'Conectar mesa'}</span>
               </Button>
               <Button
                 variant="ghost"
