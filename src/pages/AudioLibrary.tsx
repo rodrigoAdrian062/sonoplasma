@@ -18,7 +18,7 @@ import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
   Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
-  SkipBack, SkipForward, Filter, Palette, Waves,
+  SkipBack, SkipForward, Filter, Search, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
   Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer
 } from 'lucide-react';
@@ -173,6 +173,7 @@ export default function AudioLibraryPage() {
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [climaFilter, setClimaFilter] = useState<string | null>(null);
   const [showListView, setShowListView] = useState(() => {
     return localStorage.getItem('sonoplastia:library:list-view') === 'true';
@@ -237,6 +238,7 @@ export default function AudioLibraryPage() {
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     if (!folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
+    if (searchQuery.trim() && !a.nome.toLocaleLowerCase('pt-BR').includes(searchQuery.trim().toLocaleLowerCase('pt-BR'))) return false;
     if (climaFilter && ((a as any).clima || null) !== climaFilter) return false;
     return true;
   });
@@ -1032,6 +1034,19 @@ export default function AudioLibraryPage() {
               {getClima(climaFilter)?.momentos.join(' · ')}
             </p>
           )}
+        </div>
+
+        {/* Busca de músicas */}
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar músicas pelo nome..."
+            aria-label="Buscar músicas pelo nome"
+            className="pl-9"
+          />
         </div>
 
         {/* Audio List */}
