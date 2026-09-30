@@ -150,6 +150,9 @@ function PresentationContent({
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
+  const [midiAccess, setMidiAccess] = useState<any>(null);
+  const [midiEnabled, setMidiEnabled] = useState(false);
+  const [midiConnected, setMidiConnected] = useState(false);
   const focusMode = false;
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
@@ -422,6 +425,50 @@ function PresentationContent({
     onVolumeChange(Math.max(0, Math.round((volume - 0.01) * 100) / 100));
   };
 
+  const handleMidiToggle = async () => {
+    if (midiEnabled) {
+      setMidiEnabled(false);
+      setMidiConnected(false);
+      return;
+    }
+    try {
+      const requestMIDIAccess = (navigator as any).requestMIDIAccess;
+      if (!requestMIDIAccess) {
+        toast.error('Este navegador não oferece suporte a dispositivos MIDI.');
+        return;
+      }
+      const access = await requestMIDIAccess.call(navigator);
+      setMidiAccess(access);
+      setMidiEnabled(true);
+    } catch {
+      toast.error('Não foi possível acessar a mesa MIDI. Verifique a conexão e a permissão do navegador.');
+    }
+  };
+
+  useEffect(() => {
+    if (!midiEnabled || !midiAccess) return;
+    const attachInputs = () => {
+      let foundInput = false;
+      midiAccess.inputs.forEach((input: any) => {
+        foundInput = true;
+        input.onmidimessage = (event: any) => {
+          const [statusByte, controller, value] = event.data || [];
+          // CC7 (volume) é o controle MIDI padrão para volume.
+          if ((statusByte & 0xf0) === 0xb0 && controller === 7 && Number.isFinite(value)) {
+            onVolumeChange(value / 127);
+          }
+        };
+      });
+      setMidiConnected(foundInput);
+    };
+    attachInputs();
+    midiAccess.onstatechange = attachInputs;
+    return () => {
+      midiAccess.inputs.forEach((input: any) => { input.onmidimessage = null; });
+      midiAccess.onstatechange = null;
+    };
+  }, [midiEnabled, midiAccess, onVolumeChange]);
+
   // Rolagem do mouse sobre o controle de volume
   const handleVolumeWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -647,6 +694,16 @@ function PresentationContent({
 
           {!focusMode && (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMidiToggle}
+                title={midiEnabled ? 'Desativar controle MIDI de volume' : 'Ativar controle MIDI de volume (CC7)'}
+                className={cn('h-8 gap-1.5 px-2 text-xs', midiEnabled ? 'border-gold/50 text-gold' : 'text-muted-foreground')}
+              >
+                <SlidersHorizontal size={14} />
+                <span className="hidden sm:inline">{midiEnabled ? (midiConnected ? 'MIDI ativo' : 'MIDI aguardando') : 'Conectar mesa'}</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
