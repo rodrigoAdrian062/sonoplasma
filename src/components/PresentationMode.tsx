@@ -490,16 +490,13 @@ function PresentationContent({
       setShowKeyboardHints(true);
       switch (e.key) {
         case 'ArrowLeft':
-          if (selectedStageIndex > 0) {
-            const prevVisibleIdx = [...Array(selectedStageIndex).keys()].reverse().find(i => !stages[i].oculto || stages[i].id === currentStageId);
-            if (prevVisibleIdx !== undefined) setSelectedStageIndex(prevVisibleIdx);
-          }
+        case 'Backspace':
+          e.preventDefault();
+          handlePrevStage();
           break;
         case 'ArrowRight':
-          if (selectedStageIndex < stages.length - 1) {
-            const nextVisibleIdx = [...Array(stages.length).keys()].slice(selectedStageIndex + 1).find(i => !stages[i].oculto || stages[i].id === currentStageId);
-            if (nextVisibleIdx !== undefined) setSelectedStageIndex(nextVisibleIdx);
-          }
+          e.preventDefault();
+          handleNextStage();
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -1489,6 +1486,7 @@ function PresentationContent({
             {[
               { keys: ['Espaço'], desc: 'Tocar / pausar o áudio' },
               { keys: ['←', '→'], desc: 'Etapa anterior / próxima' },
+              { keys: ['Backspace'], desc: 'Voltar rapidamente uma etapa' },
               { keys: ['↑', '↓'], desc: 'Aumentar / diminuir volume' },
               { keys: ['M'], desc: 'Mudo / ativar som' },
               { keys: ['F'], desc: 'Tela cheia' },
