@@ -1,11 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Library, Music2, ChevronDown, FolderOpen } from 'lucide-react';
+import { Home, Library, Music2 } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 
-import { cn, slugify } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
@@ -28,7 +27,6 @@ export function QuickNav({ presentationOverlay = false }: { presentationOverlay?
   const location = useLocation();
   const { currentStageId, currentUrl, status } = useUniversalAudioPlayer();
   const { stages } = useStages();
-  const { sections } = useSections();
   const { audiosByStageId } = useAllStageAudios();
   const isPresentation = useIsPresentationActive();
   const { toggles } = useUiToggles();
@@ -76,38 +74,6 @@ export function QuickNav({ presentationOverlay = false }: { presentationOverlay?
           </Tooltip>
         );
       })}
-
-      {sections.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label="Atalhos para seções"
-              className={cn(
-                'flex h-9 items-center justify-center gap-1 rounded-full border border-transparent px-2 transition-all',
-                location.pathname.startsWith('/secao/')
-                  ? 'bg-gold/20 text-gold border-gold/40'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              )}
-            >
-              <FolderOpen size={17} />
-              <ChevronDown size={13} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start" className="max-h-72 w-60 overflow-y-auto">
-            {sections.map((section) => (
-              <DropdownMenuItem
-                key={section.id}
-                onSelect={() => navigate(`/secao/${slugify(section.nome)}-${section.id.slice(0, 8)}`)}
-                className="cursor-pointer"
-              >
-                <FolderOpen size={15} className="mr-2 shrink-0 text-gold" />
-                <span className="truncate">{section.nome}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
 
     </nav>
   );
