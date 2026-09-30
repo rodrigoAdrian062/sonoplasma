@@ -76,7 +76,7 @@ export default function Auth() {
       return;
     }
 
-    const email = username.trim();
+    const email = `${username}@usuarios.local`;
 
     try {
       const { error } = await signIn(email, senha);
