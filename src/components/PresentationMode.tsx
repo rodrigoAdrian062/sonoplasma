@@ -124,7 +124,8 @@ function PresentationContent({
       const idx = stages.findIndex((s) => s.id === currentStageId);
       if (idx >= 0) return idx;
     }
-    return 0;
+    const firstVisibleIndex = stages.findIndex((stage) => !stage.oculto);
+    return firstVisibleIndex >= 0 ? firstVisibleIndex : 0;
   })();
   const initialAudioIndex = (() => {
     if (currentStageId && currentUrl) {
@@ -213,6 +214,7 @@ function PresentationContent({
 
   // Filtra etapas ocultas apenas para navegação/exibição se não for a etapa atual forçada
   const visibleStages = stages.filter(s => !s.oculto || s.id === currentStageId);
+  const visibleStagePosition = visibleStages.findIndex((stage) => stage.id === stages[selectedStageIndex]?.id);
   const currentStage = stages[selectedStageIndex];
   const audios = currentStage ? audiosByStageId[currentStage.id] || [] : [];
   const currentAudio = audios[selectedAudioIndex];
@@ -749,7 +751,7 @@ function PresentationContent({
           )}
 
           <span className="text-xs text-muted-foreground px-1">
-            {selectedStageIndex + 1}/{stages.length}
+            {visibleStagePosition + 1}/{visibleStages.length}
           </span>
 
 
