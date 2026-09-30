@@ -683,18 +683,22 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             // Trocou de áudio nesse meio tempo ou play interrompido: ignora.
             if (currentUrlRef.current !== url) return;
             if (err?.name === 'AbortError' || /interrupt/i.test(err?.message || '')) return;
-            // Autoplay bloqueado ou erro de rede: tenta a URL remota e depois notifica.
+            // Se o blob do cache falhar, descarte-o e tente a origem.
+            // Em falhas de rede/decodificação da origem, recarregue a URL
+            // uma vez para recuperar respostas temporárias ou conteúdo incompleto.
             if (retry === 0 && err?.name !== 'NotAllowedError') {
               setTimeout(() => {
                 if (currentUrlRef.current !== url) return;
-                // Se o blob do cache falhou, tenta direto da origem.
-                if (cachedUrl && audio.src !== url) { audio.src = url; audio.load(); }
+                audio.src = cachedUrl && audio.src !== url ? url : `${url}${url.includes('?') ? '&' : '?'}_retry=${Date.now()}`;
+                audio.load();
                 attemptPlay(1);
               }, 500);
               return;
             }
             // eslint-disable-next-line no-console
             console.error('[AudioPlayer] falha ao reproduzir:', err, { url });
+            setStatus('idle');
+            setCurrentTime(0);
             try {
               import('sonner').then(({ toast }) => {
                 if (err?.name === 'NotAllowedError') {
