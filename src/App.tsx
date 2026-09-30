@@ -24,6 +24,7 @@ const FloatingBackgroundMusic = lazy(() => import("@/components/FloatingBackgrou
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
+const DjConsole = lazy(() => import("./pages/DjConsole"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -148,6 +149,15 @@ const App = () => (
               } 
             />
 
+
+            <Route
+              path="/mesa-dj"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="DjConsole"><DjConsole /></ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
