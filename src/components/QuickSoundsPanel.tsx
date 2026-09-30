@@ -69,6 +69,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -429,6 +430,20 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     if (playingId === id) stop(id);
   };
 
+  const reorderSound = (targetId: string) => {
+    if (!draggingId || draggingId === targetId) return;
+    setSounds((prev) => {
+      const from = prev.findIndex((sound) => sound.id === draggingId);
+      const to = prev.findIndex((sound) => sound.id === targetId);
+      if (from < 0 || to < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDraggingId(null);
+  };
+
 
   const playableAudios = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -562,7 +577,15 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
         <div className={cn('grid gap-1.5', compactVertical ? 'grid-cols-1' : 'grid-cols-2')}>
           {sounds.map((s) => (
-            <div key={s.id} className="relative">
+            <div
+              key={s.id}
+              className={cn('relative', draggingId === s.id && 'opacity-50')}
+              draggable
+              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.id); }}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+              onDrop={(e) => { e.preventDefault(); reorderSound(s.id); }}
+              onDragEnd={() => setDraggingId(null)}
+            >
               <button
                 onClick={() => trigger(s)}
                 title={s.nome}
@@ -657,7 +680,15 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
           </p>
         )}
         {sounds.map((s, i) => (
-          <div key={s.id} className="group relative">
+          <div
+            key={s.id}
+            className={cn('group relative', draggingId === s.id && 'opacity-50')}
+            draggable
+            onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.id); }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+            onDrop={(e) => { e.preventDefault(); reorderSound(s.id); }}
+            onDragEnd={() => setDraggingId(null)}
+          >
             {editingId === s.id ? (
               <div className="flex items-center gap-1">
                 <Input
