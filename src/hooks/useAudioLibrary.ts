@@ -4,7 +4,6 @@ import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
 import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
 import { mensagemUpload } from '@/lib/errorHandler';
-import { MAX_AUDIO_FILE_BYTES } from '@/lib/storageLimits';
 // Normaliza uma URL de áudio para comparação de duplicatas.
 // Reduz YouTube ao seu ID único; para o resto, compara a URL limpa.
 import { getYouTubeVideoId } from '@/lib/embedUrl';
@@ -128,16 +127,21 @@ export function useAudioLibrary() {
   });
 
   const uploadAndAddAudio = async (file: File, name: string) => {
-    if (file.size > MAX_AUDIO_FILE_BYTES) {
-      const error = new Error('Arquivo muito grande. O limite para áudio é 20 MB.');
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      toast({ title: 'Não foi possível enviar', description: mensagemUpload(authError), variant: 'destructive' });
+      throw authError;
+    }
+    if (!user) {
+      const error = new Error('Faça login para enviar arquivos.');
       toast({ title: 'Não foi possível enviar', description: error.message, variant: 'destructive' });
       throw error;
     }
 
     const duracao = await probeAudioDuration(URL.createObjectURL(file)).catch(() => null);
-    const fileName = `publico/library-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const fileName = `${user.id}/library-${uniqueId}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
-    
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('stage-audios')
       .upload(fileName, file);

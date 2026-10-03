@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryModal } from './AudioLibraryModal';
 import { mensagemUpload } from '@/lib/errorHandler';
-import { MAX_AUDIO_FILE_BYTES } from '@/lib/storageLimits';
 
 
 interface AudioItem {
@@ -158,22 +157,25 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
   };
 
   const handleFileUpload = async (index: number, file: File) => {
-    if (!file.type.startsWith('audio/')) {
+    if (!file.type.startsWith('audio/') && !/\.(mp3|wav|ogg|m4a|aac|flac|wma)$/i.test(file.name)) {
       toast.error('Selecione um arquivo de áudio válido');
-      return;
-    }
-
-    if (file.size > MAX_AUDIO_FILE_BYTES) {
-      toast.error('Arquivo muito grande. Máximo 20MB');
       return;
     }
 
     setUploadingIndex(index);
 
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) {
+        toast.error('Faça login para enviar arquivos.');
+        return;
+      }
+
       const timestamp = Date.now();
+      const uniqueId = Math.random().toString(36).slice(2, 10);
       const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `publico/${timestamp}-${cleanName}`;
+      const filePath = `${user.id}/${timestamp}-${uniqueId}-${cleanName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('stage-audios')
@@ -510,7 +512,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
           💡 <strong>Dicas:</strong>
         </p>
         <ul className="text-xs text-muted-foreground space-y-0.5 pl-5">
-          <li>• <strong>Upload:</strong> Formatos MP3, WAV, OGG (máx 20MB)</li>
+          <li>• <strong>Upload:</strong> Formatos MP3, WAV, OGG (sem limite por arquivo)</li>
           <li>• <strong>YouTube:</strong> Cole o link do vídeo diretamente</li>
           
           <li>• <strong>Biblioteca:</strong> Reutilize áudios salvos anteriormente</li>
