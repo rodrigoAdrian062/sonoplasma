@@ -24,6 +24,7 @@ const FloatingBackgroundMusic = lazy(() => import("@/components/FloatingBackgrou
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
 const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
+const HarmonyEditor = lazy(() => import("./pages/HarmonyEditor"));
 
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -130,6 +131,14 @@ const App = () => (
                   <ErrorBoundary context="SpotifyLibrary"><SpotifyLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/harmonia"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="HarmonyEditor"><HarmonyEditor /></ErrorBoundary>
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/usuarios" 
