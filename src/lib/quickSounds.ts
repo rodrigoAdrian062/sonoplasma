@@ -17,6 +17,8 @@ export interface QuickSoundData {
   url: string;
   loop?: boolean;
   fadeStop?: boolean;
+  trimStartSeconds?: number;
+  trimEndSeconds?: number;
   kind?: QuickSoundKind;
 }
 
@@ -66,6 +68,45 @@ export function addQuickSound(nome: string, url: string): AddQuickSoundResult {
       kind: quickSoundKind(clean),
     },
   ];
+  persistQuickSounds(next);
+  return { ok: true };
+}
+
+/** Cria ou atualiza o atalho e salva seu trecho de reprodução sem alterar o áudio original. */
+export function saveQuickSoundTrim(
+  nome: string,
+  url: string,
+  trimStartSeconds?: number,
+  trimEndSeconds?: number,
+): AddQuickSoundResult {
+  const clean = (url || '').trim();
+  if (!clean) return { ok: false, reason: 'invalid' };
+
+  const current = loadQuickSounds();
+  const existingIndex = current.findIndex((sound) => sound.url === clean);
+  if (existingIndex < 0 && current.length >= QUICK_SOUNDS_MAX) {
+    return { ok: false, reason: 'limit' };
+  }
+
+  const next = [...current];
+  if (existingIndex >= 0) {
+    next[existingIndex] = {
+      ...next[existingIndex],
+      trimStartSeconds,
+      trimEndSeconds,
+    };
+  } else {
+    next.push({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      nome,
+      url: clean,
+      kind: quickSoundKind(clean),
+      trimStartSeconds,
+      trimEndSeconds,
+      loop: false,
+    });
+  }
+
   persistQuickSounds(next);
   return { ok: true };
 }

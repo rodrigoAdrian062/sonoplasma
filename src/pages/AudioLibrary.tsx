@@ -1,6 +1,12 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { toast as sonnerToast } from 'sonner';
-import { addQuickSound } from '@/lib/quickSounds';
+import {
+  addQuickSound,
+  loadQuickSounds,
+  quickSoundKind,
+  saveQuickSoundTrim,
+  type QuickSoundData,
+} from '@/lib/quickSounds';
 
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +26,7 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Search, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer
+  Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer, Scissors
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
@@ -47,6 +53,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
 import { ClimaSelector } from '@/components/library/ClimaSelector';
+import { QuickSoundTrimDialog } from '@/components/QuickSoundTrimDialog';
 import { CLIMAS, getClima } from '@/lib/climas';
 import { saveCloudState } from '@/lib/cloudState';
 
@@ -1144,6 +1151,39 @@ function VirtualAudioList(props: VirtualAudioListProps) {
 
   const parentRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
+  const [trimSound, setTrimSound] = useState<QuickSoundData | null>(null);
+
+  const openTrimEditor = (audio: { id: string; nome: string; audio_url: string }) => {
+    if (quickSoundKind(audio.audio_url) !== 'file') {
+      sonnerToast.info('O corte está disponível apenas para arquivos de áudio.');
+      return;
+    }
+
+    const existing = loadQuickSounds().find((sound) => sound.url === audio.audio_url);
+    setTrimSound(existing ?? {
+      id: audio.id,
+      nome: audio.nome,
+      url: audio.audio_url,
+    });
+  };
+
+  const saveTrim = (start: number | undefined, end: number | undefined) => {
+    if (!trimSound) return;
+    const alreadyAdded = loadQuickSounds().some((sound) => sound.url === trimSound.url);
+    const result = saveQuickSoundTrim(trimSound.nome, trimSound.url, start, end);
+    if (!result.ok) {
+      if (result.reason === 'limit') sonnerToast.error('Limite de 20 sons rápidos atingido.');
+      else sonnerToast.error('Áudio sem link válido.');
+      return;
+    }
+
+    sonnerToast.success(
+      alreadyAdded
+        ? `Corte salvo para "${trimSound.nome}".`
+        : `"${trimSound.nome}" foi adicionado aos Sons Rápidos com o corte.`
+    );
+    setTrimSound(null);
+  };
 
   useEffect(() => {
     if (parentRef.current) {
@@ -1332,6 +1372,20 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={quickSoundKind(audio.audio_url || '') !== 'file'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openTrimEditor(audio);
+                      }}
+                      className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
+                      title="Escolher trecho para Sons Rápidos"
+                      aria-label={`Cortar ${audio.nome} para Sons Rápidos`}
+                    >
+                      <Scissors size={16} />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -1388,6 +1442,14 @@ function VirtualAudioList(props: VirtualAudioListProps) {
           );
         })}
       </div>
+      <QuickSoundTrimDialog
+        sound={trimSound}
+        volume={0.7}
+        onOpenChange={(open) => {
+          if (!open) setTrimSound(null);
+        }}
+        onSave={saveTrim}
+      />
     </div>
   );
 }

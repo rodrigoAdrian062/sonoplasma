@@ -158,6 +158,7 @@ function PresentationContent({
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [contingencyOpen, setContingencyOpen] = useState(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [midiAccess, setMidiAccess] = useState<any>(null);
@@ -745,27 +746,41 @@ function PresentationContent({
                 <Keyboard size={16} />
               </Button>
 
-              <DropdownMenu>
+              <DropdownMenu modal={false} open={contingencyOpen} onOpenChange={setContingencyOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 px-2 text-xs border-gold/30 text-gold"
-                    aria-label="Abrir painel de contingência"
+                    className="h-8 gap-1.5 px-2 text-xs border-gold/40 bg-gold/5 text-gold shadow-[0_0_0_1px_rgba(212,175,55,0.15)]"
+                    aria-label={contingencyOpen ? 'Fechar painel de contingência' : 'Abrir painel de contingência'}
+                    aria-expanded={contingencyOpen}
                   >
                     <SlidersHorizontal size={14} />
                     <span className="hidden sm:inline">Contingência</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-[70vh] w-64 overflow-y-auto">
+                <DropdownMenuContent
+                  align="end"
+                  className="max-h-[70vh] w-64 overflow-y-auto"
+                  onInteractOutside={(event) => event.preventDefault()}
+                  onEscapeKeyDown={(event) => event.preventDefault()}
+                >
                   <DropdownMenuLabel>Ações rápidas</DropdownMenuLabel>
                   <DropdownMenuItem
                     disabled={!currentAudio || !isActive}
-                    onSelect={() => onSeekTo?.(0)}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      onSeekTo?.(0);
+                    }}
                   >
                     <RotateCcw size={14} className="mr-2" /> Reiniciar áudio da etapa atual
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={handleToggleMute}>
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleToggleMute();
+                    }}
+                  >
                     {isMuted ? <Volume2 size={14} className="mr-2" /> : <VolumeX size={14} className="mr-2" />}
                     {isMuted ? 'Reativar som' : 'Silenciar temporariamente'}
                   </DropdownMenuItem>
@@ -777,12 +792,23 @@ function PresentationContent({
                       <DropdownMenuItem
                         key={stage.id}
                         disabled={stageIndex === selectedStageIndex}
-                        onSelect={() => {
+                        className={cn(
+                          'cursor-pointer',
+                          stageIndex === selectedStageIndex && 'bg-gold/10 text-gold focus:bg-gold/15 focus:text-gold'
+                        )}
+                        onSelect={(event) => {
+                          event.preventDefault();
                           if (isActive) handleStop();
                           setSelectedStageIndex(stageIndex);
                         }}
                       >
-                        {index + 1}. {stage.nome_simbolico}
+                        <span className="flex items-center gap-2">
+                          <span className={cn(
+                            'inline-flex h-2 w-2 rounded-full',
+                            stageIndex === selectedStageIndex ? 'bg-gold' : 'bg-muted-foreground/40'
+                          )} />
+                          {index + 1}. {stage.nome_simbolico}
+                        </span>
                       </DropdownMenuItem>
                     );
                   })}
@@ -1506,7 +1532,7 @@ function PresentationContent({
 
       {/* Painel de Sons Rápidos (coluna lateral esquerda em tela cheia) */}
       <div className="hidden lg:flex fixed left-0 top-[52px] bottom-0 w-[240px] z-30 animate-fade-in">
-        <QuickSoundsPanel fullHeight />
+        <QuickSoundsPanel fullHeight horizontal />
       </div>
 
 

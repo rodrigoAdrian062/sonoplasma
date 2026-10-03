@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
-import { quickSoundKind } from '@/lib/quickSounds';
+import { quickSoundKind, type QuickSoundData } from '@/lib/quickSounds';
 import { playQuickYouTube, stopQuickYouTube, setQuickYouTubeVolume, destroyQuickYouTube } from '@/lib/quickYoutubePlayer';
 import { playSpotifyEntity, pauseSpotifyEntity } from '@/lib/spotifyIframePlayer';
 
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { QuickSoundTrimDialog } from './QuickSoundTrimDialog';
 
 import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 
@@ -29,13 +30,7 @@ const CLOUD_KEY = 'quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
 const MAX_SLOTS = 20;
 
-export interface QuickSound {
-  id: string;
-  nome: string;
-  url: string;
-  loop?: boolean;
-  fadeStop?: boolean;
-}
+type QuickSound = QuickSoundData;
 
 function loadSounds(): QuickSound[] {
   try {
@@ -58,8 +53,170 @@ function loadVolume(): number {
   return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
 }
 
+interface QuickSoundsHorizontalBarProps {
+  sounds: QuickSound[];
+  playingId: string | null;
+  draggingId: string | null;
+  onAdd: () => void;
+  onPlay: (sound: QuickSound) => void;
+  onDrop: (targetId: string, event: React.DragEvent<HTMLDivElement>) => void;
+  onDragStart: (soundId: string, event: React.DragEvent<HTMLButtonElement>) => void;
+  onDragEnd: () => void;
+  onTrim: (sound: QuickSound) => void;
+  onLoop: (soundId: string) => void;
+  onFadeStop: (soundId: string) => void;
+  onRename: (sound: QuickSound) => void;
+  onRemove: (soundId: string) => void;
+}
+
+function QuickSoundsHorizontalBar({
+  sounds,
+  playingId,
+  draggingId,
+  onAdd,
+  onPlay,
+  onDrop,
+  onDragStart,
+  onDragEnd,
+  onTrim,
+  onLoop,
+  onFadeStop,
+  onRename,
+  onRemove,
+}: QuickSoundsHorizontalBarProps) {
+  return (
+    <div
+      data-quick-sounds-horizontal
+      className="fixed left-[240px] right-[200px] top-[52px] z-30 flex h-[100px] items-center gap-2 border-b border-gold/15 bg-background/70 px-3 py-2 shadow-lg shadow-black/10 backdrop-blur-md"
+    >
+      <div className="flex w-[92px] shrink-0 flex-col items-center justify-center gap-1 border-r border-gold/15 pr-2">
+        <Zap size={14} className={cn('text-gold', playingId && 'animate-pulse')} />
+        <span className="text-center text-[9px] font-bold uppercase tracking-[0.14em] text-gold/80">
+          Sons rápidos
+        </span>
+        {sounds.length < MAX_SLOTS && (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex h-6 items-center gap-1 rounded-md px-2 text-[9px] text-gold hover:bg-gold/10"
+            title="Adicionar som rápido"
+          >
+            <Plus size={11} /> Atalho
+          </button>
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1 scrollbar-thin">
+        {sounds.length === 0 && (
+          <p className="px-2 text-xs text-muted-foreground">Adicione sons rápidos para acessá-los aqui.</p>
+        )}
+        {sounds.map((sound, index) => (
+          <div
+            key={sound.id}
+            className={cn(
+              'group relative flex h-[76px] w-[138px] shrink-0 flex-col justify-end rounded-lg border border-gold/15 bg-black/25 px-1.5 pb-1',
+              draggingId === sound.id && 'opacity-50'
+            )}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+            }}
+            onDrop={(event) => onDrop(sound.id, event)}
+          >
+            <button
+              type="button"
+              onClick={() => onPlay(sound)}
+              title={sound.nome}
+              className={cn(
+                'flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 text-left text-[10px] font-medium transition-colors',
+                playingId === sound.id
+                  ? 'bg-gold text-background'
+                  : 'bg-secondary/70 text-foreground hover:bg-gold/15 hover:text-gold'
+              )}
+            >
+              {playingId === sound.id ? <Square size={10} className="shrink-0" /> : <Play size={10} className="shrink-0" />}
+              <span className="truncate">{index + 1}. {sound.nome}</span>
+              {(sound.trimStartSeconds !== undefined || sound.trimEndSeconds !== undefined) && (
+                <Scissors size={9} className="shrink-0 text-gold" />
+              )}
+            </button>
+            <div className="mt-1 flex h-5 items-center justify-end gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+              <button
+                type="button"
+                draggable
+                onDragStart={(event) => onDragStart(sound.id, event)}
+                onDragEnd={onDragEnd}
+                onClick={(event) => event.preventDefault()}
+                className="flex h-5 w-5 cursor-grab items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                title="Arraste para reordenar"
+                aria-label={`Arrastar ${sound.nome} para reordenar`}
+              >
+                <GripVertical size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onTrim(sound)}
+                disabled={quickSoundKind(sound.url) !== 'file'}
+                className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-gold disabled:opacity-40"
+                title="Cortar som"
+                aria-label={`Cortar ${sound.nome}`}
+              >
+                <Scissors size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onLoop(sound.id)}
+                className={cn('flex h-5 w-5 items-center justify-center rounded', sound.loop ? 'text-gold' : 'text-muted-foreground hover:text-gold')}
+                title={sound.loop ? 'Desativar loop' : 'Ativar loop'}
+                aria-label={sound.loop ? 'Desativar loop' : 'Ativar loop'}
+              >
+                <Repeat size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onFadeStop(sound.id)}
+                className={cn('flex h-5 w-5 items-center justify-center rounded', sound.fadeStop ? 'text-blue-400' : 'text-muted-foreground hover:text-gold')}
+                title={sound.fadeStop ? 'Desativar fade-out' : 'Ativar fade-out'}
+                aria-label={sound.fadeStop ? 'Desativar fade-out' : 'Ativar fade-out'}
+              >
+                <Volume2 size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onRename(sound)}
+                className="flex h-5 w-5 items-center justify-center rounded bg-gold/10 text-gold hover:bg-gold/20"
+                title="Renomear som"
+                aria-label={`Renomear ${sound.nome}`}
+              >
+                <Pencil size={10} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onRemove(sound.id)}
+                className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive"
+                title="Remover som"
+                aria-label={`Remover ${sound.nome}`}
+              >
+                <X size={11} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Sons rápidos (soundboard) — atalhos de play para efeitos curtos. */
-export function QuickSoundsPanel({ compact = false, fullHeight = false }: { compact?: boolean; fullHeight?: boolean }) {
+export function QuickSoundsPanel({
+  compact = false,
+  fullHeight = false,
+  horizontal = false,
+}: {
+  compact?: boolean;
+  fullHeight?: boolean;
+  horizontal?: boolean;
+}) {
   const { audios, isLoading } = useAudioLibrary();
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
@@ -69,9 +226,11 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [trimEditingSound, setTrimEditingSound] = useState<QuickSound | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const loopRef = useRef(false);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
@@ -192,8 +351,8 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
 
 
   /** Erros de interrupção (troca rápida de faixa) não são falhas reais. */
-  const isAbortError = (err: any) =>
-    err?.name === 'AbortError' || /interrupt/i.test(err?.message || '');
+  const isAbortError = (err: unknown) =>
+    err instanceof Error && (err.name === 'AbortError' || /interrupt/i.test(err.message));
 
   /** Mensagem clara conforme o código de erro do elemento de mídia. */
   const mediaErrorText = (el: HTMLAudioElement) => {
@@ -278,21 +437,63 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
           } else {
             audio.volume = 0;
             audio.pause();
-            audio.currentTime = 0;
+            if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+              audio.currentTime = currentSound?.trimStartSeconds ?? 0;
+            }
             audio.volume = volume;
+            audio.onloadedmetadata = null;
+            audio.ontimeupdate = null;
             clearFade();
             setPlayingId(null);
           }
         }, interval);
       } else {
+        audioRef.current.onloadedmetadata = null;
+        audioRef.current.ontimeupdate = null;
+        audioRef.current.onended = null;
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        if (audioRef.current.readyState >= HTMLMediaElement.HAVE_METADATA) {
+          audioRef.current.currentTime = currentSound?.trimStartSeconds ?? 0;
+        }
         audioRef.current.volume = volume;
         setPlayingId(null);
       }
     } else {
       setPlayingId(null);
     }
+    loopRef.current = false;
+  };
+
+  const openTrimEditor = (sound: QuickSound) => {
+    if (quickSoundKind(sound.url) !== 'file') {
+      toast.info('O corte está disponível apenas para arquivos de áudio.');
+      return;
+    }
+    if (isUnsupportedFormat(sound.url)) {
+      toast.error('Este formato não é compatível com o corte no navegador.');
+      return;
+    }
+
+    if (playingId) stop();
+    previewAudioRef.current?.pause();
+    setPreviewingId(null);
+    setTrimEditingSound(sound);
+  };
+
+  const saveTrim = (start: number | undefined, end: number | undefined) => {
+    if (!trimEditingSound) return;
+    if (playingId === trimEditingSound.id) stop(trimEditingSound.id);
+    setSounds((prev) => prev.map((sound) => (
+      sound.id === trimEditingSound.id
+        ? { ...sound, trimStartSeconds: start, trimEndSeconds: end }
+        : sound
+    )));
+    toast.success(
+      start === undefined && end === undefined
+        ? `Corte removido de "${trimEditingSound.nome}".`
+        : `Corte salvo para "${trimEditingSound.nome}".`
+    );
+    setTrimEditingSound(null);
   };
 
   const trigger = (sound: QuickSound) => {
@@ -345,16 +546,60 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     const el = audioRef.current ?? new Audio();
     el.onended = null;
     el.onerror = null;
+    el.onloadedmetadata = null;
+    el.ontimeupdate = null;
     try { el.pause(); } catch { /* noop */ }
     el.crossOrigin = null;
     el.preload = 'auto';
-    el.loop = !!sound.loop;
+    const trimStart = Math.max(0, sound.trimStartSeconds ?? 0);
+    const hasCustomRange = trimStart > 0 || sound.trimEndSeconds !== undefined;
+    if (sound.trimEndSeconds !== undefined && sound.trimEndSeconds <= trimStart) {
+      toast.error(`O trecho de "${sound.nome}" está inválido. Ajuste o corte e tente novamente.`);
+      return;
+    }
+    el.loop = !!sound.loop && !hasCustomRange;
+    loopRef.current = !!sound.loop;
     el.volume = volume;
     el.src = sound.url;
-    el.currentTime = 0;
     el.load();
+    const startPlayback = () => {
+      if (audioRef.current !== el) return;
+      el.currentTime = trimStart;
+      attempt();
+    };
+    el.onloadedmetadata = startPlayback;
+    el.ontimeupdate = () => {
+      if (
+        audioRef.current !== el ||
+        sound.trimEndSeconds === undefined ||
+        el.currentTime < sound.trimEndSeconds
+      ) return;
+
+      if (loopRef.current) {
+        el.currentTime = trimStart;
+        el.play().catch((err) => {
+          if (audioRef.current === el && !isAbortError(err)) {
+            setPlayingId(null);
+            toast.error(`Falha ao repetir "${sound.nome}": ${err?.message || 'erro desconhecido'}`);
+          }
+        });
+      } else {
+        el.pause();
+        el.currentTime = trimStart;
+        setPlayingId((cur) => (cur === sound.id ? null : cur));
+      }
+    };
     el.onended = () => {
-      if (sound.loop) return;
+      if (loopRef.current && hasCustomRange) {
+        el.currentTime = trimStart;
+        el.play().catch((err) => {
+          if (audioRef.current === el && !isAbortError(err)) {
+            setPlayingId(null);
+            toast.error(`Falha ao repetir "${sound.nome}": ${err?.message || 'erro desconhecido'}`);
+          }
+        });
+        return;
+      }
       setPlayingId((cur) => (cur === sound.id ? null : cur));
     };
     el.onerror = () => {
@@ -381,7 +626,7 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         );
       });
     };
-    attempt();
+    if (el.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
   };
 
 
@@ -409,7 +654,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
       const next = prev.map((s) => (s.id === id ? { ...s, loop: !s.loop } : s));
       const target = next.find((s) => s.id === id);
       if (target && playingId === id && audioRef.current) {
-        audioRef.current.loop = !!target.loop;
+        const hasCustomRange = (target.trimStartSeconds ?? 0) > 0 || target.trimEndSeconds !== undefined;
+        audioRef.current.loop = !!target.loop && !hasCustomRange;
+        loopRef.current = !!target.loop;
       }
       toast.success(target?.loop ? `Loop ativado: ${target.nome}` : `Loop desativado: ${target?.nome}`);
       return next;
@@ -565,6 +812,17 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     </Dialog>
   );
 
+  const trimEditor = (
+    <QuickSoundTrimDialog
+      sound={trimEditingSound}
+      volume={volume}
+      onOpenChange={(open) => {
+        if (!open) setTrimEditingSound(null);
+      }}
+      onSave={saveTrim}
+    />
+  );
+
   if (compact) {
     return (
       <div
@@ -637,6 +895,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 ) : (
                   <Play size={10} className="shrink-0" />
                 )}
+                {(s.trimStartSeconds !== undefined || s.trimEndSeconds !== undefined) && (
+                  <Scissors size={9} className="shrink-0 text-gold" />
+                )}
                 <span className="truncate">{s.nome}</span>
               </button>
               <div className="absolute -top-1 -right-1 flex flex-col gap-0.5 pointer-events-auto">
@@ -655,6 +916,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                   aria-label={`Arrastar ${s.nome} para reordenar`}
                 >
                   <GripVertical size={8} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openTrimEditor(s)}
+                  disabled={quickSoundKind(s.url) !== 'file'}
+                  className="h-4 w-4 rounded-full flex items-center justify-center border border-background bg-secondary text-muted-foreground hover:text-gold shadow-sm disabled:opacity-40"
+                  title={quickSoundKind(s.url) === 'file' ? 'Escolher trecho do áudio' : 'Corte disponível apenas para arquivos de áudio'}
+                  aria-label={`Cortar ${s.nome}`}
+                >
+                  <Scissors size={8} />
                 </button>
                 <button
                   type="button"
@@ -689,12 +960,41 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
             </button>
           )}
         </div>
+        {trimEditor}
         {picker}
       </div>
     );
   }
 
   return (
+    <>
+      {horizontal && (
+        <QuickSoundsHorizontalBar
+          sounds={sounds}
+          playingId={playingId}
+          draggingId={draggingId}
+          onAdd={() => setPickerOpen(true)}
+          onPlay={trigger}
+          onDrop={(targetId, event) => {
+            event.preventDefault();
+            reorderSound(targetId, event.dataTransfer.getData('text/plain') || draggingId);
+          }}
+          onDragStart={(soundId, event) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', soundId);
+            setDraggingId(soundId);
+          }}
+          onDragEnd={() => setDraggingId(null)}
+          onTrim={openTrimEditor}
+          onLoop={toggleLoop}
+          onFadeStop={toggleFadeStop}
+          onRename={(sound) => {
+            setEditingId(sound.id);
+            setEditingName(sound.nome);
+          }}
+          onRemove={removeSound}
+        />
+      )}
     <div
       data-quick-sounds
       onWheel={handleWheel}
@@ -804,6 +1104,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                   )}
                   <span className={cn('font-medium truncate flex-1', fullHeight ? 'text-xs' : 'text-[11px]')}>{s.nome}</span>
                   {s.loop && <Repeat size={10} className="shrink-0 opacity-80" />}
+                  {(s.trimStartSeconds !== undefined || s.trimEndSeconds !== undefined) && (
+                    <Scissors size={10} className="shrink-0 text-gold" />
+                  )}
                 </button>
                 <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -821,6 +1124,16 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                     aria-label={`Arrastar ${s.nome} para reordenar`}
                   >
                     <GripVertical size={8} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openTrimEditor(s)}
+                    disabled={quickSoundKind(s.url) !== 'file'}
+                    className="h-4 w-4 rounded-full flex items-center justify-center bg-secondary text-muted-foreground hover:text-gold shadow-sm disabled:opacity-40"
+                    title={quickSoundKind(s.url) === 'file' ? 'Escolher trecho do áudio' : 'Corte disponível apenas para arquivos de áudio'}
+                    aria-label={`Cortar ${s.nome}`}
+                  >
+                    <Scissors size={8} />
                   </button>
                   <button
                     type="button"
@@ -898,7 +1211,9 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
         </Button>
       )}
 
+      {trimEditor}
       {picker}
     </div>
+    </>
   );
 }
