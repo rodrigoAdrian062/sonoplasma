@@ -179,6 +179,7 @@ export default function AudioLibraryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [showAllSources, setShowAllSources] = useState(false);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [climaFilter, setClimaFilter] = useState<string | null>(null);
@@ -240,8 +241,8 @@ export default function AudioLibraryPage() {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
     const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = (a as any).pasta_id;
-    // Fora de pastas (raiz): esconde YouTube/Spotify — têm abas próprias.
-    if (!currentFolderId && (isYt || isSp)) return false;
+    // Na raiz, YouTube/Spotify são opcionais porque também têm abas próprias.
+    if (!currentFolderId && !showAllSources && (isYt || isSp)) return false;
     const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
     // Ao buscar, pesquisa em toda a biblioteca e não apenas na pasta atual.
     if (!searchQuery.trim() && !folderMatch) return false;
@@ -1003,8 +1004,23 @@ export default function AudioLibraryPage() {
         {/* Filtro por clima ritual */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <Thermometer size={14} className="text-gold" /> Clima ritual
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Thermometer size={14} className="text-gold" /> Clima ritual
+              </div>
+              {!currentFolderId && (
+                <Button
+                  type="button"
+                  variant={showAllSources ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowAllSources((showing) => !showing)}
+                  aria-pressed={showAllSources}
+                  className={showAllSources ? 'bg-gold text-background hover:bg-gold/90' : ''}
+                >
+                  <Music size={14} className="mr-1.5" />
+                  {showAllSources ? 'Todas as músicas' : 'Mostrar todas as músicas'}
+                </Button>
+              )}
             </div>
             <span className="text-xs text-muted-foreground">
               Total da biblioteca: <strong className="text-foreground">{audios.length}</strong>
