@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3 } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -430,10 +430,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
     if (playingId === id) stop(id);
   };
 
-  const reorderSound = (targetId: string) => {
-    if (!draggingId || draggingId === targetId) return;
+  const moveSound = (soundId: string, direction: -1 | 1) => {
     setSounds((prev) => {
-      const from = prev.findIndex((sound) => sound.id === draggingId);
+      const from = prev.findIndex((sound) => sound.id === soundId);
+      if (from < 0) return prev;
+      const to = from + direction;
+      if (to < 0 || to >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const reorderSound = (targetId: string, sourceId: string | null = draggingId) => {
+    if (!sourceId || sourceId === targetId) return;
+    setSounds((prev) => {
+      const from = prev.findIndex((sound) => sound.id === sourceId);
       const to = prev.findIndex((sound) => sound.id === targetId);
       if (from < 0 || to < 0) return prev;
       const next = [...prev];
@@ -580,15 +593,34 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
             <div
               key={s.id}
               className={cn('relative', draggingId === s.id && 'opacity-50')}
-              draggable
-              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.id); }}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-              onDrop={(e) => { e.preventDefault(); reorderSound(s.id); }}
-              onDragEnd={() => setDraggingId(null)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                reorderSound(s.id, e.dataTransfer.getData('text/plain') || draggingId);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  moveSound(s.id, -1);
+                }
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  moveSound(s.id, 1);
+                }
+              }}
+              tabIndex={0}
             >
               <button
-                onClick={() => trigger(s)}
-                title={s.nome}
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  trigger(s);
+                }}
+                title={`${s.nome} · arraste para reordenar`}
+                aria-label={`${s.nome}. Arraste para reordenar ou use as setas do teclado.`}
                 className={cn(
                   'w-full flex items-center justify-start gap-1 h-9 rounded-lg border text-[10px] font-medium truncate px-1 transition-all',
                   playingId === s.id
@@ -609,6 +641,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
               </button>
               <div className="absolute -top-1 -right-1 flex flex-col gap-0.5 pointer-events-auto">
                 <button
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', s.id);
+                    setDraggingId(s.id);
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  onClick={(e) => e.preventDefault()}
+                  className="h-4 w-4 rounded-full flex items-center justify-center border border-background bg-secondary/90 text-muted-foreground hover:text-foreground shadow-sm cursor-grab active:cursor-grabbing"
+                  title="Arraste para reordenar"
+                  aria-label={`Arrastar ${s.nome} para reordenar`}
+                >
+                  <GripVertical size={8} />
+                </button>
+                <button
+                  type="button"
                   onClick={() => toggleLoop(s.id)}
                   title={s.loop ? 'Loop ativo' : 'Ativar loop infinito'}
                   className={cn(
@@ -683,11 +732,25 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
           <div
             key={s.id}
             className={cn('group relative', draggingId === s.id && 'opacity-50')}
-            draggable
-            onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDraggingId(s.id); }}
-            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
-            onDrop={(e) => { e.preventDefault(); reorderSound(s.id); }}
-            onDragEnd={() => setDraggingId(null)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              reorderSound(s.id, e.dataTransfer.getData('text/plain') || draggingId);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveSound(s.id, -1);
+              }
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveSound(s.id, 1);
+              }
+            }}
+            tabIndex={0}
           >
             {editingId === s.id ? (
               <div className="flex items-center gap-1">
@@ -719,7 +782,8 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
               <>
                 <button
                   onClick={() => trigger(s)}
-                  title={s.nome}
+                  title={`${s.nome} · arraste para reordenar`}
+                  aria-label={`${s.nome}. Arraste para reordenar ou use as setas do teclado.`}
                   className={cn(
                     'w-full flex items-center gap-2 px-2.5 rounded-xl border text-left transition-all',
                     fullHeight ? 'py-3' : 'py-2',
@@ -743,6 +807,23 @@ export function QuickSoundsPanel({ compact = false, fullHeight = false }: { comp
                 </button>
                 <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    type="button"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', s.id);
+                      setDraggingId(s.id);
+                    }}
+                    onDragEnd={() => setDraggingId(null)}
+                    onClick={(e) => e.preventDefault()}
+                    className="h-4 w-4 rounded-full flex items-center justify-center bg-secondary text-muted-foreground hover:text-foreground shadow-sm cursor-grab active:cursor-grabbing"
+                    title="Arraste para reordenar"
+                    aria-label={`Arrastar ${s.nome} para reordenar`}
+                  >
+                    <GripVertical size={8} />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => toggleLoop(s.id)}
                     className={cn(
                       'h-4 w-4 rounded-full flex items-center justify-center',
