@@ -235,8 +235,8 @@ export default function AudioLibraryPage() {
   }, [audios]);
 
 
-  // Filter audios by current folder and usage filter (YouTube/Spotify têm abas próprias)
-  const filteredAudios = audios.filter(a => {
+  // Apply the same scope to the list and climate counts. YouTube/Spotify têm abas próprias.
+  const scopedAudios = audios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
     const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = (a as any).pasta_id;
@@ -247,9 +247,11 @@ export default function AudioLibraryPage() {
     if (!searchQuery.trim() && !folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
     if (searchQuery.trim() && !a.nome.toLocaleLowerCase('pt-BR').includes(searchQuery.trim().toLocaleLowerCase('pt-BR'))) return false;
-    if (climaFilter && ((a as any).clima || null) !== climaFilter) return false;
     return true;
   });
+  const filteredAudios = scopedAudios.filter(
+    a => !climaFilter || ((a as any).clima || null) === climaFilter,
+  );
 
 
 
@@ -1012,11 +1014,11 @@ export default function AudioLibraryPage() {
                 climaFilter === null ? 'border-gold/60 bg-gold/15 text-gold' : 'border-border/50 text-muted-foreground hover:bg-muted/50',
               )}
             >
-              Todos ({audios.length})
+              Todos ({scopedAudios.length})
             </button>
             {CLIMAS.map((c) => {
               const CIcon = c.icone;
-              const count = audios.filter((a) => (a as any).clima === c.id).length;
+              const count = scopedAudios.filter((a) => (a as any).clima === c.id).length;
               const active = climaFilter === c.id;
               return (
                 <button
