@@ -65,7 +65,7 @@ export function mensagemUpload(err: unknown): string {
   if (m.includes("already exists") || m.includes("duplicate")) {
     return "Já existe um arquivo com esse nome. Tente novamente.";
   }
-  return "Não foi possível enviar o arquivo. Tente novamente.";
+  return raw.length > 180 ? `${raw.slice(0, 177)}...` : raw;
 }
 
 export interface RetryOptions {

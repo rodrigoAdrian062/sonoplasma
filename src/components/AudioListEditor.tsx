@@ -165,8 +165,9 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
     setUploadingIndex(index);
 
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
       if (authError) throw authError;
+      const user = session?.user;
       if (!user) {
         toast.error('Faça login para enviar arquivos.');
         return;

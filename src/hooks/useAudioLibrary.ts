@@ -127,11 +127,12 @@ export function useAudioLibrary() {
   });
 
   const uploadAndAddAudio = async (file: File, name: string) => {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError) {
       toast({ title: 'Não foi possível enviar', description: mensagemUpload(authError), variant: 'destructive' });
       throw authError;
     }
+    const user = session?.user;
     if (!user) {
       const error = new Error('Faça login para enviar arquivos.');
       toast({ title: 'Não foi possível enviar', description: error.message, variant: 'destructive' });
@@ -147,6 +148,7 @@ export function useAudioLibrary() {
       .upload(fileName, file);
 
     if (uploadError) {
+      console.error('Audio library upload error:', uploadError);
       toast({ title: 'Não foi possível enviar', description: mensagemUpload(uploadError), variant: 'destructive' });
       throw uploadError;
     }
