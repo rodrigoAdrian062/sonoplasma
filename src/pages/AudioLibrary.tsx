@@ -1002,8 +1002,13 @@ export default function AudioLibraryPage() {
 
         {/* Filtro por clima ritual */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <Thermometer size={14} className="text-gold" /> Clima ritual
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Thermometer size={14} className="text-gold" /> Clima ritual
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Total da biblioteca: <strong className="text-foreground">{audios.length}</strong>
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -1018,7 +1023,7 @@ export default function AudioLibraryPage() {
             </button>
             {CLIMAS.map((c) => {
               const CIcon = c.icone;
-              const count = scopedAudios.filter((a) => (a as any).clima === c.id).length;
+              const count = audios.filter((a) => (a as any).clima === c.id).length;
               const active = climaFilter === c.id;
               return (
                 <button

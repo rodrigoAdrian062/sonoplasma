@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { AudioLibraryModal } from './AudioLibraryModal';
 import { mensagemUpload } from '@/lib/errorHandler';
+import { MAX_AUDIO_FILE_BYTES } from '@/lib/storageLimits';
 
 
 interface AudioItem {
@@ -162,8 +163,7 @@ export function AudioListEditor({ audios, onChange, maxAudios = Infinity }: Audi
       return;
     }
 
-    // Max 20MB
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > MAX_AUDIO_FILE_BYTES) {
       toast.error('Arquivo muito grande. Máximo 20MB');
       return;
     }

@@ -50,6 +50,9 @@ function traduzirErro(raw: string): string {
 export function mensagemUpload(err: unknown): string {
   const raw = extractMessage(err);
   const m = raw.toLowerCase();
+  if (m.includes("limite de armazenamento do projeto") || m.includes("storage quota")) {
+    return "Limite de armazenamento de 800 MB atingido. Remova arquivos que não usa antes de enviar outros.";
+  }
   if (m.includes("row-level security") || m.includes("policy") || m.includes("unauthorized") || m.includes("403")) {
     return "Sem permissão para enviar este arquivo. Entre novamente e tente de novo.";
   }
