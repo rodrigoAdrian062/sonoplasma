@@ -179,7 +179,7 @@ export default function AudioLibraryPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addMode, setAddMode] = useState<'upload' | 'url'>('upload');
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
-  const [showAllSources, setShowAllSources] = useState(false);
+  const [showAllSources, setShowAllSources] = useState(true);
   const [showUnusedOnly, setShowUnusedOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [climaFilter, setClimaFilter] = useState<string | null>(null);
@@ -243,7 +243,11 @@ export default function AudioLibraryPage() {
     const audioPastaId = (a as any).pasta_id;
     // Na raiz, YouTube/Spotify são opcionais porque também têm abas próprias.
     if (!currentFolderId && !showAllSources && (isYt || isSp)) return false;
-    const folderMatch = currentFolderId ? audioPastaId === currentFolderId : !audioPastaId;
+    const folderMatch = !currentFolderId && showAllSources
+      ? true
+      : currentFolderId
+        ? audioPastaId === currentFolderId
+        : !audioPastaId;
     // Ao buscar, pesquisa em toda a biblioteca e não apenas na pasta atual.
     if (!searchQuery.trim() && !folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
