@@ -34,6 +34,7 @@ import { QuickSoundTrimDialog } from './QuickSoundTrimDialog';
 import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
+const VOLUME_UPDATED_EVENT = 'sonoplastia:quickSoundsVolumeUpdated';
 const MAX_SLOTS = 20;
 
 type QuickSound = QuickSoundData;
@@ -55,8 +56,16 @@ function isUnsupportedFormat(url: string): boolean {
 }
 
 function loadVolume(): number {
-  const raw = Number(localStorage.getItem(VOLUME_KEY));
-  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
+  const stored = localStorage.getItem(VOLUME_KEY);
+  if (stored === null) return 0.7;
+  const raw = Number(stored);
+  return Number.isFinite(raw) && raw >= 0 && raw <= 1 ? raw : 0.7;
+}
+
+function saveVolume(volume: number) {
+  const next = Math.max(0, Math.min(1, volume));
+  localStorage.setItem(VOLUME_KEY, String(next));
+  window.dispatchEvent(new CustomEvent(VOLUME_UPDATED_EVENT, { detail: next }));
 }
 
 interface QuickSoundsHorizontalBarProps {
@@ -358,10 +367,29 @@ export function QuickSoundsPanel({
 
 
   useEffect(() => {
-    localStorage.setItem(VOLUME_KEY, String(volume));
     if (audioRef.current) audioRef.current.volume = volume;
     setQuickYouTubeVolume(volume);
   }, [volume]);
+
+  useEffect(() => {
+    const syncVolume = (event: Event) => {
+      const eventVolume = event instanceof CustomEvent ? Number(event.detail) : Number.NaN;
+      const next = Number.isFinite(eventVolume) ? Math.max(0, Math.min(1, eventVolume)) : loadVolume();
+      setVolume(next);
+      if (audioRef.current) audioRef.current.volume = next;
+      setQuickYouTubeVolume(next);
+    };
+    const syncStoredVolume = (event: StorageEvent) => {
+      if (event.key === VOLUME_KEY) syncVolume(event);
+    };
+
+    window.addEventListener(VOLUME_UPDATED_EVENT, syncVolume);
+    window.addEventListener('storage', syncStoredVolume);
+    return () => {
+      window.removeEventListener(VOLUME_UPDATED_EVENT, syncVolume);
+      window.removeEventListener('storage', syncStoredVolume);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -743,7 +771,7 @@ export function QuickSoundsPanel({
     e.preventDefault();
     e.stopPropagation();
     const delta = e.deltaY < 0 ? 0.01 : -0.01;
-    setVolume((v) => Math.min(1, Math.max(0, Math.round((v + delta) * 100) / 100)));
+    saveVolume(Math.round((loadVolume() + delta) * 100) / 100);
   };
 
   const picker = (
@@ -1230,12 +1258,12 @@ export function QuickSoundsPanel({
           value={[Math.round(volume * 100)]}
           max={100}
           step={1}
-          onValueChange={([v]) => setVolume(v / 100)}
+          onValueChange={([v]) => saveVolume(v / 100)}
           className="flex-1"
         />
         <span className="text-[9px] text-gold/70 w-7 text-right">{Math.round(volume * 100)}%</span>
       </div>
-      <VolumePresets volume={volume} onVolumeChange={setVolume} compact />
+      <VolumePresets volume={volume} onVolumeChange={saveVolume} compact />
 
 
       {playingId && (

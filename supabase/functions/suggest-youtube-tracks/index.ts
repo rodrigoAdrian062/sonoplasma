@@ -1,9 +1,11 @@
 // Edge function: AI-generated YouTube instrumental suggestions for a Masonic stage.
 // Returns curated track names (real, well-known instrumental pieces) with YouTube
 // search URLs — and, when the model is confident, a direct watch URL.
+import { getOpenAIKeyForRequest } from '../_shared/openai-connection.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface Suggestion {
@@ -22,8 +24,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) return json({ error: 'LOVABLE_API_KEY não configurada' }, 500);
+    const connection = await getOpenAIKeyForRequest(req);
+    if (connection.error) return json({ error: connection.error }, connection.status);
+    if (!connection.apiKey) return json({ error: 'Conecte sua chave da OpenAI na aba Mestre de Harmonia.' }, 400);
 
     const body = await req.json().catch(() => ({}));
     const stageTitle = String(body.stageTitle ?? '').trim();
@@ -69,15 +72,14 @@ Responda SOMENTE JSON no formato: {"suggestions":[{...}, ...]}`;
 ${stageDescription ? `DESCRIÇÃO: ${stageDescription}\n` : ''}${sessionType ? `TIPO DE SESSÃO: ${sessionType}\n` : ''}${userHint ? `PRÉVIA DO USUÁRIO (prioridade máxima): ${userHint}\n` : ''}
 Sugira ${limit} músicas REAIS e conhecidas do YouTube que combinem perfeitamente com este momento. Ordene do mais essencial ao mais opcional. Responda JSON: {"suggestions":[...]}`;
 
-    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${connection.apiKey}`,
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5.6-sol',
-        reasoning_effort: 'none',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -87,10 +89,9 @@ Sugira ${limit} músicas REAIS e conhecidas do YouTube que combinem perfeitament
     });
 
     if (!aiRes.ok) {
-      const txt = await aiRes.text();
-      if (aiRes.status === 429) return json({ error: 'Limite de uso da IA atingido. Tente novamente em instantes.' }, 429);
-      if (aiRes.status === 402) return json({ error: 'Créditos de IA esgotados. Adicione créditos no workspace.' }, 402);
-      return json({ error: `Falha na IA: ${txt.slice(0, 200)}` }, 500);
+      if (aiRes.status === 401) return json({ error: 'Chave da OpenAI inválida ou sem autorização.' }, 500);
+      if (aiRes.status === 429) return json({ error: 'Limite ou saldo da API OpenAI atingido. Verifique o faturamento da API.' }, 429);
+      return json({ error: `Falha na API OpenAI (${aiRes.status}). Tente novamente mais tarde.` }, 500);
     }
 
     const data = await aiRes.json();

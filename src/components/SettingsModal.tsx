@@ -21,7 +21,7 @@ import { AudioOutputSelector } from '@/components/AudioOutputSelector';
 import { Switch } from '@/components/ui/switch';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUiToggles } from '@/hooks/useUiToggles';
-import { useFrequency432, useHealingHz } from '@/hooks/useFrequency432';
+import { useHealingHz } from '@/hooks/useFrequency432';
 import { HEALING_FREQUENCIES } from '@/lib/pitch432';
 import { Download, Eye, Music2 } from 'lucide-react';
 import { mensagemUpload } from '@/lib/errorHandler';
@@ -36,7 +36,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
-  const [, setFreq432] = useFrequency432();
   const [healingHz, setHealingHz] = useHealingHz();
   const { toggles, setToggle } = useUiToggles();
   const [nomeApp, setNomeApp] = useState('');
@@ -401,8 +400,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     type="button"
                     onClick={() => {
                       setHealingHz(f.hz);
-                      // manter flag legada em sincronia
-                      setFreq432(f.hz !== 440);
                     }}
                     className={`w-full text-left rounded-lg border p-3 transition-colors ${
                       active

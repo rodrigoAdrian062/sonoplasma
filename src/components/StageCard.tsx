@@ -18,6 +18,7 @@ import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
+import { RitualDetailsEditor } from './RitualDetailsEditor';
 
 
 interface StageCardProps {
@@ -124,13 +125,22 @@ export function StageCard({
   const saveRitualDetails = async (text: string) => {
     setRitualDetails(text);
     localStorage.setItem(stageRitualDetailsKey, text);
+    queryClient.setQueryData<CeremonyStage[]>(['stages'], (currentStages) =>
+      currentStages?.map((currentStage) =>
+        currentStage.id === stage.id
+          ? { ...currentStage, ritual_detalhes: text }
+          : currentStage,
+      ),
+    );
     try {
-      await supabase
+      const { error } = await supabase
         .from('sonoplastia_etapas')
         .update({ ritual_detalhes: text })
         .eq('id', stage.id);
+      if (error) throw error;
     } catch (err) {
       console.error('Erro ao salvar detalhes do ritual:', err);
+      toast.error('Não foi possível salvar os detalhes do ritual no servidor.');
     }
   };
 
@@ -532,11 +542,13 @@ export function StageCard({
                   Detalhes do Ritual
                 </span>
               </div>
-              <textarea
+              <RitualDetailsEditor
                 value={ritualDetails}
-                onChange={(e) => saveRitualDetails(e.target.value)}
+                onChange={(value) => void saveRitualDetails(value)}
                 placeholder="Escreva aqui as instruções ou detalhes desta etapa do ritual..."
-                className="w-full min-h-[80px] text-xs bg-secondary/30 border border-border/40 rounded-lg p-2.5 focus:border-gold/40 focus:ring-1 focus:ring-gold/20 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/40"
+                className="border-border/40"
+                minHeight={80}
+                compact
               />
             </div>
             

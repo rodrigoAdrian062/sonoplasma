@@ -201,3 +201,29 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Mestre de Harmonia: conectar a OpenAI
+
+Cada usuário pode conectar sua própria chave da API OpenAI diretamente na aba **Mestre de Harmonia**. A chave é validada e criptografada no servidor, vinculada ao ID autenticado da conta e nunca retornada ao navegador após ser salva. Seu uso é cobrado pela OpenAI separadamente do ChatGPT Plus.
+
+Antes de publicar a integração:
+
+1. Configure o secret `OPENAI_CREDENTIALS_ENCRYPTION_KEY` no Supabase. Gere uma chave aleatória de 32 bytes codificada em Base64; por exemplo, no PowerShell:
+
+   ```powershell
+   $bytes = New-Object byte[] 32
+   [System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+   [Convert]::ToBase64String($bytes)
+   ```
+
+   Guarde uma cópia segura dessa chave. Se ela for perdida ou substituída, as chaves OpenAI já salvas não poderão mais ser descriptografadas.
+2. Aplique as migrations do Supabase para criar o armazenamento privado das conexões.
+3. Publique as funções:
+
+```sh
+supabase functions deploy manage-openai-connection
+supabase functions deploy suggest-audios
+supabase functions deploy suggest-youtube-tracks
+```
+
+Depois, cada usuário pode criar uma chave em [OpenAI API keys](https://platform.openai.com/api-keys) e conectá-la pela interface. A chave de criptografia fica apenas nos secrets do Supabase; nunca a coloque no código ou em arquivos versionados.

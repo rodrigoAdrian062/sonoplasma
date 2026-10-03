@@ -1,90 +1,89 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserAdminContext } from "../_shared/openai-connection.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405);
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    const { user, admin } = await getUserAdminContext(req);
+    const { data: role, error: roleError } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'super_admin')
+      .maybeSingle();
 
-    const { action, nome, senha } = await req.json();
+    if (roleError) return json({ error: 'Não foi possível verificar o acesso administrativo.' }, 500);
+    if (!role) return json({ error: 'Apenas o Plenitude pode consultar os usuários.' }, 403);
 
-    if (action === 'create') {
-      if (!nome || !senha) {
-        return new Response(
-          JSON.stringify({ error: 'Nome e senha são obrigatórios' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    const body = await req.json().catch(() => ({}));
+    if (body.action !== 'list') return json({ error: 'Ação inválida.' }, 400);
 
-      if (senha.length < 6) {
-        return new Response(
-          JSON.stringify({ error: 'Senha deve ter no mínimo 6 caracteres' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const email = `${nome.trim().toLowerCase()}@sistema.local`;
-
-      // Check if user already exists
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const userExists = existingUsers?.users?.some(u => u.email === email);
-
-      if (userExists) {
-        return new Response(
-          JSON.stringify({ error: 'Usuário já existe' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Create user
-      const { data, error } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: senha,
-        email_confirm: true,
-      });
-
+    const authUsers: Array<{
+      id: string;
+      email?: string;
+      created_at?: string;
+      user_metadata?: Record<string, unknown>;
+    }> = [];
+    const perPage = 1000;
+    for (let page = 1; ; page += 1) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
       if (error) {
-        console.error('Error creating user:', error);
-        return new Response(
-          JSON.stringify({ error: 'Erro ao criar usuário' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        console.error('Falha ao listar usuários do Auth:', error);
+        return json({ error: 'Não foi possível carregar os usuários cadastrados.' }, 500);
       }
-
-      console.log(`User created: ${email}`);
-      return new Response(
-        JSON.stringify({ success: true, message: 'Usuário criado com sucesso' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      authUsers.push(...data.users);
+      if (data.users.length < perPage) break;
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Ação inválida' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const visibleAuthUsers = authUsers.filter((item) => item.id !== user.id);
+    if (visibleAuthUsers.length === 0) return json({ users: [] });
 
+    const { data: profiles, error: profilesError } = await admin
+      .from('profiles')
+      .select('user_id, username, password, created_at, plan, permissions')
+      .in('user_id', visibleAuthUsers.map((item) => item.id));
+
+    if (profilesError) {
+      console.error('Falha ao carregar perfis de usuários:', profilesError);
+      return json({ error: 'Não foi possível carregar os perfis dos usuários.' }, 500);
+    }
+
+    const profilesByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
+    const users = visibleAuthUsers.map((authUser) => {
+      const profile = profilesByUserId.get(authUser.id);
+      const metadataUsername = authUser.user_metadata?.username;
+      const emailUsername = authUser.email?.split('@')[0];
+      return {
+        user_id: authUser.id,
+        username:
+          profile?.username ??
+          (typeof metadataUsername === 'string' ? metadataUsername : null) ??
+          emailUsername ??
+          'Usuário',
+        password: profile?.password ?? null,
+        created_at: profile?.created_at ?? authUser.created_at ?? new Date(0).toISOString(),
+        plan: profile?.plan ?? 'free',
+        permissions: profile?.permissions ?? null,
+      };
+    });
+
+    return json({ users });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const message = error instanceof Error ? error.message : 'Erro interno do servidor.';
+    return json({ error: message }, message === 'Não autenticado.' ? 401 : 500);
   }
 });
+
+function json(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}

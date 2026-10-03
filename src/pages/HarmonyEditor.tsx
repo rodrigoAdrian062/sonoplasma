@@ -2,13 +2,20 @@ import { ChangeEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, use
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, AudioLines, Download, Loader2, Music2, Pause, Play, Plus, Save, Library,
-  Search, SkipBack, Square, Trash2, Upload, Volume2, VolumeX, ZoomIn, ZoomOut,
+  Search, SkipBack, Square, Trash2, Upload, Volume2, VolumeX, ZoomIn, ZoomOut, Sparkles,
+  ExternalLink, KeyRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useSections } from '@/hooks/useSections';
+import { useStages } from '@/hooks/useStages';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
+import { supabase } from '@/integrations/supabase/client';
 import { loadCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 import { quickSoundKind } from '@/lib/quickSounds';
 import {
@@ -18,6 +25,7 @@ import {
 } from '@/lib/harmonyEditor';
 import type { AudioLibraryItem } from '@/types/audioLibrary';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 const TRACK_HEIGHT = 96;
 const DEFAULT_PROJECT: HarmonyProject = { name: 'Minha harmonia', tracks: [], version: 3 };
@@ -30,6 +38,24 @@ interface TrackDrag {
   start: number;
   trimStart: number;
   trimEnd: number;
+}
+
+interface HarmonyMusicSuggestion {
+  nome: string;
+  artista?: string;
+  motivo?: string;
+  categoria?: string;
+  duracao?: string;
+  bpm?: number;
+  solenidade?: number;
+  youtube_search_url: string;
+}
+
+interface HarmonyAdvice {
+  library: AudioLibraryItem[];
+  external: HarmonyMusicSuggestion[];
+  sectionName: string;
+  stageName: string;
 }
 
 function readLocalProject(): HarmonyProject {
@@ -96,8 +122,24 @@ function scheduleTrackGain(
 export default function HarmonyEditorPage() {
   const navigate = useNavigate();
   const { audios, isLoading, uploadAndAddAudio } = useAudioLibrary();
+  const { sections } = useSections();
+  const { stages } = useStages();
+  const { access, isLoading: isLoadingAccess } = useUserAccess();
+  const canUseAI = hasPermission(access, 'canUseAI');
   const [project, setProject] = useState<HarmonyProject>(readLocalProject);
+  const [activeTab, setActiveTab] = useState('editor');
   const [search, setSearch] = useState('');
+  const [adviceSectionId, setAdviceSectionId] = useState('');
+  const [adviceStageId, setAdviceStageId] = useState('');
+  const [adviceDescription, setAdviceDescription] = useState('');
+  const [advice, setAdvice] = useState<HarmonyAdvice | null>(null);
+  const [isGettingAdvice, setIsGettingAdvice] = useState(false);
+  const [openAIKey, setOpenAIKey] = useState('');
+  const [openAIKeySuffix, setOpenAIKeySuffix] = useState<string | null>(null);
+  const [isOpenAIConnected, setIsOpenAIConnected] = useState(false);
+  const [isLoadingOpenAIConnection, setIsLoadingOpenAIConnection] = useState(false);
+  const [isSavingOpenAIConnection, setIsSavingOpenAIConnection] = useState(false);
+  const [isRemovingOpenAIConnection, setIsRemovingOpenAIConnection] = useState(false);
   const [zoom, setZoom] = useState(48);
   const [playhead, setPlayhead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -132,6 +174,10 @@ export default function HarmonyEditorPage() {
   const directAudios = useMemo(
     () => audios.filter((audio) => quickSoundKind(audio.audio_url) === 'file'),
     [audios],
+  );
+  const sectionStages = useMemo(
+    () => stages.filter((stage) => stage.secao_id === adviceSectionId),
+    [stages, adviceSectionId],
   );
   const filteredAudios = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();
@@ -263,7 +309,7 @@ export default function HarmonyEditorPage() {
     if (context && context.state !== 'closed') void context.close();
   }, [stopPlayback]);
 
-  const addAudioToTimeline = async (audio: AudioLibraryItem) => {
+  const addAudioToTimeline = async (audio: AudioLibraryItem, notify = true): Promise<boolean> => {
     setLoadingAudioId(audio.id);
     try {
       const buffer = await decodeTrack(audio.audio_url);
@@ -290,11 +336,182 @@ export default function HarmonyEditorPage() {
         tracks: appendHarmonyTrack(current.tracks, track),
       }));
       setSelectedClipId(track.id);
-      toast.success(`"${audio.nome}" adicionada à linha do tempo.`);
+      if (notify) toast.success(`"${audio.nome}" adicionada à linha do tempo.`);
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível carregar este áudio.');
+      return false;
     } finally {
       setLoadingAudioId(null);
+    }
+  };
+
+  const requestHarmonyAdvice = async () => {
+    if (!canUseAI) {
+      toast.error('O assistente Mestre de Harmonia exige permissão de IA no seu plano.');
+      return;
+    }
+    if (!isOpenAIConnected) {
+      toast.error('Conecte sua chave da OpenAI antes de pedir uma proposta.');
+      setActiveTab('master');
+      return;
+    }
+    const section = sections.find((item) => item.id === adviceSectionId);
+    if (!section) {
+      toast.error('Selecione uma seção do roteiro.');
+      return;
+    }
+    const stage = sectionStages.find((item) => item.id === adviceStageId);
+    const stageTitle = stage?.nome_simbolico || section.nome;
+    const stageDescription = [section.descricao, stage?.descricao, stage?.ritual_detalhes]
+      .filter(Boolean)
+      .join('\n');
+    const userHint = adviceDescription.trim();
+    if (!userHint) {
+      toast.error('Descreva o momento, o clima e o resultado musical que deseja.');
+      return;
+    }
+
+    setIsGettingAdvice(true);
+    setAdvice(null);
+    try {
+      const available = directAudios.slice(0, 800);
+      const [libraryResponse, musicResponse] = await Promise.all([
+        available.length > 0
+          ? supabase.functions.invoke('suggest-audios', {
+              body: {
+                stageTitle,
+                stageDescription,
+                userHint,
+                limit: 6,
+                library: available.map((audio) => ({
+                  id: audio.id,
+                  nome: audio.nome,
+                  audio_url: audio.audio_url,
+                })),
+              },
+            })
+          : Promise.resolve({ data: { indices: [] }, error: null }),
+        supabase.functions.invoke('suggest-youtube-tracks', {
+          body: {
+            stageTitle,
+            stageDescription,
+            userHint,
+            sessionType: section.nome,
+            limit: 5,
+          },
+        }),
+      ]);
+      if (libraryResponse.error) throw new Error(`Falha ao analisar a biblioteca: ${libraryResponse.error.message}`);
+      if (musicResponse.error) throw new Error(`Falha ao gerar referências musicais: ${musicResponse.error.message}`);
+
+      const indices: unknown[] = Array.isArray(libraryResponse.data?.indices)
+        ? libraryResponse.data.indices
+        : [];
+      const librarySuggestions = indices
+        .map((index) => Number(index))
+        .filter((index) => Number.isInteger(index) && index >= 0 && index < available.length)
+        .map((index) => available[index]);
+      const externalSuggestions: HarmonyMusicSuggestion[] = Array.isArray(musicResponse.data?.suggestions)
+        ? musicResponse.data.suggestions.filter(
+            (item: unknown): item is HarmonyMusicSuggestion =>
+              typeof item === 'object' &&
+              item !== null &&
+              'nome' in item &&
+              typeof item.nome === 'string' &&
+              'youtube_search_url' in item &&
+              typeof item.youtube_search_url === 'string',
+          )
+        : [];
+
+      setAdvice({
+        library: librarySuggestions,
+        external: externalSuggestions,
+        sectionName: section.nome,
+        stageName: stageTitle,
+      });
+      if (librarySuggestions.length === 0 && externalSuggestions.length === 0) {
+        toast.info('Não encontrei sugestões desta vez. Tente detalhar melhor o clima ou o momento.');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível consultar o Mestre de Harmonia.');
+    } finally {
+      setIsGettingAdvice(false);
+    }
+  };
+
+  const loadOpenAIConnection = useCallback(async () => {
+    setIsLoadingOpenAIConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-openai-connection', {
+        body: { action: 'status' },
+      });
+      if (error) throw new Error(error.message);
+      setIsOpenAIConnected(Boolean(data?.connected));
+      setOpenAIKeySuffix(typeof data?.keySuffix === 'string' ? data.keySuffix : null);
+    } catch (error) {
+      toast.error(error instanceof Error ? `Não foi possível consultar a conexão: ${error.message}` : 'Não foi possível consultar a conexão OpenAI.');
+    } finally {
+      setIsLoadingOpenAIConnection(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'master') void loadOpenAIConnection();
+  }, [activeTab, loadOpenAIConnection]);
+
+  const connectOpenAI = async () => {
+    const key = openAIKey.trim();
+    if (!key) {
+      toast.error('Cole sua chave da API OpenAI.');
+      return;
+    }
+
+    setIsSavingOpenAIConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-openai-connection', {
+        body: { action: 'connect', apiKey: key },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(String(data.error));
+      setIsOpenAIConnected(Boolean(data?.connected));
+      setOpenAIKeySuffix(typeof data?.keySuffix === 'string' ? data.keySuffix : null);
+      setOpenAIKey('');
+      toast.success('Chave OpenAI validada e conectada à sua conta.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível conectar a chave OpenAI.');
+    } finally {
+      setIsSavingOpenAIConnection(false);
+    }
+  };
+
+  const disconnectOpenAI = async () => {
+    setIsRemovingOpenAIConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-openai-connection', {
+        body: { action: 'disconnect' },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(String(data.error));
+      setIsOpenAIConnected(false);
+      setOpenAIKeySuffix(null);
+      setOpenAIKey('');
+      toast.success('Chave OpenAI removida da sua conta.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível remover a chave OpenAI.');
+    } finally {
+      setIsRemovingOpenAIConnection(false);
+    }
+  };
+
+  const applyLibraryAdvice = async () => {
+    if (!advice?.library.length) return;
+    let addedCount = 0;
+    for (const audio of advice.library) {
+      if (await addAudioToTimeline(audio, false)) addedCount += 1;
+    }
+    if (addedCount > 0) {
+      toast.success(`${addedCount} sugestão(ões) adicionada(s) ao final da harmonia.`);
     }
   };
 
@@ -456,6 +673,212 @@ export default function HarmonyEditorPage() {
     return Array.from({ length: Math.floor(timelineDuration / interval) + 1 }, (_, index) => index * interval);
   }, [timelineDuration, zoom]);
 
+  const harmonyAssistant = (
+    <section className="mx-auto w-full max-w-4xl rounded-xl border border-gold/25 bg-gold/5 p-4 sm:p-6">
+      <div className="mb-2 flex items-center gap-2 text-gold">
+        <Sparkles size={20} />
+        <h2 className="text-lg font-semibold">Mestre de Harmonia</h2>
+      </div>
+      <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
+        Descreva o momento do roteiro e a intenção musical. A proposta considera o acervo disponível e oferece referências para pesquisa; você revisa tudo antes de aplicar.
+      </p>
+
+      <div className="mb-6 rounded-lg border border-border bg-background/70 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <KeyRound size={17} className="text-gold" />
+          <h3 className="font-semibold">Conectar minha API OpenAI</h3>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Use uma chave da API da OpenAI. Ela fica criptografada no servidor e vinculada somente à sua conta; o uso é cobrado pela OpenAI separadamente do ChatGPT Plus.
+        </p>
+        {isLoadingOpenAIConnection ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 size={15} className="animate-spin" /> Verificando conexão…
+          </p>
+        ) : isOpenAIConnected ? (
+          <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-green-600 dark:text-green-400">Conectada · chave terminada em {openAIKeySuffix}</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void disconnectOpenAI()}
+              disabled={isRemovingOpenAIConnection || isSavingOpenAIConnection}
+            >
+              {isRemovingOpenAIConnection && <Loader2 size={14} className="mr-2 animate-spin" />}
+              Desconectar
+            </Button>
+          </div>
+        ) : (
+          <p className="mb-3 text-sm text-muted-foreground">Nenhuma chave OpenAI conectada a esta conta.</p>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={openAIKey}
+            onChange={(event) => setOpenAIKey(event.target.value)}
+            placeholder="Cole aqui sua chave sk-…"
+            aria-label="Chave pessoal da API OpenAI"
+            className="min-w-0 flex-1"
+            disabled={isSavingOpenAIConnection || isRemovingOpenAIConnection}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void connectOpenAI()}
+            disabled={isLoadingOpenAIConnection || isSavingOpenAIConnection || isRemovingOpenAIConnection || !openAIKey.trim()}
+          >
+            {isSavingOpenAIConnection ? <Loader2 size={15} className="mr-2 animate-spin" /> : <KeyRound size={15} className="mr-2" />}
+            {isOpenAIConnected ? 'Trocar chave' : 'Conectar'}
+          </Button>
+        </div>
+        <a
+          href="https://platform.openai.com/api-keys"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-block text-xs text-gold underline-offset-4 hover:underline"
+        >
+          Criar ou gerenciar chave na OpenAI
+        </a>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="block text-sm text-muted-foreground">
+          Seção do roteiro
+          <select
+            value={adviceSectionId}
+            onChange={(event) => {
+              setAdviceSectionId(event.target.value);
+              setAdviceStageId('');
+              setAdvice(null);
+            }}
+            disabled={isLoadingAccess || sections.length === 0}
+            className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          >
+            <option value="">Selecione uma seção</option>
+            {sections.map((section) => (
+              <option key={section.id} value={section.id}>{section.nome}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm text-muted-foreground">
+          Etapa específica (opcional)
+          <select
+            value={adviceStageId}
+            onChange={(event) => {
+              setAdviceStageId(event.target.value);
+              setAdvice(null);
+            }}
+            disabled={!adviceSectionId || sectionStages.length === 0}
+            className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+          >
+            <option value="">Considerar a seção inteira</option>
+            {sectionStages.map((stage) => (
+              <option key={stage.id} value={stage.id}>{stage.nome_simbolico}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="mt-4 block text-sm text-muted-foreground">
+        Descreva o momento e o que deseja transmitir
+        <Textarea
+          value={adviceDescription}
+          onChange={(event) => setAdviceDescription(event.target.value)}
+          placeholder="Ex.: entrada solene, começar suave e crescer discretamente; sem vocal e sem competir com a fala."
+          rows={4}
+          className="mt-1 min-h-[110px]"
+          maxLength={1000}
+        />
+      </label>
+      <Button
+        type="button"
+        className="mt-4 w-full gap-2 sm:w-auto"
+        onClick={() => void requestHarmonyAdvice()}
+        disabled={isGettingAdvice || isLoadingAccess || !canUseAI || !isOpenAIConnected || !adviceSectionId || !adviceDescription.trim()}
+        title={!canUseAI ? 'Recurso de IA não disponível no plano atual' : undefined}
+      >
+        {isGettingAdvice ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+        {isGettingAdvice ? 'Analisando roteiro e acervo…' : 'Pedir proposta de harmonia'}
+      </Button>
+      {!isLoadingAccess && !canUseAI && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          O acesso ao assistente de IA não está habilitado no seu plano.
+        </p>
+      )}
+
+      {advice && (
+        <div className="mt-6 space-y-5 border-t border-gold/15 pt-5">
+          <div>
+            <h3 className="font-semibold">Proposta para {advice.stageName}</h3>
+            <p className="text-sm text-muted-foreground">Seção: {advice.sectionName}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              A recomendação prioriza música instrumental, volume de apoio e coerência com o momento. Confirme a adequação ao rito e às orientações da sua Loja.
+            </p>
+          </div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold text-gold">Do seu acervo</h3>
+              {advice.library.length > 0 ? (
+                <>
+                  <ol className="space-y-2">
+                    {advice.library.map((audio, index) => (
+                      <li key={audio.id} className="flex items-center gap-2 rounded-md bg-background/70 p-2 text-sm">
+                        <span className="text-muted-foreground">{index + 1}.</span>
+                        <span className="min-w-0 flex-1 truncate" title={audio.nome}>{audio.nome}</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <Button type="button" variant="outline" className="mt-3 gap-2" onClick={() => void applyLibraryAdvice()}>
+                    <Plus size={15} /> Aplicar sequência ao editor
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma faixa do acervo foi considerada adequada para esta descrição.</p>
+              )}
+            </div>
+
+            {advice.external.length > 0 && (
+              <div>
+                <h3 className="mb-2 text-sm font-semibold text-gold">Referências para pesquisar</h3>
+                <ol className="space-y-2">
+                  {advice.external.map((suggestion, index) => (
+                    <li key={`${suggestion.nome}-${index}`} className="rounded-md bg-background/70 p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="text-xs text-muted-foreground">{index + 1}.</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">{suggestion.nome}</p>
+                          {suggestion.artista && <p className="text-xs text-muted-foreground">{suggestion.artista}</p>}
+                          {suggestion.motivo && <p className="mt-1 text-xs text-muted-foreground">{suggestion.motivo}</p>}
+                          <div className="mt-2 flex flex-wrap gap-x-3 text-[10px] text-muted-foreground">
+                            {suggestion.categoria && <span>{suggestion.categoria}</span>}
+                            {suggestion.duracao && <span>{suggestion.duracao}</span>}
+                            {suggestion.solenidade && <span>Solenidade {suggestion.solenidade}/5</span>}
+                          </div>
+                        </div>
+                        <a
+                          href={suggestion.youtube_search_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 text-gold hover:text-gold/80"
+                          aria-label={`Pesquisar ${suggestion.nome} no YouTube`}
+                          title="Pesquisar no YouTube"
+                        >
+                          <ExternalLink size={15} />
+                        </a>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <main className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -466,43 +889,53 @@ export default function HarmonyEditorPage() {
           <AudioLines size={21} />
           <h1 className="font-display text-lg font-semibold">Montar Harmonia</h1>
         </div>
-        <Input
-          aria-label="Nome do projeto"
-          value={project.name}
-          onChange={(event) => setProject((current) => ({ ...current, name: event.target.value }))}
-          className="ml-auto h-9 max-w-[220px]"
-        />
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={() => {
-            try {
-              localStorage.setItem(HARMONY_STORAGE_KEY, JSON.stringify(project));
-              saveCloudStateDebounced(HARMONY_CLOUD_KEY, project, 0);
-              toast.success('Projeto salvo.');
-            } catch (error) {
-              toast.error(error instanceof Error ? `Não foi possível salvar: ${error.message}` : 'Não foi possível salvar o projeto.');
-            }
-          }}
-        >
-          <Save size={16} /> Salvar projeto
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => void handleSaveToLibrary()}
-          disabled={isSavingToLibrary || isExporting || !project.tracks.length}
-          className="gap-2"
-        >
-          {isSavingToLibrary ? <Loader2 size={16} className="animate-spin" /> : <Library size={16} />}
-          Salvar na biblioteca
-        </Button>
-        <Button onClick={() => void handleExport()} disabled={isExporting || isSavingToLibrary || !project.tracks.length} className="gap-2">
-          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-          Exportar WAV
-        </Button>
+        {activeTab === 'editor' && (
+          <>
+            <Input
+              aria-label="Nome do projeto"
+              value={project.name}
+              onChange={(event) => setProject((current) => ({ ...current, name: event.target.value }))}
+              className="ml-auto h-9 max-w-[220px]"
+            />
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                try {
+                  localStorage.setItem(HARMONY_STORAGE_KEY, JSON.stringify(project));
+                  saveCloudStateDebounced(HARMONY_CLOUD_KEY, project, 0);
+                  toast.success('Projeto salvo.');
+                } catch (error) {
+                  toast.error(error instanceof Error ? `Não foi possível salvar: ${error.message}` : 'Não foi possível salvar o projeto.');
+                }
+              }}
+            >
+              <Save size={16} /> Salvar projeto
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void handleSaveToLibrary()}
+              disabled={isSavingToLibrary || isExporting || !project.tracks.length}
+              className="gap-2"
+            >
+              {isSavingToLibrary ? <Loader2 size={16} className="animate-spin" /> : <Library size={16} />}
+              Salvar na biblioteca
+            </Button>
+            <Button onClick={() => void handleExport()} disabled={isExporting || isSavingToLibrary || !project.tracks.length} className="gap-2">
+              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Exportar WAV
+            </Button>
+          </>
+        )}
       </header>
 
-      <div className="grid min-h-[calc(100vh-64px)] grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)]">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="min-h-[calc(100vh-64px)]">
+        <TabsList className="mx-4 mt-3">
+          <TabsTrigger value="editor">Montar Harmonia</TabsTrigger>
+          <TabsTrigger value="master">Mestre de Harmonia</TabsTrigger>
+        </TabsList>
+        <TabsContent value="editor" className="mt-0">
+      <div className="grid min-h-[calc(100vh-112px)] grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="border-b border-border bg-card/40 p-4 xl:border-b-0 xl:border-r">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Biblioteca de áudio</h2>
@@ -516,7 +949,7 @@ export default function HarmonyEditorPage() {
             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar áudio..." className="pl-9" />
           </div>
           <p className="mb-3 text-xs text-muted-foreground">Adicione arquivos de áudio diretos. YouTube e Spotify não podem ser mixados/exportados.</p>
-          <div className="max-h-[45vh] space-y-1 overflow-y-auto xl:max-h-[calc(100vh-190px)]">
+          <div className="max-h-[32vh] space-y-1 overflow-y-auto xl:max-h-[calc(100vh-480px)]">
             {isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="animate-spin text-gold" /></div>
             ) : filteredAudios.length === 0 ? (
@@ -721,6 +1154,11 @@ export default function HarmonyEditorPage() {
           </p>
         </section>
       </div>
+        </TabsContent>
+        <TabsContent value="master" className="px-4 py-6">
+          {harmonyAssistant}
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }

@@ -35,6 +35,7 @@ import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { TrackHzBadge } from '@/components/TrackHzBadge';
+import { RitualDetailsDisplay, RitualDetailsEditor } from '@/components/RitualDetailsEditor';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
@@ -47,7 +48,6 @@ import { Download } from 'lucide-react';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { QuickSoundsPanel } from './QuickSoundsPanel';
-import { QuickNav } from './QuickNav';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -284,15 +284,14 @@ function PresentationContent({
       } else {
         setStageVolume((currentStage as any).volume_config ?? 0.7);
       }
+
+      const savedDetails = currentStage.ritual_detalhes ?? localStorage.getItem(`stage:ritualDetails:${currentStage.id}`) ?? '';
+      setRitualDetails(savedDetails);
     }
     // Não reseta o áudio na primeira montagem (preserva a música em reprodução)
     if (didInitRef.current) {
       didInitRef.current = false;
       return;
-    }
-    if (currentStage) {
-      const savedDetails = currentStage.ritual_detalhes || localStorage.getItem(`stage:ritualDetails:${currentStage.id}`) || '';
-      setRitualDetails(savedDetails);
     }
     setSelectedAudioIndex(0);
   }, [currentStage?.id]);
@@ -460,9 +459,13 @@ function PresentationContent({
   useEffect(() => {
     if (!midiEnabled || !midiAccess) return;
     const attachInputs = () => {
-      let foundInput = false;
+      let connectedInputs = 0;
       midiAccess.inputs.forEach((input: any) => {
-        foundInput = true;
+        if (input.state !== 'connected') {
+          input.onmidimessage = null;
+          return;
+        }
+        connectedInputs += 1;
         input.onmidimessage = (event: any) => {
           const [statusByte, controller, value] = event.data || [];
           // CC7 (volume) é o controle MIDI padrão para volume.
@@ -471,7 +474,7 @@ function PresentationContent({
           }
         };
       });
-      setMidiConnected(foundInput);
+      setMidiConnected(connectedInputs > 0);
     };
     attachInputs();
     midiAccess.onstatechange = attachInputs;
@@ -680,7 +683,6 @@ function PresentationContent({
       data-presentation-root
       className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
     >
-      <QuickNav presentationOverlay />
       {/* Header - responsive */}
       <header className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -1133,11 +1135,12 @@ function PresentationContent({
             </div>
             
             {isRitualEditing ? (
-              <textarea
+              <RitualDetailsEditor
                 value={ritualDetails}
-                onChange={(e) => saveRitualDetails(e.target.value)}
+                onChange={(value) => void saveRitualDetails(value)}
                 placeholder="Escreva aqui detalhes importantes para o Mestre de Harmonia..."
-                className="w-full min-h-[100px] text-sm bg-background/50 border border-gold/20 rounded-xl p-4 focus:border-gold/50 focus:ring-1 focus:ring-gold/30 outline-none transition-all resize-y text-foreground placeholder:text-muted-foreground/30 shadow-inner"
+                className="border-gold/20 shadow-inner"
+                minHeight={100}
                 autoFocus
               />
             ) : (
@@ -1149,9 +1152,10 @@ function PresentationContent({
                 )}
               >
                 {ritualDetails ? (
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed text-center italic">
-                    "{ritualDetails}"
-                  </p>
+                  <RitualDetailsDisplay
+                    value={ritualDetails}
+                    className="text-sm text-foreground/90 leading-relaxed text-center italic"
+                  />
                 ) : (
                   "Nenhuma instrução definida para esta etapa. Clique para adicionar detalhes."
                 )}

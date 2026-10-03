@@ -51,18 +51,23 @@ export default function UserManagement() {
   const [deleting, setDeleting] = useState(false);
   const [savingAccess, setSavingAccess] = useState<Record<string, boolean>>({});
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
+    refetch: refetchUsers,
+  } = useQuery({
     queryKey: ['managed-users'],
-    enabled: isSuperAdmin,
+    enabled: isSuperAdmin && !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, username, password, created_at, plan, permissions')
-        .neq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('admin-users', {
+        body: { action: 'list' },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(String(data.error));
+      if (!Array.isArray(data?.users)) throw new Error('A resposta do servidor não contém a lista de usuários.');
 
-      return (data || []).map((item: any) => ({
+      return data.users.map((item: any) => ({
         user_id: item.user_id,
         username: item.username,
         password: item.password ?? null,
@@ -277,9 +282,20 @@ export default function UserManagement() {
               <Loader2 className="w-6 h-6 text-gold animate-spin" />
             </div>
           ) : users.length === 0 ? (
+            usersError ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
+                <p className="text-sm text-destructive">
+                  Não foi possível carregar os usuários: {usersError instanceof Error ? usersError.message : 'erro desconhecido'}
+                </p>
+                <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void refetchUsers()}>
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : (
             <p className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
               Nenhum acesso criado ainda.
             </p>
+            )
           ) : (
             <ul className="space-y-2">
               {users.map((u) => {
