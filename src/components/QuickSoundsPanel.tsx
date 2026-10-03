@@ -11,7 +11,14 @@ import { toast } from 'sonner';
 import { getYouTubeVideoId } from '@/lib/embedUrl';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
-import { quickSoundKind, type QuickSoundData } from '@/lib/quickSounds';
+import {
+  QUICK_SOUNDS_CLOUD_KEY,
+  QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY,
+  QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY,
+  QUICK_SOUNDS_STORAGE_KEY,
+  quickSoundKind,
+  type QuickSoundData,
+} from '@/lib/quickSounds';
 import { playQuickYouTube, stopQuickYouTube, setQuickYouTubeVolume, destroyQuickYouTube } from '@/lib/quickYoutubePlayer';
 import { playSpotifyEntity, pauseSpotifyEntity } from '@/lib/spotifyIframePlayer';
 
@@ -26,16 +33,14 @@ import { QuickSoundTrimDialog } from './QuickSoundTrimDialog';
 
 import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 
-const STORAGE_KEY = 'sonoplastia:quickSounds';
-const CLOUD_KEY = 'quickSounds';
 const VOLUME_KEY = 'sonoplastia:quickSoundsVolume';
 const MAX_SLOTS = 20;
 
 type QuickSound = QuickSoundData;
 
-function loadSounds(): QuickSound[] {
+function loadSounds(storageKey: string): QuickSound[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, MAX_SLOTS) : [];
   } catch {
@@ -218,8 +223,10 @@ export function QuickSoundsPanel({
   fullHeight?: boolean;
   horizontal?: boolean;
 }) {
+  const storageKey = horizontal ? QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY : QUICK_SOUNDS_STORAGE_KEY;
+  const cloudKey = horizontal ? QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY : QUICK_SOUNDS_CLOUD_KEY;
   const { audios, isLoading } = useAudioLibrary();
-  const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
+  const [sounds, setSounds] = useState<QuickSound[]>(() => loadSounds(storageKey));
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [horizontalPortalTarget, setHorizontalPortalTarget] = useState<HTMLElement | null>(null);
@@ -247,13 +254,13 @@ export function QuickSoundsPanel({
 
   useEffect(() => {
     const syncSounds = () => {
-      setSounds(loadSounds());
+      setSounds(loadSounds(storageKey));
     };
 
     const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
       const { nome, url } = e.detail;
       
-      const currentSounds = loadSounds();
+      const currentSounds = loadSounds(storageKey);
 
       if (currentSounds.length >= MAX_SLOTS) {
         toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
@@ -272,7 +279,7 @@ export function QuickSoundsPanel({
       };
       
       const newSounds = [...currentSounds, newSound];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSounds));
+      localStorage.setItem(storageKey, JSON.stringify(newSounds));
       setSounds(newSounds);
       
       // Notificar todas as instâncias e outras abas
@@ -280,66 +287,74 @@ export function QuickSoundsPanel({
       
       // Também dispara um evento de storage manual para garantir que outras abas ou componentes escutem
       window.dispatchEvent(new StorageEvent('storage', {
-        key: STORAGE_KEY,
+        key: storageKey,
         newValue: JSON.stringify(newSounds)
       }));
       
       toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) syncSounds();
+      if (e.key === storageKey) syncSounds();
     };
 
-    window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+    if (!horizontal) {
+      window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+    }
     window.addEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
     window.addEventListener('storage', handleStorage);
     
     return () => {
-      window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+      if (!horizontal) {
+        window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
+      }
       window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
       window.removeEventListener('storage', handleStorage);
     };
-  }, []);
+  }, [horizontal, storageKey]);
 
   // Hidrata do banco ao montar (garante persistência após F5 / outro dispositivo)
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const remote = await loadCloudState<QuickSound[]>(CLOUD_KEY);
-      if (cancelled || !Array.isArray(remote)) return;
-      const local = loadSounds();
-      // Se o banco tem dados, ele é a fonte da verdade na entrada.
-      if (remote.length > 0 || local.length === 0) {
-        const next = remote.slice(0, MAX_SLOTS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        setSounds(next);
-        window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+      const remote = await loadCloudState<QuickSound[]>(cloudKey);
+      if (cancelled) return;
+      const local = loadSounds(storageKey);
+      if (Array.isArray(remote)) {
+        // Se o banco tem dados, ele é a fonte da verdade na entrada.
+        if (remote.length > 0 || local.length === 0) {
+          const next = remote.slice(0, MAX_SLOTS);
+          localStorage.setItem(storageKey, JSON.stringify(next));
+          setSounds(next);
+          window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
+        } else if (local.length > 0) {
+          // Primeira migração: envia o que existe localmente para o banco.
+          void saveCloudState(cloudKey, local);
+        }
       } else if (local.length > 0) {
-        // Primeira migração: envia o que existe localmente para o banco.
-        void saveCloudState(CLOUD_KEY, local);
+        void saveCloudState(cloudKey, local);
       }
       hydratedRef.current = true;
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [cloudKey, storageKey]);
 
   // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
   useEffect(() => {
     if (!isLoading) {
-      setSounds(loadSounds());
+      setSounds(loadSounds(storageKey));
     }
-  }, [isLoading, audios]);
+  }, [isLoading, audios, storageKey]);
 
   useEffect(() => {
     // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
-    const currentStored = localStorage.getItem(STORAGE_KEY);
+    const currentStored = localStorage.getItem(storageKey);
     const newStored = JSON.stringify(sounds);
     if (currentStored !== newStored) {
-      localStorage.setItem(STORAGE_KEY, newStored);
+      localStorage.setItem(storageKey, newStored);
       window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
     }
-    if (hydratedRef.current) saveCloudStateDebounced(CLOUD_KEY, sounds);
-  }, [sounds]);
+    if (hydratedRef.current) saveCloudStateDebounced(cloudKey, sounds);
+  }, [sounds, storageKey, cloudKey]);
 
 
   useEffect(() => {

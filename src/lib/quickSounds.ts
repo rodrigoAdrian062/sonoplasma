@@ -7,7 +7,23 @@ import { saveCloudState } from '@/lib/cloudState';
 
 export const QUICK_SOUNDS_STORAGE_KEY = 'sonoplastia:quickSounds';
 export const QUICK_SOUNDS_CLOUD_KEY = 'quickSounds';
+export const QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY = 'sonoplastia:quickSoundsHorizontal';
+export const QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY = 'quickSoundsHorizontal';
 export const QUICK_SOUNDS_MAX = 20;
+
+export type QuickSoundCollection = 'vertical' | 'horizontal';
+
+function getStorageKey(collection: QuickSoundCollection): string {
+  return collection === 'horizontal'
+    ? QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY
+    : QUICK_SOUNDS_STORAGE_KEY;
+}
+
+function getCloudKey(collection: QuickSoundCollection): string {
+  return collection === 'horizontal'
+    ? QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY
+    : QUICK_SOUNDS_CLOUD_KEY;
+}
 
 export type QuickSoundKind = 'file' | 'youtube' | 'spotify';
 
@@ -27,9 +43,9 @@ export function quickSoundKind(url: string): QuickSoundKind {
   return stream === 'youtube' ? 'youtube' : stream === 'spotify' ? 'spotify' : 'file';
 }
 
-export function loadQuickSounds(): QuickSoundData[] {
+export function loadQuickSounds(collection: QuickSoundCollection = 'vertical'): QuickSoundData[] {
   try {
-    const raw = localStorage.getItem(QUICK_SOUNDS_STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(collection));
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, QUICK_SOUNDS_MAX) : [];
   } catch {
@@ -37,9 +53,12 @@ export function loadQuickSounds(): QuickSoundData[] {
   }
 }
 
-export function persistQuickSounds(sounds: QuickSoundData[]) {
-  localStorage.setItem(QUICK_SOUNDS_STORAGE_KEY, JSON.stringify(sounds));
-  void saveCloudState(QUICK_SOUNDS_CLOUD_KEY, sounds);
+export function persistQuickSounds(
+  sounds: QuickSoundData[],
+  collection: QuickSoundCollection = 'vertical',
+) {
+  localStorage.setItem(getStorageKey(collection), JSON.stringify(sounds));
+  void saveCloudState(getCloudKey(collection), sounds);
   window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
 }
 
@@ -50,11 +69,15 @@ export type AddQuickSoundResult = {
 
 
 /** Adiciona um áudio (arquivo, YouTube ou Spotify) aos sons rápidos. */
-export function addQuickSound(nome: string, url: string): AddQuickSoundResult {
+export function addQuickSound(
+  nome: string,
+  url: string,
+  collection: QuickSoundCollection = 'vertical',
+): AddQuickSoundResult {
   const clean = (url || '').trim();
   if (!clean) return { ok: false, reason: 'invalid' };
 
-  const current = loadQuickSounds();
+  const current = loadQuickSounds(collection);
   if (current.length >= QUICK_SOUNDS_MAX) return { ok: false, reason: 'limit' };
   if (current.some((s) => s.url === clean)) return { ok: false, reason: 'duplicate' };
 
@@ -68,7 +91,7 @@ export function addQuickSound(nome: string, url: string): AddQuickSoundResult {
       kind: quickSoundKind(clean),
     },
   ];
-  persistQuickSounds(next);
+  persistQuickSounds(next, collection);
   return { ok: true };
 }
 
@@ -78,11 +101,12 @@ export function saveQuickSoundTrim(
   url: string,
   trimStartSeconds?: number,
   trimEndSeconds?: number,
+  collection: QuickSoundCollection = 'vertical',
 ): AddQuickSoundResult {
   const clean = (url || '').trim();
   if (!clean) return { ok: false, reason: 'invalid' };
 
-  const current = loadQuickSounds();
+  const current = loadQuickSounds(collection);
   const existingIndex = current.findIndex((sound) => sound.url === clean);
   if (existingIndex < 0 && current.length >= QUICK_SOUNDS_MAX) {
     return { ok: false, reason: 'limit' };
@@ -107,6 +131,6 @@ export function saveQuickSoundTrim(
     });
   }
 
-  persistQuickSounds(next);
+  persistQuickSounds(next, collection);
   return { ok: true };
 }

@@ -54,4 +54,12 @@ describe('quick sound trim persistence', () => {
     expect(result).toEqual({ ok: false, reason: 'limit' });
     expect(loadQuickSounds()).toHaveLength(20);
   });
+
+  it('keeps horizontal and vertical quick-sound lists independent', () => {
+    addQuickSound('Vertical', 'https://example.com/vertical.mp3');
+    addQuickSound('Horizontal', 'https://example.com/horizontal.mp3', 'horizontal');
+
+    expect(loadQuickSounds()).toMatchObject([{ nome: 'Vertical' }]);
+    expect(loadQuickSounds('horizontal')).toMatchObject([{ nome: 'Horizontal' }]);
+  });
 });
