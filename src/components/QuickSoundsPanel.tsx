@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -221,6 +222,7 @@ export function QuickSoundsPanel({
   const [sounds, setSounds] = useState<QuickSound[]>(loadSounds);
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [horizontalPortalTarget, setHorizontalPortalTarget] = useState<HTMLElement | null>(null);
   const [compactVertical, setCompactVertical] = useState(() => localStorage.getItem('sonoplastia:quickSoundsVertical') === 'true');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -234,6 +236,14 @@ export function QuickSoundsPanel({
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!horizontal) {
+      setHorizontalPortalTarget(null);
+      return;
+    }
+    setHorizontalPortalTarget(document.querySelector('[data-presentation-root]'));
+  }, [horizontal]);
 
   useEffect(() => {
     const syncSounds = () => {
@@ -276,19 +286,18 @@ export function QuickSoundsPanel({
       
       toast.success(`"${nome}" adicionado aos sons rápidos!`);
     };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) syncSounds();
+    };
 
     window.addEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
     window.addEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
-    window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY) {
-        syncSounds();
-      }
-    });
+    window.addEventListener('storage', handleStorage);
     
     return () => {
       window.removeEventListener('sonoplastia:addQuickSound', handleAddExternal as EventListener);
       window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
-      window.removeEventListener('storage', syncSounds);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 
@@ -823,6 +832,43 @@ export function QuickSoundsPanel({
     />
   );
 
+  if (horizontal) {
+    return (
+      <>
+        {horizontalPortalTarget && createPortal(
+          <QuickSoundsHorizontalBar
+            sounds={sounds}
+            playingId={playingId}
+            draggingId={draggingId}
+            onAdd={() => setPickerOpen(true)}
+            onPlay={trigger}
+            onDrop={(targetId, event) => {
+              event.preventDefault();
+              reorderSound(targetId, event.dataTransfer.getData('text/plain') || draggingId);
+            }}
+            onDragStart={(soundId, event) => {
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData('text/plain', soundId);
+              setDraggingId(soundId);
+            }}
+            onDragEnd={() => setDraggingId(null)}
+            onTrim={openTrimEditor}
+            onLoop={toggleLoop}
+            onFadeStop={toggleFadeStop}
+            onRename={(sound) => {
+              setEditingId(sound.id);
+              setEditingName(sound.nome);
+            }}
+            onRemove={removeSound}
+          />,
+          horizontalPortalTarget
+        )}
+        {trimEditor}
+        {picker}
+      </>
+    );
+  }
+
   if (compact) {
     return (
       <div
@@ -967,34 +1013,6 @@ export function QuickSoundsPanel({
   }
 
   return (
-    <>
-      {horizontal && (
-        <QuickSoundsHorizontalBar
-          sounds={sounds}
-          playingId={playingId}
-          draggingId={draggingId}
-          onAdd={() => setPickerOpen(true)}
-          onPlay={trigger}
-          onDrop={(targetId, event) => {
-            event.preventDefault();
-            reorderSound(targetId, event.dataTransfer.getData('text/plain') || draggingId);
-          }}
-          onDragStart={(soundId, event) => {
-            event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData('text/plain', soundId);
-            setDraggingId(soundId);
-          }}
-          onDragEnd={() => setDraggingId(null)}
-          onTrim={openTrimEditor}
-          onLoop={toggleLoop}
-          onFadeStop={toggleFadeStop}
-          onRename={(sound) => {
-            setEditingId(sound.id);
-            setEditingName(sound.nome);
-          }}
-          onRemove={removeSound}
-        />
-      )}
     <div
       data-quick-sounds
       onWheel={handleWheel}
@@ -1214,6 +1232,5 @@ export function QuickSoundsPanel({
       {trimEditor}
       {picker}
     </div>
-    </>
   );
 }

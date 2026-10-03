@@ -675,7 +675,11 @@ function PresentationContent({
   }
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+    <div
+      ref={containerRef}
+      data-presentation-root
+      className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
+    >
       <QuickNav presentationOverlay />
       {/* Header - responsive */}
       <header className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b border-gold/10 bg-card/70 backdrop-blur-xl shrink-0">
@@ -1532,8 +1536,9 @@ function PresentationContent({
 
       {/* Painel de Sons Rápidos (coluna lateral esquerda em tela cheia) */}
       <div className="hidden lg:flex fixed left-0 top-[52px] bottom-0 w-[240px] z-30 animate-fade-in">
-        <QuickSoundsPanel fullHeight horizontal />
+        <QuickSoundsPanel fullHeight />
       </div>
+      <QuickSoundsPanel horizontal />
 
 
 
