@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, Square, Clock, RotateCcw, Pencil, Trash2, Music, ChevronDown, ChevronUp, X, SkipBack, SkipForward, RotateCw, Loader2, Repeat, ArrowDown, Volume2, VolumeX, Eye, EyeOff, CheckCircle2, Plus, Search } from 'lucide-react';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
 import { CeremonyIcon } from './icons/CeremonyIcon';
@@ -18,7 +18,12 @@ import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
-import { RitualDetailsEditor } from './RitualDetailsEditor';
+import { RitualDetailsEditor, type RitualHarmonyAudio } from './RitualDetailsEditor';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useAudioLibrary } from '@/hooks/useAudioLibrary';
+import { useStageAudios } from '@/hooks/useStageAudios';
+import { formatDuration } from '@/types/audioLibrary';
 
 
 interface StageCardProps {
@@ -63,7 +68,13 @@ export function StageCard({
 }: StageCardProps) {
 
   const queryClient = useQueryClient();
+  const { audios: libraryAudios, isLoading: isLibraryLoading, error: libraryError } = useAudioLibrary();
+  const { createAudio: createStageAudio } = useStageAudios();
   const { toggleStageVisibility } = useStages();
+  const [harmonyPickerOpen, setHarmonyPickerOpen] = useState(false);
+  const [harmonySearch, setHarmonySearch] = useState('');
+  const addingHarmonyUrls = useRef(new Set<string>());
+  const pendingHarmonyInsert = useRef<((audio: RitualHarmonyAudio) => void) | null>(null);
   const defaultTime = stage.tempo_padrao || 300;
   const timerKey = `stage:timerSeconds:${stage.id}`;
   const timerEnabledKey = `stage:timerEnabled:${stage.id}`;
@@ -193,6 +204,64 @@ export function StageCard({
   const isActive = isPlaying || isPaused;
   const hasAudios = audios.length > 0;
   const currentAudio = audios[selectedAudioIndex];
+  const normalizedHarmonySearch = harmonySearch.trim().toLocaleLowerCase();
+  const filteredLibraryAudios = libraryAudios.filter((audio) =>
+    audio.nome.toLocaleLowerCase().includes(normalizedHarmonySearch)
+  );
+  const nextHarmonyOrder = useRef({ stageId: stage.id, order: audios.reduce((max, audio) => Math.max(max, audio.ordem), -1) + 1 });
+
+  useEffect(() => {
+    const nextOrder = audios.reduce((max, audio) => Math.max(max, audio.ordem), -1) + 1;
+    if (nextHarmonyOrder.current.stageId !== stage.id) {
+      nextHarmonyOrder.current = { stageId: stage.id, order: nextOrder };
+    } else {
+      nextHarmonyOrder.current.order = Math.max(nextHarmonyOrder.current.order, nextOrder);
+    }
+  }, [audios, stage.id]);
+
+  const addHarmonyToStage = (audio: (typeof libraryAudios)[number]) => {
+    if (audios.some((item) => item.audio_url === audio.audio_url)) {
+      const insert = pendingHarmonyInsert.current;
+      if (insert) {
+        pendingHarmonyInsert.current = null;
+        insert(audio);
+        setHarmonyPickerOpen(false);
+        toast.success(`"${audio.nome}" inserida nas instruções`);
+      }
+      return;
+    }
+    if (addingHarmonyUrls.current.has(audio.audio_url)) {
+      return;
+    }
+
+    addingHarmonyUrls.current.add(audio.audio_url);
+    const order = nextHarmonyOrder.current.order++;
+    createStageAudio.mutate(
+      {
+        etapa_id: stage.id,
+        nome: audio.nome,
+        audio_url: audio.audio_url,
+        ordem: order,
+      },
+      {
+        onSuccess: () => {
+          addingHarmonyUrls.current.delete(audio.audio_url);
+          const insert = pendingHarmonyInsert.current;
+          if (insert) {
+            pendingHarmonyInsert.current = null;
+            insert(audio);
+            setHarmonyPickerOpen(false);
+            toast.success(`"${audio.nome}" inserida nas instruções`);
+          } else {
+            toast.success(`"${audio.nome}" adicionada à etapa`);
+          }
+        },
+        onError: () => {
+          addingHarmonyUrls.current.delete(audio.audio_url);
+        },
+      },
+    );
+  };
 
   // Só usa o tempo padrão da etapa se ainda não houver escolha salva do usuário
   useEffect(() => {
@@ -372,6 +441,12 @@ export function StageCard({
     onPlay(audio.audio_url);
   };
 
+  const handleRitualHarmonyPlay = (audioUrl: string) => {
+    const audioIndex = audios.findIndex((audio) => audio.audio_url === audioUrl);
+    if (audioIndex >= 0) setSelectedAudioIndex(audioIndex);
+    onPlay(audioUrl);
+  };
+
   const handleDeleteAudio = async (audioId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -545,6 +620,10 @@ export function StageCard({
               <RitualDetailsEditor
                 value={ritualDetails}
                 onChange={(value) => void saveRitualDetails(value)}
+                onRequestAddHarmony={(insert) => {
+                  pendingHarmonyInsert.current = insert;
+                  setHarmonyPickerOpen(true);
+                }}
                 placeholder="Escreva aqui as instruções ou detalhes desta etapa do ritual..."
                 className="border-border/40"
                 minHeight={80}
@@ -558,6 +637,24 @@ export function StageCard({
         {!collapsed && (
           <>
         {/* Audio selector */}
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+            Harmonias ({audios.length})
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs text-gold hover:bg-gold/10"
+            onClick={(event) => {
+              event.stopPropagation();
+              setHarmonyPickerOpen(true);
+            }}
+          >
+            <Plus size={13} />
+            Adicionar harmonia
+          </Button>
+        </div>
         {hasAudios ? (
           <div className="mb-2.5 min-w-0 overflow-hidden">
             <button
@@ -697,6 +794,87 @@ export function StageCard({
             Sem áudio configurado
           </p>
         )}
+
+        <Dialog
+          open={harmonyPickerOpen}
+          onOpenChange={(open) => {
+            setHarmonyPickerOpen(open);
+            if (!open) setHarmonySearch('');
+          }}
+        >
+          <DialogContent className="max-w-md border-border bg-card">
+            <DialogHeader>
+              <DialogTitle className="font-display text-lg text-foreground">
+                Adicionar harmonia
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Pesquise no acervo e selecione uma ou mais faixas para esta etapa.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="relative">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={harmonySearch}
+                onChange={(event) => setHarmonySearch(event.target.value)}
+                placeholder="Pesquisar harmonias..."
+                className="border-border bg-secondary pl-9"
+                aria-label="Pesquisar harmonias no acervo"
+              />
+            </div>
+            <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+              {isLibraryLoading ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">Carregando acervo...</p>
+              ) : libraryError ? (
+                <p className="py-6 text-center text-sm text-destructive">
+                  Não foi possível carregar o acervo: {libraryError.message}
+                </p>
+              ) : filteredLibraryAudios.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Nenhuma harmonia encontrada.
+                </p>
+              ) : (
+                filteredLibraryAudios.map((audio) => {
+                  const alreadyAdded = audios.some((item) => item.audio_url === audio.audio_url);
+                  const isAdding = addingHarmonyUrls.current.has(audio.audio_url);
+                  const isInlineInsert = pendingHarmonyInsert.current !== null;
+
+                  return (
+                    <button
+                      key={audio.id}
+                      type="button"
+                      disabled={(alreadyAdded && !isInlineInsert) || isAdding}
+                      onClick={() => addHarmonyToStage(audio)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors',
+                        alreadyAdded
+                          ? 'cursor-default bg-gold/5 text-muted-foreground'
+                          : 'text-foreground hover:border-gold/25 hover:bg-secondary/70',
+                      )}
+                    >
+                      <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
+                      {audio.duracao_segundos != null && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {formatDuration(audio.duracao_segundos)}
+                        </span>
+                      )}
+                      <span className="shrink-0 text-xs text-gold">
+                        {isAdding
+                          ? 'Salvando...'
+                          : alreadyAdded
+                            ? isInlineInsert ? 'Inserir no texto' : 'Adicionada'
+                            : <Plus size={15} />}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Timer + Controls row */}
         <div className="flex items-center gap-2 flex-wrap">

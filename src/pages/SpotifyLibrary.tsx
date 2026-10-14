@@ -170,15 +170,16 @@ export default function SpotifyLibraryPage() {
 
   const handleAddToStage = async (audioNome: string, audioUrl: string, etapaId: string) => {
     try {
-      const { data: existingAudios } = await supabase
+      const { data: existingAudios, error: existingAudiosError } = await supabase
         .from('sonoplastia_etapa_audios')
         .select('*')
         .eq('etapa_id', etapaId)
         .order('ordem', { ascending: true });
+      if (existingAudiosError) throw existingAudiosError;
 
       const currentAudios = existingAudios || [];
-      if (currentAudios.length >= 10) {
-        toast({ title: 'Esta etapa já possui 10 áudios (máximo)', variant: 'destructive' });
+      if (currentAudios.some((audio) => audio.audio_url === audioUrl)) {
+        toast({ title: 'Este áudio já está vinculado a esta etapa' });
         return;
       }
 
@@ -191,8 +192,12 @@ export default function SpotifyLibraryPage() {
       });
       const stage = stages.find((s) => s.id === etapaId);
       toast({ title: `"${audioNome}" enviado para "${stage?.nome_simbolico || ''}"` });
-    } catch {
-      toast({ title: 'Erro ao enviar áudio para a etapa', variant: 'destructive' });
+    } catch (error) {
+      toast({
+        title: 'Erro ao enviar áudio para a etapa',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
     }
   };
 

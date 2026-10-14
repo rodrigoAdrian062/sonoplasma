@@ -104,9 +104,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
 
   // Load existing audios when editing
   useEffect(() => {
-    if (stage && existingAudios.length > 0) {
-      setAudioItems(existingAudios.map(a => ({ nome: a.nome, audio_url: a.audio_url })));
-    }
+    setAudioItems(stage ? existingAudios.map(a => ({ nome: a.nome, audio_url: a.audio_url })) : []);
   }, [stage, existingAudios]);
 
   const handleNext = () => {

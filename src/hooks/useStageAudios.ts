@@ -88,35 +88,78 @@ export function useStageAudios(etapaId?: string) {
 
   const saveAudios = useMutation({
     mutationFn: async ({ etapa_id, audios }: { etapa_id: string; audios: Array<{ nome: string; audio_url: string }> }) => {
-      // Delete existing audios for this stage
-      const { error: deleteError } = await supabase
+      const { data: existingAudios, error: readError } = await supabase
         .from('sonoplastia_etapa_audios')
-        .delete()
-        .eq('etapa_id', etapa_id);
+        .select('*')
+        .eq('etapa_id', etapa_id)
+        .order('ordem', { ascending: true });
 
-      if (deleteError) throw deleteError;
+      if (readError) throw readError;
 
-      // Insert new audios
-      if (audios.length > 0) {
-        const audiosToInsert = audios.map((audio, index) => ({
-          etapa_id,
-          nome: audio.nome,
-          audio_url: audio.audio_url,
-          ordem: index,
-        }));
+      const existingByUrl = new Map<string, StageAudio[]>();
+      for (const audio of existingAudios ?? []) {
+        const matches = existingByUrl.get(audio.audio_url) ?? [];
+        matches.push(audio);
+        existingByUrl.set(audio.audio_url, matches);
+      }
 
+      const retainedIds = new Set<string>();
+      const audiosToInsert: StageAudioInsert[] = [];
+      const audiosToUpdate: Array<{ id: string; nome: string; ordem: number }> = [];
+
+      audios.forEach((audio, index) => {
+        const existing = existingByUrl.get(audio.audio_url)?.shift();
+        if (existing) {
+          retainedIds.add(existing.id);
+          if (existing.nome !== audio.nome || existing.ordem !== index) {
+            audiosToUpdate.push({ id: existing.id, nome: audio.nome, ordem: index });
+          }
+        } else {
+          audiosToInsert.push({
+            etapa_id,
+            nome: audio.nome,
+            audio_url: audio.audio_url,
+            ordem: index,
+          });
+        }
+      });
+
+      if (audiosToInsert.length > 0) {
         const { error: insertError } = await supabase
           .from('sonoplastia_etapa_audios')
           .insert(audiosToInsert);
 
         if (insertError) throw insertError;
       }
+
+      for (const audio of audiosToUpdate) {
+        const { error: updateError } = await supabase
+          .from('sonoplastia_etapa_audios')
+          .update({ nome: audio.nome, ordem: audio.ordem })
+          .eq('id', audio.id);
+
+        if (updateError) throw updateError;
+      }
+
+      const removedIds = (existingAudios ?? [])
+        .filter((audio) => !retainedIds.has(audio.id))
+        .map((audio) => audio.id);
+      if (removedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('sonoplastia_etapa_audios')
+          .delete()
+          .in('id', removedIds);
+
+        if (deleteError) throw deleteError;
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['stage-audios', variables.etapa_id] });
       queryClient.invalidateQueries({ queryKey: ['all-stage-audios'] });
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['stage-audios', variables.etapa_id] });
+      queryClient.invalidateQueries({ queryKey: ['all-stage-audios'] });
       toast({ title: 'Erro ao salvar áudios', description: error.message, variant: 'destructive' });
     },
   });

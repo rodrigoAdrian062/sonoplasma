@@ -11,6 +11,36 @@
   }
 }
 
+@layer components {
+  .ritual-harmony-marker {
+    display: inline-flex;
+    width: 1.35rem;
+    height: 1.35rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.12rem;
+    border: 1px solid hsl(var(--gold) / 0.55);
+    border-radius: 9999px;
+    background: hsl(var(--gold) / 0.12);
+    color: hsl(var(--gold));
+    font: inherit;
+    font-size: 0.68em;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 150ms ease, transform 150ms ease;
+  }
+
+  .ritual-harmony-marker:hover,
+  .ritual-harmony-marker:focus-visible {
+    background: hsl(var(--gold) / 0.25);
+    transform: scale(1.08);
+    outline: 2px solid hsl(var(--gold) / 0.45);
+    outline-offset: 2px;
+  }
+}
+
 @layer base {
   :root {
     --background: 220 20% 10%;
@@ -143,4 +173,3 @@ div[style*="Edit with Lovable"],
   position: absolute !important;
   z-index: -9999 !important;
 }
-

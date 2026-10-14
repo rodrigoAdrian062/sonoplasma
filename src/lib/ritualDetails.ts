@@ -15,6 +15,20 @@ function serializeSafeNode(node: Node): string {
   const tag = node.tagName.toLowerCase();
   if (['script', 'style', 'iframe', 'object', 'svg', 'math'].includes(tag)) return '';
 
+  const harmonyUrl = node.getAttribute('data-ritual-harmony');
+  if (tag === 'span' && harmonyUrl && /^(https?:\/\/|spotify:)/i.test(harmonyUrl)) {
+    const marker = document.createElement('span');
+    marker.className = 'ritual-harmony-marker';
+    marker.setAttribute('role', 'button');
+    marker.setAttribute('tabindex', '0');
+    marker.setAttribute('contenteditable', 'false');
+    marker.setAttribute('data-ritual-harmony', harmonyUrl);
+    marker.setAttribute('data-ritual-harmony-name', node.getAttribute('data-ritual-harmony-name') || 'Harmonia');
+    marker.setAttribute('title', `Reproduzir ${node.getAttribute('data-ritual-harmony-name') || 'harmonia'}`);
+    marker.textContent = '▶';
+    return marker.outerHTML;
+  }
+
   const content = Array.from(node.childNodes, serializeSafeNode).join('');
   if (tag === 'br') return '<br>';
   if (['b', 'strong', 'u', 'p', 'div'].includes(tag)) return `<${tag}>${content}</${tag}>`;

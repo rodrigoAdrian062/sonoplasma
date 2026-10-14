@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Bold, Underline } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bold, Underline, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { sanitizeRitualDetails } from '@/lib/ritualDetails';
 import { cn } from '@/lib/utils';
@@ -13,12 +13,19 @@ const RITUAL_COLORS = [
   { name: 'Roxo', value: '#A855F7' },
 ];
 
+export interface RitualHarmonyAudio {
+  nome: string;
+  audio_url: string;
+}
+
 export function RitualDetailsDisplay({
   value,
   className,
+  onHarmonyPlay,
 }: {
   value: string;
   className?: string;
+  onHarmonyPlay?: (audioUrl: string) => void;
 }) {
   const safeHtml = sanitizeRitualDetails(value);
   const hasContent = safeHtml.replace(/<[^>]*>/g, '').trim().length > 0;
@@ -27,6 +34,22 @@ export function RitualDetailsDisplay({
     <div
       className={cn('whitespace-pre-wrap [&_p]:my-1', className)}
       dangerouslySetInnerHTML={{ __html: safeHtml }}
+      onClick={(event) => {
+        const marker = (event.target as HTMLElement).closest<HTMLElement>('[data-ritual-harmony]');
+        const audioUrl = marker?.dataset.ritualHarmony;
+        if (!audioUrl) return;
+        event.stopPropagation();
+        onHarmonyPlay?.(audioUrl);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const marker = (event.target as HTMLElement).closest<HTMLElement>('[data-ritual-harmony]');
+        const audioUrl = marker?.dataset.ritualHarmony;
+        if (!audioUrl) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onHarmonyPlay?.(audioUrl);
+      }}
     />
   ) : null;
 }
@@ -39,6 +62,7 @@ export function RitualDetailsEditor({
   minHeight = 80,
   compact = false,
   autoFocus = false,
+  onRequestAddHarmony,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -47,8 +71,12 @@ export function RitualDetailsEditor({
   minHeight?: number;
   compact?: boolean;
   autoFocus?: boolean;
+  onRequestAddHarmony?: (onSelected: (audio: RitualHarmonyAudio) => void) => void;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const targetRangeRef = useRef<Range | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ left: number; top: number } | null>(null);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -66,8 +94,93 @@ export function RitualDetailsEditor({
     if (editorRef.current) onChange(sanitizeRitualDetails(editorRef.current.innerHTML));
   };
 
+  const setHarmonyTarget = (range: Range, clientX: number, clientY: number) => {
+    const editor = editorRef.current;
+    const container = containerRef.current;
+    if (!editor || !container) return;
+
+    if (
+      range.collapsed &&
+      range.startContainer.nodeType === Node.TEXT_NODE &&
+      range.startOffset < (range.startContainer.textContent?.length ?? 0)
+    ) {
+      range.setEnd(range.startContainer, range.startOffset + 1);
+    }
+
+    targetRangeRef.current = range.cloneRange();
+    const containerRect = container.getBoundingClientRect();
+    setContextMenu({
+      left: Math.max(4, Math.min(clientX - containerRect.left, containerRect.width - 170)),
+      top: Math.max(4, clientY - containerRect.top - 38),
+    });
+  };
+
+  const captureHarmonyTarget = (clientX: number, clientY: number) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const selected = window.getSelection();
+    if (
+      selected &&
+      !selected.isCollapsed &&
+      selected.anchorNode &&
+      selected.focusNode &&
+      editor.contains(selected.anchorNode) &&
+      editor.contains(selected.focusNode)
+    ) {
+      setHarmonyTarget(selected.getRangeAt(0), clientX, clientY);
+      return;
+    }
+
+    let range = document.caretRangeFromPoint?.(clientX, clientY) ?? null;
+    if (!range) {
+      const position = document.caretPositionFromPoint?.(clientX, clientY);
+      if (position) {
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+        range.collapse(true);
+      }
+    }
+    if (!range || !editor.contains(range.startContainer)) return;
+    if ((range.startContainer.parentElement?.closest('[data-ritual-harmony]'))) return;
+    setHarmonyTarget(range, clientX, clientY);
+  };
+
+  const insertHarmonyMarker = (audio: RitualHarmonyAudio) => {
+    const editor = editorRef.current;
+    const range = targetRangeRef.current;
+    if (!editor || !range || !editor.contains(range.startContainer)) return;
+
+    const marker = document.createElement('span');
+    marker.className = 'ritual-harmony-marker';
+    marker.setAttribute('role', 'button');
+    marker.setAttribute('tabindex', '0');
+    marker.setAttribute('contenteditable', 'false');
+    marker.setAttribute('data-ritual-harmony', audio.audio_url);
+    marker.setAttribute('data-ritual-harmony-name', audio.nome);
+    marker.setAttribute('title', `Reproduzir ${audio.nome}`);
+    marker.textContent = '▶';
+
+    range.deleteContents();
+    range.insertNode(marker);
+    range.setStartAfter(marker);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    editor.focus();
+    editor.dataset.empty = String(editor.textContent?.trim().length === 0);
+    onChange(sanitizeRitualDetails(editor.innerHTML));
+    targetRangeRef.current = null;
+    setContextMenu(null);
+  };
+
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-border/50 bg-background/50', className)}>
+    <div
+      ref={containerRef}
+      className={cn('relative rounded-lg border border-border/50 bg-background/50', className)}
+      onMouseLeave={() => setContextMenu(null)}
+    >
       <div
         className={cn(
           'flex flex-wrap items-center gap-1 border-b border-border/50 p-1.5',
@@ -131,6 +244,9 @@ export function RitualDetailsEditor({
         )}
         data-empty="true"
         style={{ minHeight }}
+        onMouseMove={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
+        onMouseUp={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
+        onClick={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
         onInput={(event) => {
           event.currentTarget.dataset.empty = String(event.currentTarget.textContent?.trim().length === 0);
           onChange(sanitizeRitualDetails(event.currentTarget.innerHTML));
@@ -142,6 +258,20 @@ export function RitualDetailsEditor({
           onChange(safeHtml);
         }}
       />
+      {contextMenu && onRequestAddHarmony && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="absolute z-10 h-8 gap-1 border border-gold/30 bg-card px-2 text-xs text-gold shadow-lg hover:bg-gold/10"
+          style={{ left: contextMenu.left, top: contextMenu.top }}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => onRequestAddHarmony(insertHarmonyMarker)}
+        >
+          <Plus size={13} />
+          Adicionar harmonia
+        </Button>
+      )}
     </div>
   );
 }

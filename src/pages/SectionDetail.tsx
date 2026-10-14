@@ -361,7 +361,7 @@ const SectionDetail = () => {
         const merged = [
           ...existing.map((a) => ({ nome: a.nome, audio_url: a.audio_url })),
           ...picks,
-        ].slice(0, 10);
+        ];
 
         await saveAudios.mutateAsync({ etapa_id: stage.id, audios: merged });
         totalAdded += picks.length;

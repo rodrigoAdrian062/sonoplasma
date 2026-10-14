@@ -35,7 +35,8 @@ import { useStageAudios } from '@/hooks/useStageAudios';
 import { AudioLines } from 'lucide-react';
 import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/AudioSourceIcon';
 import { TrackHzBadge } from '@/components/TrackHzBadge';
-import { RitualDetailsDisplay, RitualDetailsEditor } from '@/components/RitualDetailsEditor';
+import { RitualDetailsDisplay, RitualDetailsEditor, type RitualHarmonyAudio } from '@/components/RitualDetailsEditor';
+import { formatDuration } from '@/types/audioLibrary';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
@@ -59,6 +60,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -168,8 +170,12 @@ function PresentationContent({
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'all' | AudioSource>('all');
   const [audioToDelete, setAudioToDelete] = useState<StageAudio | null>(null);
-  const { deleteAudio } = useStageAudios();
+  const { createAudio: createStageAudio, deleteAudio } = useStageAudios();
   const { audios: libraryAudios } = useAudioLibrary();
+  const [harmonyPickerOpen, setHarmonyPickerOpen] = useState(false);
+  const [harmonySearch, setHarmonySearch] = useState('');
+  const pendingHarmonyInsert = useRef<((audio: RitualHarmonyAudio) => void) | null>(null);
+  const addingHarmonyUrls = useRef(new Set<string>());
   const stagesById = new Map(stages.map((s) => [s.id, s] as const));
   const libraryById = new Map(libraryAudios.map((a) => [a.id, a] as const));
 
@@ -189,6 +195,43 @@ function PresentationContent({
     } catch (err) {
       console.error('Erro ao salvar detalhes do ritual:', err);
     }
+  };
+
+  const chooseRitualHarmony = (audio: RitualHarmonyAudio) => {
+    if (!currentStage) return;
+    const alreadyAdded = audios.some((item) => item.audio_url === audio.audio_url);
+    const insertMarker = () => {
+      const insert = pendingHarmonyInsert.current;
+      if (!insert) return;
+      pendingHarmonyInsert.current = null;
+      insert(audio);
+      setHarmonyPickerOpen(false);
+      toast.success(`"${audio.nome}" inserida nas instruções`);
+    };
+
+    if (alreadyAdded) {
+      insertMarker();
+      return;
+    }
+    if (addingHarmonyUrls.current.has(audio.audio_url)) return;
+
+    addingHarmonyUrls.current.add(audio.audio_url);
+    const nextOrder = audios.reduce((maxOrder, item) => Math.max(maxOrder, item.ordem), -1) + 1;
+    createStageAudio.mutate(
+      {
+        etapa_id: currentStage.id,
+        nome: audio.nome,
+        audio_url: audio.audio_url,
+        ordem: nextOrder,
+      },
+      {
+        onSuccess: () => {
+          addingHarmonyUrls.current.delete(audio.audio_url);
+          insertMarker();
+        },
+        onError: () => addingHarmonyUrls.current.delete(audio.audio_url),
+      },
+    );
   };
 
   const handleConfirmDeleteAudio = () => {
@@ -1138,6 +1181,10 @@ function PresentationContent({
               <RitualDetailsEditor
                 value={ritualDetails}
                 onChange={(value) => void saveRitualDetails(value)}
+                onRequestAddHarmony={(insert) => {
+                  pendingHarmonyInsert.current = insert;
+                  setHarmonyPickerOpen(true);
+                }}
                 placeholder="Escreva aqui detalhes importantes para o Mestre de Harmonia..."
                 className="border-gold/20 shadow-inner"
                 minHeight={100}
@@ -1155,6 +1202,9 @@ function PresentationContent({
                   <RitualDetailsDisplay
                     value={ritualDetails}
                     className="text-sm text-foreground/90 leading-relaxed text-center italic"
+                    onHarmonyPlay={(audioUrl) => {
+                      if (currentStage) onPlay(currentStage.id, audioUrl);
+                    }}
                   />
                 ) : (
                   "Nenhuma instrução definida para esta etapa. Clique para adicionar detalhes."
@@ -1564,6 +1614,71 @@ function PresentationContent({
         );
       })()}
 
+
+      <Dialog
+        open={harmonyPickerOpen}
+        onOpenChange={(open) => {
+          setHarmonyPickerOpen(open);
+          if (!open) setHarmonySearch('');
+        }}
+      >
+        <DialogContent className="max-w-md border-border bg-card">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg text-foreground">
+              Adicionar harmonia
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Pesquise no acervo e selecione a faixa para este ponto das instruções.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <Music size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={harmonySearch}
+              onChange={(event) => setHarmonySearch(event.target.value)}
+              placeholder="Pesquisar harmonias..."
+              className="border-border bg-secondary pl-9"
+              aria-label="Pesquisar harmonias no acervo"
+            />
+          </div>
+          <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+            {libraryAudios
+              .filter((audio) => audio.nome.toLocaleLowerCase().includes(harmonySearch.trim().toLocaleLowerCase()))
+              .map((audio) => {
+                const alreadyAdded = audios.some((item) => item.audio_url === audio.audio_url);
+                const isAdding = addingHarmonyUrls.current.has(audio.audio_url);
+                return (
+                  <button
+                    key={audio.id}
+                    type="button"
+                    disabled={isAdding}
+                    onClick={() => chooseRitualHarmony(audio)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors',
+                      'text-foreground hover:border-gold/25 hover:bg-secondary/70',
+                    )}
+                  >
+                    <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
+                    {audio.duracao_segundos != null && (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDuration(audio.duracao_segundos)}
+                      </span>
+                    )}
+                    <span className="shrink-0 text-xs text-gold">
+                      {isAdding ? 'Salvando...' : alreadyAdded ? 'Inserir' : <Plus size={15} />}
+                    </span>
+                  </button>
+                );
+              })}
+            {libraryAudios.filter((audio) =>
+              audio.nome.toLocaleLowerCase().includes(harmonySearch.trim().toLocaleLowerCase())
+            ).length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma harmonia encontrada.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="bg-card border-gold/20 max-w-md">
