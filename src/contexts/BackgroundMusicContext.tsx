@@ -172,6 +172,7 @@ export function BackgroundMusicProvider({
   const corsRetryRef = useRef<Set<string>>(new Set());
   const streamIframeRef = useRef<HTMLIFrameElement | null>(null);
   const streamFrameRef = useRef<typeof streamFrame>(null);
+  const readyStreamTrackRef = useRef<string | null>(null);
   const wasAutoPausedRef = useRef(false);
   const isDuckingRef = useRef(false);
   const fadeRafRef = useRef<number | null>(null);
@@ -181,6 +182,8 @@ export function BackgroundMusicProvider({
   const currentIndexRef = useRef(currentIndex);
   const playRequestRef = useRef(0);
   const wantsToPlayRef = useRef(false);
+  const playRef = useRef<(index?: number) => void>(() => undefined);
+  const advanceAfterTrackEndRef = useRef<() => void>(() => undefined);
   const crossfadeMsRef = useRef(crossfadeMs);
   const volumeRef = useRef(volume);
   const duckVolumeRef = useRef(duckVolume);
@@ -314,25 +317,7 @@ export function BackgroundMusicProvider({
     const handleEnded = (e: Event) => {
       const el = e.target as HTMLAudioElement;
       if (el !== audioRef.current) return;
-      const pl = playlistRef.current;
-      if (pl.length === 0) return;
-      if (!wantsToPlayRef.current) return;
-      const enabled = pl.filter((t) => !t.disabled);
-      if (enabled.length === 0) return;
-      if (enabled.length === 1 && !pl[currentIndexRef.current].disabled) {
-        try { el.currentTime = 0; el.play().catch(() => undefined); }
-        catch { setIsPlaying(false); }
-        return;
-      }
-      const nextIdx = findNextEnabled(pl, currentIndexRef.current, 1);
-      if (nextIdx < 0) return;
-      currentIndexRef.current = nextIdx;
-      setCurrentIndex(nextIdx);
-      const track = pl[nextIdx];
-      if (track && !isStreamingUrl(track.audio_url)) {
-        el.src = track.audio_url;
-        el.play().catch(() => undefined);
-      }
+      advanceAfterTrackEndRef.current();
     };
     const handlePlay = (e: Event) => {
       if ((e.target as HTMLAudioElement) !== audioRef.current) return;
@@ -453,11 +438,24 @@ export function BackgroundMusicProvider({
     );
   }, []);
 
-  const ensureStreamFrame = useCallback((track: BackgroundTrack, autoplay: boolean) => {
+  const restartStream = useCallback(() => {
+    const frame = streamIframeRef.current;
+    if (!frame?.contentWindow) return;
+    frame.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }),
+      'https://www.youtube.com'
+    );
+    window.setTimeout(() => postStreamCommand('play'), 150);
+  }, [postStreamCommand]);
+
+  const ensureStreamFrame = useCallback((track: BackgroundTrack) => {
     if (detectStream(track.audio_url) !== 'youtube') return false;
-    const embed = toEmbedUrl(track.audio_url, { autoplay });
+    const embed = toEmbedUrl(track.audio_url, { autoplay: false });
     if (!embed) return false;
 
+    if (streamFrameRef.current?.trackId !== track.id) {
+      readyStreamTrackRef.current = null;
+    }
     setStreamFrame((prev) => {
       if (prev?.trackId === track.id) return prev;
       const withCacheBust = `${embed}${embed.includes('?') ? '&' : '?'}_bg=${Date.now()}`;
@@ -580,7 +578,7 @@ export function BackgroundMusicProvider({
           const track = pl[currentIndexRef.current];
           if (track) {
             if (isStreamingUrl(track.audio_url)) {
-              if (ensureStreamFrame(track, true)) {
+              if (ensureStreamFrame(track)) {
                 setIsPlaying(true);
                 window.setTimeout(() => postStreamCommand('play'), 300);
               }
@@ -641,20 +639,25 @@ export function BackgroundMusicProvider({
     }
     if (isStreamingUrl(track.audio_url)) {
       try { a.pause(); } catch { /* noop */ }
-      if (!ensureStreamFrame(track, true)) {
+      if (!ensureStreamFrame(track)) {
         setIsPlaying(false);
         return;
       }
       wantsToPlayRef.current = true;
       setIsPlaying(true);
-      window.setTimeout(() => postStreamCommand('play'), 300);
+      if (readyStreamTrackRef.current === track.id) postStreamCommand('play');
       return;
     }
+    postStreamCommand('pause');
+    setStreamFrame(null);
+    readyStreamTrackRef.current = null;
     const requestId = ++playRequestRef.current;
     wantsToPlayRef.current = true;
     if (a.src !== track.audio_url) {
       a.src = track.audio_url;
       a.load();
+    } else if (a.ended) {
+      a.currentTime = 0;
     }
 
     a.volume = isDuckingRef.current ? duckVolume : volume;
@@ -686,6 +689,82 @@ export function BackgroundMusicProvider({
     });
 
   }, [playlist, currentIndex, volume, duckVolume, mainStatus, autoPauseEnabled, autoMode, ensureStreamFrame, postStreamCommand, cancelCrossfade]);
+
+  playRef.current = play;
+  advanceAfterTrackEndRef.current = () => {
+    const pl = playlistRef.current;
+    if (!wantsToPlayRef.current || pl.length === 0) return;
+    const enabled = pl.filter((track) => !track.disabled);
+    if (enabled.length === 0) {
+      setIsPlaying(false);
+      return;
+    }
+
+    const currentTrack = pl[currentIndexRef.current];
+    if (enabled.length === 1 && currentTrack && !currentTrack.disabled) {
+      if (isStreamingUrl(currentTrack.audio_url)) {
+        restartStream();
+      } else {
+        const active = audioRef.current;
+        if (active) {
+          try {
+            active.currentTime = 0;
+            active.play().catch((error) => {
+              console.warn('Background music replay failed:', error);
+              setIsPlaying(false);
+            });
+          } catch (error) {
+            console.warn('Background music replay failed:', error);
+            setIsPlaying(false);
+          }
+        }
+      }
+      return;
+    }
+
+    const nextIndex = findNextEnabled(pl, currentIndexRef.current, 1);
+    if (nextIndex < 0) {
+      setIsPlaying(false);
+      return;
+    }
+    currentIndexRef.current = nextIndex;
+    setCurrentIndex(nextIndex);
+    playRef.current(nextIndex);
+  };
+
+  useEffect(() => {
+    const handleStreamMessage = (event: MessageEvent<unknown>) => {
+      const frame = streamIframeRef.current;
+      if (!frame?.contentWindow || event.source !== frame.contentWindow) return;
+      try {
+        const frameOrigin = new URL(frame.src).origin;
+        if (event.origin !== frameOrigin || typeof event.data !== 'string') return;
+        const payload: unknown = JSON.parse(event.data);
+        if (!payload || typeof payload !== 'object') return;
+        const message = payload as { event?: unknown; info?: unknown };
+        if (message.event === 'onReady') {
+          readyStreamTrackRef.current = streamFrameRef.current?.trackId ?? null;
+          frame.contentWindow.postMessage(
+            JSON.stringify({
+              event: 'command',
+              func: 'addEventListener',
+              args: ['onStateChange'],
+            }),
+            frameOrigin
+          );
+          if (wantsToPlayRef.current) postStreamCommand('play');
+          return;
+        }
+        if (message.event === 'onStateChange' && Number(message.info) === 0) {
+          advanceAfterTrackEndRef.current();
+        }
+      } catch (error) {
+        console.warn('Could not process background YouTube player message:', error);
+      }
+    };
+    window.addEventListener('message', handleStreamMessage);
+    return () => window.removeEventListener('message', handleStreamMessage);
+  }, [postStreamCommand]);
 
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(playlist));
@@ -886,6 +965,14 @@ export function BackgroundMusicProvider({
             src={streamFrame.src}
             title="Background Audio Stream"
             allow="autoplay; encrypted-media"
+            onLoad={() => {
+              const frame = streamIframeRef.current;
+              if (!frame?.contentWindow) return;
+              frame.contentWindow.postMessage(
+                JSON.stringify({ event: 'listening', id: 'background-music' }),
+                'https://www.youtube.com'
+              );
+            }}
           />
         </div>
       )}

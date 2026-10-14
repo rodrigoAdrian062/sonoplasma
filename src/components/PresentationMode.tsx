@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useClock } from '@/hooks/useClock';
 
@@ -37,6 +38,14 @@ import { AudioSourceIcon, getAudioSource, type AudioSource } from '@/components/
 import { TrackHzBadge } from '@/components/TrackHzBadge';
 import { RitualDetailsDisplay, RitualDetailsEditor, type RitualHarmonyAudio } from '@/components/RitualDetailsEditor';
 import { formatDuration } from '@/types/audioLibrary';
+import { DEFAULT_STAGE_VOLUME_SETTINGS, STAGE_RAMP_DURATIONS, clampPercent, type StagePlaybackVolume, type StageVolumeSettings } from '@/lib/stageVolume';
+import {
+  MAX_STAGE_TIMER_SECONDS,
+  MIN_STAGE_TIMER_SECONDS,
+  readStageTimerPreferences,
+  saveStageTimerEnabled,
+  saveStageTimerSeconds,
+} from '@/lib/stageTimer';
 
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
@@ -84,7 +93,7 @@ interface PresentationModeProps {
   currentTime: number;
   duration: number;
   onVolumeChange: (value: number) => void;
-  onPlay: (stageId: string, audioUrl: string) => void;
+  onPlay: (stageId: string, audioUrl: string, volumeSettings?: StagePlaybackVolume) => void;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -154,9 +163,11 @@ function PresentationContent({
   const didInitRef = useRef(true);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [customTime, setCustomTime] = useState(0);
-  const [useTimerEnabled, setUseTimerEnabled] = useState(false);
+  const [customTime, setCustomTime] = useState(300);
+  const [useTimerEnabled, setUseTimerEnabled] = useState(true);
   const [stageVolume, setStageVolume] = useState(0.7);
+  const [stageVolumeSettings, setStageVolumeSettings] = useState<StageVolumeSettings>(DEFAULT_STAGE_VOLUME_SETTINGS);
+  const [savingVolumeSettings, setSavingVolumeSettings] = useState(false);
   const [showKeyboardHints, setShowKeyboardHints] = useState(true);
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -253,16 +264,8 @@ function PresentationContent({
   const {
     fadeEnabled,
     setFadeEnabled,
-    startVolume,
-    setStartVolume,
-    rampEnabled,
-    setRampEnabled,
-    rampSeconds,
-    setRampSeconds,
-    rampTarget,
-    setRampTarget,
-    setVolume: setGlobalVolume,
   } = useUniversalAudioPlayer();
+  const queryClient = useQueryClient();
 
   // Filtra etapas ocultas apenas para navegação/exibição se não for a etapa atual forçada
   const visibleStages = stages.filter(s => !s.oculto || s.id === currentStageId);
@@ -312,21 +315,35 @@ function PresentationContent({
     prefetchNextStages(currentStage.id, stages, audiosByStageId);
   }, [prefetchOn, currentStage?.id, stages, audiosByStageId, prefetchNextStages]);
 
+  useEffect(() => {
+    if (!currentStage) return;
+    const timerPreferences = readStageTimerPreferences(currentStage.id, currentStage.tempo_padrao);
+    setCustomTime(timerPreferences.seconds);
+    setUseTimerEnabled(timerPreferences.enabled);
+  }, [currentStage?.id, currentStage?.tempo_padrao]);
 
 
 
   useEffect(() => {
     if (currentStage) {
-      const defaultTime = currentStage.tempo_padrao || 0;
-      setCustomTime(defaultTime);
-      setUseTimerEnabled(defaultTime > 0);
-      
       const savedVol = localStorage.getItem(`stage:volume:${currentStage.id}`);
       if (savedVol !== null) {
         setStageVolume(Number(savedVol));
       } else {
         setStageVolume((currentStage as any).volume_config ?? 0.7);
       }
+      let localSettings: Partial<StageVolumeSettings> = {};
+      try {
+        const stored = localStorage.getItem(`stage:volumeSettings:${currentStage.id}`);
+        if (stored) localSettings = JSON.parse(stored) as Partial<StageVolumeSettings>;
+      } catch { /* fall back to the values fetched from the server */ }
+      const initialPercent = currentStage.volume_start_percent ?? localSettings.initialPercent ?? 100;
+      setStageVolumeSettings({
+        initialPercent,
+        rampEnabled: currentStage.volume_ramp_enabled ?? localSettings.rampEnabled ?? false,
+        finalPercent: Math.max(initialPercent, currentStage.volume_final_percent ?? localSettings.finalPercent ?? 100),
+        rampSeconds: currentStage.volume_ramp_seconds ?? localSettings.rampSeconds ?? 3,
+      });
 
       const savedDetails = currentStage.ritual_detalhes ?? localStorage.getItem(`stage:ritualDetails:${currentStage.id}`) ?? '';
       setRitualDetails(savedDetails);
@@ -617,13 +634,57 @@ function PresentationContent({
 
   const handlePlayWithTimer = () => {
     if (!currentAudio || !currentStage) return;
-    
-    // Aplica o volume específico da etapa ou áudio
-    const volumeToUse = (currentAudio as any).volume_config ?? stageVolume;
-    setGlobalVolume(volumeToUse);
+    startTimedStageAudio(currentAudio.audio_url);
+  };
 
-    if (useTimerEnabled && customTime > 0) timer.start(customTime);
-    onPlay(currentStage.id, currentAudio.audio_url);
+  const saveStageVolumeSettings = async () => {
+    if (!currentStage) return;
+    const settings = {
+      volume_start_percent: clampPercent(stageVolumeSettings.initialPercent),
+      volume_ramp_enabled: stageVolumeSettings.rampEnabled,
+      volume_final_percent: Math.max(
+        clampPercent(stageVolumeSettings.initialPercent),
+        clampPercent(stageVolumeSettings.finalPercent),
+      ),
+      volume_ramp_seconds: stageVolumeSettings.rampSeconds,
+    };
+    setSavingVolumeSettings(true);
+    try {
+      const { error } = await supabase
+        .from('sonoplastia_etapas')
+        .update(settings)
+        .eq('id', currentStage.id);
+      if (error) throw error;
+      try {
+        localStorage.setItem(`stage:volumeSettings:${currentStage.id}`, JSON.stringify({
+          initialPercent: settings.volume_start_percent,
+          rampEnabled: settings.volume_ramp_enabled,
+          finalPercent: settings.volume_final_percent,
+          rampSeconds: settings.volume_ramp_seconds,
+        }));
+      } catch (storageError) {
+        console.warn('Não foi possível armazenar localmente o volume da etapa:', storageError);
+      }
+      queryClient.setQueryData<CeremonyStage[]>(['stages'], (cachedStages) =>
+        cachedStages?.map((stage) => stage.id === currentStage.id ? { ...stage, ...settings } : stage),
+      );
+      setStageVolumeSettings((current) => ({
+        ...current,
+        initialPercent: settings.volume_start_percent,
+        finalPercent: settings.volume_final_percent,
+      }));
+      toast.success('Configurações de volume salvas.');
+    } catch (error) {
+      console.error('Erro ao salvar configurações de volume da etapa:', error);
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Erro desconhecido ao salvar no servidor.';
+      toast.error('Não foi possível salvar as configurações de volume.', { description: message });
+    } finally {
+      setSavingVolumeSettings(false);
+    }
   };
 
   const handlePause = () => {
@@ -658,7 +719,35 @@ function PresentationContent({
   };
 
   const handleTimeChange = (minutes: number) => {
-    setCustomTime(minutes * 60);
+    const clamped = Math.min(
+      MAX_STAGE_TIMER_SECONDS / 60,
+      Math.max(MIN_STAGE_TIMER_SECONDS / 60, Math.round(minutes)),
+    );
+    const seconds = clamped * 60;
+    setCustomTime(seconds);
+    if (currentStage) {
+      try { saveStageTimerSeconds(currentStage.id, seconds); } catch {}
+    }
+  };
+
+  const handleTimerEnabledChange = (enabled: boolean) => {
+    setUseTimerEnabled(enabled);
+    if (currentStage) {
+      try { saveStageTimerEnabled(currentStage.id, enabled); } catch {}
+    }
+    if (!enabled) timer.reset();
+    else if (isActive) timer.start(customTime);
+  };
+
+  const startTimedStageAudio = (audioUrl: string) => {
+    if (!currentStage) return;
+    if (useTimerEnabled && customTime > 0) timer.start(customTime);
+    else timer.reset();
+    const audio = audios.find((item) => item.audio_url === audioUrl);
+    onPlay(currentStage.id, audioUrl, {
+      masterVolume: audio?.volume_config ?? stageVolume,
+      ...stageVolumeSettings,
+    });
   };
 
   const handleSelectAudio = (index: number) => {
@@ -1025,15 +1114,22 @@ function PresentationContent({
 
             <div className="flex flex-col items-center gap-1 pt-3 border-t border-gold/20 w-full">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Iniciar em
+                Iniciar em ({stageVolumeSettings.initialPercent}%)
               </span>
               <select
-                value={Math.round(startVolume * 100)}
-                onChange={(e) => setStartVolume(Number(e.target.value) / 100)}
-                aria-label="Volume inicial ao dar play"
+                value={stageVolumeSettings.initialPercent}
+                onChange={(e) => {
+                  const initialPercent = Number(e.target.value);
+                  setStageVolumeSettings((current) => ({
+                    ...current,
+                    initialPercent,
+                    finalPercent: Math.max(initialPercent, current.finalPercent),
+                  }));
+                }}
+                aria-label="Volume inicial da etapa"
                 className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
               >
-                {Array.from({ length: 51 }, (_, i) => i).map((p) => (
+                {Array.from({ length: 101 }, (_, i) => i).map((p) => (
                   <option key={p} value={p}>{p}%</option>
                 ))}
               </select>
@@ -1042,36 +1138,58 @@ function PresentationContent({
               <label className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={rampEnabled}
-                  onChange={(e) => setRampEnabled(e.target.checked)}
+                  checked={stageVolumeSettings.rampEnabled}
+                  onChange={(e) => setStageVolumeSettings((current) => ({
+                    ...current,
+                    rampEnabled: e.target.checked,
+                  }))}
                   className="accent-[hsl(var(--gold))]"
                 />
                 Subida suave
               </label>
-              {rampEnabled && (
+              {stageVolumeSettings.rampEnabled && (
                 <div className="flex flex-col items-center gap-1">
                   <select
-                    value={Math.round(rampTarget * 100)}
-                    onChange={(e) => setRampTarget(Number(e.target.value) / 100)}
-                    aria-label="Volume alvo da subida suave"
+                    value={stageVolumeSettings.finalPercent}
+                    onChange={(e) => setStageVolumeSettings((current) => ({
+                      ...current,
+                      finalPercent: Number(e.target.value),
+                    }))}
+                    aria-label="Volume final da subida suave"
                     className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
                   >
-                    {[20, 30, 40, 50, 60, 70, 80, 90, 100].map((p) => (
+                    {Array.from(
+                      { length: 101 - stageVolumeSettings.initialPercent },
+                      (_, index) => index + stageVolumeSettings.initialPercent,
+                    ).map((p) => (
                       <option key={p} value={p}>até {p}%</option>
                     ))}
                   </select>
                   <select
-                    value={rampSeconds}
-                    onChange={(e) => setRampSeconds(Number(e.target.value))}
+                    value={stageVolumeSettings.rampSeconds}
+                    onChange={(e) => setStageVolumeSettings((current) => ({
+                      ...current,
+                      rampSeconds: Number(e.target.value),
+                    }))}
                     aria-label="Duração da subida suave"
                     className="bg-background/80 border border-gold/30 text-gold text-xs rounded-md px-2 py-1 outline-none"
                   >
-                    {[3, 5, 8, 10, 15, 20, 30, 45, 60].map((s) => (
+                    {STAGE_RAMP_DURATIONS.map((s) => (
                       <option key={s} value={s}>{s}s</option>
                     ))}
                   </select>
                 </div>
               )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!currentStage || savingVolumeSettings}
+                onClick={saveStageVolumeSettings}
+                className="h-7 border-gold/30 text-[10px] text-gold hover:bg-gold/10"
+              >
+                {savingVolumeSettings ? 'Salvando...' : 'Salvar etapa'}
+              </Button>
             </div>
 
           </div>
@@ -1203,7 +1321,7 @@ function PresentationContent({
                     value={ritualDetails}
                     className="text-sm text-foreground/90 leading-relaxed text-center italic"
                     onHarmonyPlay={(audioUrl) => {
-                      if (currentStage) onPlay(currentStage.id, audioUrl);
+                      startTimedStageAudio(audioUrl);
                     }}
                   />
                 ) : (
@@ -1343,7 +1461,7 @@ function PresentationContent({
               <input
                 type="checkbox"
                 checked={useTimerEnabled}
-                onChange={(e) => setUseTimerEnabled(e.target.checked)}
+                onChange={(e) => handleTimerEnabledChange(e.target.checked)}
                 className="rounded border-border bg-secondary text-gold focus:ring-gold w-4 h-4 sm:w-5 sm:h-5"
               />
               <span className="hidden sm:inline">Cronômetro</span>
@@ -1354,7 +1472,7 @@ function PresentationContent({
                 <input
                   type="number"
                   min="1"
-                  max="60"
+                  max={String(MAX_STAGE_TIMER_SECONDS / 60)}
                   value={Math.floor(customTime / 60)}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
                   className="w-14 sm:w-20 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-secondary border border-border rounded-lg text-foreground focus:border-gold focus:ring-1 focus:ring-gold"
@@ -1648,27 +1766,44 @@ function PresentationContent({
                 const alreadyAdded = audios.some((item) => item.audio_url === audio.audio_url);
                 const isAdding = addingHarmonyUrls.current.has(audio.audio_url);
                 return (
-                  <button
+                  <div
                     key={audio.id}
-                    type="button"
-                    disabled={isAdding}
-                    onClick={() => chooseRitualHarmony(audio)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors',
-                      'text-foreground hover:border-gold/25 hover:bg-secondary/70',
-                    )}
+                    className="flex items-center gap-1 rounded-lg border border-transparent px-1.5 transition-colors hover:border-gold/25 hover:bg-secondary/70"
                   >
-                    <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
-                    <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
-                    {audio.duracao_segundos != null && (
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDuration(audio.duracao_segundos)}
+                    <button
+                      type="button"
+                      aria-label={`Ouvir ${audio.nome}`}
+                      title={`Ouvir ${audio.nome}`}
+                      disabled={!currentStage}
+                      onClick={() => currentStage && onPlay(currentStage.id, audio.audio_url, {
+                        masterVolume: stageVolume,
+                        ...stageVolumeSettings,
+                      })}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gold hover:bg-gold/10 disabled:opacity-50"
+                    >
+                      <Play size={15} fill="currentColor" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isAdding}
+                      onClick={() => chooseRitualHarmony(audio)}
+                      className={cn(
+                        'flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 text-left transition-colors',
+                        'text-foreground hover:bg-secondary/50 disabled:cursor-wait disabled:opacity-60',
+                      )}
+                    >
+                      <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
+                      {audio.duracao_segundos != null && (
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {formatDuration(audio.duracao_segundos)}
+                        </span>
+                      )}
+                      <span className="shrink-0 text-xs text-gold">
+                        {isAdding ? 'Salvando...' : alreadyAdded ? 'Inserir' : <Plus size={15} />}
                       </span>
-                    )}
-                    <span className="shrink-0 text-xs text-gold">
-                      {isAdding ? 'Salvando...' : alreadyAdded ? 'Inserir' : <Plus size={15} />}
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
             {libraryAudios.filter((audio) =>

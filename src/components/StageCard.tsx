@@ -24,6 +24,14 @@ import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useStageAudios } from '@/hooks/useStageAudios';
 import { formatDuration } from '@/types/audioLibrary';
+import { DEFAULT_STAGE_VOLUME_SETTINGS, STAGE_RAMP_DURATIONS, clampPercent, type StagePlaybackVolume, type StageVolumeSettings } from '@/lib/stageVolume';
+import {
+  MAX_STAGE_TIMER_SECONDS,
+  MIN_STAGE_TIMER_SECONDS,
+  readStageTimerPreferences,
+  saveStageTimerEnabled,
+  saveStageTimerSeconds,
+} from '@/lib/stageTimer';
 
 
 interface StageCardProps {
@@ -34,7 +42,7 @@ interface StageCardProps {
   isPaused: boolean;
   currentTime?: number;
   duration?: number;
-  onPlay: (audioUrl: string) => void;
+  onPlay: (audioUrl: string, volumeSettings?: StagePlaybackVolume) => void;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -46,6 +54,13 @@ interface StageCardProps {
   continuousPlayback?: boolean;
 }
 
+function readStoredVolumeSettings(stageId: string): StageVolumeSettings {
+  try {
+    const stored = localStorage.getItem(`stage:volumeSettings:${stageId}`);
+    if (stored) return { ...DEFAULT_STAGE_VOLUME_SETTINGS, ...JSON.parse(stored) };
+  } catch { /* use server values or defaults */ }
+  return DEFAULT_STAGE_VOLUME_SETTINGS;
+}
 
 export function StageCard({
   stage,
@@ -75,29 +90,18 @@ export function StageCard({
   const [harmonySearch, setHarmonySearch] = useState('');
   const addingHarmonyUrls = useRef(new Set<string>());
   const pendingHarmonyInsert = useRef<((audio: RitualHarmonyAudio) => void) | null>(null);
-  const defaultTime = stage.tempo_padrao || 300;
-  const timerKey = `stage:timerSeconds:${stage.id}`;
-  const timerEnabledKey = `stage:timerEnabled:${stage.id}`;
+  const initialTimerPreferences = readStageTimerPreferences(stage.id, stage.tempo_padrao);
   const [customTime, setCustomTime] = useState(() => {
-    try {
-      const saved = Number(localStorage.getItem(timerKey));
-      if (Number.isFinite(saved) && saved >= 60 && saved <= 180 * 60) return saved;
-    } catch {}
-    return defaultTime;
+    return initialTimerPreferences.seconds;
   });
   const [useTimerEnabled, setUseTimerEnabled] = useState(() => {
-    try {
-      return localStorage.getItem(timerEnabledKey) !== '0';
-    } catch {}
-    return true;
+    return initialTimerPreferences.enabled;
   });
-  // Persiste as preferências do cronômetro desta etapa
   useEffect(() => {
-    try { localStorage.setItem(timerKey, String(customTime)); } catch {}
-  }, [customTime, timerKey]);
-  useEffect(() => {
-    try { localStorage.setItem(timerEnabledKey, useTimerEnabled ? '1' : '0'); } catch {}
-  }, [useTimerEnabled, timerEnabledKey]);
+    const timerPreferences = readStageTimerPreferences(stage.id, stage.tempo_padrao);
+    setCustomTime(timerPreferences.seconds);
+    setUseTimerEnabled(timerPreferences.enabled);
+  }, [stage.id, stage.tempo_padrao]);
   const [loopUntilTimer, setLoopUntilTimer] = useState(false);
   const loopUntilTimerRef = useRef(loopUntilTimer);
   useEffect(() => { loopUntilTimerRef.current = loopUntilTimer; }, [loopUntilTimer]);
@@ -123,6 +127,17 @@ export function StageCard({
     } catch {}
     return (stage as any).volume_config ?? 0.7;
   });
+  const [stageVolumeSettings, setStageVolumeSettings] = useState<StageVolumeSettings>(() => {
+    const stored = readStoredVolumeSettings(stage.id);
+    const initialPercent = stage.volume_start_percent ?? stored.initialPercent;
+    return {
+      initialPercent,
+      rampEnabled: stage.volume_ramp_enabled ?? stored.rampEnabled,
+      finalPercent: Math.max(initialPercent, stage.volume_final_percent ?? stored.finalPercent),
+      rampSeconds: stage.volume_ramp_seconds ?? stored.rampSeconds,
+    };
+  });
+  const [savingVolumeSettings, setSavingVolumeSettings] = useState(false);
   const [ritualDetails, setRitualDetails] = useState(() => {
     return stage.ritual_detalhes || localStorage.getItem(stageRitualDetailsKey) || '';
   });
@@ -158,6 +173,67 @@ export function StageCard({
   useEffect(() => {
     try { localStorage.setItem(stageVolumeKey, String(stageVolume)); } catch {}
   }, [stageVolume, stageVolumeKey]);
+
+  useEffect(() => {
+    const stored = readStoredVolumeSettings(stage.id);
+    setStageVolumeSettings({
+      initialPercent: stage.volume_start_percent ?? stored.initialPercent,
+      rampEnabled: stage.volume_ramp_enabled ?? stored.rampEnabled,
+      finalPercent: stage.volume_final_percent ?? stored.finalPercent,
+      rampSeconds: stage.volume_ramp_seconds ?? stored.rampSeconds,
+    });
+  }, [stage.id, stage.volume_start_percent, stage.volume_ramp_enabled, stage.volume_final_percent, stage.volume_ramp_seconds]);
+
+  const saveStageVolumeSettings = async () => {
+    const settings = {
+      volume_start_percent: clampPercent(stageVolumeSettings.initialPercent),
+      volume_ramp_enabled: stageVolumeSettings.rampEnabled,
+      volume_final_percent: Math.max(
+        clampPercent(stageVolumeSettings.initialPercent),
+        clampPercent(stageVolumeSettings.finalPercent),
+      ),
+      volume_ramp_seconds: stageVolumeSettings.rampSeconds,
+    };
+    setSavingVolumeSettings(true);
+    try {
+      const { error } = await supabase
+        .from('sonoplastia_etapas')
+        .update(settings)
+        .eq('id', stage.id);
+      if (error) throw error;
+      try {
+        localStorage.setItem(`stage:volumeSettings:${stage.id}`, JSON.stringify({
+          initialPercent: settings.volume_start_percent,
+          rampEnabled: settings.volume_ramp_enabled,
+          finalPercent: settings.volume_final_percent,
+          rampSeconds: settings.volume_ramp_seconds,
+        }));
+      } catch (storageError) {
+        console.warn('Não foi possível armazenar localmente o volume da etapa:', storageError);
+      }
+      queryClient.setQueryData<CeremonyStage[]>(['stages'], (currentStages) =>
+        currentStages?.map((currentStage) =>
+          currentStage.id === stage.id ? { ...currentStage, ...settings } : currentStage,
+        ),
+      );
+      setStageVolumeSettings((current) => ({
+        ...current,
+        initialPercent: settings.volume_start_percent,
+        finalPercent: settings.volume_final_percent,
+      }));
+      toast.success('Configurações de volume salvas.');
+    } catch (error) {
+      console.error('Erro ao salvar configurações de volume da etapa:', error);
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Erro desconhecido ao salvar no servidor.';
+      toast.error('Não foi possível salvar as configurações de volume.', { description: message });
+    } finally {
+      setSavingVolumeSettings(false);
+    }
+  };
 
   // Persist the "armed" (prepared) track per stage.
   useEffect(() => {
@@ -200,6 +276,24 @@ export function StageCard({
   const timer = useTimer(() => {
     onStop();
   });
+  const getStagePlaybackVolume = (audioUrl: string): StagePlaybackVolume => ({
+    masterVolume: audios.find((audio) => audio.audio_url === audioUrl)?.volume_config ?? stageVolume,
+    ...stageVolumeSettings,
+  });
+  const startStageTimer = () => {
+    if (useTimerEnabled && customTime > 0) timer.start(customTime);
+    else timer.reset();
+  };
+  const startStageAudio = (audioUrl: string) => {
+    startStageTimer();
+    onPlay(audioUrl, getStagePlaybackVolume(audioUrl));
+  };
+  const handleTimerEnabledChange = (enabled: boolean) => {
+    setUseTimerEnabled(enabled);
+    try { saveStageTimerEnabled(stage.id, enabled); } catch {}
+    if (!enabled) timer.reset();
+    else if (isPlaying || isPaused) timer.start(customTime);
+  };
 
   const isActive = isPlaying || isPaused;
   const hasAudios = audios.length > 0;
@@ -262,14 +356,6 @@ export function StageCard({
       },
     );
   };
-
-  // Só usa o tempo padrão da etapa se ainda não houver escolha salva do usuário
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(timerKey)) return;
-    } catch {}
-    setCustomTime(defaultTime);
-  }, [defaultTime, timerKey]);
 
   // Mantém a faixa selecionada mesmo quando a lista é reordenada/editada,
   // localizando o mesmo id/url na nova lista. Só reseta se não existir mais.
@@ -342,19 +428,9 @@ export function StageCard({
 
 
 
-  const { setVolume: setGlobalVolume } = useUniversalAudioPlayer();
-
   const handlePlayWithTimer = () => {
     if (!currentAudio) return;
-    
-    // Apply stage or track specific volume
-    const volumeToUse = currentAudio.volume_config ?? stageVolume;
-    setGlobalVolume(volumeToUse);
-
-    if (useTimerEnabled && customTime > 0) {
-      timer.start(customTime);
-    }
-    onPlay(currentAudio.audio_url);
+    startStageAudio(currentAudio.audio_url);
   };
 
   const handleStop = () => {
@@ -393,9 +469,14 @@ export function StageCard({
 
   const savedToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleTimeChange = (minutes: number) => {
-    const clamped = Math.min(180, Math.max(1, Math.round(minutes)));
+    const clamped = Math.min(
+      MAX_STAGE_TIMER_SECONDS / 60,
+      Math.max(MIN_STAGE_TIMER_SECONDS / 60, Math.round(minutes)),
+    );
     const seconds = clamped * 60;
     setCustomTime(seconds);
+    try { saveStageTimerSeconds(stage.id, seconds); } catch {}
+    try { saveStageTimerSeconds(stage.id, seconds); } catch {}
     // Permite alterar o tempo mesmo com a música tocando
     if (timer.isRunning || timer.isPaused) {
       timer.setTime(seconds);
@@ -435,16 +516,13 @@ export function StageCard({
     if (isActive) {
       handleStop();
     }
-    if (useTimerEnabled && customTime > 0) {
-      timer.start(customTime);
-    }
-    onPlay(audio.audio_url);
+    startStageAudio(audio.audio_url);
   };
 
   const handleRitualHarmonyPlay = (audioUrl: string) => {
     const audioIndex = audios.findIndex((audio) => audio.audio_url === audioUrl);
     if (audioIndex >= 0) setSelectedAudioIndex(audioIndex);
-    onPlay(audioUrl);
+    startStageAudio(audioUrl);
   };
 
   const handleDeleteAudio = async (audioId: string, e: React.MouseEvent) => {
@@ -604,7 +682,89 @@ export function StageCard({
               className="py-2"
             />
             <VolumePresets volume={stageVolume} onVolumeChange={setStageVolume} className="mt-1" />
-
+            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-gold/15 bg-background/40 p-2">
+              <label className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                Iniciar em ({stageVolumeSettings.initialPercent}%)
+                <select
+                  value={stageVolumeSettings.initialPercent}
+                  onChange={(event) => {
+                    const initialPercent = Number(event.target.value);
+                    setStageVolumeSettings((current) => ({
+                      ...current,
+                      initialPercent,
+                      finalPercent: Math.max(initialPercent, current.finalPercent),
+                    }));
+                  }}
+                  className="rounded border border-gold/25 bg-background px-2 py-1.5 text-xs font-normal normal-case text-foreground"
+                  aria-label="Volume inicial da etapa"
+                >
+                  {Array.from({ length: 101 }, (_, percent) => (
+                    <option key={percent} value={percent}>{percent}%</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 self-end pb-2 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={stageVolumeSettings.rampEnabled}
+                  onChange={(event) => setStageVolumeSettings((current) => ({
+                    ...current,
+                    rampEnabled: event.target.checked,
+                  }))}
+                  className="accent-[hsl(var(--gold))]"
+                />
+                Subida suave
+              </label>
+              {stageVolumeSettings.rampEnabled && (
+                <>
+                  <label className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Volume final ({stageVolumeSettings.finalPercent}%)
+                    <select
+                      value={stageVolumeSettings.finalPercent}
+                      onChange={(event) => setStageVolumeSettings((current) => ({
+                        ...current,
+                        finalPercent: Number(event.target.value),
+                      }))}
+                      className="rounded border border-gold/25 bg-background px-2 py-1.5 text-xs font-normal normal-case text-foreground"
+                      aria-label="Volume final da subida"
+                    >
+                      {Array.from(
+                        { length: 101 - stageVolumeSettings.initialPercent },
+                        (_, index) => index + stageVolumeSettings.initialPercent,
+                      ).map((percent) => (
+                        <option key={percent} value={percent}>{percent}%</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Duração da subida
+                    <select
+                      value={stageVolumeSettings.rampSeconds}
+                      onChange={(event) => setStageVolumeSettings((current) => ({
+                        ...current,
+                        rampSeconds: Number(event.target.value),
+                      }))}
+                      className="rounded border border-gold/25 bg-background px-2 py-1.5 text-xs font-normal normal-case text-foreground"
+                      aria-label="Duração da subida suave"
+                    >
+                      {STAGE_RAMP_DURATIONS.map((seconds) => (
+                        <option key={seconds} value={seconds}>{seconds} segundo{seconds > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={saveStageVolumeSettings}
+                disabled={savingVolumeSettings}
+                className="col-span-2 h-7 border-gold/30 text-[10px] text-gold hover:bg-gold/10"
+              >
+                {savingVolumeSettings ? 'Salvando...' : 'Salvar volume da etapa'}
+              </Button>
+            </div>
           </div>
         )}
 
@@ -842,33 +1002,47 @@ export function StageCard({
                   const isInlineInsert = pendingHarmonyInsert.current !== null;
 
                   return (
-                    <button
+                    <div
                       key={audio.id}
-                      type="button"
-                      disabled={(alreadyAdded && !isInlineInsert) || isAdding}
-                      onClick={() => addHarmonyToStage(audio)}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left transition-colors',
-                        alreadyAdded
-                          ? 'cursor-default bg-gold/5 text-muted-foreground'
-                          : 'text-foreground hover:border-gold/25 hover:bg-secondary/70',
-                      )}
+                      className="flex items-center gap-1 rounded-lg border border-transparent px-1.5 transition-colors hover:border-gold/25 hover:bg-secondary/70"
                     >
-                      <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
-                      <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
-                      {audio.duracao_segundos != null && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {formatDuration(audio.duracao_segundos)}
+                      <button
+                        type="button"
+                        aria-label={`Ouvir ${audio.nome}`}
+                        title={`Ouvir ${audio.nome}`}
+                        onClick={() => onPlay(audio.audio_url, {
+                          masterVolume: stageVolume,
+                          ...stageVolumeSettings,
+                        })}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-gold hover:bg-gold/10"
+                      >
+                        <Play size={15} fill="currentColor" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={(alreadyAdded && !isInlineInsert) || isAdding}
+                        onClick={() => addHarmonyToStage(audio)}
+                        className={cn(
+                          'flex min-w-0 flex-1 items-center gap-2 rounded-md py-2 text-left transition-colors disabled:cursor-default',
+                          alreadyAdded ? 'text-muted-foreground' : 'text-foreground',
+                        )}
+                      >
+                        <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={15} />
+                        <span className="min-w-0 flex-1 truncate text-sm">{audio.nome}</span>
+                        {audio.duracao_segundos != null && (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatDuration(audio.duracao_segundos)}
+                          </span>
+                        )}
+                        <span className="shrink-0 text-xs text-gold">
+                          {isAdding
+                            ? 'Salvando...'
+                            : alreadyAdded
+                              ? isInlineInsert ? 'Inserir no texto' : 'Adicionada'
+                              : <Plus size={15} />}
                         </span>
-                      )}
-                      <span className="shrink-0 text-xs text-gold">
-                        {isAdding
-                          ? 'Salvando...'
-                          : alreadyAdded
-                            ? isInlineInsert ? 'Inserir no texto' : 'Adicionada'
-                            : <Plus size={15} />}
-                      </span>
-                    </button>
+                      </button>
+                    </div>
                   );
                 })
               )}
@@ -887,7 +1061,7 @@ export function StageCard({
                   <input
                     type="checkbox"
                     checked={useTimerEnabled}
-                    onChange={(e) => setUseTimerEnabled(e.target.checked)}
+                    onChange={(e) => handleTimerEnabledChange(e.target.checked)}
                     className="rounded border-border bg-secondary text-gold focus:ring-gold w-4 h-4 transition-all"
                   />
                   Cronômetro

@@ -38,6 +38,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useUiToggles } from '@/hooks/useUiToggles';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
+import type { StagePlaybackVolume } from '@/lib/stageVolume';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -201,6 +202,10 @@ const SectionDetail = () => {
   // mudança da flag "reproducao_continua".
   const sectionQueueRef = useRef(sectionQueue);
   useEffect(() => { sectionQueueRef.current = sectionQueue; }, [sectionQueue]);
+  const playbackDataRef = useRef({ stages: sectionStages, audiosByStageId });
+  useEffect(() => {
+    playbackDataRef.current = { stages: sectionStages, audiosByStageId };
+  }, [sectionStages, audiosByStageId]);
   useEffect(() => {
     if (!section?.reproducao_continua) {
       setOnTrackEnded(null);
@@ -213,7 +218,22 @@ const SectionDetail = () => {
       );
       if (idx === -1 || idx + 1 >= q.length) return false;
       const next = q[idx + 1];
-      play(next.stageId, next.url);
+      const { stages: currentStages, audiosByStageId: currentAudios } = playbackDataRef.current;
+      const nextStage = currentStages.find((stage) => stage.id === next.stageId);
+      const nextAudio = currentAudios[next.stageId]?.find((audio) => audio.audio_url === next.url);
+      let savedStageVolume: number | undefined;
+      try {
+        const saved = localStorage.getItem(`stage:volume:${next.stageId}`);
+        if (saved !== null && Number.isFinite(Number(saved))) savedStageVolume = Number(saved);
+      } catch { /* use the persisted stage volume */ }
+      const masterVolume = nextAudio?.volume_config ?? savedStageVolume ?? nextStage?.volume_config ?? 0.7;
+      play(next.stageId, next.url, nextStage ? {
+        masterVolume,
+        initialPercent: nextStage.volume_start_percent ?? 100,
+        rampEnabled: nextStage.volume_ramp_enabled ?? false,
+        finalPercent: nextStage.volume_final_percent ?? 100,
+        rampSeconds: nextStage.volume_ramp_seconds ?? 3,
+      } : undefined);
       return true;
     });
     return () => setOnTrackEnded(null);
@@ -239,8 +259,8 @@ const SectionDetail = () => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handlePlay = (stage: CeremonyStage, audioUrl?: string) => {
-    if (audioUrl) play(stage.id, audioUrl);
+  const handlePlay = (stage: CeremonyStage, audioUrl?: string, volumeSettings?: StagePlaybackVolume) => {
+    if (audioUrl) play(stage.id, audioUrl, volumeSettings);
   };
 
   const handleSaveStage = async (
@@ -248,7 +268,19 @@ const SectionDetail = () => {
     audios?: Array<{ nome: string; audio_url: string }>
   ) => {
     if (editingStage) {
-      updateStage.mutate({ id: editingStage.id, ...data });
+      const scheduleChanged = data.tempo_padrao !== undefined && data.tempo_padrao !== editingStage.tempo_padrao;
+      updateStage.mutate({ id: editingStage.id, ...data }, {
+        onSuccess: () => {
+          if (!scheduleChanged) return;
+          try {
+            localStorage.removeItem(`stage:timerSeconds:${editingStage.id}`);
+            localStorage.removeItem(`stage:timerEnabled:${editingStage.id}`);
+            localStorage.removeItem(`stage:timerEnabledExplicit:${editingStage.id}`);
+          } catch (error) {
+            console.warn('Não foi possível atualizar as preferências locais do cronômetro:', error);
+          }
+        },
+      });
       if (audios) saveAudios.mutate({ etapa_id: editingStage.id, audios });
     } else {
       const insertData: CeremonyStageInsert = {
@@ -437,8 +469,8 @@ const SectionDetail = () => {
     );
   }
 
-  const handlePresentationPlay = (stageId: string, audioUrl: string) => {
-    play(stageId, audioUrl);
+  const handlePresentationPlay = (stageId: string, audioUrl: string, volumeSettings?: StagePlaybackVolume) => {
+    play(stageId, audioUrl, volumeSettings);
   };
 
   const handleDownloadSection = async () => {
@@ -636,7 +668,7 @@ const SectionDetail = () => {
                       isPaused={currentStageId === stage.id && status === 'paused'}
                       currentTime={currentStageId === stage.id ? currentTime : 0}
                       duration={currentStageId === stage.id ? duration : 0}
-                      onPlay={(audioUrl) => handlePlay(stage, audioUrl)}
+                      onPlay={(audioUrl, volumeSettings) => handlePlay(stage, audioUrl, volumeSettings)}
                       onPause={pause}
                       onResume={resume}
                       onStop={stop}

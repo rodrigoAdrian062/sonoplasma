@@ -12,6 +12,8 @@ import {
   subscribeSpotifyPlayback,
 } from '@/lib/spotifyIframePlayer';
 import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequency432, subscribeTrackHz } from '@/lib/pitch432';
+import { getStagePlaybackLevels, type StagePlaybackVolume } from '@/lib/stageVolume';
+import { VolumeRampController } from '@/lib/volumeRamp';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
 
 export interface EQSettings {
@@ -34,7 +36,7 @@ interface AudioPlayerContextValue {
   setFadeEnabled: (value: boolean) => void;
   loopEnabled: boolean;
   setLoopEnabled: (value: boolean) => void;
-  play: (stageId: string, url: string) => void;
+  play: (stageId: string, url: string, stageVolume?: StagePlaybackVolume) => void;
   preload: (urls: (string | null | undefined)[]) => void;
   prefetchNextStages: (currentStageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => void;
   pause: () => void;
@@ -138,7 +140,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const rampEnabledRef = useRef(rampEnabled);
   const rampSecondsRef = useRef(rampSeconds);
   const rampTargetRef = useRef(rampTarget);
-  const rampIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rampControllerRef = useRef<VolumeRampController | null>(null);
+  const pendingRampRef = useRef<{ url: string; to: number; durationMs: number; enabled: boolean } | null>(null);
   const fadeEnabledRef = useRef(fadeEnabled);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
@@ -178,10 +181,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearRamp = useCallback(() => {
-    if (rampIntervalRef.current) {
-      clearInterval(rampIntervalRef.current);
-      rampIntervalRef.current = null;
-    }
+    rampControllerRef.current?.cancel();
+    pendingRampRef.current = null;
   }, []);
 
   useEffect(() => { rampEnabledRef.current = rampEnabled; }, [rampEnabled]);
@@ -210,10 +211,41 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Apply a volume level to whichever player is active (no state change)
   const applyPlayerVolume = useCallback((v: number) => {
-    if (audioRef.current) audioRef.current.volume = v;
+    const clamped = Math.min(1, Math.max(0, v));
+    if (audioRef.current) audioRef.current.volume = clamped;
     if (ytPlayerRef.current && ytPlayerReadyRef.current) {
-      try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
+      try { ytPlayerRef.current.setVolume(clamped * 100); } catch { /* noop */ }
     }
+  }, []);
+
+  const updateRampVolume = useCallback((v: number) => {
+    const clamped = Math.min(1, Math.max(0, v));
+    volumeRef.current = clamped;
+    setVolumeState(clamped);
+    applyPlayerVolume(clamped);
+  }, [applyPlayerVolume]);
+
+  const startRamp = useCallback((from: number, to: number, durationMs: number, elapsedMs = 0) => {
+    const controller = rampControllerRef.current ?? new VolumeRampController(updateRampVolume);
+    rampControllerRef.current = controller;
+    controller.start(from, to, durationMs, elapsedMs);
+  }, [updateRampVolume]);
+
+  const beginRampForUrl = useCallback((url: string) => {
+    const pending = pendingRampRef.current;
+    if (!pending || pending.url !== url || currentUrlRef.current !== url) return;
+    pendingRampRef.current = null;
+    if (pending.enabled && pending.to > volumeRef.current) {
+      startRamp(volumeRef.current, pending.to, pending.durationMs);
+    }
+  }, [startRamp]);
+
+  const suspendRamp = useCallback(() => {
+    return rampControllerRef.current?.pause() ?? false;
+  }, []);
+
+  const continueRamp = useCallback(() => {
+    rampControllerRef.current?.resume();
   }, []);
 
   // Gradually reduce volume, then run onDone. Restores player volume afterwards.
@@ -315,6 +347,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         audio.play().catch(() => {});
         return;
       }
+      clearRamp();
       const endedStage = currentStageIdRef.current;
       const endedUrl = currentUrlRef.current;
       if (onTrackEndedRef.current && endedStage && endedUrl) {
@@ -330,6 +363,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentUrl(null);
     };
     const handleError = (e: Event) => {
+      clearRamp();
       console.error('Audio playback error:', e);
       setStatus('idle');
     };
@@ -349,7 +383,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.pause();
       ctx.close();
     };
-  }, []);
+  }, [clearRamp]);
+
+  useEffect(() => () => clearRamp(), [clearRamp]);
 
   // Destrava o AudioContext no primeiro gesto do usuário (toque/clique),
   // evitando atraso/travamento ao iniciar a primeira música no tablet.
@@ -511,6 +547,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             event.target.setVolume(volumeRef.current * 100);
             event.target.unMute?.();
             event.target.playVideo();
+            const playingUrl = currentUrlRef.current;
+            if (playingUrl) beginRampForUrl(playingUrl);
             pendingPlayRef.current = null;
             // Se o autoplay não engatar (comum em tablets), tenta de novo.
             window.setTimeout(() => {
@@ -531,6 +569,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
                 try { ytPlayerRef.current.seekTo(0); ytPlayerRef.current.playVideo(); } catch {}
                 return;
               }
+              clearRamp();
               const endedStage = currentStageIdRef.current;
               const endedUrl = currentUrlRef.current;
               if (onTrackEndedRef.current && endedStage && endedUrl && onTrackEndedRef.current(endedStage, endedUrl)) {
@@ -549,6 +588,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             }
           },
           onError: (event: any) => {
+            clearRamp();
             const code = event?.data;
             console.error('YouTube player error:', code, { videoId });
             const motivo =
@@ -573,43 +613,29 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       });
     };
     initPlayer();
-  }, [disposed]);
+  }, [disposed, beginRampForUrl, clearRamp]);
 
-  const play = useCallback((stageId: string, url: string) => {
+  const play = useCallback((stageId: string, url: string, stageVolume?: StagePlaybackVolume) => {
     clearFade();
     clearRamp();
     stopCurrentPlayback();
 
-    // Todo play() começa no volume inicial configurado (padrão 2%).
-    const initialVol = startVolumeRef.current;
+    const levels = stageVolume ? getStagePlaybackLevels(stageVolume) : null;
+    const initialVol = levels?.initial ?? startVolumeRef.current;
+    const targetVol = levels?.final ?? rampTargetRef.current;
+    const shouldRamp = levels
+      ? stageVolume.rampEnabled
+      : rampEnabledRef.current;
+    const durationMs = levels?.durationMs ?? Math.max(1, rampSecondsRef.current) * 1000;
     volumeRef.current = initialVol;
     setVolumeState(initialVol);
     applyPlayerVolume(initialVol);
-
-    // Rampa suave: sobe do volume inicial até o volume alvo em N segundos.
-    if (rampEnabledRef.current && rampTargetRef.current > initialVol) {
-      const from = initialVol;
-      const to = rampTargetRef.current;
-      const totalMs = Math.max(1, rampSecondsRef.current) * 1000;
-      const tickMs = 100;
-      const steps = Math.max(1, Math.round(totalMs / tickMs));
-      let step = 0;
-      rampIntervalRef.current = setInterval(() => {
-        step++;
-        const v = Math.min(to, from + (to - from) * (step / steps));
-        volumeRef.current = v;
-        setVolumeState(v);
-        if (audioRef.current) audioRef.current.volume = v;
-        if (ytPlayerRef.current && ytPlayerReadyRef.current) {
-          try { ytPlayerRef.current.setVolume(v * 100); } catch { /* noop */ }
-        }
-        if (step >= steps) clearRamp();
-      }, tickMs);
-    }
-
-
-
-
+    pendingRampRef.current = {
+      url,
+      to: targetVol,
+      durationMs,
+      enabled: shouldRamp && targetVol > initialVol,
+    };
 
     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume().catch(err => {
@@ -625,6 +651,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIsSpotify(isSpot);
 
     if (isSpot) {
+      pendingRampRef.current = null;
+      if (stageVolume && (stageVolume.initialPercent < 100 || stageVolume.rampEnabled)) {
+        import('sonner').then(({ toast }) =>
+          toast.info('O player do Spotify não permite controlar o volume inicial nem a subida suave.'),
+        );
+      }
       if (!isSpotifyUrl(url)) {
         console.error('Invalid Spotify URL:', url);
         return;
@@ -679,7 +711,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         audio.src = cachedUrl || url;
         audio.load();
         const attemptPlay = (retry = 0) => {
-          audio.play().catch((err) => {
+          audio.play().then(() => {
+            beginRampForUrl(url);
+          }).catch((err) => {
             // Trocou de áudio nesse meio tempo ou play interrompido: ignora.
             if (currentUrlRef.current !== url) return;
             if (err?.name === 'AbortError' || /interrupt/i.test(err?.message || '')) return;
@@ -718,7 +752,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentStageId(stageId);
       setStatus('playing');
     }
-  }, [stopCurrentPlayback, createYouTubePlayer]);
+  }, [stopCurrentPlayback, createYouTubePlayer, clearFade, clearRamp, applyPlayerVolume, beginRampForUrl]);
 
   const preload = useCallback((urls: (string | null | undefined)[]) => {
     const valid = urls.filter((u): u is string => !!u && isCacheableAudioUrl(u));
@@ -748,7 +782,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const pause = useCallback(() => {
-    clearRamp();
+    const rampPaused = suspendRamp();
     const doPause = () => {
       if (isSpotifyRef.current) {
         pauseSpotifyEntity().catch(() => { /* noop */ });
@@ -760,12 +794,14 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setStatus('paused');
     };
     // Spotify iframe controller does not expose reliable volume control
-    if (fadeEnabledRef.current && !isSpotifyRef.current) {
+    if (rampPaused) {
+      doPause();
+    } else if (fadeEnabledRef.current && !isSpotifyRef.current) {
       fadeOutThen(doPause);
     } else {
       doPause();
     }
-  }, [fadeOutThen, clearRamp]);
+  }, [fadeOutThen, suspendRamp]);
 
   const resume = useCallback(() => {
     clearFade();
@@ -774,15 +810,18 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       resumeSpotifyEntity(currentUrlRef.current).catch(() => { /* noop */ });
     } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
       ytPlayerRef.current.playVideo();
+      continueRamp();
     } else if (audioRef.current) {
-      audioRef.current.play();
+      audioRef.current.play().then(continueRamp).catch((error) => {
+        console.error('[AudioPlayer] falha ao retomar reprodução:', error);
+      });
     }
     setStatus('playing');
-  }, [clearFade, applyPlayerVolume]);
+  }, [clearFade, applyPlayerVolume, continueRamp]);
 
   const stop = useCallback(() => {
+    clearRamp();
     const doStop = () => {
-      clearRamp();
       stopCurrentPlayback();
       setStatus('idle');
       setCurrentStageId(null);
@@ -800,7 +839,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     } else {
       doStop();
     }
-  }, [stopCurrentPlayback, status, fadeOutThen]);
+  }, [stopCurrentPlayback, status, fadeOutThen, clearRamp]);
 
   const setVolume = useCallback((value: number) => {
     // Ajuste manual cancela a rampa em andamento.

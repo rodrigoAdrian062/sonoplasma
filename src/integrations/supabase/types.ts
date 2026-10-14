@@ -219,6 +219,10 @@ export type Database = {
           owner_id: string | null
           updated_at: string
           volume_config: number | null
+          volume_start_percent: number
+          volume_ramp_enabled: boolean
+          volume_final_percent: number
+          volume_ramp_seconds: number
         }
         Insert: {
           audio_url: string
@@ -230,6 +234,10 @@ export type Database = {
           owner_id?: string | null
           updated_at?: string
           volume_config?: number | null
+          volume_start_percent?: number
+          volume_ramp_enabled?: boolean
+          volume_final_percent?: number
+          volume_ramp_seconds?: number
         }
         Update: {
           audio_url?: string
@@ -241,6 +249,10 @@ export type Database = {
           owner_id?: string | null
           updated_at?: string
           volume_config?: number | null
+          volume_start_percent?: number
+          volume_ramp_enabled?: boolean
+          volume_final_percent?: number
+          volume_ramp_seconds?: number
         }
         Relationships: [
           {

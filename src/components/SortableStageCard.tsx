@@ -5,6 +5,7 @@ import { StageCard } from './StageCard';
 import { CopyStageMenu } from './CopyStageMenu';
 import { CeremonyStage } from '@/types/ceremony';
 import { StageAudio } from '@/types/stageAudio';
+import type { StagePlaybackVolume } from '@/lib/stageVolume';
 import { CeremonySection } from '@/types/section';
 
 interface SortableStageCardProps {
@@ -15,7 +16,7 @@ interface SortableStageCardProps {
   isPaused: boolean;
   currentTime?: number;
   duration?: number;
-  onPlay: (audioUrl: string) => void;
+  onPlay: (audioUrl: string, volumeSettings?: StagePlaybackVolume) => void;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -112,4 +113,3 @@ export function SortableStageCard({
     </div>
   );
 }
-
