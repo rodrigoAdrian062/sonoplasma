@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appendHarmonyTrack, encodeWav, formatTime, getProjectDuration, getTrackDuration,
-  normalizeHarmonyProject, normalizeHarmonyTrack, trimHarmonyTrack, type HarmonyTrack,
+  normalizeHarmonyProject, normalizeHarmonyTrack, splitHarmonyTrack, trimHarmonyTrack, type HarmonyTrack,
 } from './harmonyEditor';
 
 const track: HarmonyTrack = {
@@ -95,6 +95,21 @@ describe('harmony editor timeline', () => {
     expect(trimmed[0].trimEnd).toBe(14);
     expect(trimmed[1].start).toBe(10);
     expect(getProjectDuration(trimmed)).toBe(30);
+  });
+
+  it('splits a clip at the selected audio point without changing the project duration', () => {
+    const first = { ...track, start: 0, fadeIn: 2, fadeOut: 3 };
+    const split = splitHarmonyTrack([first], first.id, 14, 'track-2');
+
+    expect(split).toHaveLength(2);
+    expect(split[0]).toMatchObject({ trimStart: 4, trimEnd: 14, fadeIn: 2, fadeOut: 0 });
+    expect(split[1]).toMatchObject({ id: 'track-2', start: 10, trimStart: 14, trimEnd: 24, fadeIn: 0, fadeOut: 3 });
+    expect(getProjectDuration(split)).toBe(20);
+  });
+
+  it('does not create invalid or duplicate split clips', () => {
+    expect(splitHarmonyTrack([track], track.id, 4.1, 'track-2')).toHaveLength(1);
+    expect(splitHarmonyTrack([track], track.id, 14, track.id)).toHaveLength(1);
   });
 
   it('formats the timeline clock as minutes and seconds', () => {

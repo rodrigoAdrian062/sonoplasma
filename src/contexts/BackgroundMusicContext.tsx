@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { useUniversalAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { registerAudioElement } from '@/lib/audioOutput';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
@@ -109,6 +110,8 @@ export function BackgroundMusicProvider({
   onPlaylistChange?: (pl: BackgroundTrack[]) => void;
   isPresentation?: boolean;
 }) {
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const userId = user?.id;
   const ActiveCtx = isPresentation ? PresentationCtx : GlobalCtx;
   const safeRead = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
@@ -345,7 +348,18 @@ export function BackgroundMusicProvider({
           fb.src = src;
           fb.load();
           if (wantsToPlayRef.current) {
-            fb.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            fb.play().then(() => setIsPlaying(true)).catch((error: unknown) => {
+              setIsPlaying(false);
+              if (error instanceof DOMException && error.name === 'NotAllowedError') {
+                toast({
+                  title: 'O navegador bloqueou a reprodução',
+                  description: 'Toque novamente em reproduzir para autorizar a música de fundo.',
+                  variant: 'destructive',
+                });
+              } else {
+                console.error('[bg-audio] fallback de reprodução falhou:', error);
+              }
+            });
           }
           return;
         } catch { /* segue para o aviso */ }
@@ -391,20 +405,28 @@ export function BackgroundMusicProvider({
   const cloudPlaylistKey = `bgMusic:${storageKey}`;
   const cloudHydratedRef = useRef(false);
   useEffect(() => {
+    cloudHydratedRef.current = false;
+    if (isAuthLoading || !userId) return;
+
     let cancelled = false;
     (async () => {
       const remote = await loadCloudState<BackgroundTrack[]>(cloudPlaylistKey);
       if (cancelled) return;
-      if (Array.isArray(remote) && remote.length > 0) {
+      if (Array.isArray(remote)) {
         setPlaylist(remote.filter((t) => !!t?.audio_url));
       } else {
-        const local = JSON.parse(safeRead(storageKey) || '[]');
+        let local: unknown = [];
+        try {
+          local = JSON.parse(safeRead(storageKey) || '[]');
+        } catch (error) {
+          console.warn('[bg-audio] playlist local inválida:', error);
+        }
         if (Array.isArray(local) && local.length > 0) void saveCloudState(cloudPlaylistKey, local);
       }
       cloudHydratedRef.current = true;
     })();
     return () => { cancelled = true; };
-  }, [cloudPlaylistKey, storageKey]);
+  }, [cloudPlaylistKey, storageKey, isAuthLoading, userId]);
 
   useEffect(() => { 
     safeWrite(storageKey, JSON.stringify(playlist)); 
@@ -683,7 +705,9 @@ export function BackgroundMusicProvider({
       setIsPlaying(false);
       toast({
         title: 'Não foi possível iniciar a música de fundo',
-        description: 'Toque novamente no botão de play para autorizar o áudio.',
+        description: err instanceof DOMException && err.name === 'NotAllowedError'
+          ? 'Toque novamente no botão de play para autorizar o áudio.'
+          : `Verifique o arquivo/link da faixa${err instanceof Error && err.message ? `: ${err.message}` : '.'}`,
         variant: 'destructive',
       });
     });

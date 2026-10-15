@@ -100,6 +100,28 @@
     --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  :root[data-vivid-colors="true"] {
+    --background: 224 25% 8%;
+    --foreground: 220 20% 96%;
+    --card: 224 24% 13%;
+    --card-foreground: 220 20% 94%;
+    --card-active: 224 28% 19%;
+    --popover: 224 24% 13%;
+    --popover-foreground: 220 20% 94%;
+    --secondary: 224 24% 22%;
+    --secondary-foreground: 220 20% 92%;
+    --muted: 224 22% 24%;
+    --muted-foreground: 220 18% 72%;
+    --accent: 43 85% 52%;
+    --accent-foreground: 224 25% 8%;
+    --border: 224 24% 33%;
+    --input: 224 24% 30%;
+    --ring: 43 85% 58%;
+    --gold: 43 90% 56%;
+    --gold-dim: 43 78% 42%;
+    --gold-glow: 43 95% 68%;
+  }
+
   * {
     @apply border-border;
   }

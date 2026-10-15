@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, AudioLines, Download, Loader2, Music2, Pause, Play, Plus, Save, Library,
   Search, SkipBack, Square, Trash2, Upload, Volume2, VolumeX, ZoomIn, ZoomOut, Sparkles,
-  ExternalLink, KeyRound,
+  ExternalLink, KeyRound, Scissors,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,13 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useSections } from '@/hooks/useSections';
 import { useStages } from '@/hooks/useStages';
 import { useUserAccess } from '@/hooks/useUserAccess';
+import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/access';
 import { supabase } from '@/integrations/supabase/client';
 import { loadCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 import { quickSoundKind } from '@/lib/quickSounds';
 import {
-  appendHarmonyTrack, encodeWav, formatTime, getProjectDuration, getTrackDuration, trimHarmonyTrack,
+  appendHarmonyTrack, encodeWav, formatTime, getProjectDuration, getTrackDuration, splitHarmonyTrack, trimHarmonyTrack,
   HARMONY_CLOUD_KEY, HARMONY_STORAGE_KEY, normalizeHarmonyProject, normalizeHarmonyTrack,
   type HarmonyProject, type HarmonyTrack,
 } from '@/lib/harmonyEditor';
@@ -38,6 +39,7 @@ interface TrackDrag {
   start: number;
   trimStart: number;
   trimEnd: number;
+  moved: boolean;
 }
 
 interface HarmonyMusicSuggestion {
@@ -121,6 +123,8 @@ function scheduleTrackGain(
 
 export default function HarmonyEditorPage() {
   const navigate = useNavigate();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const userId = user?.id;
   const { audios, isLoading, uploadAndAddAudio } = useAudioLibrary();
   const { sections } = useSections();
   const { stages } = useStages();
@@ -157,6 +161,7 @@ export default function HarmonyEditorPage() {
   const playbackStartedAtRef = useRef(0);
   const playbackOffsetRef = useRef(0);
   const dragRef = useRef<TrackDrag | null>(null);
+  const suppressTrackClickRef = useRef(false);
   const hydratedRef = useRef(false);
 
   const getAudioContext = useCallback(() => {
@@ -168,6 +173,13 @@ export default function HarmonyEditorPage() {
 
   const mixDuration = getProjectDuration(project.tracks);
   const selectedClip = project.tracks.find((track) => track.id === selectedClipId) ?? project.tracks.at(-1);
+  const selectedClipPosition = selectedClip ? playhead - selectedClip.start : -1;
+  const canSplitSelectedClip = Boolean(
+    selectedClip &&
+    !isPlaying &&
+    selectedClipPosition >= 0.25 &&
+    getTrackDuration(selectedClip) - selectedClipPosition >= 0.25,
+  );
   const timelineDuration = Math.max(30, Math.ceil((mixDuration + 15) / 10) * 10);
   const timelineWidth = timelineDuration * zoom;
   const pxPerSecond = zoom;
@@ -198,6 +210,9 @@ export default function HarmonyEditorPage() {
   }, [getAudioContext]);
 
   useEffect(() => {
+    if (isAuthLoading || !userId) return;
+
+    hydratedRef.current = false;
     let cancelled = false;
     (async () => {
       const remote = await loadCloudState<HarmonyProject>(HARMONY_CLOUD_KEY);
@@ -210,7 +225,7 @@ export default function HarmonyEditorPage() {
       hydratedRef.current = true;
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [isAuthLoading, userId]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
@@ -545,6 +560,18 @@ export default function HarmonyEditorPage() {
     setProject((current) => ({ ...current, tracks: current.tracks.filter((track) => track.id !== id) }));
   };
 
+  const splitSelectedClip = () => {
+    if (!selectedClip || !canSplitSelectedClip) return;
+    const newTrackId = crypto.randomUUID();
+    const splitAt = selectedClip.trimStart + selectedClipPosition;
+    setProject((current) => ({
+      ...current,
+      tracks: splitHarmonyTrack(current.tracks, selectedClip.id, splitAt, newTrackId),
+    }));
+    setSelectedClipId(newTrackId);
+    toast.success(`"${selectedClip.nome}" dividida no cursor.`);
+  };
+
   const beginTrackDrag = (event: PointerEvent<HTMLDivElement>, track: HarmonyTrack, mode: DragMode) => {
     event.preventDefault();
     event.stopPropagation();
@@ -556,12 +583,15 @@ export default function HarmonyEditorPage() {
       start: track.start,
       trimStart: track.trimStart,
       trimEnd: track.trimEnd,
+      moved: false,
     };
   };
 
   const moveTrackDrag = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag) return;
+    if (!drag.moved && Math.abs(event.clientX - drag.pointerX) < 4) return;
+    drag.moved = true;
     const delta = (event.clientX - drag.pointerX) / pxPerSecond;
     if (!Number.isFinite(delta)) return;
     const track = project.tracks.find((item) => item.id === drag.id);
@@ -583,7 +613,14 @@ export default function HarmonyEditorPage() {
     }
   };
 
-  const endTrackDrag = () => { dragRef.current = null; };
+  const endTrackDrag = () => {
+    if (dragRef.current?.moved) suppressTrackClickRef.current = true;
+    dragRef.current = null;
+  };
+  const cancelTrackDrag = () => {
+    dragRef.current = null;
+    suppressTrackClickRef.current = false;
+  };
 
   const renderMix = async (): Promise<Blob> => {
     if (!project.tracks.length || mixDuration <= 0) {
@@ -983,6 +1020,16 @@ export default function HarmonyEditorPage() {
             <Button variant="outline" size="icon" aria-label="Parar" onClick={() => { stopPlayback(); setPlayhead(0); }}>
               <Square size={14} />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-gold/30"
+              onClick={splitSelectedClip}
+              disabled={!canSplitSelectedClip}
+              title={isPlaying ? 'Pause a reprodução para dividir o clipe' : 'Divide o clipe selecionado na posição do cursor'}
+            >
+              <Scissors size={15} /> Dividir clipe
+            </Button>
             <span className="min-w-[110px] font-mono text-sm tabular-nums">{formatTime(playhead)} / {formatTime(mixDuration)}</span>
             <div className="ml-auto flex items-center gap-1">
               <Button variant="ghost" size="icon" aria-label="Diminuir zoom" disabled={zoom <= 16} onClick={() => setZoom((value) => Math.max(16, value - 8))}><ZoomOut size={16} /></Button>
@@ -990,6 +1037,9 @@ export default function HarmonyEditorPage() {
               <Button variant="ghost" size="icon" aria-label="Aumentar zoom" disabled={zoom >= 96} onClick={() => setZoom((value) => Math.min(96, value + 8))}><ZoomIn size={16} /></Button>
             </div>
           </div>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Clique no clipe para posicionar o cursor · arraste o centro para mover · arraste as alças laterais para cortar.
+          </p>
 
           <div ref={scrollRef} className="overflow-auto rounded-xl border border-border bg-card/30">
             <div className="min-w-max">
@@ -1012,6 +1062,10 @@ export default function HarmonyEditorPage() {
                       {formatTime(second)}
                     </div>
                   ))}
+                  <div
+                    className="pointer-events-none absolute inset-y-0 z-10 border-l-2 border-amber-400"
+                    style={{ left: playhead * pxPerSecond }}
+                  />
                 </div>
               </div>
 
@@ -1050,16 +1104,25 @@ export default function HarmonyEditorPage() {
                           style={{ left: track.start * pxPerSecond, width }}
                           onClick={(event) => {
                             event.stopPropagation();
+                            if (suppressTrackClickRef.current) {
+                              suppressTrackClickRef.current = false;
+                              return;
+                            }
                             setSelectedClipId(track.id);
+                            const bounds = event.currentTarget.getBoundingClientRect();
+                            const clipPosition = Math.max(0, Math.min(duration, (event.clientX - bounds.left) / pxPerSecond));
+                            const next = Math.min(mixDuration, track.start + clipPosition);
+                            if (isPlaying) void playFrom(next);
+                            else setPlayhead(next);
                           }}
                           onPointerMove={moveTrackDrag}
                           onPointerUp={endTrackDrag}
-                          onPointerCancel={endTrackDrag}
+                          onPointerCancel={cancelTrackDrag}
                           onPointerDown={(event) => {
                             setSelectedClipId(track.id);
                             beginTrackDrag(event, track, 'move');
                           }}
-                          title={`${track.nome} — arraste para reposicionar; arraste as bordas para cortar`}
+                          title={`${track.nome} — clique para posicionar o cursor; arraste para mover`}
                         >
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-around gap-px overflow-hidden px-2 opacity-70">
                             {(waveforms[track.audioUrl] ?? Array.from({ length: 60 }, (_, i) => 0.2 + ((i * 29 + index * 11) % 60) / 100)).map((peak, i) => (
@@ -1072,18 +1135,26 @@ export default function HarmonyEditorPage() {
                           {track.fadeIn > 0 && <div className="pointer-events-none absolute bottom-0 left-0 h-5 border-l-2 border-gold" style={{ width: track.fadeIn * pxPerSecond }} />}
                           {track.fadeOut > 0 && <div className="pointer-events-none absolute bottom-0 right-0 h-5 border-r-2 border-gold" style={{ width: track.fadeOut * pxPerSecond }} />}
                           <div
-                            className="absolute inset-y-0 left-0 z-10 w-2 cursor-ew-resize bg-gold/80"
+                            className="absolute inset-y-0 left-0 z-10 flex w-3 cursor-ew-resize items-center justify-center bg-gradient-to-r from-amber-400/50 to-amber-400"
                             onPointerDown={(event) => beginTrackDrag(event, track, 'trim-start')}
+                            onClick={(event) => event.stopPropagation()}
                             aria-label={`Cortar início de ${track.nome}`}
+                            title="Arraste para ajustar o início do corte"
                           />
                           <div
-                            className="absolute inset-y-0 right-0 z-10 w-2 cursor-ew-resize bg-gold/80"
+                            className="absolute inset-y-0 right-0 z-10 flex w-3 cursor-ew-resize items-center justify-center bg-gradient-to-l from-amber-400/50 to-amber-400"
                             onPointerDown={(event) => beginTrackDrag(event, track, 'trim-end')}
+                            onClick={(event) => event.stopPropagation()}
                             aria-label={`Cortar fim de ${track.nome}`}
+                            title="Arraste para ajustar o fim do corte"
                           />
                         </div>
                       );
                     })}
+                    <div
+                      className="pointer-events-none absolute bottom-0 top-0 z-20 border-l-2 border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                      style={{ left: playhead * pxPerSecond }}
+                    />
                   </div>
                 </div>
               )}

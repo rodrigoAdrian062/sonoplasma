@@ -119,6 +119,46 @@ export function trimHarmonyTrack(
   });
 }
 
+export function splitHarmonyTrack(
+  tracks: HarmonyTrack[],
+  trackId: string,
+  splitAt: number,
+  newTrackId: string,
+): HarmonyTrack[] {
+  const safeTracks = tracks
+    .map(normalizeHarmonyTrack)
+    .filter((track): track is HarmonyTrack => track !== null);
+  const index = safeTracks.findIndex((track) => track.id === trackId);
+  if (index < 0 || !newTrackId || safeTracks.some((track) => track.id === newTrackId)) return safeTracks;
+
+  const track = safeTracks[index];
+  const safeSplitAt = finiteOr(splitAt, track.trimStart);
+  const elapsed = safeSplitAt - track.trimStart;
+  const duration = getTrackDuration(track);
+  if (elapsed < 0.25 || duration - elapsed < 0.25) return safeTracks;
+
+  const first = normalizeHarmonyTrack({
+    ...track,
+    trimEnd: safeSplitAt,
+    fadeOut: 0,
+  });
+  const second = normalizeHarmonyTrack({
+    ...track,
+    id: newTrackId,
+    start: track.start + elapsed,
+    trimStart: safeSplitAt,
+    fadeIn: 0,
+  });
+  if (!first || !second) return safeTracks;
+
+  return [
+    ...safeTracks.slice(0, index),
+    first,
+    second,
+    ...safeTracks.slice(index + 1),
+  ];
+}
+
 export function formatTime(seconds: number): string {
   const safeSeconds = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
   const minutes = Math.floor(safeSeconds / 60);

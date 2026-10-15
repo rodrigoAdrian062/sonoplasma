@@ -62,4 +62,17 @@ describe('quick sound trim persistence', () => {
     expect(loadQuickSounds()).toMatchObject([{ nome: 'Vertical' }]);
     expect(loadQuickSounds('horizontal')).toMatchObject([{ nome: 'Horizontal' }]);
   });
+
+  it('persists a custom color for a quick sound', () => {
+    persistQuickSounds([
+      {
+        id: 'color-test',
+        nome: 'Sino',
+        url: 'https://example.com/sino.mp3',
+        color: '#4169E1',
+      },
+    ]);
+
+    expect(loadQuickSounds()).toMatchObject([{ id: 'color-test', color: '#4169E1' }]);
+  });
 });

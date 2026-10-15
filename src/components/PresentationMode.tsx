@@ -8,7 +8,7 @@ import { useClock } from '@/hooks/useClock';
 import { ElegantClock } from './ElegantClock';
 import { SessionStopwatch } from './SessionStopwatch';
 
-import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Play, Pause, Square, ChevronLeft, ChevronRight, Maximize, Minimize, Music, Clock, RotateCcw, Volume2, VolumeX, Keyboard, SkipBack, SkipForward, SlidersHorizontal, Shrink, Expand, HelpCircle, Trash2, Plus, Minus, Pencil, EyeOff, CheckCircle2, Loader2, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { CeremonyStage } from '@/types/ceremony';
@@ -55,6 +55,7 @@ import { prefetchAudios, isAudioCached, isCacheableAudioUrl } from '@/lib/audioC
 import { PREFETCH_LOOKAHEAD } from '@/lib/prefetchSettings';
 import { usePrefetchEnabled } from '@/hooks/usePrefetchEnabled';
 import { Download } from 'lucide-react';
+import { loadCloudState, saveCloudState } from '@/lib/cloudState';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { QuickSoundsPanel } from './QuickSoundsPanel';
@@ -78,6 +79,25 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+const STAGE_COLORS_STORAGE_KEY = 'sonoplastia:stageColors';
+const STAGE_COLORS_CLOUD_KEY = 'stageColors';
+
+function isHexColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
+}
+
+function readStageColors(): Record<string, string> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(STAGE_COLORS_STORAGE_KEY) || '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, string] => isHexColor(entry[1]))
+    );
+  } catch {
+    return {};
+  }
 }
 
 interface PresentationModeProps {
@@ -172,6 +192,8 @@ function PresentationContent({
   const [pinKeyboardHints, setPinKeyboardHints] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [contingencyOpen, setContingencyOpen] = useState(false);
+  const [stageColors, setStageColors] = useState<Record<string, string>>(readStageColors);
+  const stageColorsDirtyRef = useRef(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
   const [midiAccess, setMidiAccess] = useState<any>(null);
@@ -277,6 +299,44 @@ function PresentationContent({
   const isPlaying = currentStageId === currentStage?.id && status === 'playing';
   const isPaused = currentStageId === currentStage?.id && status === 'paused';
   const isMuted = volume === 0;
+  const currentStageColor = currentStage ? stageColors[currentStage.id] : undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadCloudState<Record<string, string>>(STAGE_COLORS_CLOUD_KEY).then((remote) => {
+      if (cancelled) return;
+      const local = readStageColors();
+      if (stageColorsDirtyRef.current) {
+        void saveCloudState(STAGE_COLORS_CLOUD_KEY, local);
+        return;
+      }
+      if (remote && typeof remote === 'object' && !Array.isArray(remote)) {
+        const validRemote = Object.fromEntries(
+          Object.entries(remote).filter((entry): entry is [string, string] => isHexColor(entry[1]))
+        );
+        if (Object.keys(validRemote).length > 0 || Object.keys(local).length === 0) {
+          localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(validRemote));
+          setStageColors(validRemote);
+        } else {
+          void saveCloudState(STAGE_COLORS_CLOUD_KEY, local);
+        }
+      } else if (Object.keys(local).length > 0) {
+        void saveCloudState(STAGE_COLORS_CLOUD_KEY, local);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateStageColor = (stageId: string, color: string) => {
+    if (!isHexColor(color)) return;
+    const next = { ...stageColors, [stageId]: color };
+    stageColorsDirtyRef.current = true;
+    localStorage.setItem(STAGE_COLORS_STORAGE_KEY, JSON.stringify(next));
+    void saveCloudState(STAGE_COLORS_CLOUD_KEY, next);
+    setStageColors(next);
+  };
 
   // Status de cache do áudio atual
   useEffect(() => {
@@ -899,7 +959,7 @@ function PresentationContent({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="max-h-[70vh] w-64 overflow-y-auto"
+                  className="max-h-[70vh] w-80 overflow-y-auto"
                   onInteractOutside={(event) => event.preventDefault()}
                   onEscapeKeyDown={(event) => event.preventDefault()}
                 >
@@ -926,28 +986,67 @@ function PresentationContent({
                   <DropdownMenuLabel>Pular para uma etapa</DropdownMenuLabel>
                   {visibleStages.map((stage, index) => {
                     const stageIndex = stages.findIndex((item) => item.id === stage.id);
+                    const stageColor = stageColors[stage.id];
                     return (
-                      <DropdownMenuItem
+                      <div
                         key={stage.id}
-                        disabled={stageIndex === selectedStageIndex}
                         className={cn(
-                          'cursor-pointer',
-                          stageIndex === selectedStageIndex && 'bg-gold/10 text-gold focus:bg-gold/15 focus:text-gold'
+                          'flex items-center gap-1 rounded-md border px-1',
+                          stageIndex === selectedStageIndex
+                            ? 'border-gold bg-gold/15 shadow-[0_0_12px_rgba(212,175,55,0.25)]'
+                            : 'border-transparent'
                         )}
-                        onSelect={(event) => {
-                          event.preventDefault();
-                          if (isActive) handleStop();
-                          setSelectedStageIndex(stageIndex);
+                        style={{
+                          backgroundColor: stageIndex === selectedStageIndex
+                            ? 'color-mix(in srgb, hsl(var(--gold)) 18%, hsl(var(--card)))'
+                            : stageColor
+                              ? `color-mix(in srgb, ${stageColor} 28%, transparent)`
+                            : undefined,
                         }}
                       >
-                        <span className="flex items-center gap-2">
-                          <span className={cn(
-                            'inline-flex h-2 w-2 rounded-full',
-                            stageIndex === selectedStageIndex ? 'bg-gold' : 'bg-muted-foreground/40'
-                          )} />
-                          {index + 1}. {stage.nome_simbolico}
-                        </span>
-                      </DropdownMenuItem>
+                        <button
+                          type="button"
+                          disabled={stageIndex === selectedStageIndex}
+                          className={cn(
+                            'flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-left text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-100',
+                            stageIndex === selectedStageIndex && 'font-bold text-gold'
+                          )}
+                          onClick={() => {
+                            if (isActive) handleStop();
+                            setSelectedStageIndex(stageIndex);
+                          }}
+                        >
+                          <span
+                            className="inline-flex h-3 w-3 shrink-0 rounded-full border border-foreground/30"
+                            style={{
+                              backgroundColor: stageColor
+                                || (stageIndex === selectedStageIndex ? 'hsl(var(--gold))' : undefined),
+                            }}
+                          />
+                          <span className="w-5 shrink-0 text-right text-xs font-semibold text-muted-foreground">{index + 1}.</span>
+                          <span className="min-w-0 flex-1 truncate">{stage.nome_simbolico}</span>
+                          {stageIndex === selectedStageIndex && (
+                            <span className="shrink-0 rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-background">
+                              Atual
+                            </span>
+                          )}
+                        </button>
+                        <label
+                          className="relative flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
+                          title={`Escolher cor da etapa ${stage.nome_simbolico}`}
+                          onPointerDown={(event) => event.stopPropagation()}
+                        >
+                          <Palette size={14} style={{ color: stageColor || 'hsl(var(--muted-foreground))' }} />
+                          <input
+                            type="color"
+                            value={stageColor || '#D4AF37'}
+                            onChange={(event) => updateStageColor(stage.id, event.target.value)}
+                            onClick={(event) => event.stopPropagation()}
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                            aria-label={`Escolher cor da etapa ${stage.nome_simbolico}`}
+                          />
+                        </label>
+                      </div>
                     );
                   })}
                 </DropdownMenuContent>
@@ -1063,6 +1162,14 @@ function PresentationContent({
           className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-background/70 to-background pointer-events-none" />
+        {currentStageColor && (
+          <div
+            className="absolute inset-0 pointer-events-none transition-colors duration-500"
+            style={{
+              background: `radial-gradient(ellipse at center, color-mix(in srgb, ${currentStageColor} 22%, transparent) 0%, transparent 72%)`,
+            }}
+          />
+        )}
 
 
 
@@ -1242,9 +1349,17 @@ function PresentationContent({
 
           {/* Stage Name */}
           <h1 className={cn(
-            'font-display font-bold text-center bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent',
+            'font-display font-bold text-center rounded-xl px-4 py-1',
+            currentStageColor
+              ? 'text-foreground'
+              : 'bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent',
             compact ? 'text-lg sm:text-xl md:text-2xl mb-1' : 'text-xl sm:text-2xl md:text-4xl mb-1 sm:mb-2'
-          )}>
+          )}
+            style={currentStageColor ? {
+              backgroundColor: `color-mix(in srgb, ${currentStageColor} 24%, transparent)`,
+              outline: `1px solid color-mix(in srgb, ${currentStageColor} 58%, transparent)`,
+            } : undefined}
+          >
             {currentStage.nome_simbolico}
           </h1>
           {currentAudio && (

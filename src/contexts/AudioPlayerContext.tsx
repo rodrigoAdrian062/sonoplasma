@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { PlaybackStatus } from '@/types/ceremony';
-import { getPlayableAudioUrl, prefetchAudios, isCacheableAudioUrl } from '@/lib/audioCache';
+import {
+  getInMemoryPlayableAudioUrl,
+  getPlayableAudioUrl,
+  prefetchAudios,
+  isCacheableAudioUrl,
+} from '@/lib/audioCache';
 import { registerAudioElement } from '@/lib/audioOutput';
 import { isSpotifyUrl } from '@/lib/embedUrl';
 import {
@@ -703,52 +708,40 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentUrl(url);
       applyPitchForUrl(pitch432NodeRef.current, url);
       audio.volume = volumeRef.current;
-      // Toca a partir do cache local (blob) quando disponível para
-      // início instantâneo; senão usa a URL direta e cacheia em segundo plano.
-      getPlayableAudioUrl(url).then((cachedUrl) => {
-        // Ignora se o usuário já trocou de áudio nesse meio tempo.
-        if (currentUrlRef.current !== url) return;
-        audio.src = cachedUrl || url;
-        audio.load();
-        const attemptPlay = (retry = 0) => {
-          audio.play().then(() => {
-            beginRampForUrl(url);
-          }).catch((err) => {
-            // Trocou de áudio nesse meio tempo ou play interrompido: ignora.
-            if (currentUrlRef.current !== url) return;
-            if (err?.name === 'AbortError' || /interrupt/i.test(err?.message || '')) return;
-            // Se o blob do cache falhar, descarte-o e tente a origem.
-            // Em falhas de rede/decodificação da origem, recarregue a URL
-            // uma vez para recuperar respostas temporárias ou conteúdo incompleto.
-            if (retry === 0 && err?.name !== 'NotAllowedError') {
-              setTimeout(() => {
-                if (currentUrlRef.current !== url) return;
-                audio.src = cachedUrl && audio.src !== url ? url : `${url}${url.includes('?') ? '&' : '?'}_retry=${Date.now()}`;
-                audio.load();
-                attemptPlay(1);
-              }, 500);
-              return;
-            }
-            // eslint-disable-next-line no-console
-            console.error('[AudioPlayer] falha ao reproduzir:', err, { url });
-            setStatus('idle');
-            setCurrentTime(0);
-            try {
-              import('sonner').then(({ toast }) => {
-                if (err?.name === 'NotAllowedError') {
-                  toast.error('Toque na tela para liberar o áudio (autoplay bloqueado).');
-                } else {
-                  toast.error('Não foi possível iniciar o áudio.');
-                }
-              });
-            } catch { /* noop */ }
+      // Inicia no mesmo gesto do usuário; consultar Cache Storage primeiro
+      // pode perder a autorização de reprodução no primeiro clique.
+      const cachedUrl = getInMemoryPlayableAudioUrl(url);
+      audio.src = cachedUrl || url;
+      audio.load();
+      const attemptPlay = (retry = 0) => {
+        audio.play().then(() => {
+          beginRampForUrl(url);
+        }).catch((err) => {
+          if (currentUrlRef.current !== url) return;
+          if (err?.name === 'AbortError' || /interrupt/i.test(err?.message || '')) return;
+          if (retry === 0 && err?.name !== 'NotAllowedError') {
+            setTimeout(() => {
+              if (currentUrlRef.current !== url) return;
+              audio.src = cachedUrl
+                ? url
+                : `${url}${url.includes('?') ? '&' : '?'}_retry=${Date.now()}`;
+              audio.load();
+              attemptPlay(1);
+            }, 500);
+            return;
+          }
+          console.error('[AudioPlayer] falha ao reproduzir:', err, { url });
+          setStatus('idle');
+          setCurrentTime(0);
+          import('sonner').then(({ toast }) => {
+            toast.error(err?.name === 'NotAllowedError'
+              ? 'Toque na tela para liberar o áudio (autoplay bloqueado).'
+              : `Não foi possível iniciar o áudio${err?.message ? `: ${err.message}` : '.'}`);
           });
-        };
-        attemptPlay();
-      }).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('[AudioPlayer] falha ao carregar do cache:', err, { url });
-      });
+        });
+      };
+      attemptPlay();
+      if (!cachedUrl) void getPlayableAudioUrl(url);
       setCurrentStageId(stageId);
       setStatus('playing');
     }

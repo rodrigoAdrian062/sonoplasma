@@ -360,6 +360,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <ColorPicker value={corTema} onChange={setCorTema} />
           </div>
 
+          <div className="space-y-2 border-t border-border pt-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <Label htmlFor="cores-vibrantes">Modo de cores vibrantes</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Aumenta o contraste e realça as cores dos painéis e botões.
+                </p>
+              </div>
+              <Switch
+                id="cores-vibrantes"
+                checked={toggles.cores_vibrantes}
+                onCheckedChange={(enabled) => setToggle('cores_vibrantes', enabled)}
+              />
+            </div>
+          </div>
+
           {/* Saída de áudio */}
           <AudioOutputSelector />
 

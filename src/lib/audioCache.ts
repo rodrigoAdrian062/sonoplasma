@@ -25,6 +25,11 @@ const blobUrlMap = new Map<string, string>();
 // Requisições de prefetch em andamento, para não duplicar.
 const inFlight = new Map<string, Promise<void>>();
 
+/** Retorna apenas uma URL blob já resolvida, sem esperar a Cache Storage API. */
+export function getInMemoryPlayableAudioUrl(url: string): string | null {
+  return blobUrlMap.get(url) ?? null;
+}
+
 /** Baixa e guarda o áudio no cache (silencioso se falhar). */
 export async function prefetchAudio(url: string): Promise<void> {
   if (!isCacheableAudioUrl(url) || url.startsWith('blob:')) return;

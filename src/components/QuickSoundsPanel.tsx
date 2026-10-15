@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -38,6 +38,49 @@ const VOLUME_UPDATED_EVENT = 'sonoplastia:quickSoundsVolumeUpdated';
 const MAX_SLOTS = 20;
 
 type QuickSound = QuickSoundData;
+
+const DEFAULT_QUICK_SOUND_COLOR = '#D4AF37';
+
+function getQuickSoundColorStyle(color?: string): CSSProperties | undefined {
+  if (!color || !/^#[\da-f]{6}$/i.test(color)) return undefined;
+  const channels = color.slice(1).match(/.{2}/g)?.map((channel) => parseInt(channel, 16) / 255);
+  if (!channels || channels.length !== 3) return undefined;
+  const [red, green, blue] = channels.map((channel) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  );
+  const textColor = 0.2126 * red + 0.7152 * green + 0.0722 * blue > 0.35
+    ? '#111827'
+    : '#FFFFFF';
+  return { backgroundColor: color, borderColor: color, color: textColor };
+}
+
+function QuickSoundColorInput({
+  sound,
+  onChange,
+}: {
+  sound: QuickSound;
+  onChange: (soundId: string, color: string) => void;
+}) {
+  const color = sound.color && /^#[\da-f]{6}$/i.test(sound.color)
+    ? sound.color
+    : DEFAULT_QUICK_SOUND_COLOR;
+
+  return (
+    <label
+      className="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground hover:text-foreground"
+      title={`Escolher cor de ${sound.nome}`}
+    >
+      <Palette size={11} style={{ color }} />
+      <input
+        type="color"
+        value={color}
+        onChange={(event) => onChange(sound.id, event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        aria-label={`Escolher cor de ${sound.nome}`}
+      />
+    </label>
+  );
+}
 
 function loadSounds(storageKey: string): QuickSound[] {
   try {
@@ -81,6 +124,7 @@ interface QuickSoundsHorizontalBarProps {
   onLoop: (soundId: string) => void;
   onFadeStop: (soundId: string) => void;
   onRename: (sound: QuickSound) => void;
+  onColorChange: (soundId: string, color: string) => void;
   onRemove: (soundId: string) => void;
 }
 
@@ -97,6 +141,7 @@ function QuickSoundsHorizontalBar({
   onLoop,
   onFadeStop,
   onRename,
+  onColorChange,
   onRemove,
 }: QuickSoundsHorizontalBarProps) {
   return (
@@ -129,7 +174,7 @@ function QuickSoundsHorizontalBar({
           <div
             key={sound.id}
             className={cn(
-              'group relative flex h-[76px] w-[138px] shrink-0 flex-col justify-end rounded-lg border border-gold/15 bg-black/25 px-1.5 pb-1',
+              'group relative flex h-[76px] w-[154px] shrink-0 flex-col justify-end rounded-lg border border-gold/15 bg-black/25 px-1.5 pb-1',
               draggingId === sound.id && 'opacity-50'
             )}
             onDragOver={(event) => {
@@ -148,6 +193,7 @@ function QuickSoundsHorizontalBar({
                   ? 'bg-gold text-background'
                   : 'bg-secondary/70 text-foreground hover:bg-gold/15 hover:text-gold'
               )}
+              style={getQuickSoundColorStyle(sound.color)}
             >
               {playingId === sound.id ? <Square size={10} className="shrink-0" /> : <Play size={10} className="shrink-0" />}
               <span className="truncate">{index + 1}. {sound.nome}</span>
@@ -196,6 +242,7 @@ function QuickSoundsHorizontalBar({
               >
                 <Volume2 size={11} />
               </button>
+              <QuickSoundColorInput sound={sound} onChange={onColorChange} />
               <button
                 type="button"
                 onClick={() => onRename(sound)}
@@ -701,6 +748,10 @@ export function QuickSoundsPanel({
     setSounds((prev) => prev.map((s) => (s.id === id ? { ...s, nome } : s)));
   };
 
+  const setSoundColor = (id: string, color: string) => {
+    setSounds((prev) => prev.map((sound) => (sound.id === id ? { ...sound, color } : sound)));
+  };
+
   const toggleLoop = (id: string) => {
     setSounds((prev) => {
       const next = prev.map((s) => (s.id === id ? { ...s, loop: !s.loop } : s));
@@ -902,6 +953,7 @@ export function QuickSoundsPanel({
               setEditingId(sound.id);
               setEditingName(sound.nome);
             }}
+            onColorChange={setSoundColor}
             onRemove={removeSound}
           />,
           horizontalPortalTarget
@@ -974,6 +1026,7 @@ export function QuickSoundsPanel({
                     ? 'bg-gold text-background border-gold'
                     : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50'
                 )}
+                style={getQuickSoundColorStyle(s.color)}
               >
                 {playingId === s.id ? (
                   <div className="flex gap-0.5 items-end h-2.5 shrink-0 mr-0.5">
@@ -1037,6 +1090,7 @@ export function QuickSoundsPanel({
                 >
                   <Volume2 size={8} />
                 </button>
+                <QuickSoundColorInput sound={s} onChange={setSoundColor} />
               </div>
             </div>
           ))}
@@ -1152,6 +1206,7 @@ export function QuickSoundsPanel({
                       ? 'bg-gold text-background border-gold shadow-lg shadow-gold/20'
                       : 'bg-black/40 text-foreground border-gold/20 hover:border-gold/50 hover:bg-gold/5'
                   )}
+                  style={getQuickSoundColorStyle(s.color)}
                 >
                   <span className="text-[9px] font-bold opacity-60 shrink-0">{i + 1}</span>
                   {playingId === s.id ? (
@@ -1169,7 +1224,7 @@ export function QuickSoundsPanel({
                     <Scissors size={10} className="shrink-0 text-gold" />
                   )}
                 </button>
-                <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <button
                     type="button"
                     draggable
@@ -1217,6 +1272,7 @@ export function QuickSoundsPanel({
                   >
                     <Volume2 size={8} />
                   </button>
+                  <QuickSoundColorInput sound={s} onChange={setSoundColor} />
                   <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"

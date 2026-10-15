@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReloadNotice } from "@/components/ReloadNotice";
 import { Loader2 } from "lucide-react";
+import { useUiToggles } from "@/hooks/useUiToggles";
 import Index from "./pages/Index";
 import SectionDetail from "./pages/SectionDetail";
 
@@ -68,11 +69,18 @@ const RouteFallback = () => (
   </div>
 );
 
-const App = () => (
-  <PersistQueryClientProvider 
-    client={queryClient} 
-    persistOptions={{ persister }}
-  >
+const App = () => {
+  const { toggles } = useUiToggles();
+
+  useEffect(() => {
+    document.documentElement.dataset.vividColors = String(toggles.cores_vibrantes);
+  }, [toggles.cores_vibrantes]);
+
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister }}
+    >
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -172,7 +180,8 @@ const App = () => (
         </ReloadNotice>
       </BrowserRouter>
     </TooltipProvider>
-  </PersistQueryClientProvider>
-);
+    </PersistQueryClientProvider>
+  );
+};
 
 export default App;

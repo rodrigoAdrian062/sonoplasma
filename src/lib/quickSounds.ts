@@ -36,6 +36,7 @@ export interface QuickSoundData {
   trimStartSeconds?: number;
   trimEndSeconds?: number;
   kind?: QuickSoundKind;
+  color?: string;
 }
 
 export function quickSoundKind(url: string): QuickSoundKind {

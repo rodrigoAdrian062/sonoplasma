@@ -9,7 +9,8 @@ export type UiToggleKey =
   | 'nav_biblioteca'
   | 'nav_youtube'
   | 'nav_spotify'
-  | 'nav_conversor';
+  | 'nav_conversor'
+  | 'cores_vibrantes';
 
 const STORAGE_KEY = 'sonoplastia:uiToggles';
 const EVENT = 'sonoplastia:uiToggles:changed';
@@ -20,6 +21,7 @@ const DEFAULTS: Record<UiToggleKey, boolean> = {
   nav_youtube: true,
   nav_spotify: true,
   nav_conversor: true,
+  cores_vibrantes: false,
 };
 
 
