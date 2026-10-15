@@ -68,8 +68,12 @@ export function useAutoSuggestAudios() {
         title: 'Sugestões aplicadas',
         description: `${inserts.length} músicas adicionadas em ${stagesTouched} etapa(s).`,
       });
-    } catch (e: any) {
-      toast({ title: 'Erro ao sugerir músicas', description: e.message, variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({
+        title: 'Erro ao sugerir músicas',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
     } finally {
       setIsRunning(false);
     }

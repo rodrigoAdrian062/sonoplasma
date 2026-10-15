@@ -88,11 +88,12 @@ Escolha até ${limit} índices ORDENADOS do mais relevante ao menos relevante se
       return json({ error: `Falha na API OpenAI (${aiRes.status}). Tente novamente mais tarde.` }, 500);
     }
 
-    const data = await aiRes.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? '{}';
-    let parsed: any = {};
+    const data: unknown = await aiRes.json();
+    const content = getResponseContent(data);
+    let parsed: unknown = {};
     try { parsed = JSON.parse(content); } catch { /* fallback */ }
-    const rawIndices: number[] = Array.isArray(parsed?.indices) ? parsed.indices : [];
+    const parsedRecord = isRecord(parsed) ? parsed : {};
+    const rawIndices: unknown[] = Array.isArray(parsedRecord.indices) ? parsedRecord.indices : [];
     const seen = new Set<number>();
     const indices = rawIndices
       .map((n) => Number(n))
@@ -100,10 +101,21 @@ Escolha até ${limit} índices ORDENADOS do mais relevante ao menos relevante se
       .slice(0, limit);
 
     return json({ indices });
-  } catch (e: any) {
-    return json({ error: e?.message ?? 'Erro inesperado' }, 500);
+  } catch (e: unknown) {
+    return json({ error: e instanceof Error ? e.message : 'Erro inesperado' }, 500);
   }
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getResponseContent(data: unknown): string {
+  if (!isRecord(data) || !Array.isArray(data.choices)) return '{}';
+  const firstChoice: unknown = data.choices[0];
+  if (!isRecord(firstChoice) || !isRecord(firstChoice.message)) return '{}';
+  return typeof firstChoice.message.content === 'string' ? firstChoice.message.content : '{}';
+}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {

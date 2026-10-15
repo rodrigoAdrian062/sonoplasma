@@ -101,7 +101,7 @@ export function MiniPlayer() {
     const currentStage = stages.find((s) => s.id === currentStageId);
     if (!currentStage) return null;
     const section = sections.find((s) => s.id === currentStage.secao_id);
-    if (!section || !(section as any).reproducao_continua) return null;
+    if (!section || !section.reproducao_continua) return null;
 
     const sectionStages = stages
       .filter((s) => s.secao_id === section.id)

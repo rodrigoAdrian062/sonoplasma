@@ -114,7 +114,7 @@ export function useAudioLibrary() {
     mutationFn: async ({ id, clima }: { id: string; clima: string | null }) => {
       const { error } = await supabase
         .from('sonoplastia_audios_biblioteca')
-        .update({ clima } as any)
+        .update({ clima })
         .eq('id', id);
       if (error) throw error;
     },

@@ -20,6 +20,48 @@ import { ensure432Registered, create432Node, applyPitchForUrl, subscribeFrequenc
 import { getStagePlaybackLevels, type StagePlaybackVolume } from '@/lib/stageVolume';
 import { VolumeRampController } from '@/lib/volumeRamp';
 import type { SoundTouchNode } from '@soundtouchjs/audio-worklet';
+import type { CeremonyStage } from '@/types/ceremony';
+import type { StageAudio } from '@/types/stageAudio';
+
+interface YouTubePlayer {
+  destroy(): void;
+  getCurrentTime(): number;
+  getDuration(): number;
+  getPlayerState?(): number;
+  pauseVideo(): void;
+  playVideo(): void;
+  seekTo(seconds: number, allowSeekAhead?: boolean): void;
+  setVolume(volume: number): void;
+  stopVideo(): void;
+  unMute?(): void;
+}
+
+interface YouTubePlayerEvent {
+  data: number;
+  target: YouTubePlayer;
+}
+
+interface YouTubePlayerOptions {
+  height: string;
+  width: string;
+  videoId: string;
+  host: string;
+  playerVars: Record<string, string | number>;
+  events: {
+    onReady: (event: YouTubePlayerEvent) => void;
+    onStateChange: (event: YouTubePlayerEvent) => void;
+    onError: (event: YouTubePlayerEvent) => void;
+  };
+}
+
+interface YouTubeApi {
+  Player: new (element: string, options: YouTubePlayerOptions) => YouTubePlayer;
+  PlayerState: { ENDED: number; PLAYING: number; PAUSED: number };
+}
+
+function getYouTubeApi(): YouTubeApi | undefined {
+  return (window as Window & { YT?: YouTubeApi }).YT;
+}
 
 export interface EQSettings {
   bass: number;    // -12 to 12 dB
@@ -43,7 +85,7 @@ interface AudioPlayerContextValue {
   setLoopEnabled: (value: boolean) => void;
   play: (stageId: string, url: string, stageVolume?: StagePlaybackVolume) => void;
   preload: (urls: (string | null | undefined)[]) => void;
-  prefetchNextStages: (currentStageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => void;
+  prefetchNextStages: (currentStageId: string, sectionStages: CeremonyStage[], audiosByStageId: Record<string, StageAudio[]>) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -133,7 +175,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const midFilterRef = useRef<BiquadFilterNode | null>(null);
   const trebleFilterRef = useRef<BiquadFilterNode | null>(null);
   const pitch432NodeRef = useRef<SoundTouchNode | null>(null);
-  const ytPlayerRef = useRef<any>(null);
+  const ytPlayerRef = useRef<YouTubePlayer | null>(null);
   const ytInitTimeoutRef = useRef<number | null>(null);
   const ytPlayerReadyRef = useRef(false);
   const pendingPlayRef = useRef<{ stageId: string; videoId: string } | null>(null);
@@ -416,13 +458,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   // Initialize YouTube IFrame API
   useEffect(() => {
-    if (!(window as any).YT) {
+    if (!getYouTubeApi()) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
     }
-    (window as any).onYouTubeIframeAPIReady = () => {
+    (window as Window & { onYouTubeIframeAPIReady?: () => void }).onYouTubeIframeAPIReady = () => {
       // API de YouTube carregada.
     };
   }, []);
@@ -514,7 +556,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
     const initPlayer = (attempts = 0) => {
       if (disposed) return;
-      if (!(window as any).YT || !(window as any).YT.Player) {
+      const YT = getYouTubeApi();
+      if (!YT?.Player) {
         // A API pode demorar em redes lentas; avisa só depois de ~15s.
         if (attempts > 150) {
           console.error('[YouTube] API não carregou');
@@ -530,7 +573,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
       ytInitTimeoutRef.current = null;
-      ytPlayerRef.current = new (window as any).YT.Player('yt-player', {
+      ytPlayerRef.current = new YT.Player('yt-player', {
         height: '1',
         width: '1',
         videoId: videoId,
@@ -547,7 +590,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           origin: window.location.origin,
         },
         events: {
-          onReady: (event: any) => {
+          onReady: (event: YouTubePlayerEvent) => {
             ytPlayerReadyRef.current = true;
             event.target.setVolume(volumeRef.current * 100);
             event.target.unMute?.();
@@ -558,7 +601,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
             // Se o autoplay não engatar (comum em tablets), tenta de novo.
             window.setTimeout(() => {
               try {
-                const YT = (window as any).YT;
+                const YT = getYouTubeApi();
                 const p = ytPlayerRef.current;
                 if (!p || !YT) return;
                 if (p.getPlayerState?.() !== YT.PlayerState.PLAYING) {
@@ -567,11 +610,17 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               } catch { /* noop */ }
             }, 1200);
           },
-          onStateChange: (event: any) => {
-            const YT = (window as any).YT;
+          onStateChange: (event: YouTubePlayerEvent) => {
+            const YT = getYouTubeApi();
+            if (!YT) return;
             if (event.data === YT.PlayerState.ENDED) {
               if (loopEnabledRef.current && ytPlayerRef.current) {
-                try { ytPlayerRef.current.seekTo(0); ytPlayerRef.current.playVideo(); } catch {}
+                try {
+                  ytPlayerRef.current.seekTo(0);
+                  ytPlayerRef.current.playVideo();
+                } catch {
+                  // Player may be shutting down while a loop transition is requested.
+                }
                 return;
               }
               clearRamp();
@@ -592,7 +641,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
               setStatus('paused');
             }
           },
-          onError: (event: any) => {
+          onError: (event: YouTubePlayerEvent) => {
             clearRamp();
             const code = event?.data;
             console.error('YouTube player error:', code, { videoId });
@@ -752,7 +801,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     if (valid.length > 0) prefetchAudios(valid);
   }, []);
 
-  const prefetchNextStages = useCallback((stageId: string, sectionStages: any[], audiosByStageId: Record<string, any[]>) => {
+  const prefetchNextStages = useCallback((stageId: string, sectionStages: CeremonyStage[], audiosByStageId: Record<string, StageAudio[]>) => {
     const currentIndex = sectionStages.findIndex(s => s.id === stageId);
     if (currentIndex === -1) return;
 

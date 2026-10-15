@@ -185,9 +185,10 @@ export function BulkAddLinksDialog({
         await addAudio({ nome: row.title.trim(), audio_url: row.url.trim(), tipo: meta.tipo });
         ok++;
         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: 'done' } : r)));
-      } catch (e: any) {
+      } catch (e: unknown) {
         fail++;
-        setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: 'error', message: e?.message || 'Erro' } : r)));
+        const message = e instanceof Error ? e.message : 'Erro';
+        setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: 'error', message } : r)));
       }
     }
     setAdding(false);

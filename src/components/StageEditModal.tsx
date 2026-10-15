@@ -84,7 +84,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
         descricao: stage.descricao || '',
         tempo_padrao: stage.tempo_padrao || 0,
         icone: stage.icone || 'flame',
-        icone_url: (stage as any).icone_url || null,
+        icone_url: stage.icone_url || null,
         secao_id: stage.secao_id || null,
       });
       setCurrentStep(0);
@@ -140,7 +140,7 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
       icone: formData.icone,
       icone_url: formData.icone_url,
       secao_id: formData.secao_id,
-    } as any, validAudios);
+    }, validAudios);
     onClose();
   };
 

@@ -130,7 +130,7 @@ export function useStages() {
           descricao: origin.descricao,
           tempo_padrao: origin.tempo_padrao,
           icone: origin.icone,
-          icone_url: (origin as any).icone_url ?? null,
+          icone_url: origin.icone_url ?? null,
           ordem: nextOrdem,
           ativo: true,
           secao_id: targetSectionId,

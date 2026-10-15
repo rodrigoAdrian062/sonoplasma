@@ -63,8 +63,8 @@ export function YoutubeAiSuggestionsModal({ isOpen, onClose, stageTitle, stageDe
         toast.info('A IA não retornou sugestões — tente refinar a prévia.');
       }
       setSuggestions(list);
-    } catch (e: any) {
-      toast.error('Erro inesperado', { description: e?.message });
+    } catch (e: unknown) {
+      toast.error('Erro inesperado', { description: e instanceof Error ? e.message : String(e) });
     } finally {
       setLoading(false);
     }

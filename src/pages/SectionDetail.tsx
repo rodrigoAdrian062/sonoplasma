@@ -400,8 +400,9 @@ const SectionDetail = () => {
         stagesUpdated += 1;
       }
       toast.success(`${stagesUpdated} etapa(s) preenchida(s) — ${totalAdded} áudio(s) (Arquivos + YouTube)`, { id: toastId });
-    } catch (e: any) {
-      toast.error(`Erro ao preencher: ${e?.message || 'desconhecido'}`, { id: toastId });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'desconhecido';
+      toast.error(`Erro ao preencher: ${message}`, { id: toastId });
     } finally {
       setIsAutoFilling(false);
     }
@@ -677,7 +678,7 @@ const SectionDetail = () => {
                       onSeekForward={() => seekForward()}
                       onSeekBackward={() => seekBackward()}
                       onSeekTo={seekTo}
-                      continuousPlayback={!!(section as any)?.reproducao_continua}
+                      continuousPlayback={section.reproducao_continua}
                       sections={sections}
                       currentSectionId={section.id}
                       onCopyToSection={(targetSectionId) =>

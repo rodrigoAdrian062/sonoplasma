@@ -33,19 +33,56 @@ function isYouTubeUrl(url: string): boolean {
   return getYouTubeVideoId(url) !== null;
 }
 
+interface YouTubePlayer {
+  destroy(): void;
+  pauseVideo(): void;
+  playVideo(): void;
+}
+
+interface YouTubePlayerEvent {
+  data: number;
+  target: YouTubePlayer;
+}
+
+interface YouTubeApi {
+  Player: new (
+    element: HTMLElement,
+    options: {
+      width: string;
+      height: string;
+      videoId: string;
+      playerVars: Record<string, string | number>;
+      events: {
+        onReady: (event: YouTubePlayerEvent) => void;
+        onStateChange: (event: YouTubePlayerEvent) => void;
+      };
+    },
+  ) => YouTubePlayer;
+  PlayerState: { PLAYING: number; PAUSED: number };
+}
+
+function getYouTubeApi(): YouTubeApi | undefined {
+  return (window as Window & { YT?: YouTubeApi }).YT;
+}
+
 // Load the YouTube IFrame API once.
-let ytApiPromise: Promise<any> | null = null;
-function loadYouTubeApi(): Promise<any> {
+let ytApiPromise: Promise<YouTubeApi> | null = null;
+function loadYouTubeApi(): Promise<YouTubeApi> {
   if (ytApiPromise) return ytApiPromise;
   ytApiPromise = new Promise((resolve) => {
-    if ((window as any).YT && (window as any).YT.Player) {
-      resolve((window as any).YT);
+    const api = getYouTubeApi();
+    if (api?.Player) {
+      resolve(api);
       return;
     }
-    const prev = (window as any).onYouTubeIframeAPIReady;
-    (window as any).onYouTubeIframeAPIReady = () => {
+    const browserWindow = window as Window & {
+      onYouTubeIframeAPIReady?: () => void;
+    };
+    const prev = browserWindow.onYouTubeIframeAPIReady;
+    browserWindow.onYouTubeIframeAPIReady = () => {
       if (typeof prev === 'function') { try { prev(); } catch { /* noop */ } }
-      resolve((window as any).YT);
+      const loadedApi = getYouTubeApi();
+      if (loadedApi?.Player) resolve(loadedApi);
     };
     if (!document.getElementById('youtube-iframe-api')) {
       const script = document.createElement('script');
@@ -98,7 +135,7 @@ export default function YoutubeLibraryPage() {
   const [search, setSearch] = useState('');
   const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
 
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
 
   const PAGE_SIZE = 30;
@@ -173,8 +210,8 @@ export default function YoutubeLibraryPage() {
         videoId,
         playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
         events: {
-          onReady: (e: any) => { try { e.target.playVideo(); } catch { /* noop */ } },
-          onStateChange: (e: any) => {
+          onReady: (e: YouTubePlayerEvent) => { try { e.target.playVideo(); } catch { /* noop */ } },
+          onStateChange: (e: YouTubePlayerEvent) => {
             if (e.data === YT.PlayerState.PLAYING) setIsPaused(false);
             else if (e.data === YT.PlayerState.PAUSED) setIsPaused(true);
           },

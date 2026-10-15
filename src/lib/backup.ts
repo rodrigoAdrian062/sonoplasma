@@ -1,15 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 
 export interface BackupData {
   formato: string;
   versao: number;
   exportado_em: string;
-  secoes: any[];
-  etapas: any[];
-  etapa_audios: any[];
-  pastas: any[];
-  biblioteca: any[];
-  faixas: any[];
+  secoes: Tables<'sonoplastia_secoes'>[];
+  etapas: Tables<'sonoplastia_etapas'>[];
+  etapa_audios: Tables<'sonoplastia_etapa_audios'>[];
+  pastas: Tables<'sonoplastia_audios_pastas'>[];
+  biblioteca: Tables<'sonoplastia_audios_biblioteca'>[];
+  faixas: Tables<'sonoplastia_faixas'>[];
 }
 
 const BACKUP_FORMAT = 'sonoplasma-backup';
@@ -54,7 +55,15 @@ export function downloadBackup(data: BackupData) {
   URL.revokeObjectURL(url);
 }
 
-function stripMeta(row: Record<string, any>): any {
+function stripMeta<T extends {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  owner_id?: string | null;
+  user_id?: string;
+}>(
+  row: T,
+): Omit<T, 'id' | 'created_at' | 'updated_at' | 'owner_id' | 'user_id'> {
   const { id, created_at, updated_at, owner_id, user_id, ...rest } = row;
   return rest;
 }
@@ -95,7 +104,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
   // Etapas (religa secao_id)
   const etapaMap = new Map<string, string>();
   for (const e of data.etapas || []) {
-    const payload: any = stripMeta(e);
+    const payload = stripMeta(e);
     if (e.secao_id) payload.secao_id = secaoMap.get(e.secao_id) ?? null;
     const { data: ins, error } = await supabase
       .from('sonoplastia_etapas')
@@ -109,7 +118,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
 
   // Áudios das etapas (religa etapa_id)
   for (const a of data.etapa_audios || []) {
-    const payload: any = stripMeta(a);
+    const payload = stripMeta(a);
     if (a.etapa_id) {
       const newId = etapaMap.get(a.etapa_id);
       if (!newId) continue;
@@ -123,7 +132,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
   // Pastas da biblioteca
   const pastaMap = new Map<string, string>();
   for (const p of data.pastas || []) {
-    const payload: any = stripMeta(p);
+    const payload = stripMeta(p);
     // Insere primeiro sem pai para permitir backups em qualquer ordem.
     payload.parent_id = null;
     const { data: ins, error } = await supabase
@@ -150,7 +159,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
 
   // Biblioteca (religa pasta_id)
   for (const b of data.biblioteca || []) {
-    const payload: any = stripMeta(b);
+    const payload = stripMeta(b);
     if (b.pasta_id) payload.pasta_id = pastaMap.get(b.pasta_id) ?? null;
     const { error } = await supabase.from('sonoplastia_audios_biblioteca').insert(payload);
     if (error) throw error;

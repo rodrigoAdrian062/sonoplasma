@@ -50,6 +50,36 @@ interface AudioDragPickerProps {
 
 type AddMode = 'upload' | 'youtube' | 'spotify' | 'link';
 
+interface YouTubePreviewPlayer {
+  destroy(): void;
+  getCurrentTime(): number;
+  getDuration(): number;
+  pauseVideo(): void;
+  playVideo(): void;
+  setVolume(volume: number): void;
+  stopVideo(): void;
+}
+
+interface YouTubePreviewOptions {
+  height: string;
+  width: string;
+  videoId: string;
+  playerVars: Record<string, string | number | boolean>;
+  events: {
+    onReady: (event: { target: YouTubePreviewPlayer }) => void;
+    onStateChange: (event: { data: number; target: YouTubePreviewPlayer }) => void;
+    onError: () => void;
+  };
+}
+
+interface YouTubePreviewWindow extends Window {
+  YT?: {
+    Player: new (elementId: string, options: YouTubePreviewOptions) => YouTubePreviewPlayer;
+    PlayerState: { ENDED: number };
+  };
+  onYouTubeIframeAPIReady?: () => void;
+}
+
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
 
@@ -114,8 +144,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const [curTime, setCurTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const ytPlayerRef = useRef<any>(null);
-  const ytPollRef = useRef<any>(null);
+  const ytPlayerRef = useRef<YouTubePreviewPlayer | null>(null);
+  const ytPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggingUrl, setDraggingUrl] = useState<string | null>(null);
 
@@ -209,7 +239,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     const base = suggested ?? library;
     return base.filter((a) => {
       // Mantém áudios já selecionados visíveis com estado "Em uso" (não selecionáveis)
-      const scoped = suggested || search || sourceFilter !== 'all' ? true : (a as any).pasta_id === currentFolderId;
+      const scoped = suggested || search || sourceFilter !== 'all' ? true : a.pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return scoped && matches && matchesSource(a.audio_url);
     });
@@ -360,17 +390,18 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     container.appendChild(playerDiv);
 
     const initPlayer = () => {
-      if (!(window as any).YT || !(window as any).YT.Player) {
+      const youtubeApi = (window as YouTubePreviewWindow).YT;
+      if (!youtubeApi?.Player) {
         setTimeout(initPlayer, 100);
         return;
       }
-      ytPlayerRef.current = new (window as any).YT.Player('yt-picker-player', {
+      ytPlayerRef.current = new youtubeApi.Player('yt-picker-player', {
         height: '1',
         width: '1',
         videoId,
         playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0 },
         events: {
-          onReady: (e: any) => {
+          onReady: (e) => {
             e.target.setVolume(70);
             e.target.playVideo();
             setPlayingUrl(url);
@@ -382,8 +413,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
               } catch { /* noop */ }
             }, 500);
           },
-          onStateChange: (e: any) => {
-            const YT = (window as any).YT;
+          onStateChange: (e) => {
+            const YT = (window as YouTubePreviewWindow).YT;
             if (e.data === YT.PlayerState.ENDED) stopPreview();
           },
           onError: () => { toast.error('Erro ao reproduzir vídeo'); stopPreview(); },
@@ -391,11 +422,12 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       });
     };
 
-    if (!(window as any).YT) {
+    const youtubeWindow = window as YouTubePreviewWindow;
+    if (!youtubeWindow.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       document.getElementsByTagName('script')[0]?.parentNode?.insertBefore(tag, document.getElementsByTagName('script')[0]);
-      (window as any).onYouTubeIframeAPIReady = initPlayer;
+      youtubeWindow.onYouTubeIframeAPIReady = initPlayer;
     } else {
       initPlayer();
     }
@@ -523,7 +555,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       for (const file of Array.from(files)) {
         const name = files.length === 1 && newName ? newName : file.name.replace(/\.[^/.]+$/, '');
         try {
-          const res: any = await uploadAndAddAudio(file, name);
+          const res = await uploadAndAddAudio(file, name);
           if (!atMax && res?.audio_url) onChange([...audios, { nome: res.nome, audio_url: res.audio_url }]);
         } catch {
           /* handled in hook */
@@ -797,7 +829,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-foreground">{folder.nome}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {library.filter((a) => (a as any).pasta_id === folder.id).length} áudio(s)
+                          {library.filter((a) => a.pasta_id === folder.id).length} áudio(s)
                         </p>
                       </div>
                     </button>

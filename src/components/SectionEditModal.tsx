@@ -47,8 +47,8 @@ export function SectionEditModal({
         nome: section.nome,
         descricao: section.descricao || '',
         icone: section.icone || 'folder',
-        icone_url: (section as any).icone_url || null,
-        reproducao_continua: (section as any).reproducao_continua || false,
+        icone_url: section.icone_url || null,
+        reproducao_continua: section.reproducao_continua || false,
       });
     } else if (isNew) {
       setFormData({
@@ -67,7 +67,7 @@ export function SectionEditModal({
       return;
     }
 
-    const data: any = {
+    const data: CeremonySectionInsert | CeremonySectionUpdate = {
       nome: formData.nome,
       descricao: formData.descricao || null,
       icone: formData.icone,

@@ -17,10 +17,10 @@ export function useSettings() {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      const rows = (data || []) as AppSettings[];
+      const rows = data || [];
       // Prefer the user's own settings; fall back to the shared model row.
-      const own = user?.id ? rows.find((r) => (r as any).owner_id === user.id) : undefined;
-      return (own ?? rows[0] ?? null) as AppSettings | null;
+      const own = user?.id ? rows.find((r) => r.owner_id === user.id) : undefined;
+      return own ?? rows[0] ?? null;
     },
   });
 
@@ -41,7 +41,7 @@ export function useSettings() {
       // No settings row yet -> create the first one.
       const { data, error } = await supabase
         .from('sonoplastia_configuracoes')
-        .insert({ ...updates } as any)
+        .insert(updates)
         .select()
         .single();
       if (error) throw error;

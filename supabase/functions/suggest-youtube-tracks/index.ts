@@ -94,11 +94,14 @@ Sugira ${limit} músicas REAIS e conhecidas do YouTube que combinem perfeitament
       return json({ error: `Falha na API OpenAI (${aiRes.status}). Tente novamente mais tarde.` }, 500);
     }
 
-    const data = await aiRes.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? '{}';
-    let parsed: any = {};
+    const data: unknown = await aiRes.json();
+    const content = getResponseContent(data);
+    let parsed: unknown = {};
     try { parsed = JSON.parse(content); } catch { /* ignore */ }
-    const rawList: any[] = Array.isArray(parsed?.suggestions) ? parsed.suggestions : [];
+    const parsedRecord = isRecord(parsed) ? parsed : {};
+    const rawList = Array.isArray(parsedRecord.suggestions)
+      ? parsedRecord.suggestions.filter(isRecord)
+      : [];
 
     const suggestions: Suggestion[] = rawList
       .filter((s) => s && typeof s.nome === 'string' && s.nome.trim())
@@ -127,10 +130,21 @@ Sugira ${limit} músicas REAIS e conhecidas do YouTube que combinem perfeitament
       });
 
     return json({ suggestions });
-  } catch (e: any) {
-    return json({ error: e?.message ?? 'Erro inesperado' }, 500);
+  } catch (e: unknown) {
+    return json({ error: e instanceof Error ? e.message : 'Erro inesperado' }, 500);
   }
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getResponseContent(data: unknown): string {
+  if (!isRecord(data) || !Array.isArray(data.choices)) return '{}';
+  const firstChoice: unknown = data.choices[0];
+  if (!isRecord(firstChoice) || !isRecord(firstChoice.message)) return '{}';
+  return typeof firstChoice.message.content === 'string' ? firstChoice.message.content : '{}';
+}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {

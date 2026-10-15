@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors, Palette } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors, Palette, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -115,7 +115,9 @@ interface QuickSoundsHorizontalBarProps {
   sounds: QuickSound[];
   playingId: string | null;
   draggingId: string | null;
+  expandedActionsId: string | null;
   onAdd: () => void;
+  onToggleActions: (soundId: string) => void;
   onPlay: (sound: QuickSound) => void;
   onDrop: (targetId: string, event: React.DragEvent<HTMLDivElement>) => void;
   onDragStart: (soundId: string, event: React.DragEvent<HTMLButtonElement>) => void;
@@ -132,7 +134,9 @@ function QuickSoundsHorizontalBar({
   sounds,
   playingId,
   draggingId,
+  expandedActionsId,
   onAdd,
+  onToggleActions,
   onPlay,
   onDrop,
   onDragStart,
@@ -188,7 +192,7 @@ function QuickSoundsHorizontalBar({
               onClick={() => onPlay(sound)}
               title={sound.nome}
               className={cn(
-                'flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 text-left text-[10px] font-medium transition-colors',
+                'flex h-9 w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 pr-12 text-left text-[10px] font-medium transition-colors',
                 playingId === sound.id
                   ? 'bg-gold text-background'
                   : 'bg-secondary/70 text-foreground hover:bg-gold/15 hover:text-gold'
@@ -201,7 +205,29 @@ function QuickSoundsHorizontalBar({
                 <Scissors size={9} className="shrink-0 text-gold" />
               )}
             </button>
-            <div className="mt-1 flex h-5 items-center justify-end gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+            <div className="absolute right-1 top-1 flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => onToggleActions(sound.id)}
+                className="flex h-5 w-5 items-center justify-center rounded bg-background/80 text-muted-foreground hover:text-gold"
+                title={expandedActionsId === sound.id ? 'Ocultar ferramentas' : 'Mostrar ferramentas'}
+                aria-label={expandedActionsId === sound.id ? `Ocultar ferramentas de ${sound.nome}` : `Mostrar ferramentas de ${sound.nome}`}
+                aria-expanded={expandedActionsId === sound.id}
+              >
+                {expandedActionsId === sound.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => onRemove(sound.id)}
+                className="flex h-5 w-5 items-center justify-center rounded bg-background/80 text-muted-foreground hover:text-destructive"
+                title="Remover som"
+                aria-label={`Remover ${sound.nome}`}
+              >
+                <X size={11} />
+              </button>
+            </div>
+            {expandedActionsId === sound.id && (
+            <div className="mt-1 flex h-5 items-center justify-end gap-1">
               <button
                 type="button"
                 draggable
@@ -252,16 +278,8 @@ function QuickSoundsHorizontalBar({
               >
                 <Pencil size={10} />
               </button>
-              <button
-                type="button"
-                onClick={() => onRemove(sound.id)}
-                className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive"
-                title="Remover som"
-                aria-label={`Remover ${sound.nome}`}
-              >
-                <X size={11} />
-              </button>
             </div>
+            )}
           </div>
         ))}
       </div>
@@ -285,6 +303,7 @@ export function QuickSoundsPanel({
   const [sounds, setSounds] = useState<QuickSound[]>(() => loadSounds(storageKey));
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
   const [horizontalPortalTarget, setHorizontalPortalTarget] = useState<HTMLElement | null>(null);
   const [compactVertical, setCompactVertical] = useState(() => localStorage.getItem('sonoplastia:quickSoundsVertical') === 'true');
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -935,6 +954,8 @@ export function QuickSoundsPanel({
             playingId={playingId}
             draggingId={draggingId}
             onAdd={() => setPickerOpen(true)}
+            expandedActionsId={expandedActionsId}
+            onToggleActions={(id) => setExpandedActionsId((current) => current === id ? null : id)}
             onPlay={trigger}
             onDrop={(targetId, event) => {
               event.preventDefault();
@@ -1042,7 +1063,29 @@ export function QuickSoundsPanel({
                 )}
                 <span className="truncate">{s.nome}</span>
               </button>
-              <div className="absolute -top-1 -right-1 flex flex-col gap-0.5 pointer-events-auto">
+              <div className="absolute -top-1 -right-1 flex items-center gap-0.5 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={() => setExpandedActionsId((current) => current === s.id ? null : s.id)}
+                  className="h-4 w-4 rounded-full flex items-center justify-center border border-background bg-secondary/90 text-muted-foreground hover:text-gold shadow-sm"
+                  title={expandedActionsId === s.id ? 'Ocultar ferramentas' : 'Mostrar ferramentas'}
+                  aria-label={expandedActionsId === s.id ? `Ocultar ferramentas de ${s.nome}` : `Mostrar ferramentas de ${s.nome}`}
+                  aria-expanded={expandedActionsId === s.id}
+                >
+                  {expandedActionsId === s.id ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeSound(s.id)}
+                  className="h-4 w-4 rounded-full flex items-center justify-center border border-background bg-destructive text-destructive-foreground shadow-sm"
+                  title="Remover atalho"
+                  aria-label={`Remover ${s.nome}`}
+                >
+                  <X size={9} />
+                </button>
+              </div>
+              {expandedActionsId === s.id && (
+              <div className="absolute right-0 top-4 z-20 grid grid-cols-3 gap-0.5 rounded-md border border-border bg-card/95 p-1 shadow-lg pointer-events-auto">
                 <button
                   type="button"
                   draggable
@@ -1092,6 +1135,7 @@ export function QuickSoundsPanel({
                 </button>
                 <QuickSoundColorInput sound={s} onChange={setSoundColor} />
               </div>
+              )}
             </div>
           ))}
           {sounds.length < MAX_SLOTS && (
@@ -1200,7 +1244,7 @@ export function QuickSoundsPanel({
                   title={`${s.nome} · arraste para reordenar`}
                   aria-label={`${s.nome}. Arraste para reordenar ou use as setas do teclado.`}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 rounded-xl border text-left transition-all',
+                    'w-full flex items-center gap-2 px-2.5 pr-12 rounded-xl border text-left transition-all',
                     fullHeight ? 'py-3' : 'py-2',
                     playingId === s.id
                       ? 'bg-gold text-background border-gold shadow-lg shadow-gold/20'
@@ -1224,7 +1268,29 @@ export function QuickSoundsPanel({
                     <Scissors size={10} className="shrink-0 text-gold" />
                   )}
                 </button>
-                <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <div className="absolute -top-1.5 -right-1.5 flex items-center gap-0.5 opacity-90 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedActionsId((current) => current === s.id ? null : s.id)}
+                    className="h-4 w-4 rounded-full bg-secondary text-muted-foreground flex items-center justify-center shadow-sm hover:text-gold"
+                    title={expandedActionsId === s.id ? 'Ocultar ferramentas' : 'Mostrar ferramentas'}
+                    aria-label={expandedActionsId === s.id ? `Ocultar ferramentas de ${s.nome}` : `Mostrar ferramentas de ${s.nome}`}
+                    aria-expanded={expandedActionsId === s.id}
+                  >
+                    {expandedActionsId === s.id ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSound(s.id)}
+                    className="h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-sm"
+                    title="Remover atalho"
+                    aria-label={`Remover ${s.nome}`}
+                  >
+                    <X size={9} />
+                  </button>
+                </div>
+                {expandedActionsId === s.id && (
+                <div className="mt-1 flex items-center justify-end gap-1">
                   <button
                     type="button"
                     draggable
@@ -1280,14 +1346,8 @@ export function QuickSoundsPanel({
                   >
                     <Pencil size={8} />
                   </button>
-                  <button
-                    onClick={() => removeSound(s.id)}
-                    className="h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-                    title="Remover atalho"
-                  >
-                    <X size={9} />
-                  </button>
                 </div>
+                )}
 
               </>
             )}

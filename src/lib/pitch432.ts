@@ -1,7 +1,6 @@
 // Frequências curativas — pitch-shift em tempo real preservando a velocidade.
 // Fator aplicado ao pitch: hz/440. Ex.: 432/440 = 0,98181...
 import { SoundTouchNode } from '@soundtouchjs/audio-worklet';
-// eslint-disable-next-line import/no-unresolved
 import processorUrl from '@soundtouchjs/audio-worklet/processor?url';
 
 export const RATIO_432 = 432 / 440;
@@ -94,7 +93,7 @@ function readTrackMap(): TrackMap {
   } catch { /* noop */ }
   return {};
 }
-let trackMap: TrackMap = typeof window !== 'undefined' ? readTrackMap() : {};
+const trackMap: TrackMap = typeof window !== 'undefined' ? readTrackMap() : {};
 
 export function getTrackHz(url: string | null | undefined): number | null {
   if (!url) return null;

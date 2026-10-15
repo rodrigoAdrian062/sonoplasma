@@ -6,13 +6,52 @@ import { getYouTubeVideoId } from '@/lib/embedUrl';
 const CONTAINER_ID = 'qs-yt-player-container';
 const PLAYER_ID = 'qs-yt-player';
 
-let player: any = null;
+interface YouTubePlayer {
+  __onEnded?: () => void;
+  setLoop?: (loop: boolean) => void;
+  loadVideoById: (videoId: string) => void;
+  setVolume: (volume: number) => void;
+  unMute?: () => void;
+  playVideo: () => void;
+  seekTo: (seconds: number) => void;
+  stopVideo?: () => void;
+  destroy?: () => void;
+}
+
+interface YouTubePlayerEvent {
+  target: YouTubePlayer;
+  data: number;
+}
+
+interface YouTubeApi {
+  PlayerState: { ENDED: number };
+  Player: new (
+    elementId: string,
+    options: {
+      height: string;
+      width: string;
+      videoId: string;
+      host: string;
+      playerVars: Record<string, string | number>;
+      events: {
+        onReady: (event: YouTubePlayerEvent) => void;
+        onStateChange: (event: YouTubePlayerEvent) => void;
+        onError: () => void;
+      };
+    },
+  ) => YouTubePlayer;
+}
+
+function getYouTubeApi(): YouTubeApi | undefined {
+  return (window as Window & { YT?: YouTubeApi }).YT;
+}
+
+let player: YouTubePlayer | null = null;
 let ready = false;
 
 function loadApi(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const w = window as any;
-    if (w.YT?.Player) return resolve();
+    if (getYouTubeApi()?.Player) return resolve();
     if (!document.getElementById('youtube-iframe-api')) {
       const tag = document.createElement('script');
       tag.id = 'youtube-iframe-api';
@@ -22,7 +61,7 @@ function loadApi(): Promise<void> {
     }
     let tries = 0;
     const timer = window.setInterval(() => {
-      if ((window as any).YT?.Player) {
+      if (getYouTubeApi()?.Player) {
         window.clearInterval(timer);
         resolve();
       } else if (++tries > 150) {
@@ -74,7 +113,8 @@ export async function playQuickYouTube(
   div.id = PLAYER_ID;
   host.appendChild(div);
 
-  const YT = (window as any).YT;
+  const YT = getYouTubeApi();
+  if (!YT) throw new Error('Não foi possível carregar o player do YouTube.');
   ready = false;
   player = new YT.Player(PLAYER_ID, {
     height: '1',
@@ -92,14 +132,14 @@ export async function playQuickYouTube(
       origin: window.location.origin,
     },
     events: {
-      onReady: (e: any) => {
+      onReady: (e) => {
         ready = true;
         player.__onEnded = opts.onEnded;
         e.target.setVolume(Math.round(opts.volume * 100));
         e.target.unMute?.();
         e.target.playVideo();
       },
-      onStateChange: (e: any) => {
+      onStateChange: (e) => {
         if (e.data === YT.PlayerState.ENDED) {
           if (opts.loop) {
             try { player.seekTo(0); player.playVideo(); } catch { /* noop */ }

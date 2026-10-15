@@ -22,8 +22,8 @@ export function BackupSection() {
       const data = await exportBackup();
       downloadBackup(data);
       toast.success('Backup exportado com sucesso.');
-    } catch (e: any) {
-      toast.error('Erro ao exportar', { description: e.message });
+    } catch (e: unknown) {
+      toast.error('Erro ao exportar', { description: e instanceof Error ? e.message : String(e) });
     } finally {
       setIsExporting(false);
     }
@@ -43,8 +43,8 @@ export function BackupSection() {
       toast.success('Backup importado', {
         description: `${res.secoes} seções, ${res.etapas} etapas, ${res.biblioteca} músicas restauradas.`,
       });
-    } catch (err: any) {
-      toast.error('Erro ao importar', { description: err.message });
+    } catch (err: unknown) {
+      toast.error('Erro ao importar', { description: err instanceof Error ? err.message : String(err) });
     } finally {
       setIsImporting(false);
     }

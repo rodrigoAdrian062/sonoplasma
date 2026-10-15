@@ -36,7 +36,7 @@ import {
 
 interface StageCardProps {
   stage: CeremonyStage;
-  audios: StageAudio[];
+  audios: StageAudioWithSource[];
   stageNumber?: number;
   isPlaying: boolean;
   isPaused: boolean;
@@ -53,6 +53,8 @@ interface StageCardProps {
   onSeekTo?: (seconds: number) => void;
   continuousPlayback?: boolean;
 }
+
+type StageAudioWithSource = StageAudio & { tipo?: string | null };
 
 function readStoredVolumeSettings(stageId: string): StageVolumeSettings {
   try {
@@ -113,7 +115,9 @@ export function StageCard({
         const idx = audios.findIndex((a) => a.audio_url === savedUrl);
         if (idx >= 0) return idx;
       }
-    } catch {}
+    } catch {
+      // Keep the default selection when browser storage is unavailable.
+    }
     return 0;
   });
 
@@ -124,8 +128,10 @@ export function StageCard({
     try {
       const saved = localStorage.getItem(stageVolumeKey);
       if (saved !== null) return Number(saved);
-    } catch {}
-    return (stage as any).volume_config ?? 0.7;
+    } catch {
+      // Use the server-provided volume when browser storage is unavailable.
+    }
+    return stage.volume_config ?? 0.7;
   });
   const [stageVolumeSettings, setStageVolumeSettings] = useState<StageVolumeSettings>(() => {
     const stored = readStoredVolumeSettings(stage.id);
@@ -171,7 +177,9 @@ export function StageCard({
   };
 
   useEffect(() => {
-    try { localStorage.setItem(stageVolumeKey, String(stageVolume)); } catch {}
+    try { localStorage.setItem(stageVolumeKey, String(stageVolume)); } catch {
+      // Volume remains active in memory when browser storage is unavailable.
+    }
   }, [stageVolume, stageVolumeKey]);
 
   useEffect(() => {
@@ -239,7 +247,9 @@ export function StageCard({
   useEffect(() => {
     const a = audios[selectedAudioIndex];
     if (!a) return;
-    try { localStorage.setItem(armedKey, a.audio_url); } catch {}
+    try { localStorage.setItem(armedKey, a.audio_url); } catch {
+      // Keep the prepared audio active in memory when storage is unavailable.
+    }
   }, [selectedAudioIndex, audios, armedKey]);
   const { currentUrl } = useUniversalAudioPlayer();
 
@@ -259,7 +269,9 @@ export function StageCard({
     setCollapsed((c) => {
       const next = !c;
       if (!next) {
-        try { window.dispatchEvent(new CustomEvent('stage:expanded', { detail: { id: stage.id } })); } catch {}
+        try { window.dispatchEvent(new CustomEvent('stage:expanded', { detail: { id: stage.id } })); } catch {
+          // The local expansion event is an optional cross-card coordination hint.
+        }
       }
       return next;
     });
@@ -290,7 +302,9 @@ export function StageCard({
   };
   const handleTimerEnabledChange = (enabled: boolean) => {
     setUseTimerEnabled(enabled);
-    try { saveStageTimerEnabled(stage.id, enabled); } catch {}
+    try { saveStageTimerEnabled(stage.id, enabled); } catch {
+      // Timer behavior remains available in memory if preference storage fails.
+    }
     if (!enabled) timer.reset();
     else if (isPlaying || isPaused) timer.start(customTime);
   };
@@ -475,8 +489,12 @@ export function StageCard({
     );
     const seconds = clamped * 60;
     setCustomTime(seconds);
-    try { saveStageTimerSeconds(stage.id, seconds); } catch {}
-    try { saveStageTimerSeconds(stage.id, seconds); } catch {}
+    try { saveStageTimerSeconds(stage.id, seconds); } catch {
+      // Timer behavior remains available in memory if preference storage fails.
+    }
+    try { saveStageTimerSeconds(stage.id, seconds); } catch {
+      // Preserve the existing best-effort preference persistence behavior.
+    }
     // Permite alterar o tempo mesmo com a música tocando
     if (timer.isRunning || timer.isPaused) {
       timer.setTime(seconds);
@@ -595,10 +613,10 @@ export function StageCard({
             className={cn(
               'shrink-0 rounded-xl overflow-hidden transition-all duration-300 ring-1',
               isActive ? 'bg-gold/15 ring-gold/30' : 'bg-secondary/80 ring-border/30 group-hover:ring-gold/25',
-              (stage as any).icone_url ? 'p-0.5' : 'p-1.5 sm:p-2'
+              stage.icone_url ? 'p-0.5' : 'p-1.5 sm:p-2'
             )}
           >
-            <CeremonyIcon name={stage.icone} imageUrl={(stage as any).icone_url} size={(stage as any).icone_url ? 32 : 16} className="sm:!w-[18px] sm:!h-[18px]" />
+            <CeremonyIcon name={stage.icone} imageUrl={stage.icone_url} size={stage.icone_url ? 32 : 16} className="sm:!w-[18px] sm:!h-[18px]" />
           </div>
 
 
@@ -826,7 +844,7 @@ export function StageCard({
                   : 'bg-secondary/50 border-border/40 text-foreground hover:border-gold/25'
               )}
             >
-              <AudioSourceIcon url={currentAudio?.audio_url} tipo={(currentAudio as any)?.tipo} size={14} active />
+              <AudioSourceIcon url={currentAudio?.audio_url} tipo={currentAudio?.tipo} size={14} active />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate flex items-center gap-1.5">
                   <span className="truncate">{currentAudio?.nome || `Áudio ${selectedAudioIndex + 1}`}</span>
@@ -885,7 +903,7 @@ export function StageCard({
                           : 'hover:bg-secondary/60 text-foreground'
                       )}
                     >
-                      <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} active={index === selectedAudioIndex} />
+                      <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={12} active={index === selectedAudioIndex} />
                       <span className="text-xs truncate flex-1 min-w-0 block">{audio.nome || `Áudio ${index + 1}`}</span>
                       <TrackHzBadge url={audio.audio_url} playing={isPlaying && index === selectedAudioIndex} />
                       {index === selectedAudioIndex && !isActive && (

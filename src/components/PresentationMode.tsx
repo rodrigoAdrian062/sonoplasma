@@ -102,7 +102,7 @@ function readStageColors(): Record<string, string> {
 
 interface PresentationModeProps {
   stages: CeremonyStage[];
-  audiosByStageId: Record<string, StageAudio[]>;
+  audiosByStageId: Record<string, PresentationAudio[]>;
   currentStageId: string | null;
   currentUrl?: string | null;
   secaoId?: string;
@@ -132,6 +132,48 @@ interface PresentationModeProps {
 export function PresentationMode(props: PresentationModeProps) {
   return <PresentationContent {...props} />;
 }
+
+type PresentationAudio = StageAudio & { tipo?: string | null };
+
+interface MidiMessageLike {
+  data: Uint8Array;
+}
+
+interface MidiInputLike {
+  state: string;
+  onmidimessage: ((event: MidiMessageLike) => void) | null;
+}
+
+interface MidiInputMapLike {
+  forEach(callback: (input: MidiInputLike) => void): void;
+}
+
+interface MidiAccessLike {
+  inputs: MidiInputMapLike;
+  onstatechange: ((event: Event) => void) | null;
+}
+
+interface WakeLockSentinelLike {
+  release(): Promise<void>;
+}
+
+interface VendorFullscreenElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+  webkitRequestFullScreen?: () => Promise<void> | void;
+  mozRequestFullScreen?: () => Promise<void> | void;
+  msRequestFullscreen?: () => Promise<void> | void;
+}
+
+interface VendorFullscreenDocument extends Document {
+  webkitExitFullscreen?: () => Promise<void> | void;
+  mozCancelFullScreen?: () => Promise<void> | void;
+  msExitFullscreen?: () => Promise<void> | void;
+}
+
+type BrowserNavigator = Navigator & {
+  wakeLock?: { request(type: 'screen'): Promise<WakeLockSentinelLike> };
+  requestMIDIAccess?: () => Promise<MidiAccessLike>;
+};
 
 function PresentationContent({
   stages,
@@ -196,7 +238,7 @@ function PresentationContent({
   const stageColorsDirtyRef = useRef(false);
   const [showEQ, setShowEQ] = useState(false);
   const [showVolume, setShowVolume] = useState(false);
-  const [midiAccess, setMidiAccess] = useState<any>(null);
+  const [midiAccess, setMidiAccess] = useState<MidiAccessLike | null>(null);
   const [midiEnabled, setMidiEnabled] = useState(false);
   const [midiConnected, setMidiConnected] = useState(false);
   const focusMode = false;
@@ -390,7 +432,7 @@ function PresentationContent({
       if (savedVol !== null) {
         setStageVolume(Number(savedVol));
       } else {
-        setStageVolume((currentStage as any).volume_config ?? 0.7);
+        setStageVolume(currentStage.volume_config ?? 0.7);
       }
       let localSettings: Partial<StageVolumeSettings> = {};
       try {
@@ -439,16 +481,17 @@ function PresentationContent({
   // para reduzir interrupções de sons/alertas de outros apps durante a apresentação.
   useEffect(() => {
     if (!focusMode) return;
-    let wakeLock: any = null;
+    let wakeLock: WakeLockSentinelLike | null = null;
     let released = false;
 
     const requestWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await (navigator as any).wakeLock.request('screen');
+        const screenWakeLock = (navigator as BrowserNavigator).wakeLock;
+        if (screenWakeLock) {
+          wakeLock = await screenWakeLock.request('screen');
         }
       } catch {
-        /* ignora se não suportado */
+        /* The browser may not support Wake Lock or may deny the request. */
       }
     };
     requestWakeLock();
@@ -461,13 +504,13 @@ function PresentationContent({
     // Media Session: informa ao sistema que este app está reproduzindo áudio
     if ('mediaSession' in navigator) {
       try {
-        (navigator as any).mediaSession.metadata = new (window as any).MediaMetadata({
+        navigator.mediaSession.metadata = new window.MediaMetadata({
           title: 'Apresentação em andamento',
           artist: 'Sonoplastia',
         });
-        (navigator as any).mediaSession.playbackState = 'playing';
+        navigator.mediaSession.playbackState = 'playing';
       } catch {
-        /* ignora */
+        /* Media Session metadata is an optional browser integration. */
       }
     }
 
@@ -475,10 +518,12 @@ function PresentationContent({
       released = true;
       document.removeEventListener('visibilitychange', handleVisibility);
       if (wakeLock) {
-        try { wakeLock.release(); } catch { /* ignora */ }
+        wakeLock.release().catch((error: unknown) => {
+          console.warn('Could not release screen wake lock:', error);
+        });
       }
       if ('mediaSession' in navigator) {
-        try { (navigator as any).mediaSession.playbackState = 'none'; } catch { /* ignora */ }
+        try { navigator.mediaSession.playbackState = 'none'; } catch { /* Media Session cleanup is best-effort. */ }
       }
     };
   }, [focusMode]);
@@ -498,7 +543,7 @@ function PresentationContent({
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
-        const el: any = containerRef.current || document.documentElement;
+        const el: VendorFullscreenElement = containerRef.current || document.documentElement;
         const request =
           el.requestFullscreen ||
           el.webkitRequestFullscreen ||
@@ -512,11 +557,16 @@ function PresentationContent({
         await request.call(el);
         setIsFullscreen(true);
       } else {
-        const exit: any =
+        const fullscreenDocument = document as VendorFullscreenDocument;
+        const exit =
           document.exitFullscreen ||
-          (document as any).webkitExitFullscreen ||
-          (document as any).mozCancelFullScreen ||
-          (document as any).msExitFullscreen;
+          fullscreenDocument.webkitExitFullscreen ||
+          fullscreenDocument.mozCancelFullScreen ||
+          fullscreenDocument.msExitFullscreen;
+        if (!exit) {
+          toast.error('Tela cheia não é suportada neste navegador.');
+          return;
+        }
         await exit.call(document);
         setIsFullscreen(false);
       }
@@ -563,7 +613,7 @@ function PresentationContent({
       return;
     }
     try {
-      const requestMIDIAccess = (navigator as any).requestMIDIAccess;
+      const requestMIDIAccess = (navigator as BrowserNavigator).requestMIDIAccess;
       if (!requestMIDIAccess) {
         toast.error('Este navegador não oferece suporte a dispositivos MIDI.');
         return;
@@ -580,13 +630,13 @@ function PresentationContent({
     if (!midiEnabled || !midiAccess) return;
     const attachInputs = () => {
       let connectedInputs = 0;
-      midiAccess.inputs.forEach((input: any) => {
+      midiAccess.inputs.forEach((input) => {
         if (input.state !== 'connected') {
           input.onmidimessage = null;
           return;
         }
         connectedInputs += 1;
-        input.onmidimessage = (event: any) => {
+        input.onmidimessage = (event) => {
           const [statusByte, controller, value] = event.data || [];
           // CC7 (volume) é o controle MIDI padrão para volume.
           if ((statusByte & 0xf0) === 0xb0 && controller === 7 && Number.isFinite(value)) {
@@ -599,7 +649,7 @@ function PresentationContent({
     attachInputs();
     midiAccess.onstatechange = attachInputs;
     return () => {
-      midiAccess.inputs.forEach((input: any) => { input.onmidimessage = null; });
+      midiAccess.inputs.forEach((input) => { input.onmidimessage = null; });
       midiAccess.onstatechange = null;
     };
   }, [midiEnabled, midiAccess, onVolumeChange]);
@@ -786,14 +836,18 @@ function PresentationContent({
     const seconds = clamped * 60;
     setCustomTime(seconds);
     if (currentStage) {
-      try { saveStageTimerSeconds(currentStage.id, seconds); } catch {}
+      try { saveStageTimerSeconds(currentStage.id, seconds); } catch {
+        // The timer remains usable in memory when browser storage is unavailable.
+      }
     }
   };
 
   const handleTimerEnabledChange = (enabled: boolean) => {
     setUseTimerEnabled(enabled);
     if (currentStage) {
-      try { saveStageTimerEnabled(currentStage.id, enabled); } catch {}
+      try { saveStageTimerEnabled(currentStage.id, enabled); } catch {
+        // The timer remains usable in memory when browser storage is unavailable.
+      }
     }
     if (!enabled) timer.reset();
     else if (isActive) timer.start(customTime);
@@ -1327,7 +1381,7 @@ function PresentationContent({
             className={cn(
               'rounded-2xl sm:rounded-3xl transition-all duration-500 overflow-hidden ring-1',
               compact ? 'mb-2 sm:mb-3' : 'mb-3 sm:mb-5',
-              (currentStage as any).icone_url ? 'p-0' : compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6 md:p-8',
+              currentStage.icone_url ? 'p-0' : compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6 md:p-8',
               isActive 
                 ? 'bg-gold/20 text-gold scale-105 sm:scale-110 shadow-[0_0_50px_rgba(212,175,55,0.35)] ring-gold/40' 
                 : 'bg-secondary/80 text-muted-foreground ring-border/40'
@@ -1335,14 +1389,14 @@ function PresentationContent({
           >
             <CeremonyIcon 
               name={currentStage.icone} 
-              imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? (compact ? 64 : 96) : (compact ? 36 : 48)} 
+              imageUrl={currentStage.icone_url}
+              size={currentStage.icone_url ? (compact ? 64 : 96) : (compact ? 36 : 48)}
               className="sm:hidden"
             />
             <CeremonyIcon 
               name={currentStage.icone} 
-              imageUrl={(currentStage as any).icone_url} 
-              size={(currentStage as any).icone_url ? (compact ? 80 : 128) : (compact ? 44 : 64)} 
+              imageUrl={currentStage.icone_url}
+              size={currentStage.icone_url ? (compact ? 80 : 128) : (compact ? 44 : 64)}
               className="hidden sm:block"
             />
           </div>
@@ -1467,7 +1521,7 @@ function PresentationContent({
           {/* Audio Selector - horizontal scroll on mobile */}
           {audios.length > 0 && (() => {
             // Fontes disponíveis nesta etapa
-            const sourcesPresent = new Set(audios.map((a) => getAudioSource(a.audio_url, (a as any).tipo)));
+            const sourcesPresent = new Set(audios.map((a) => getAudioSource(a.audio_url, a.tipo)));
             const filterOptions: Array<{ key: 'all' | AudioSource; label: string; icon: JSX.Element }> = [
               { key: 'all', label: 'Todas', icon: <Music size={13} className="shrink-0" /> },
               { key: 'youtube', label: 'YouTube', icon: <YoutubeIcon size={13} className="shrink-0" /> },
@@ -1479,7 +1533,7 @@ function PresentationContent({
             const effectiveFilter = sourceFilter !== 'all' && !sourcesPresent.has(sourceFilter as AudioSource) ? 'all' : sourceFilter;
             const filteredAudios = audios
               .map((audio, index) => ({ audio, index }))
-              .filter(({ audio }) => effectiveFilter === 'all' || getAudioSource(audio.audio_url, (audio as any).tipo) === effectiveFilter);
+              .filter(({ audio }) => effectiveFilter === 'all' || getAudioSource(audio.audio_url, audio.tipo) === effectiveFilter);
 
             return (
               <div className="w-full mb-4 sm:mb-6">
@@ -1535,8 +1589,8 @@ function PresentationContent({
                             compact ? 'pl-2.5 pr-1 py-1' : 'pl-3 pr-1 py-1.5 sm:pl-4 sm:py-2'
                           )}
                         >
-                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={12} className="sm:hidden" active={selected} />
-                          <AudioSourceIcon url={audio.audio_url} tipo={(audio as any).tipo} size={14} className="hidden sm:block" active={selected} />
+                          <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={12} className="sm:hidden" active={selected} />
+                          <AudioSourceIcon url={audio.audio_url} tipo={audio.tipo} size={14} className="hidden sm:block" active={selected} />
                           {audio.nome || `Áudio ${index + 1}`}
                           <TrackHzBadge url={audio.audio_url} playing={selected && isPlaying} className="ml-1" />
                           {selected && audio && isCacheableAudioUrl(audio.audio_url) && (

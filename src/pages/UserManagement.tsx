@@ -32,6 +32,49 @@ interface ManagedUser {
   permissions: Record<AccessPermissionKey, boolean>;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isAccessPlan(value: unknown): value is AccessPlan {
+  return value === 'free' || value === 'premium' || value === 'admin';
+}
+
+function readPermissions(value: unknown): Partial<Record<AccessPermissionKey, boolean>> | undefined {
+  if (!isRecord(value)) return undefined;
+  const permissions: Partial<Record<AccessPermissionKey, boolean>> = {};
+  for (const key of ACCESS_PERMISSION_KEYS) {
+    if (typeof value[key] === 'boolean') permissions[key] = value[key];
+  }
+  return permissions;
+}
+
+function parseManagedUser(value: unknown): ManagedUser {
+  if (
+    !isRecord(value)
+    || typeof value.user_id !== 'string'
+    || typeof value.username !== 'string'
+    || typeof value.created_at !== 'string'
+    || (value.password !== undefined && value.password !== null && typeof value.password !== 'string')
+  ) {
+    throw new Error('A resposta do servidor contém um usuário inválido.');
+  }
+
+  const plan = isAccessPlan(value.plan) ? value.plan : 'free';
+  return {
+    user_id: value.user_id,
+    username: value.username,
+    password: typeof value.password === 'string' ? value.password : null,
+    created_at: value.created_at,
+    plan,
+    permissions: normalizePermissions(readPermissions(value.permissions) ?? buildPermissions(plan)),
+  };
+}
+
+function getResponseError(value: unknown): string | undefined {
+  return isRecord(value) && value.error ? String(value.error) : undefined;
+}
+
 export default function UserManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -64,17 +107,13 @@ export default function UserManagement() {
         body: { action: 'list' },
       });
       if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(String(data.error));
-      if (!Array.isArray(data?.users)) throw new Error('A resposta do servidor não contém a lista de usuários.');
+      const responseError = getResponseError(data);
+      if (responseError) throw new Error(responseError);
+      if (!isRecord(data) || !Array.isArray(data.users)) {
+        throw new Error('A resposta do servidor não contém a lista de usuários.');
+      }
 
-      return data.users.map((item: any) => ({
-        user_id: item.user_id,
-        username: item.username,
-        password: item.password ?? null,
-        created_at: item.created_at,
-        plan: (item.plan as AccessPlan | undefined) ?? 'free',
-        permissions: normalizePermissions(item.permissions ?? buildPermissions((item.plan as AccessPlan | undefined) ?? 'free')),
-      })) as ManagedUser[];
+      return data.users.map((item: unknown) => parseManagedUser(item));
     },
   });
 
@@ -119,8 +158,9 @@ export default function UserManagement() {
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: { username: uname, password },
       });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || 'Erro ao criar acesso');
+      const responseError = getResponseError(data);
+      if (error || responseError) {
+        toast.error(responseError || 'Erro ao criar acesso');
         return;
       }
       toast.success(`Acesso "${uname}" criado com sucesso!`);
@@ -144,8 +184,9 @@ export default function UserManagement() {
       const { data, error } = await supabase.functions.invoke('update-user', {
         body: { user_id: u.user_id, password: editPassword },
       });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || 'Erro ao salvar');
+      const responseError = getResponseError(data);
+      if (error || responseError) {
+        toast.error(responseError || 'Erro ao salvar');
         return;
       }
       toast.success('Senha atualizada!');
@@ -166,8 +207,9 @@ export default function UserManagement() {
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: deleteTarget.user_id },
       });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || 'Erro ao excluir');
+      const responseError = getResponseError(data);
+      if (error || responseError) {
+        toast.error(responseError || 'Erro ao excluir');
         return;
       }
       toast.success(`Acesso "${deleteTarget.username}" excluído`);

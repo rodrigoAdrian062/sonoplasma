@@ -93,8 +93,8 @@ export function useFaixas() {
     },
   });
 
-  const modo = (settings as any)?.faixa_modo ?? 'auto';
-  const manualKey = (settings as any)?.faixa_manual_key ?? null;
+  const modo = settings?.faixa_modo ?? 'auto';
+  const manualKey = settings?.faixa_manual_key ?? null;
 
   // Faixa que deve ser exibida agora
   let currentKey: string | null = null;
@@ -107,9 +107,9 @@ export function useFaixas() {
     if (found && found.ativo) current = found;
   }
 
-  const setModo = (m: string) => updateSettings.mutate({ faixa_modo: m } as any);
+  const setModo = (m: string) => updateSettings.mutate({ faixa_modo: m });
   const setManualKey = (k: string | null) =>
-    updateSettings.mutate({ faixa_manual_key: k } as any);
+    updateSettings.mutate({ faixa_manual_key: k });
 
   return { resolved, current, modo, manualKey, isLoading, saveFaixa, setModo, setManualKey };
 }

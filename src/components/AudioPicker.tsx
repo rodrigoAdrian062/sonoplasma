@@ -62,7 +62,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return library.filter((a) => {
-      const inFolder = search ? true : (a as any).pasta_id === currentFolderId;
+      const inFolder = search ? true : a.pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
       return inFolder && matches;
     });
@@ -114,7 +114,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
       for (const file of Array.from(files)) {
         const name = files.length === 1 && newName ? newName : file.name.replace(/\.[^/.]+$/, '');
         try {
-          const res: any = await uploadAndAddAudio(file, name);
+          const res = await uploadAndAddAudio(file, name);
           if (!atMax && res?.audio_url) {
             onChange([...audios, { nome: res.nome, audio_url: res.audio_url }]);
           }
@@ -222,7 +222,7 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium text-foreground">{folder.nome}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {library.filter((a) => (a as any).pasta_id === folder.id).length} áudio(s)
+                  {library.filter((a) => a.pasta_id === folder.id).length} áudio(s)
                 </p>
               </div>
             </button>

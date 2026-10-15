@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import type { InputHTMLAttributes } from 'react';
 import { toast as sonnerToast } from 'sonner';
 import {
   addQuickSound,
@@ -16,8 +17,12 @@ import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { formatDuration } from '@/types/audioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
+import type { AudioFolder } from '@/hooks/useAudioFolders';
 import { useStages } from '@/hooks/useStages';
 import { useSections } from '@/hooks/useSections';
+import type { CeremonyStage } from '@/types/ceremony';
+import type { CeremonySection } from '@/types/section';
+import type { AudioLibraryItem } from '@/types/audioLibrary';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,7 +31,8 @@ import {
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Search, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
-  Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer, Scissors
+  Church, Crown, Sparkles, BookOpen, Sun, Moon, Award, Flag, Compass, Zap, Thermometer, Scissors,
+  type LucideIcon,
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
@@ -65,10 +71,47 @@ const FOLDER_COLORS = [
   '#8B5CF6', '#0EA5E9', '#84CC16', '#F59E0B', '#64748B',
 ];
 
-const FOLDER_ICONS: Record<string, React.ComponentType<any>> = {
+const FOLDER_ICONS: Record<string, LucideIcon> = {
   Folder, Music, Headphones, Radio, Mic, Star, Heart, Flame,
   Bookmark, Bell, Church, Crown, Sparkles, Sun, Moon, Award, Flag, Compass, BookOpen,
 };
+
+interface YouTubePlayer {
+  destroy(): void;
+  getCurrentTime(): number;
+  getDuration(): number;
+  pauseVideo(): void;
+  playVideo(): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+  setVolume(volume: number): void;
+  stopVideo(): void;
+}
+
+interface YouTubePlayerOptions {
+  height: string;
+  width: string;
+  videoId: string;
+  playerVars: Record<string, string | number | boolean>;
+  events: {
+    onReady: (event: { target: YouTubePlayer }) => void;
+    onStateChange: (event: { data: number; target: YouTubePlayer }) => void;
+    onError: (event: { data: number; target: YouTubePlayer }) => void;
+  };
+}
+
+interface YouTubeApiWindow extends Window {
+  YT?: {
+    Player: new (elementId: string, options: YouTubePlayerOptions) => YouTubePlayer;
+    PlayerState: { ENDED: number };
+  };
+  onYouTubeIframeAPIReady?: () => void;
+}
+
+const folderInputAttributes: InputHTMLAttributes<HTMLInputElement> &
+  Record<'webkitdirectory' | 'directory', string> = {
+    webkitdirectory: '',
+    directory: '',
+  };
 
 function FolderIcon({ name, size = 20, className = '' }: { name?: string | null; size?: number; className?: string }) {
   const Cmp = (name && FOLDER_ICONS[name]) || Folder;
@@ -170,7 +213,7 @@ export default function AudioLibraryPage() {
   // Ao sair da página, pausa a prévia para não seguir tocando em segundo plano
   useEffect(() => () => { audioElement?.pause(); }, [audioElement]);
   useEffect(() => () => { destroySpotifyPlayer(); }, []);
-  const ytPlayerRef = useRef<any>(null);
+  const ytPlayerRef = useRef<YouTubePlayer | null>(null);
   const ytInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
@@ -240,7 +283,7 @@ export default function AudioLibraryPage() {
   const scopedAudios = audios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
     const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
-    const audioPastaId = (a as any).pasta_id;
+    const audioPastaId = a.pasta_id;
     // Na raiz, YouTube/Spotify são opcionais porque também têm abas próprias.
     if (!currentFolderId && !showAllSources && (isYt || isSp)) return false;
     const folderMatch = !currentFolderId && showAllSources
@@ -255,7 +298,7 @@ export default function AudioLibraryPage() {
     return true;
   });
   const filteredAudios = scopedAudios.filter(
-    a => !climaFilter || ((a as any).clima || null) === climaFilter,
+    a => !climaFilter || (a.clima || null) === climaFilter,
   );
 
 
@@ -298,7 +341,9 @@ export default function AudioLibraryPage() {
         try {
           setAudioCurrentTime(ytPlayerRef.current.getCurrentTime());
           setAudioDuration(ytPlayerRef.current.getDuration());
-        } catch {}
+        } catch {
+          // The embedded player can be unavailable while its clock is sampled.
+        }
       }
     }, 500);
   };
@@ -316,7 +361,9 @@ export default function AudioLibraryPage() {
         try {
           const current = ytPlayerRef.current.getCurrentTime() || 0;
           ytPlayerRef.current.seekTo(current + seconds, true);
-        } catch {}
+        } catch {
+          // Seeking is best-effort during player initialization or teardown.
+        }
       } else if (currentAudio && isSpotifyUrl(currentAudio.audio_url)) {
         seekSpotifyEntity(audioCurrentTime + seconds).catch(() => {});
       } else if (audioElement) {
@@ -329,7 +376,9 @@ export default function AudioLibraryPage() {
     if (playingId) {
       const currentAudio = audios.find(a => a.id === playingId);
       if (currentAudio && isYouTubeUrl(currentAudio.audio_url) && ytPlayerRef.current) {
-        try { ytPlayerRef.current.seekTo(time, true); } catch {}
+        try { ytPlayerRef.current.seekTo(time, true); } catch {
+          // Seeking is best-effort during player initialization or teardown.
+        }
       } else if (currentAudio && isSpotifyUrl(currentAudio.audio_url)) {
         seekSpotifyEntity(time).catch(() => {});
       } else if (audioElement) {
@@ -355,7 +404,9 @@ export default function AudioLibraryPage() {
           const container = document.getElementById('yt-library-player-container');
           if (container) container.remove();
         }
-      } catch {}
+      } catch {
+        // Ignore teardown errors if the embedded player has already stopped.
+      }
     }
     // Remove Spotify iframe if present
     const spContainer = document.getElementById('sp-library-player-container');
@@ -374,7 +425,9 @@ export default function AudioLibraryPage() {
       if (isSpotifyUrl(audio.audio_url)) {
         pauseSpotifyEntity().catch(() => {});
       } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
-        try { ytPlayerRef.current.pauseVideo(); } catch {}
+        try { ytPlayerRef.current.pauseVideo(); } catch {
+          // The player may stop between the state check and the command.
+        }
       } else if (audioElement) {
         audioElement.pause();
       }
@@ -386,7 +439,9 @@ export default function AudioLibraryPage() {
       if (isSpotifyUrl(audio.audio_url)) {
         resumeSpotifyEntity(audio.audio_url).catch(() => {});
       } else if (isYouTubeUrl(audio.audio_url) && ytPlayerRef.current) {
-        try { ytPlayerRef.current.playVideo(); } catch {}
+        try { ytPlayerRef.current.playVideo(); } catch {
+          // The player may stop between the state check and the command.
+        }
       } else if (audioElement) {
         audioElement.play();
       }
@@ -424,24 +479,25 @@ export default function AudioLibraryPage() {
       container.appendChild(playerDiv);
 
       const initPlayer = () => {
-        if (!(window as any).YT || !(window as any).YT.Player) {
+        const youtubeApi = (window as YouTubeApiWindow).YT;
+        if (!youtubeApi?.Player) {
           ytInitTimeoutRef.current = setTimeout(initPlayer, 100);
           return;
         }
-        ytPlayerRef.current = new (window as any).YT.Player('yt-library-player', {
+        ytPlayerRef.current = new youtubeApi.Player('yt-library-player', {
           height: '1',
           width: '1',
           videoId,
           playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, rel: 0 },
           events: {
-            onReady: (event: any) => {
+            onReady: (event) => {
               event.target.setVolume(70);
               event.target.playVideo();
               setPlayingId(audio.id);
               startYtTimePolling();
             },
-            onStateChange: (event: any) => {
-              const YT = (window as any).YT;
+            onStateChange: (event) => {
+              const YT = (window as YouTubeApiWindow).YT;
               if (event.data === YT.PlayerState.ENDED) {
                 setPlayingId(null);
               }
@@ -455,11 +511,12 @@ export default function AudioLibraryPage() {
       };
 
       // Load YT API if needed
-      if (!(window as any).YT) {
+      const youtubeWindow = window as YouTubeApiWindow;
+      if (!youtubeWindow.YT) {
         const tag = document.createElement('script');
         tag.src = 'https://www.youtube.com/iframe_api';
         document.getElementsByTagName('script')[0]?.parentNode?.insertBefore(tag, document.getElementsByTagName('script')[0]);
-        (window as any).onYouTubeIframeAPIReady = initPlayer;
+        youtubeWindow.onYouTubeIframeAPIReady = initPlayer;
       } else {
         initPlayer();
       }
@@ -834,7 +891,7 @@ export default function AudioLibraryPage() {
                       <>
                         <span className="text-sm font-medium truncate flex-1" style={{ color }}>{folder.nome}</span>
                         <span className="text-xs text-muted-foreground">
-                          {audios.filter(a => (a as any).pasta_id === folder.id).length}
+                          {audios.filter(a => a.pasta_id === folder.id).length}
                         </span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -986,7 +1043,7 @@ export default function AudioLibraryPage() {
                     multiple
                     onChange={handleFileSelect}
                     className="hidden"
-                    {...{ webkitdirectory: '', directory: '' } as any}
+                    {...folderInputAttributes}
                   />
                   <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="flex-1">
                     {isUploading ? (<><Loader2 className="animate-spin mr-2" size={16} />Enviando...</>) : (<><Upload size={16} className="mr-2" />Arquivo(s)</>)}
@@ -1048,7 +1105,7 @@ export default function AudioLibraryPage() {
             </button>
             {CLIMAS.map((c) => {
               const CIcon = c.icone;
-              const count = audios.filter((a) => (a as any).clima === c.id).length;
+              const count = audios.filter((a) => a.clima === c.id).length;
               const active = climaFilter === c.id;
               return (
                 <button
@@ -1141,7 +1198,7 @@ export default function AudioLibraryPage() {
 }
 
 interface VirtualAudioListProps {
-  audios: any[];
+  audios: AudioLibraryItem[];
   bulkDeleteMode: boolean;
   selectedIds: Set<string>;
   toggleSelectId: (id: string) => void;
@@ -1153,14 +1210,14 @@ interface VirtualAudioListProps {
   handleSeek: (seconds: number) => void;
   handleSeekTo: (time: number) => void;
   stopCurrentPlayback: (destroy?: boolean) => void;
-  deleteAudio: any;
-  stages: any[];
-  folders: any[];
+  deleteAudio: ReturnType<typeof useAudioLibrary>['deleteAudio'];
+  stages: CeremonyStage[];
+  folders: AudioFolder[];
   currentFolderId: string | null;
-  moveAudioToFolder: any;
+  moveAudioToFolder: ReturnType<typeof useAudioFolders>['moveAudioToFolder'];
   handleAddToStage: (audioNome: string, audioUrl: string, etapaId: string) => void;
-  stagesBySection: Array<{ section: any; stages: any[] }>;
-  unassignedStages: any[];
+  stagesBySection: Array<{ section: CeremonySection; stages: CeremonyStage[] }>;
+  unassignedStages: CeremonyStage[];
   isYouTubeUrl: (url: string) => boolean;
   formatFileSize: (bytes: number | null) => string;
   audioUsageMap: Map<string, Array<{ stageName: string; sectionName: string }>>;

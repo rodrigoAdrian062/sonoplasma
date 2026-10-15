@@ -58,8 +58,8 @@ export function SectionCard({
         </button>
         
         <div className="p-2 bg-gold/10 rounded-lg overflow-hidden">
-          {(section as any).icone_url ? (
-            <img src={(section as any).icone_url} alt={section.nome} className="w-5 h-5 object-cover rounded" />
+          {section.icone_url ? (
+            <img src={section.icone_url} alt={section.nome} className="w-5 h-5 object-cover rounded" />
           ) : (
             <CeremonyIcon name={section.icone || 'folder'} size={20} className="text-gold" />
           )}
