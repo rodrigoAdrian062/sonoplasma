@@ -14,11 +14,14 @@
 @layer components {
   .ritual-harmony-marker {
     display: inline-flex;
-    width: 1.35rem;
-    height: 1.35rem;
+    width: max-content;
+    min-width: 1.35rem;
+    min-height: 1.35rem;
     align-items: center;
     justify-content: center;
+    gap: 0.3rem;
     margin: 0 0.12rem;
+    padding: 0.15rem 0.42rem;
     border: 1px solid hsl(var(--gold) / 0.55);
     border-radius: 9999px;
     background: hsl(var(--gold) / 0.12);
@@ -29,6 +32,7 @@
     vertical-align: middle;
     cursor: pointer;
     user-select: none;
+    white-space: nowrap;
     transition: background-color 150ms ease, transform 150ms ease;
   }
 

@@ -218,7 +218,9 @@ Antes de publicar a integração:
 
    Guarde uma cópia segura dessa chave. Se ela for perdida ou substituída, as chaves OpenAI já salvas não poderão mais ser descriptografadas.
 2. Aplique as migrations do Supabase para criar o armazenamento privado das conexões.
-3. Publique as funções:
+3. Configure os secrets `SUPABASE_ACCESS_TOKEN` e `SUPABASE_PROJECT_ID` nas configurações do repositório no GitHub. O workflow publica todas as Edge Functions automaticamente quando há um push para `main`; também pode ser iniciado manualmente em **Actions → Deploy Supabase Edge Functions → Run workflow**.
+
+   Para publicar manualmente pelo terminal:
 
 ```sh
 supabase functions deploy manage-openai-connection

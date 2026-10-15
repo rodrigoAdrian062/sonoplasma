@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bold, Underline, Plus } from 'lucide-react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { Bold, Underline, Plus, Check, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { sanitizeRitualDetails } from '@/lib/ritualDetails';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +13,11 @@ const RITUAL_COLORS = [
   { name: 'Verde', value: '#22C55E' },
   { name: 'Roxo', value: '#A855F7' },
 ];
+const HARMONY_LABEL_MAX_LENGTH = 40;
+
+function createHarmonyMarkerId(): string {
+  return `ritual-harmony-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export interface RitualHarmonyAudio {
   nome: string;
@@ -77,6 +83,15 @@ export function RitualDetailsEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const targetRangeRef = useRef<Range | null>(null);
   const [contextMenu, setContextMenu] = useState<{ left: number; top: number } | null>(null);
+  const harmonyMarkerRef = useRef<HTMLElement | null>(null);
+  const harmonyMarkerIdRef = useRef<string | null>(null);
+  const harmonyLabelInputRef = useRef<HTMLInputElement>(null);
+  const [harmonyMarkerMenu, setHarmonyMarkerMenu] = useState<{ left: number; top: number } | null>(null);
+  const [harmonyLabel, setHarmonyLabel] = useState('');
+
+  useEffect(() => {
+    if (harmonyMarkerMenu) harmonyLabelInputRef.current?.focus();
+  }, [harmonyMarkerMenu]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -158,8 +173,11 @@ export function RitualDetailsEditor({
     marker.setAttribute('contenteditable', 'false');
     marker.setAttribute('data-ritual-harmony', audio.audio_url);
     marker.setAttribute('data-ritual-harmony-name', audio.nome);
-    marker.setAttribute('title', `Reproduzir ${audio.nome}`);
-    marker.textContent = '▶';
+    marker.setAttribute('data-ritual-harmony-id', createHarmonyMarkerId());
+    const label = audio.nome.trim().slice(0, HARMONY_LABEL_MAX_LENGTH);
+    if (label) marker.setAttribute('data-ritual-harmony-label', label);
+    marker.setAttribute('title', `Reproduzir ${label || audio.nome}`);
+    marker.textContent = label ? `${label} ▶` : '▶';
 
     range.deleteContents();
     range.insertNode(marker);
@@ -173,6 +191,84 @@ export function RitualDetailsEditor({
     onChange(sanitizeRitualDetails(editor.innerHTML));
     targetRangeRef.current = null;
     setContextMenu(null);
+  };
+
+  const handleEditorClick = (event: MouseEvent<HTMLDivElement>) => {
+    const editor = editorRef.current;
+    const marker = (event.target as HTMLElement).closest<HTMLElement>('[data-ritual-harmony]');
+    if (editor && marker && editor.contains(marker)) {
+      event.preventDefault();
+      const container = containerRef.current;
+      if (!container) return;
+      if (!marker.dataset.ritualHarmonyId) {
+        marker.dataset.ritualHarmonyId = createHarmonyMarkerId();
+      }
+      harmonyMarkerRef.current = marker;
+      harmonyMarkerIdRef.current = marker.dataset.ritualHarmonyId;
+      setHarmonyLabel(marker.dataset.ritualHarmonyLabel || '');
+      const containerRect = container.getBoundingClientRect();
+      const markerRect = marker.getBoundingClientRect();
+      setHarmonyMarkerMenu({
+        left: Math.max(4, Math.min(markerRect.left - containerRect.left, containerRect.width - 280)),
+        top: Math.max(4, markerRect.top - containerRect.top - 48),
+      });
+      setContextMenu(null);
+      return;
+    }
+    setHarmonyMarkerMenu(null);
+    harmonyMarkerRef.current = null;
+    harmonyMarkerIdRef.current = null;
+    captureHarmonyTarget(event.clientX, event.clientY);
+  };
+
+  const findHarmonyMarker = (): HTMLElement | null => {
+    const editor = editorRef.current;
+    if (!editor) return null;
+    if (harmonyMarkerRef.current?.isConnected) return harmonyMarkerRef.current;
+    const markerId = harmonyMarkerIdRef.current;
+    if (!markerId) return null;
+    return Array.from(editor.querySelectorAll<HTMLElement>('[data-ritual-harmony-id]'))
+      .find((marker) => marker.dataset.ritualHarmonyId === markerId) ?? null;
+  };
+
+  const closeHarmonyMarkerMenu = () => {
+    harmonyMarkerRef.current = null;
+    harmonyMarkerIdRef.current = null;
+    setHarmonyMarkerMenu(null);
+  };
+
+  const saveHarmonyMarkerLabel = () => {
+    const editor = editorRef.current;
+    const marker = findHarmonyMarker();
+    if (!editor || !marker) {
+      closeHarmonyMarkerMenu();
+      return;
+    }
+
+    const label = harmonyLabel.trim().slice(0, HARMONY_LABEL_MAX_LENGTH);
+    if (label) marker.dataset.ritualHarmonyLabel = label;
+    else delete marker.dataset.ritualHarmonyLabel;
+    const trackName = marker.dataset.ritualHarmonyName || 'Harmonia';
+    marker.title = `Reproduzir ${label || trackName}`;
+    marker.textContent = label ? `${label} ▶` : '▶';
+    editor.dataset.empty = String(editor.textContent?.trim().length === 0);
+    onChange(sanitizeRitualDetails(editor.innerHTML));
+    closeHarmonyMarkerMenu();
+  };
+
+  const deleteHarmonyMarker = () => {
+    const editor = editorRef.current;
+    const marker = findHarmonyMarker();
+    if (!editor || !marker) {
+      closeHarmonyMarkerMenu();
+      return;
+    }
+
+    marker.remove();
+    editor.dataset.empty = String(editor.textContent?.trim().length === 0);
+    onChange(sanitizeRitualDetails(editor.innerHTML));
+    closeHarmonyMarkerMenu();
+    editor.focus();
   };
 
   return (
@@ -246,7 +342,7 @@ export function RitualDetailsEditor({
         style={{ minHeight }}
         onMouseMove={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
         onMouseUp={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
-        onClick={(event) => captureHarmonyTarget(event.clientX, event.clientY)}
+        onClick={handleEditorClick}
         onInput={(event) => {
           event.currentTarget.dataset.empty = String(event.currentTarget.textContent?.trim().length === 0);
           onChange(sanitizeRitualDetails(event.currentTarget.innerHTML));
@@ -271,6 +367,52 @@ export function RitualDetailsEditor({
           <Plus size={13} />
           Adicionar harmonia
         </Button>
+      )}
+      {harmonyMarkerMenu && (
+        <div
+          className="absolute z-20 flex w-[min(280px,calc(100%-8px))] items-center gap-1.5 rounded-lg border border-gold/30 bg-card p-1.5 shadow-xl"
+          style={{ left: harmonyMarkerMenu.left, top: harmonyMarkerMenu.top }}
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <Input
+            ref={harmonyLabelInputRef}
+            value={harmonyLabel}
+            maxLength={HARMONY_LABEL_MAX_LENGTH}
+            onChange={(event) => setHarmonyLabel(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                saveHarmonyMarkerLabel();
+              }
+              if (event.key === 'Escape') closeHarmonyMarkerMenu();
+            }}
+            placeholder="Nome do botão"
+            aria-label="Nome do botão de harmonia"
+            className="h-8 min-w-0 border-border bg-secondary text-xs"
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 text-gold hover:bg-gold/10"
+            onClick={saveHarmonyMarkerLabel}
+            title="Salvar nome do botão"
+            aria-label="Salvar nome do botão"
+          >
+            <Check size={15} />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10"
+            onClick={deleteHarmonyMarker}
+            title="Excluir botão de harmonia"
+            aria-label="Excluir botão de harmonia"
+          >
+            <Trash2 size={15} />
+          </Button>
+        </div>
       )}
     </div>
   );

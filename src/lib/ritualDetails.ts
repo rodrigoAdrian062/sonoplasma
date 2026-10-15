@@ -17,15 +17,22 @@ function serializeSafeNode(node: Node): string {
 
   const harmonyUrl = node.getAttribute('data-ritual-harmony');
   if (tag === 'span' && harmonyUrl && /^(https?:\/\/|spotify:)/i.test(harmonyUrl)) {
+    const harmonyName = (node.getAttribute('data-ritual-harmony-name') || 'Harmonia').slice(0, 200);
+    const buttonLabel = (node.getAttribute('data-ritual-harmony-label') || '').trim().slice(0, 40);
     const marker = document.createElement('span');
     marker.className = 'ritual-harmony-marker';
     marker.setAttribute('role', 'button');
     marker.setAttribute('tabindex', '0');
     marker.setAttribute('contenteditable', 'false');
     marker.setAttribute('data-ritual-harmony', harmonyUrl);
-    marker.setAttribute('data-ritual-harmony-name', node.getAttribute('data-ritual-harmony-name') || 'Harmonia');
-    marker.setAttribute('title', `Reproduzir ${node.getAttribute('data-ritual-harmony-name') || 'harmonia'}`);
-    marker.textContent = '▶';
+    marker.setAttribute('data-ritual-harmony-name', harmonyName);
+    if (buttonLabel) marker.setAttribute('data-ritual-harmony-label', buttonLabel);
+    const markerId = node.getAttribute('data-ritual-harmony-id');
+    if (markerId && /^[\w-]{1,100}$/.test(markerId)) {
+      marker.setAttribute('data-ritual-harmony-id', markerId);
+    }
+    marker.setAttribute('title', `Reproduzir ${buttonLabel || harmonyName}`);
+    marker.textContent = buttonLabel ? `${buttonLabel} ▶` : '▶';
     return marker.outerHTML;
   }
 
