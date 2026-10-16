@@ -12,6 +12,7 @@ import {
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
@@ -27,7 +28,7 @@ import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink,
-  Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen,
+  Loader2, Download, CheckSquare, Square, X, ArrowLeft, FolderOpen, AlertTriangle,
   Folder, FolderPlus, Edit2, ChevronRight, MoveRight, ListPlus,
   SkipBack, SkipForward, Filter, Search, Palette, Waves,
   Headphones, Radio, Mic, Star, Heart, Flame, Bookmark, Bell,
@@ -62,6 +63,7 @@ import { ClimaSelector } from '@/components/library/ClimaSelector';
 import { QuickSoundTrimDialog } from '@/components/QuickSoundTrimDialog';
 import { CLIMAS, getClima } from '@/lib/climas';
 import { saveCloudState } from '@/lib/cloudState';
+import { PageState } from '@/components/PageState';
 
 
 
@@ -183,7 +185,8 @@ function TrackHzSelector({ url }: { url: string }) {
 
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
+  const queryClient = useQueryClient();
+  const { audios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
   const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
 
   const { stages } = useStages();
@@ -746,7 +749,7 @@ export default function AudioLibraryPage() {
           <Library className="text-gold" size={22} />
           <div className="flex items-center gap-1 flex-1 min-w-0">
             <h1
-              className={cn("font-display text-lg sm:text-xl font-semibold text-foreground truncate", currentFolderId && "cursor-pointer hover:text-gold transition-colors")}
+              className={cn("page-title truncate", currentFolderId && "cursor-pointer hover:text-gold transition-colors")}
               onClick={currentFolderId ? () => { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); } : undefined}
             >
               Biblioteca
@@ -754,7 +757,7 @@ export default function AudioLibraryPage() {
             {currentFolder && (
               <>
                 <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-                <span className="font-display text-lg sm:text-xl font-semibold text-gold truncate">{currentFolder.nome}</span>
+                <span className="page-title text-gold truncate">{currentFolder.nome}</span>
               </>
             )}
           </div>
@@ -846,7 +849,7 @@ export default function AudioLibraryPage() {
       </header>
 
       {/* Content */}
-      <main className="container py-4 sm:py-6 space-y-4 max-w-3xl mx-auto">
+      <main className="container mx-auto max-w-3xl space-y-4 px-4 py-5 sm:py-7">
         {/* Folder Section: root folders at the library root, child folders inside each parent */}
         {(
           <div className="space-y-2">
@@ -1148,15 +1151,32 @@ export default function AudioLibraryPage() {
 
         {/* Audio List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-gold" size={28} />
-          </div>
+          <PageState
+            variant="loading"
+            title="Carregando a biblioteca"
+            description="Buscando seus áudios e pastas."
+          />
+        ) : libraryError ? (
+          <PageState
+            variant="error"
+            title="Não foi possível carregar a biblioteca"
+            description="Verifique sua conexão e tente novamente. Seus áudios permanecem salvos."
+            icon={AlertTriangle}
+            action={
+              <Button variant="outline" onClick={() => void queryClient.invalidateQueries({ queryKey: ['audioLibrary'] })}>
+                Tentar novamente
+              </Button>
+            }
+          />
         ) : filteredAudios.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Music size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-lg">{currentFolder ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}</p>
-            <p className="text-sm mt-1">Adicione áudios para reutilizá-los em várias etapas</p>
-          </div>
+          <PageState
+            variant="empty"
+            title={currentFolder ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}
+            description={searchQuery
+              ? 'Tente outro termo ou limpe a busca para ver mais resultados.'
+              : 'Use “Adicionar áudio” acima para enviar arquivos ou cadastrar links.'}
+            icon={Music}
+          />
         ) : (
           <AudioDndZone
             accent="green"

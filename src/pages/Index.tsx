@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
@@ -13,22 +14,24 @@ import { useSections } from '@/hooks/useSections';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
-import { Loader2, FolderPlus, ChevronRight, Edit2, Trash2, Copy } from 'lucide-react';
+import { FolderPlus, ChevronRight, Edit2, Trash2, Copy, AlertTriangle } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
 import { useUserAccess } from '@/hooks/useUserAccess';
 import { hasPermission } from '@/lib/access';
+import { PageState } from '@/components/PageState';
 
 const Index = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { settings } = useSettings();
   const { access } = useUserAccess();
   const canCreateUnlimitedSections = hasPermission(access, 'canCreateUnlimitedSections');
   useThemeColor(settings?.cor_tema);
   
-  const { stages, isLoading: stagesLoading } = useStages();
-  const { sections, isLoading: sectionsLoading, createSection, updateSection, deleteSection, cloneSection } = useSections();
+  const { stages, isLoading: stagesLoading, error: stagesError } = useStages();
+  const { sections, isLoading: sectionsLoading, error: sectionsError, createSection, updateSection, deleteSection, cloneSection } = useSections();
   const sectionLimitReached = !canCreateUnlimitedSections && sections.length >= 3;
 
   const [editingSection, setEditingSection] = useState<CeremonySection | null>(null);
@@ -64,14 +67,12 @@ const Index = () => {
   const getStageCount = (sectionId: string) => stageCountBySection[sectionId] || 0;
 
   const isLoading = stagesLoading || sectionsLoading;
+  const loadError = sectionsError || stagesError;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-gold animate-spin" />
-          <p className="text-muted-foreground">Carregando...</p>
-        </div>
+      <div className="container flex min-h-screen items-center justify-center bg-background px-4">
+        <PageState variant="loading" title="Carregando suas seções" description="Isso pode levar alguns instantes." className="w-full max-w-md" />
       </div>
     );
   }
@@ -84,26 +85,51 @@ const Index = () => {
         onAddSection={() => setIsNewSectionModal(true)}
       />
       
-      <main className="container px-3 sm:px-4 py-4 sm:py-6 flex-1 flex flex-col">
+      <main className="container flex flex-1 flex-col px-4 py-5 sm:py-7">
         {/* Banner principal editável */}
         <EditableBanner />
 
+        {loadError && (
+          <PageState
+            variant="error"
+            title="Não foi possível atualizar os dados"
+            description="Tente carregar novamente. Se o problema continuar, verifique sua conexão."
+            icon={AlertTriangle}
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void queryClient.invalidateQueries({ queryKey: ['sections'] });
+                  void queryClient.invalidateQueries({ queryKey: ['stages'] });
+                }}
+              >
+                Tentar novamente
+              </Button>
+            }
+            className="my-5"
+          />
+        )}
 
-        {sections.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-6">Nenhuma seção cadastrada</p>
-            <Button
-              onClick={() => setIsNewSectionModal(true)}
-              disabled={sectionLimitReached}
-              className="bg-gold hover:bg-gold/90 text-background gap-2 disabled:opacity-60"
-            >
-              <FolderPlus size={18} />
-              Criar primeira seção
-            </Button>
-            {sectionLimitReached && (
-              <p className="mt-3 text-xs text-muted-foreground">Seu plano gratuito permite até 3 seções. Atualize para Premium para criar mais.</p>
-            )}
-          </div>
+        {!loadError && sections.length === 0 ? (
+          <PageState
+            variant="empty"
+            title="Nenhuma seção cadastrada"
+            description={sectionLimitReached
+              ? 'Seu plano gratuito permite até 3 seções. Atualize para o Premium para criar mais.'
+              : 'Crie uma seção para organizar as etapas e os áudios da cerimônia.'}
+            icon={FolderPlus}
+            action={
+              <Button
+                onClick={() => setIsNewSectionModal(true)}
+                disabled={sectionLimitReached}
+                className="gap-2 bg-gold text-background hover:bg-gold/90"
+              >
+                <FolderPlus size={18} />
+                Criar primeira seção
+              </Button>
+            }
+            className="my-6"
+          />
         ) : (
           <div className="mx-auto grid w-full max-w-screen-2xl gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {sections.map((section, index) => {

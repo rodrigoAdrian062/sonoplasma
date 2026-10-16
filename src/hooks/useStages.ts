@@ -38,7 +38,7 @@ export function useStages() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Etapa criada com sucesso' });
+      toast({ title: 'Etapa criada com sucesso', description: 'Você já pode adicionar áudios e configurar o tempo.' });
     },
     onError: (error) => {
       toast({ title: 'Erro ao criar etapa', description: error.message, variant: 'destructive' });
@@ -59,7 +59,7 @@ export function useStages() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      toast({ title: 'Etapa atualizada com sucesso' });
+      toast({ title: 'Etapa atualizada com sucesso', description: 'As alterações já estão salvas na seção.' });
     },
     onError: (error) => {
       toast({ title: 'Erro ao atualizar etapa', description: error.message, variant: 'destructive' });

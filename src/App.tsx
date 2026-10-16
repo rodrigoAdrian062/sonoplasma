@@ -31,7 +31,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Auth = lazy(() => import("./pages/Auth"));
 
 const UserManagement = lazy(() => import("./pages/UserManagement"));
-const Acervo = lazy(() => import("./pages/Acervo"));
 
 // Dados de cerimônia/áudio são majoritariamente estáticos entre navegações.
 // Evita refetch em cada mount / focus da aba.
@@ -156,15 +155,6 @@ const App = () => {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/acervo" 
-              element={
-                <ProtectedRoute>
-                  <ErrorBoundary context="Acervo"><Acervo /></ErrorBoundary>
-                </ProtectedRoute>
-              } 
-            />
-
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

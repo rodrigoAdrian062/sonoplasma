@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { MasonicFooter } from '@/components/MasonicFooter';
 import sectionBanner from '@/assets/section-banner.png';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -17,7 +18,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2, Download } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Presentation, BookOpen, Wand2, Download, AlertTriangle } from 'lucide-react';
 import { prefetchAudios } from '@/lib/audioCache';
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
 import { toast } from 'sonner';
@@ -25,7 +26,6 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { SortableStageCard } from '@/components/SortableStageCard';
 import { CrossSectionDropSidebar } from '@/components/CrossSectionDropSidebar';
-import { ControlBar } from '@/components/ControlBar';
 import { lazy, Suspense } from 'react';
 // Modal pesado — carregado sob demanda ao editar/criar etapa.
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
@@ -40,6 +40,7 @@ import { useUiToggles } from '@/hooks/useUiToggles';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import type { StagePlaybackVolume } from '@/lib/stageVolume';
 import { Button } from '@/components/ui/button';
+import { PageState } from '@/components/PageState';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -61,11 +62,12 @@ const StageEditModal = lazy(() =>
 const SectionDetail = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { settings } = useSettings();
   useThemeColor(settings?.cor_tema);
 
-  const { stages, isLoading: stagesLoading, createStage, updateStage, deleteStage, reorderStages, copyStageToSection } = useStages();
-  const { sections, isLoading: sectionsLoading } = useSections();
+  const { stages, isLoading: stagesLoading, error: stagesError, createStage, updateStage, deleteStage, reorderStages, copyStageToSection } = useStages();
+  const { sections, isLoading: sectionsLoading, error: sectionsError } = useSections();
   const { saveAudios } = useStageAudios();
   const { audiosByStageId } = useAllStageAudios();
   const { audios: libraryAudios } = useAudioLibrary();
@@ -445,27 +447,52 @@ const SectionDetail = () => {
   }, [stages]);
 
   const isLoading = stagesLoading || sectionsLoading;
+  const loadError = stagesError || sectionsError;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-gold animate-spin" />
-          <p className="text-muted-foreground">Carregando...</p>
-        </div>
+      <div className="container flex min-h-screen items-center justify-center bg-background px-4">
+        <PageState variant="loading" title="Carregando a seção" description="Preparando etapas e áudios." className="w-full max-w-md" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="container flex min-h-screen items-center justify-center bg-background px-4">
+        <PageState
+          variant="error"
+          title="Não foi possível carregar esta seção"
+          description="Verifique sua conexão e tente novamente. Seus dados não foram alterados."
+          icon={AlertTriangle}
+          action={
+            <Button
+              variant="outline"
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ['sections'] });
+                void queryClient.invalidateQueries({ queryKey: ['stages'] });
+              }}
+            >
+              Tentar novamente
+            </Button>
+          }
+          className="w-full max-w-md"
+        />
       </div>
     );
   }
 
   if (!section) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">Seção não encontrada</p>
-          <Button onClick={() => navigate('/')} variant="outline">
-            Voltar
-          </Button>
-        </div>
+      <div className="container flex min-h-screen items-center justify-center bg-background px-4">
+        <PageState
+          variant="error"
+          title="Seção não encontrada"
+          description="Ela pode ter sido removida ou o endereço pode estar incorreto. Volte ao início para escolher outra seção."
+          icon={AlertTriangle}
+          action={<Button onClick={() => navigate('/')} variant="outline">Ir para o início</Button>}
+          className="w-full max-w-md"
+        />
       </div>
     );
   }
@@ -561,11 +588,11 @@ const SectionDetail = () => {
               <CeremonyIcon name={section.icone || 'folder'} size={22} className="text-gold" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="font-display text-lg sm:text-2xl font-semibold text-foreground truncate">
+              <h1 className="page-title truncate">
                 {section.nome}
               </h1>
               {section.descricao && (
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                <p className="page-description truncate">
                   {section.descricao}
                 </p>
               )}
@@ -608,19 +635,7 @@ const SectionDetail = () => {
         </div>
       </header>
 
-      <ControlBar
-        volume={volume}
-        onVolumeChange={setVolume}
-        activeStage={activeStage ? { symbolicName: activeStage.nome_simbolico } : null}
-        isPlaying={status === 'playing'}
-        currentTime={currentTime}
-        duration={duration}
-        onSeekTo={seekTo}
-        eq={eq}
-        onEQChange={setEQ}
-      />
-
-      <main className="container px-3 sm:px-4 py-4 sm:py-6">
+      <main className="container px-4 py-5 sm:py-7">
         {/* Banner da seção */}
         <div className="relative mb-5 rounded-2xl overflow-hidden border border-gold/20 shadow-lg shadow-gold/5">
           <img 
@@ -644,16 +659,22 @@ const SectionDetail = () => {
 
 
         {sectionStages.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">Nenhuma etapa nesta seção</p>
-            <Button
-              onClick={() => setIsNewStageModal(true)}
-              className="gap-2 bg-gold hover:bg-gold/90 text-background"
-            >
-              <Plus size={18} />
-              Criar primeira etapa
-            </Button>
-          </div>
+          <PageState
+            variant="empty"
+            title="Nenhuma etapa nesta seção"
+            description="Adicione a primeira etapa para começar a organizar a sequência da cerimônia."
+            icon={BookOpen}
+            action={
+              <Button
+                onClick={() => setIsNewStageModal(true)}
+                className="gap-2 bg-gold text-background hover:bg-gold/90"
+              >
+                <Plus size={18} />
+                Criar primeira etapa
+              </Button>
+            }
+            className="mx-auto my-6 max-w-3xl"
+          />
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sectionStages.map((s) => s.id)} strategy={verticalListSortingStrategy}>

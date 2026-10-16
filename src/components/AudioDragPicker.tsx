@@ -11,6 +11,7 @@ import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { FolderMusicIcon } from '@/components/icons/FolderMusicIcon';
 
 import { matchAudiosForStage } from '@/lib/autoMatchAudios';
+import { getYouTubeVideoId } from '@/lib/embedUrl';
 import type { CeremonyStage } from '@/types/ceremony';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -82,11 +83,6 @@ interface YouTubePreviewWindow extends Window {
 
 const isYouTubeUrl = (url: string) => url.includes('youtube.com') || url.includes('youtu.be');
 const isSpotifyUrl = (url: string) => url.includes('open.spotify.com') || url.startsWith('spotify:');
-
-const getYouTubeVideoId = (url: string): string | null => {
-  const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-  return m && m[2].length === 11 ? m[2] : null;
-};
 
 // Ready-made preview hints. Common presets always shown; theme-specific ones
 // appear first when the stage title matches related keywords.
@@ -169,13 +165,6 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   const selectedUrls = useMemo(() => new Set(audios.map((a) => a.audio_url)), [audios]);
   const atMax = audios.length >= maxAudios;
 
-  const matchesSource = (url: string) => {
-    if (sourceFilter === 'all') return true;
-    if (sourceFilter === 'youtube') return isYouTubeUrl(url);
-    if (sourceFilter === 'spotify') return isSpotifyUrl(url);
-    return !isYouTubeUrl(url) && !isSpotifyUrl(url); // upload/link
-  };
-
   const suggested = useMemo(() => {
     if (!suggestMode || !stageTitle) return null;
     if (aiSuggested && aiSuggested.length > 0) {
@@ -202,6 +191,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     let cancelled = false;
     (async () => {
       setIsSuggesting(true);
+      setAiSuggested(null);
       try {
         const payload = {
           stageTitle,
@@ -231,8 +221,7 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       }
     })();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestMode, stageTitle, stageDescription, aiHint]);
+  }, [suggestMode, stageTitle, stageDescription, aiHint, library]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -241,7 +230,11 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       // Mantém áudios já selecionados visíveis com estado "Em uso" (não selecionáveis)
       const scoped = suggested || search || sourceFilter !== 'all' ? true : a.pasta_id === currentFolderId;
       const matches = !q || a.nome.toLowerCase().includes(q);
-      return scoped && matches && matchesSource(a.audio_url);
+      const matchesSource = sourceFilter === 'all'
+        || (sourceFilter === 'youtube' && isYouTubeUrl(a.audio_url))
+        || (sourceFilter === 'spotify' && isSpotifyUrl(a.audio_url))
+        || (sourceFilter === 'upload' && !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url));
+      return scoped && matches && matchesSource;
     });
   }, [library, suggested, search, currentFolderId, sourceFilter]);
 
@@ -299,6 +292,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       if (picks.length === 0) { toast.info('Nada novo a adicionar'); return; }
       onChange([...audios, ...picks.map((a) => ({ nome: a.nome, audio_url: a.audio_url }))]);
       toast.success(`${picks.length} áudio(s) adicionado(s) — ${byName.length} por nome + ${picks.length - byName.length} pela IA`);
+    } catch {
+      toast.error('Não foi possível selecionar áudios automaticamente');
     } finally {
       setIsAutoPicking(false);
     }
@@ -344,6 +339,8 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
       if (picks.length === 0) { toast.info('A IA não retornou sugestões desta vez'); return; }
       onChange([...audios, ...picks.map((a) => ({ nome: a.nome, audio_url: a.audio_url }))]);
       toast.success(`${picks.length} áudio(s) do YouTube/Spotify adicionados pela IA`);
+    } catch {
+      toast.error('Não foi possível buscar sugestões de áudio');
     } finally {
       setIsAutoPickingAll(false);
     }
@@ -515,12 +512,10 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
   // Stop playback when the dialog closes / unmounts
   useEffect(() => {
     if (!isOpen) stopPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
     return () => stopPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -540,9 +535,22 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     setIsDragOver(false);
     try {
       const data = e.dataTransfer.getData('application/json');
-      if (data) addItem(JSON.parse(data));
+      if (data) {
+        const item: unknown = JSON.parse(data);
+        if (
+          typeof item === 'object' &&
+          item !== null &&
+          'nome' in item &&
+          'audio_url' in item &&
+          typeof item.nome === 'string' &&
+          typeof item.audio_url === 'string' &&
+          item.audio_url.trim()
+        ) {
+          addItem({ nome: item.nome, audio_url: item.audio_url });
+        }
+      }
     } catch {
-      /* ignore */
+      toast.error('Não foi possível adicionar o áudio arrastado');
     }
     setDraggingUrl(null);
   };
@@ -552,15 +560,20 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
     if (!files || files.length === 0) return;
     setIsUploading(true);
     try {
+      const added: AudioItem[] = [];
+      const availableSlots = Math.max(0, maxAudios - audios.length);
       for (const file of Array.from(files)) {
         const name = files.length === 1 && newName ? newName : file.name.replace(/\.[^/.]+$/, '');
         try {
           const res = await uploadAndAddAudio(file, name);
-          if (!atMax && res?.audio_url) onChange([...audios, { nome: res.nome, audio_url: res.audio_url }]);
+          if (res?.audio_url && added.length < availableSlots) {
+            added.push({ nome: res.nome, audio_url: res.audio_url });
+          }
         } catch {
           /* handled in hook */
         }
       }
+      if (added.length > 0) onChange([...audios, ...added]);
       setNewName('');
       setShowAdd(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -767,13 +780,15 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                   { id: 'all', label: 'Todos', icon: Library },
                   { id: 'upload', label: 'Áudio', icon: Music },
                   { id: 'youtube', label: 'YouTube', icon: YoutubeIcon },
+                  { id: 'spotify', label: 'Spotify', icon: SpotifyIcon },
                 ] as const).map((f) => {
                   const active = sourceFilter === f.id;
                   const count = f.id === 'all'
                     ? library.length
                     : library.filter((a) => (
                         f.id === 'youtube' ? isYouTubeUrl(a.audio_url)
-                        : !isYouTubeUrl(a.audio_url)
+                        : f.id === 'spotify' ? isSpotifyUrl(a.audio_url)
+                        : !isYouTubeUrl(a.audio_url) && !isSpotifyUrl(a.audio_url)
                       )).length;
                   return (
                     <button
@@ -785,7 +800,9 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                         active
                           ? f.id === 'youtube'
                             ? 'border-red-500/50 bg-red-500/15 text-red-500'
-                            : 'border-gold/50 bg-gold/15 text-gold'
+                            : f.id === 'spotify'
+                              ? 'border-[#1DB954]/50 bg-[#1DB954]/15 text-[#1DB954]'
+                              : 'border-gold/50 bg-gold/15 text-gold'
                           : 'border-border bg-secondary text-muted-foreground hover:text-foreground'
                       )}
                     >

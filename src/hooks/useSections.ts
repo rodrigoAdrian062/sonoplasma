@@ -47,7 +47,7 @@ export function useSections() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });
-      toast({ title: 'Seção criada com sucesso' });
+      toast({ title: 'Seção criada com sucesso', description: 'Agora você pode abrir a seção e adicionar etapas.' });
     },
     onError: (error) => {
       toast({ title: 'Erro ao criar seção', description: error.message, variant: 'destructive' });
@@ -68,7 +68,7 @@ export function useSections() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });
-      toast({ title: 'Seção atualizada com sucesso' });
+      toast({ title: 'Seção atualizada com sucesso', description: 'As alterações já estão disponíveis na lista de seções.' });
     },
     onError: (error) => {
       toast({ title: 'Erro ao atualizar seção', description: error.message, variant: 'destructive' });
