@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   appendHarmonyTrack, encodeWav, formatTime, getProjectDuration, getTrackDuration,
-  normalizeHarmonyProject, normalizeHarmonyTrack, splitHarmonyTrack, trimHarmonyTrack, type HarmonyTrack,
+  normalizeHarmonyMixPreset, normalizeHarmonyProject, normalizeHarmonyTrack,
+  splitHarmonyTrack, trimHarmonyTrack, type HarmonyTrack,
 } from './harmonyEditor';
 
 const track: HarmonyTrack = {
@@ -63,6 +64,45 @@ describe('harmony editor timeline', () => {
     expect(normalized.tracks).toHaveLength(1);
     expect(getProjectDuration(normalized.tracks)).toBe(30);
     expect(normalizeHarmonyTrack(null)).toBeNull();
+  });
+
+  it('normalizes mixer and effect settings while preserving legacy defaults', () => {
+    const normalized = normalizeHarmonyTrack({
+      ...track,
+      pan: 5,
+      bass: Number.NaN,
+      mid: -20,
+      treble: 4,
+      reverb: 2,
+    });
+    const legacy = normalizeHarmonyTrack(track);
+
+    expect(normalized).toMatchObject({
+      pan: 1,
+      bass: 0,
+      mid: -12,
+      treble: 4,
+      reverb: 1,
+    });
+    expect(legacy).toMatchObject({ pan: 0, bass: 0, mid: 0, treble: 0, reverb: 0 });
+  });
+
+  it('retains valid project mix presets and rejects malformed presets', () => {
+    const normalized = normalizeHarmonyProject({
+      name: 'Projeto',
+      tracks: [track],
+      presets: [
+        { id: 'studio', name: 'Studio', settings: { volume: 2, pan: -2, bass: 8, mid: 0, treble: 0, reverb: 0 } },
+        { id: '', name: 'Inválido', settings: { volume: 0.8, pan: 0, bass: 0, mid: 0, treble: 0, reverb: 0 } },
+      ],
+    });
+
+    expect(normalized.presets).toEqual([{
+      id: 'studio',
+      name: 'Studio',
+      settings: { volume: 1, pan: -1, bass: 8, mid: 0, treble: 0, reverb: 0 },
+    }]);
+    expect(normalizeHarmonyMixPreset(null)).toBeNull();
   });
 
   it('appends a new audio clip to the end of the same timeline lane', () => {

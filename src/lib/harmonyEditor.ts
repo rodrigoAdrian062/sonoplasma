@@ -11,19 +11,94 @@ export interface HarmonyTrack {
   fadeIn: number;
   fadeOut: number;
   muted: boolean;
+  pan?: number;
+  bass?: number;
+  mid?: number;
+  treble?: number;
+  reverb?: number;
+}
+
+export interface HarmonyMixSettings {
+  volume: number;
+  pan: number;
+  bass: number;
+  mid: number;
+  treble: number;
+  reverb: number;
+}
+
+export interface HarmonyMixPreset {
+  id: string;
+  name: string;
+  settings: HarmonyMixSettings;
 }
 
 export interface HarmonyProject {
   name: string;
   tracks: HarmonyTrack[];
   version?: number;
+  presets?: HarmonyMixPreset[];
 }
 
 export const HARMONY_STORAGE_KEY = 'sonoplastia:harmony-project';
 export const HARMONY_CLOUD_KEY = 'harmonyProject';
 
+export const DEFAULT_HARMONY_PRESETS: HarmonyMixPreset[] = [
+  {
+    id: 'balanced',
+    name: 'Equilibrado',
+    settings: { volume: 0.8, pan: 0, bass: 0, mid: 0, treble: 0, reverb: 0 },
+  },
+  {
+    id: 'soft-space',
+    name: 'Ambiente suave',
+    settings: { volume: 0.75, pan: 0, bass: 0, mid: -1, treble: -2, reverb: 0.25 },
+  },
+  {
+    id: 'clear-presence',
+    name: 'Presença',
+    settings: { volume: 0.8, pan: 0, bass: -1, mid: 2, treble: 1, reverb: 0.05 },
+  },
+];
+
 function finiteOr(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
+}
+
+function clamp(value: number, min: number, max: number, fallback: number): number {
+  return Math.max(min, Math.min(max, finiteOr(value, fallback)));
+}
+
+export function normalizeHarmonyMixSettings(
+  settings: Partial<HarmonyMixSettings> | null | undefined,
+): HarmonyMixSettings {
+  return {
+    volume: clamp(settings?.volume ?? 0.8, 0, 1, 0.8),
+    pan: clamp(settings?.pan ?? 0, -1, 1, 0),
+    bass: clamp(settings?.bass ?? 0, -12, 12, 0),
+    mid: clamp(settings?.mid ?? 0, -12, 12, 0),
+    treble: clamp(settings?.treble ?? 0, -12, 12, 0),
+    reverb: clamp(settings?.reverb ?? 0, 0, 1, 0),
+  };
+}
+
+export function normalizeHarmonyMixPreset(value: unknown): HarmonyMixPreset | null {
+  if (!value || typeof value !== 'object') return null;
+  const preset = value as Partial<HarmonyMixPreset>;
+  if (
+    typeof preset.id !== 'string' ||
+    !preset.id ||
+    typeof preset.name !== 'string' ||
+    !preset.name.trim() ||
+    !preset.settings ||
+    typeof preset.settings !== 'object'
+  ) return null;
+
+  return {
+    id: preset.id,
+    name: preset.name.trim(),
+    settings: normalizeHarmonyMixSettings(preset.settings),
+  };
 }
 
 export function normalizeHarmonyTrack(value: HarmonyTrack | null | undefined): HarmonyTrack | null {
@@ -48,6 +123,7 @@ export function normalizeHarmonyTrack(value: HarmonyTrack | null | undefined): H
     fadeIn: Math.max(0, Math.min(trimEnd - trimStart, finiteOr(track.fadeIn, 0))),
     fadeOut: Math.max(0, Math.min(trimEnd - trimStart, finiteOr(track.fadeOut, 0))),
     muted: Boolean(track.muted),
+    ...normalizeHarmonyMixSettings(track),
   };
 }
 
@@ -74,9 +150,15 @@ export function normalizeHarmonyProject(project: HarmonyProject): HarmonyProject
   const tracks = [...project.tracks]
     .map(normalizeHarmonyTrack)
     .filter((track): track is HarmonyTrack => track !== null);
+  const presets = Array.isArray(project.presets)
+    ? project.presets
+      .map(normalizeHarmonyMixPreset)
+      .filter((preset): preset is HarmonyMixPreset => preset !== null)
+      .slice(0, 30)
+    : [];
 
   if (project.version && project.version >= 3) {
-    return { ...project, tracks, version: 3 };
+    return { ...project, tracks, presets, version: 3 };
   }
 
   let position = 0;
@@ -86,7 +168,7 @@ export function normalizeHarmonyProject(project: HarmonyProject): HarmonyProject
     position += getTrackDuration(track);
   }
 
-  return { ...project, tracks, version: 3 };
+  return { ...project, tracks, presets, version: 3 };
 }
 
 export function trimHarmonyTrack(

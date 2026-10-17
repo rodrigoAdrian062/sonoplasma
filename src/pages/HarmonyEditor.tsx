@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, AudioLines, Download, Loader2, Music2, Pause, Play, Plus, Save, Library,
   Search, SkipBack, Square, Trash2, Upload, Volume2, VolumeX, ZoomIn, ZoomOut, Sparkles,
-  ExternalLink, KeyRound, Scissors,
+  ExternalLink, KeyRound, Scissors, Mic,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,9 @@ import { loadCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 import { quickSoundKind } from '@/lib/quickSounds';
 import {
   appendHarmonyTrack, encodeWav, formatTime, getProjectDuration, getTrackDuration, splitHarmonyTrack, trimHarmonyTrack,
-  HARMONY_CLOUD_KEY, HARMONY_STORAGE_KEY, normalizeHarmonyProject, normalizeHarmonyTrack,
-  type HarmonyProject, type HarmonyTrack,
+  DEFAULT_HARMONY_PRESETS, HARMONY_CLOUD_KEY, HARMONY_STORAGE_KEY,
+  normalizeHarmonyMixPreset, normalizeHarmonyProject, normalizeHarmonyTrack,
+  type HarmonyMixPreset, type HarmonyProject, type HarmonyTrack,
 } from '@/lib/harmonyEditor';
 import type { AudioLibraryItem } from '@/types/audioLibrary';
 import { cn } from '@/lib/utils';
@@ -123,6 +124,73 @@ function scheduleTrackGain(
   }
 }
 
+const reverbBuffers = new WeakMap<BaseAudioContext, AudioBuffer>();
+
+function getReverbBuffer(context: BaseAudioContext): AudioBuffer {
+  const cached = reverbBuffers.get(context);
+  if (cached) return cached;
+
+  const duration = 1.8;
+  const frameCount = Math.floor(context.sampleRate * duration);
+  const impulse = context.createBuffer(2, frameCount, context.sampleRate);
+  for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+    const samples = impulse.getChannelData(channel);
+    for (let frame = 0; frame < frameCount; frame += 1) {
+      const decay = (1 - frame / frameCount) ** 2.5;
+      samples[frame] = (Math.random() * 2 - 1) * decay;
+    }
+  }
+  reverbBuffers.set(context, impulse);
+  return impulse;
+}
+
+function connectTrackAudio(
+  source: AudioBufferSourceNode,
+  context: BaseAudioContext,
+  track: HarmonyTrack,
+): GainNode {
+  const bass = context.createBiquadFilter();
+  bass.type = 'lowshelf';
+  bass.frequency.value = 250;
+  bass.gain.value = track.bass ?? 0;
+
+  const mid = context.createBiquadFilter();
+  mid.type = 'peaking';
+  mid.frequency.value = 1000;
+  mid.Q.value = 0.8;
+  mid.gain.value = track.mid ?? 0;
+
+  const treble = context.createBiquadFilter();
+  treble.type = 'highshelf';
+  treble.frequency.value = 4000;
+  treble.gain.value = track.treble ?? 0;
+
+  const panner = context.createStereoPanner();
+  panner.pan.value = track.pan ?? 0;
+  source.connect(bass);
+  bass.connect(mid);
+  mid.connect(treble);
+  treble.connect(panner);
+
+  const envelope = context.createGain();
+  panner.connect(envelope);
+  const dry = context.createGain();
+  envelope.connect(dry);
+  dry.connect(context.destination);
+
+  const reverb = track.reverb ?? 0;
+  if (reverb > 0) {
+    const convolver = context.createConvolver();
+    convolver.buffer = getReverbBuffer(context);
+    const wet = context.createGain();
+    wet.gain.value = reverb * 0.35;
+    envelope.connect(convolver);
+    convolver.connect(wet);
+    wet.connect(context.destination);
+  }
+  return envelope;
+}
+
 export default function HarmonyEditorPage() {
   const navigate = useNavigate();
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -151,12 +219,21 @@ export default function HarmonyEditorPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [presetId, setPresetId] = useState(DEFAULT_HARMONY_PRESETS[0].id);
+  const [presetName, setPresetName] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingElapsed, setRecordingElapsed] = useState(0);
   const [trimEditingClipId, setTrimEditingClipId] = useState<string | null>(null);
   const [waveforms, setWaveforms] = useState<Record<string, number[]>>({});
   const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingStartedAtRef = useRef(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const decodedRef = useRef(new Map<string, AudioBuffer>());
   const sourcesRef = useRef<AudioBufferSourceNode[]>([]);
@@ -199,6 +276,13 @@ export default function HarmonyEditorPage() {
     const query = search.trim().toLocaleLowerCase();
     return directAudios.filter((audio) => !query || audio.nome.toLocaleLowerCase().includes(query));
   }, [directAudios, search]);
+  const availablePresets = useMemo(() => [
+    ...DEFAULT_HARMONY_PRESETS,
+    ...(project.presets ?? []).filter((preset) =>
+      !DEFAULT_HARMONY_PRESETS.some((defaultPreset) => defaultPreset.id === preset.id),
+    ),
+  ], [project.presets]);
+  const selectedPreset = availablePresets.find((preset) => preset.id === presetId) ?? DEFAULT_HARMONY_PRESETS[0];
 
   const decodeTrack = useCallback(async (audioUrl: string): Promise<AudioBuffer> => {
     const cached = decodedRef.current.get(audioUrl);
@@ -291,10 +375,8 @@ export default function HarmonyEditorPage() {
         const actualStart = currentTime + beginsIn;
         if (!Number.isFinite(actualStart) || !Number.isFinite(clipPositionAtStart)) continue;
         const source = context.createBufferSource();
-        const gain = context.createGain();
         source.buffer = buffer;
-        source.connect(gain);
-        gain.connect(context.destination);
+        const gain = connectTrackAudio(source, context, track);
         scheduleTrackGain(gain, track, clipDuration, clipPositionAtStart, actualStart);
         sources.push(source);
         source.start(actualStart, offset, remainingDuration);
@@ -323,6 +405,16 @@ export default function HarmonyEditorPage() {
 
   useEffect(() => () => {
     stopPlayback();
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    const recorder = recorderRef.current;
+    if (recorder) {
+      recorder.onstop = null;
+      recorder.onerror = null;
+      if (recorder.state !== 'inactive') recorder.stop();
+    }
+    recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+    recordingStreamRef.current = null;
+    recorderRef.current = null;
     const context = audioContextRef.current;
     audioContextRef.current = null;
     if (context && context.state !== 'closed') void context.close();
@@ -349,6 +441,11 @@ export default function HarmonyEditorPage() {
         fadeIn: 0,
         fadeOut: 0,
         muted: false,
+        pan: 0,
+        bass: 0,
+        mid: 0,
+        treble: 0,
+        reverb: 0,
       };
       setProject((current) => ({
         ...current,
@@ -550,6 +647,119 @@ export default function HarmonyEditorPage() {
     }
   };
 
+  const startRecording = async () => {
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      toast.error('Este navegador não oferece suporte à gravação de áudio.');
+      return;
+    }
+
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const supportedType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+      ].find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = supportedType
+        ? new MediaRecorder(stream, { mimeType: supportedType })
+        : new MediaRecorder(stream);
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
+      recordingStartedAtRef.current = Date.now();
+      let recordingFailed = false;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordingChunksRef.current.push(event.data);
+      };
+      recorder.onerror = () => {
+        recordingFailed = true;
+        toast.error('A gravação foi interrompida por um erro do navegador.');
+        if (recorder.state !== 'inactive') recorder.stop();
+      };
+      recorder.onstop = () => {
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+        recordingStreamRef.current = null;
+        recorderRef.current = null;
+        setIsRecording(false);
+        setRecordingElapsed(0);
+        if (recordingFailed) return;
+
+        const blob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        recordingChunksRef.current = [];
+        if (blob.size === 0) {
+          toast.error('A gravação ficou vazia. Verifique o microfone e tente novamente.');
+          return;
+        }
+
+        const mimeType = blob.type || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'm4a' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const name = `Gravação ${new Date().toLocaleString('pt-BR')}`;
+        const file = new File([blob], `${name}.${extension}`, { type: mimeType });
+        void uploadAndAddAudio(file, name)
+          .then((audio) => addAudioToTimeline(audio))
+          .catch((error: unknown) => {
+            toast.error(error instanceof Error ? `Não foi possível salvar a gravação: ${error.message}` : 'Não foi possível salvar a gravação.');
+          });
+      };
+
+      recorderRef.current = recorder;
+      recorder.start(1000);
+      setIsRecording(true);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingElapsed(Math.floor((Date.now() - recordingStartedAtRef.current) / 1000));
+      }, 250);
+      toast.success('Gravação iniciada. Fale ou reproduza o áudio para capturá-lo.');
+    } catch (error) {
+      stream?.getTracks().forEach((track) => track.stop());
+      recordingStreamRef.current = null;
+      recorderRef.current = null;
+      toast.error(error instanceof Error ? `Não foi possível acessar o microfone: ${error.message}` : 'Não foi possível acessar o microfone.');
+    }
+  };
+
+  const stopRecording = () => {
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  };
+
+  const saveMixPreset = () => {
+    if (!selectedClip) {
+      toast.error('Selecione um clipe para salvar suas configurações como preset.');
+      return;
+    }
+    const name = presetName.trim();
+    if (!name) {
+      toast.error('Informe um nome para o preset.');
+      return;
+    }
+    const preset = normalizeHarmonyMixPreset({
+      id: crypto.randomUUID(),
+      name,
+      settings: selectedClip,
+    });
+    if (!preset) {
+      toast.error('Não foi possível criar este preset.');
+      return;
+    }
+    setProject((current) => ({ ...current, presets: [...(current.presets ?? []), preset].slice(-30) }));
+    setPresetId(preset.id);
+    setPresetName('');
+    toast.success(`Preset "${preset.name}" salvo neste projeto.`);
+  };
+
+  const applyMixPreset = () => {
+    if (!selectedClip) {
+      toast.error('Selecione um clipe para aplicar o preset.');
+      return;
+    }
+    updateTrack(selectedClip.id, selectedPreset.settings);
+    toast.success(`Preset "${selectedPreset.name}" aplicado ao clipe selecionado.`);
+  };
+
   const updateTrack = (id: string, update: Partial<HarmonyTrack>) => {
     setProject((current) => ({
       ...current,
@@ -628,10 +838,12 @@ export default function HarmonyEditorPage() {
   };
 
   const renderMix = async (tracks: HarmonyTrack[] = project.tracks): Promise<Blob> => {
-    const duration = getProjectDuration(tracks);
-    if (!tracks.length || duration <= 0) {
+    const arrangementDuration = getProjectDuration(tracks);
+    if (!tracks.length || arrangementDuration <= 0) {
       throw new Error('Adicione ao menos uma música antes de renderizar a harmonia.');
     }
+    const hasReverb = tracks.some((track) => !track.muted && (track.reverb ?? 0) > 0);
+    const duration = arrangementDuration + (hasReverb ? 1.8 : 0);
     const sampleRate = 44100;
     const frameCount = Math.ceil(duration * sampleRate);
     if (!Number.isSafeInteger(frameCount) || frameCount <= 0) {
@@ -659,10 +871,8 @@ export default function HarmonyEditorPage() {
         continue;
       }
       const source = context.createBufferSource();
-      const gain = context.createGain();
       source.buffer = buffer;
-      source.connect(gain);
-      gain.connect(context.destination);
+      const gain = connectTrackAudio(source, context, track);
       scheduleTrackGain(gain, track, clipDuration, 0, start);
       source.start(start, track.trimStart, clipDuration);
       scheduledSources += 1;
@@ -1004,11 +1214,26 @@ export default function HarmonyEditorPage() {
         <aside className="border-b border-border bg-card/40 p-4 xl:border-b-0 xl:border-r">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Biblioteca de áudio</h2>
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={14} /> Importar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={isRecording ? 'destructive' : 'outline'}
+                className="gap-1"
+                onClick={isRecording ? stopRecording : () => void startRecording()}
+                aria-label={isRecording ? 'Parar gravação' : 'Gravar áudio pelo microfone'}
+              >
+                {isRecording ? <Square size={13} /> : <Mic size={14} />}
+                {isRecording ? `Gravando ${formatTime(recordingElapsed)}` : 'Gravar'}
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={14} /> Importar
+              </Button>
+            </div>
             <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleUpload} />
           </div>
+          <p className="mb-3 text-xs text-muted-foreground">
+            A gravação pede acesso ao microfone e, ao parar, salva o áudio na biblioteca e na linha do tempo.
+          </p>
           <div className="relative mb-3">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar áudio..." className="pl-9" />
@@ -1263,6 +1488,85 @@ export default function HarmonyEditorPage() {
                     </label>
                     <label className="text-[10px] text-muted-foreground">Fade-out (s)
                       <Input type="number" min="0" max={getTrackDuration(selectedClip)} step="0.1" value={selectedClip.fadeOut} onChange={(event) => updateTrack(selectedClip.id, { fadeOut: Math.max(0, Math.min(getTrackDuration(selectedClip), Number(event.target.value))) })} className="mt-1 h-8" />
+                    </label>
+                  </div>
+                </div>
+              )}
+              {selectedClip && (
+                <div className="space-y-3 border-t border-border/60 pt-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="min-w-40 flex-1 text-[10px] text-muted-foreground">
+                      Preset de mixagem
+                      <select
+                        value={selectedPreset.id}
+                        onChange={(event) => setPresetId(event.target.value)}
+                        className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                        aria-label="Preset de mixagem"
+                      >
+                        {availablePresets.map((preset) => (
+                          <option key={preset.id} value={preset.id}>{preset.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <Button type="button" variant="outline" size="sm" onClick={applyMixPreset}>
+                      Aplicar ao clipe
+                    </Button>
+                    <label className="min-w-40 flex-1 text-[10px] text-muted-foreground">
+                      Salvar configuração atual como preset
+                      <Input
+                        value={presetName}
+                        onChange={(event) => setPresetName(event.target.value)}
+                        placeholder="Nome do preset"
+                        maxLength={40}
+                        className="mt-1 h-9"
+                      />
+                    </label>
+                    <Button type="button" variant="outline" size="sm" onClick={saveMixPreset}>
+                      <Save size={14} className="mr-1" /> Salvar preset
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <label className="text-[10px] text-muted-foreground">
+                      Panorama {Math.round((selectedClip.pan ?? 0) * 100)}
+                      <Slider
+                        value={[Math.round((selectedClip.pan ?? 0) * 100)]}
+                        min={-100}
+                        max={100}
+                        step={1}
+                        onValueChange={([value]) => updateTrack(selectedClip.id, { pan: value / 100 })}
+                        className="mt-2"
+                        aria-label={`Panorama ${selectedClip.nome}`}
+                      />
+                    </label>
+                    {([
+                      ['bass', 'Graves'],
+                      ['mid', 'Médios'],
+                      ['treble', 'Agudos'],
+                    ] as const).map(([key, label]) => (
+                      <label key={key} className="text-[10px] text-muted-foreground">
+                        {label} {(selectedClip[key] ?? 0) > 0 ? '+' : ''}{selectedClip[key] ?? 0} dB
+                        <Slider
+                          value={[selectedClip[key] ?? 0]}
+                          min={-12}
+                          max={12}
+                          step={1}
+                          onValueChange={([value]) => updateTrack(selectedClip.id, { [key]: value })}
+                          className="mt-2"
+                          aria-label={`${label} ${selectedClip.nome}`}
+                        />
+                      </label>
+                    ))}
+                    <label className="text-[10px] text-muted-foreground">
+                      Reverberação {Math.round((selectedClip.reverb ?? 0) * 100)}%
+                      <Slider
+                        value={[Math.round((selectedClip.reverb ?? 0) * 100)]}
+                        min={0}
+                        max={100}
+                        step={1}
+                        onValueChange={([value]) => updateTrack(selectedClip.id, { reverb: value / 100 })}
+                        className="mt-2"
+                        aria-label={`Reverberação ${selectedClip.nome}`}
+                      />
                     </label>
                   </div>
                 </div>

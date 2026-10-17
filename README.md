@@ -7,6 +7,10 @@ Criar um sistema web de sonoplastia cerimonial maçônica, simples, silencioso e
 
 O sistema deve ser respeitoso, discreto e confiável, ideal para uso durante os trabalhos.
 
+🎛️ **Montar Harmonia — modo estúdio**
+
+O editor permite combinar clipes da biblioteca em uma linha do tempo, gravar áudio pelo microfone e salvar a gravação na biblioteca. Cada clipe pode ter volume, panorama, fade, equalização de graves/médios/agudos e reverberação próprios. Presets prontos ou salvos pelo usuário podem ser aplicados a clipes; a mixagem final pode ser exportada em WAV ou salva na biblioteca.
+
 🔊 Integração com Áudio Externo
 
 O sistema deve permitir tocar áudios externos via URL, como por exemplo:
