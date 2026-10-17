@@ -27,6 +27,7 @@ import {
 import type { AudioLibraryItem } from '@/types/audioLibrary';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { QuickSoundTrimDialog } from '@/components/QuickSoundTrimDialog';
 
 const TRACK_HEIGHT = 96;
 const DEFAULT_PROJECT: HarmonyProject = { name: 'Minha harmonia', tracks: [], version: 3 };
@@ -37,6 +38,7 @@ interface TrackDrag {
   mode: DragMode;
   pointerX: number;
   start: number;
+  duration: number;
   trimStart: number;
   trimEnd: number;
   moved: boolean;
@@ -149,6 +151,7 @@ export default function HarmonyEditorPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [trimEditingClipId, setTrimEditingClipId] = useState<string | null>(null);
   const [waveforms, setWaveforms] = useState<Record<string, number[]>>({});
   const [loadingAudioId, setLoadingAudioId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -173,6 +176,7 @@ export default function HarmonyEditorPage() {
 
   const mixDuration = getProjectDuration(project.tracks);
   const selectedClip = project.tracks.find((track) => track.id === selectedClipId) ?? project.tracks.at(-1);
+  const trimEditingClip = project.tracks.find((track) => track.id === trimEditingClipId) ?? null;
   const selectedClipPosition = selectedClip ? playhead - selectedClip.start : -1;
   const canSplitSelectedClip = Boolean(
     selectedClip &&
@@ -581,6 +585,7 @@ export default function HarmonyEditorPage() {
       mode,
       pointerX: event.clientX,
       start: track.start,
+      duration: track.duration,
       trimStart: track.trimStart,
       trimEnd: track.trimEnd,
       moved: false,
@@ -622,18 +627,19 @@ export default function HarmonyEditorPage() {
     suppressTrackClickRef.current = false;
   };
 
-  const renderMix = async (): Promise<Blob> => {
-    if (!project.tracks.length || mixDuration <= 0) {
+  const renderMix = async (tracks: HarmonyTrack[] = project.tracks): Promise<Blob> => {
+    const duration = getProjectDuration(tracks);
+    if (!tracks.length || duration <= 0) {
       throw new Error('Adicione ao menos uma música antes de renderizar a harmonia.');
     }
     const sampleRate = 44100;
-    const frameCount = Math.ceil(mixDuration * sampleRate);
+    const frameCount = Math.ceil(duration * sampleRate);
     if (!Number.isSafeInteger(frameCount) || frameCount <= 0) {
       throw new Error('A duração da harmonia não é válida para renderização.');
     }
     const context = new OfflineAudioContext(2, frameCount, sampleRate);
     let scheduledSources = 0;
-    for (const rawTrack of project.tracks) {
+    for (const rawTrack of tracks) {
       const initialTrack = normalizeHarmonyTrack(rawTrack);
       if (!initialTrack || initialTrack.muted) continue;
       const buffer = await decodeTrack(initialTrack.audioUrl);
@@ -647,7 +653,7 @@ export default function HarmonyEditorPage() {
         !Number.isFinite(clipDuration) ||
         start < 0 ||
         clipDuration <= 0 ||
-        start + clipDuration > mixDuration + 0.05 ||
+        start + clipDuration > duration + 0.05 ||
         track.trimStart + clipDuration > buffer.duration + 0.05
       ) {
         continue;
@@ -695,6 +701,28 @@ export default function HarmonyEditorPage() {
       toast.success(`"${projectName}" foi salva na Biblioteca de Áudios.`);
     } catch (error) {
       toast.error(error instanceof Error ? `Falha ao salvar na biblioteca: ${error.message}` : 'Falha ao salvar na biblioteca.');
+    } finally {
+      setIsSavingToLibrary(false);
+    }
+  };
+
+  const handleSaveClipToLibrary = async () => {
+    if (!selectedClip) return;
+    if (selectedClip.muted) {
+      toast.error('Ative o clipe antes de salvá-lo na biblioteca.');
+      return;
+    }
+
+    setIsSavingToLibrary(true);
+    try {
+      const wav = await renderMix([{ ...selectedClip, start: 0 }]);
+      const clipName = `${selectedClip.nome} (corte)`;
+      const safeFileName = clipName.replace(/[\\/:*?"<>|]/g, '-');
+      const file = new File([wav], `${safeFileName}.wav`, { type: 'audio/wav' });
+      await uploadAndAddAudio(file, clipName);
+      toast.success(`"${clipName}" foi salvo na Biblioteca de Áudios.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? `Falha ao salvar o clipe: ${error.message}` : 'Falha ao salvar o clipe na biblioteca.');
     } finally {
       setIsSavingToLibrary(false);
     }
@@ -1186,6 +1214,28 @@ export default function HarmonyEditorPage() {
                       aria-label={`Volume ${selectedClip.nome}`}
                     />
                     <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => setTrimEditingClipId(selectedClip.id)}
+                      aria-label={`Cortar ${selectedClip.nome}`}
+                    >
+                      <Scissors size={14} /> Cortar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => void handleSaveClipToLibrary()}
+                      disabled={isSavingToLibrary || isExporting}
+                      aria-label={`Salvar corte de ${selectedClip.nome} na biblioteca`}
+                    >
+                      {isSavingToLibrary ? <Loader2 size={14} className="animate-spin" /> : <Library size={14} />}
+                      Salvar corte
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="icon"
                       aria-label={`Remover ${selectedClip.nome}`}
@@ -1230,6 +1280,32 @@ export default function HarmonyEditorPage() {
           {harmonyAssistant}
         </TabsContent>
       </Tabs>
+      <QuickSoundTrimDialog
+        sound={trimEditingClip ? {
+          id: trimEditingClip.id,
+          nome: trimEditingClip.nome,
+          url: trimEditingClip.audioUrl,
+          trimStartSeconds: trimEditingClip.trimStart,
+          trimEndSeconds: trimEditingClip.trimEnd,
+        } : null}
+        volume={trimEditingClip?.volume ?? 0.8}
+        onOpenChange={(open) => {
+          if (!open) setTrimEditingClipId(null);
+        }}
+        onSave={(start, end) => {
+          if (!trimEditingClip) return;
+          setProject((current) => ({
+            ...current,
+            tracks: trimHarmonyTrack(
+              current.tracks,
+              trimEditingClip.id,
+              start ?? 0,
+              end ?? trimEditingClip.duration,
+            ),
+          }));
+          toast.success(`Corte salvo para "${trimEditingClip.nome}".`);
+        }}
+      />
     </main>
   );
 }

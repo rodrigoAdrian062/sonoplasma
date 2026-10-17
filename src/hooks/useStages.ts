@@ -114,13 +114,14 @@ export function useStages() {
         .single();
       if (readErr || !origin) throw readErr ?? new Error('Etapa não encontrada');
 
-      const { data: last } = await supabase
+      const { data: last, error: lastErr } = await supabase
         .from('sonoplastia_etapas')
         .select('ordem')
         .eq('secao_id', targetSectionId)
         .order('ordem', { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (lastErr) throw lastErr;
       const nextOrdem = (last?.ordem ?? 0) + 1;
 
       const { data: newStage, error: insErr } = await supabase
@@ -133,25 +134,45 @@ export function useStages() {
           icone_url: origin.icone_url ?? null,
           ordem: nextOrdem,
           ativo: true,
+          oculto: origin.oculto,
+          volume_config: origin.volume_config,
+          ritual_detalhes: origin.ritual_detalhes,
+          audio_url: origin.audio_url,
+          fundo_musicas: origin.fundo_musicas,
           secao_id: targetSectionId,
         })
         .select()
         .single();
       if (insErr || !newStage) throw insErr ?? new Error('Erro ao criar cópia');
 
-      const { data: audios } = await supabase
-        .from('sonoplastia_etapa_audios')
-        .select('*')
-        .eq('etapa_id', stageId);
-      if (audios && audios.length > 0) {
-        const toInsert = audios.map((a) => ({
-          etapa_id: newStage.id,
-          nome: a.nome,
-          audio_url: a.audio_url,
-          ordem: a.ordem,
-        }));
-        const { error: audioErr } = await supabase.from('sonoplastia_etapa_audios').insert(toInsert);
-        if (audioErr) throw audioErr;
+      try {
+        const { data: audios, error: audiosErr } = await supabase
+          .from('sonoplastia_etapa_audios')
+          .select('*')
+          .eq('etapa_id', stageId);
+        if (audiosErr) throw audiosErr;
+
+        if (audios?.length) {
+          const toInsert = audios.map((audio) => ({
+            etapa_id: newStage.id,
+            nome: audio.nome,
+            audio_url: audio.audio_url,
+            ordem: audio.ordem,
+            volume_config: audio.volume_config,
+          }));
+          const { error: audioErr } = await supabase.from('sonoplastia_etapa_audios').insert(toInsert);
+          if (audioErr) throw audioErr;
+        }
+      } catch (error) {
+        const { error: cleanupError } = await supabase
+          .from('sonoplastia_etapas')
+          .delete()
+          .eq('id', newStage.id);
+        if (cleanupError) {
+          const originalMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`${originalMessage}. A cópia incompleta também não pôde ser removida: ${cleanupError.message}`);
+        }
+        throw error;
       }
       return newStage;
     },

@@ -96,7 +96,7 @@ export function useSections() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });
       queryClient.invalidateQueries({ queryKey: ['stages'] });
-      queryClient.invalidateQueries({ queryKey: ['allStageAudios'] });
+      queryClient.invalidateQueries({ queryKey: ['all-stage-audios'] });
       toast({ title: 'Seção e etapas removidas com sucesso' });
     },
     onError: (error) => {
@@ -154,20 +154,17 @@ export function useSections() {
         .single();
       
       if (newSectionError || !newSection) throw newSectionError || new Error('Erro ao criar nova seção');
-      
-      // 3. Fetch original stages
-      const { data: originalStages, error: stagesError } = await supabase
-        .from('sonoplastia_etapas')
-        .select('*')
-        .eq('secao_id', id)
-        .order('ordem', { ascending: true });
-      
-      if (stagesError) throw stagesError;
-      
-      // 4. Clone each stage and its audios
-      if (originalStages && originalStages.length > 0) {
-        for (const stage of originalStages) {
-          // Create new stage
+      const clonedStageIds: string[] = [];
+      try {
+        const { data: originalStages, error: stagesError } = await supabase
+          .from('sonoplastia_etapas')
+          .select('*')
+          .eq('secao_id', id)
+          .order('ordem', { ascending: true });
+
+        if (stagesError) throw stagesError;
+
+        for (const stage of originalStages ?? []) {
           const { data: newStage, error: newStageError } = await supabase
             .from('sonoplastia_etapas')
             .insert({
@@ -187,36 +184,59 @@ export function useSections() {
             })
             .select()
             .single();
-          
-          if (newStageError || !newStage) throw newStageError;
-          
-          // Fetch and clone audios for this stage
+
+          if (newStageError || !newStage) {
+            throw newStageError ?? new Error('Erro ao criar uma etapa da cópia');
+          }
+          clonedStageIds.push(newStage.id);
+
           const { data: originalAudios, error: audiosError } = await supabase
             .from('sonoplastia_etapa_audios')
             .select('*')
             .eq('etapa_id', stage.id);
-          
+
           if (audiosError) throw audiosError;
-          
-          if (originalAudios && originalAudios.length > 0) {
-            const newAudios = originalAudios.map(a => ({
+
+          if (originalAudios?.length) {
+            const newAudios = originalAudios.map((audio) => ({
               etapa_id: newStage.id,
-              nome: a.nome,
-              audio_url: a.audio_url,
-              ordem: a.ordem,
-              volume_config: a.volume_config,
+              nome: audio.nome,
+              audio_url: audio.audio_url,
+              ordem: audio.ordem,
+              volume_config: audio.volume_config,
             }));
-            
+
             const { error: insertAudiosError } = await supabase
               .from('sonoplastia_etapa_audios')
               .insert(newAudios);
-            
+
             if (insertAudiosError) throw insertAudiosError;
           }
         }
+
+        return newSection;
+      } catch (error) {
+        const cleanupErrors: string[] = [];
+        if (clonedStageIds.length > 0) {
+          const { error: stagesCleanupError } = await supabase
+            .from('sonoplastia_etapas')
+            .delete()
+            .in('id', clonedStageIds);
+          if (stagesCleanupError) cleanupErrors.push(stagesCleanupError.message);
+        }
+
+        const { error: sectionCleanupError } = await supabase
+          .from('sonoplastia_secoes')
+          .delete()
+          .eq('id', newSection.id);
+        if (sectionCleanupError) cleanupErrors.push(sectionCleanupError.message);
+
+        if (cleanupErrors.length > 0) {
+          const originalMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`${originalMessage}. A limpeza da cópia incompleta também falhou: ${cleanupErrors.join('; ')}`);
+        }
+        throw error;
       }
-      
-      return newSection;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections'] });

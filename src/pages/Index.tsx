@@ -14,7 +14,7 @@ import { useSections } from '@/hooks/useSections';
 import { useSettings } from '@/hooks/useSettings';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@/types/section';
-import { FolderPlus, ChevronRight, Edit2, Trash2, Copy, AlertTriangle } from 'lucide-react';
+import { FolderPlus, ChevronRight, Edit2, Trash2, Copy, AlertTriangle, Loader2 } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditableBanner } from '@/components/EditableBanner';
