@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors, Palette, ChevronDown, ChevronRight } from 'lucide-react';
+import { Play, Square, Plus, X, Volume2, Zap, Search, Pencil, Check, Repeat, Rows3, Columns3, GripVertical, Scissors, Palette, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VolumePresets } from './VolumePresets';
@@ -12,10 +12,10 @@ import { getYouTubeVideoId } from '@/lib/embedUrl';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import {
-  QUICK_SOUNDS_CLOUD_KEY,
-  QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY,
-  QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY,
-  QUICK_SOUNDS_STORAGE_KEY,
+  copyQuickSoundToSection,
+  getQuickSoundsCloudKey,
+  getQuickSoundsStorageKey,
+  loadQuickSounds,
   quickSoundKind,
   type QuickSoundData,
 } from '@/lib/quickSounds';
@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { QuickSoundTrimDialog } from './QuickSoundTrimDialog';
+import { QuickSoundSectionMenu, type QuickSoundSectionOption } from './QuickSoundSectionMenu';
 
 import { loadCloudState, saveCloudState, saveCloudStateDebounced } from '@/lib/cloudState';
 
@@ -82,16 +83,6 @@ function QuickSoundColorInput({
   );
 }
 
-function loadSounds(storageKey: string): QuickSound[] {
-  try {
-    const raw = localStorage.getItem(storageKey);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_SLOTS) : [];
-  } catch {
-    return [];
-  }
-}
-
 /** Formatos que o navegador não reproduz (ex.: WMA). */
 function isUnsupportedFormat(url: string): boolean {
   const clean = (url || '').split('?')[0].toLowerCase();
@@ -127,6 +118,9 @@ interface QuickSoundsHorizontalBarProps {
   onFadeStop: (soundId: string) => void;
   onRename: (sound: QuickSound) => void;
   onColorChange: (soundId: string, color: string) => void;
+  onTransfer: (sound: QuickSound, targetSectionId: string) => void;
+  sections: QuickSoundSectionOption[];
+  currentSectionId?: string;
   onRemove: (soundId: string) => void;
 }
 
@@ -146,6 +140,9 @@ function QuickSoundsHorizontalBar({
   onFadeStop,
   onRename,
   onColorChange,
+  onTransfer,
+  sections,
+  currentSectionId,
   onRemove,
 }: QuickSoundsHorizontalBarProps) {
   return (
@@ -269,6 +266,16 @@ function QuickSoundsHorizontalBar({
                 <Volume2 size={11} />
               </button>
               <QuickSoundColorInput sound={sound} onChange={onColorChange} />
+              {currentSectionId && (
+                <QuickSoundSectionMenu
+                  sections={sections}
+                  currentSectionId={currentSectionId}
+                  label={`Enviar ${sound.nome} para outra seção`}
+                  icon={<Copy size={11} />}
+                  className="h-5 w-5 text-muted-foreground hover:text-gold"
+                  onSelect={(targetId) => onTransfer(sound, targetId)}
+                />
+              )}
               <button
                 type="button"
                 onClick={() => onRename(sound)}
@@ -292,15 +299,20 @@ export function QuickSoundsPanel({
   compact = false,
   fullHeight = false,
   horizontal = false,
+  sectionId,
+  sections = [],
 }: {
   compact?: boolean;
   fullHeight?: boolean;
   horizontal?: boolean;
+  sectionId?: string;
+  sections?: QuickSoundSectionOption[];
 }) {
-  const storageKey = horizontal ? QUICK_SOUNDS_HORIZONTAL_STORAGE_KEY : QUICK_SOUNDS_STORAGE_KEY;
-  const cloudKey = horizontal ? QUICK_SOUNDS_HORIZONTAL_CLOUD_KEY : QUICK_SOUNDS_CLOUD_KEY;
+  const collection = horizontal ? 'horizontal' : 'vertical';
+  const storageKey = getQuickSoundsStorageKey(collection, sectionId);
+  const cloudKey = getQuickSoundsCloudKey(collection, sectionId);
   const { audios, isLoading } = useAudioLibrary();
-  const [sounds, setSounds] = useState<QuickSound[]>(() => loadSounds(storageKey));
+  const [sounds, setSounds] = useState<QuickSound[]>(() => loadQuickSounds(collection, sectionId));
   const [volume, setVolume] = useState<number>(loadVolume);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
@@ -324,18 +336,18 @@ export function QuickSoundsPanel({
       setHorizontalPortalTarget(null);
       return;
     }
-    setHorizontalPortalTarget(document.querySelector('[data-presentation-root]'));
+    setHorizontalPortalTarget(document.querySelector<HTMLElement>('[data-presentation-root]'));
   }, [horizontal]);
 
   useEffect(() => {
     const syncSounds = () => {
-      setSounds(loadSounds(storageKey));
+      setSounds(loadQuickSounds(collection, sectionId));
     };
 
     const handleAddExternal = (e: CustomEvent<{ nome: string; url: string }>) => {
       const { nome, url } = e.detail;
       
-      const currentSounds = loadSounds(storageKey);
+      const currentSounds = loadQuickSounds(collection, sectionId);
 
       if (currentSounds.length >= MAX_SLOTS) {
         toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido.`);
@@ -385,7 +397,7 @@ export function QuickSoundsPanel({
       window.removeEventListener('sonoplastia:quickSoundsUpdated', syncSounds);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [horizontal, storageKey]);
+  }, [horizontal, storageKey, collection, sectionId]);
 
   // Hidrata do banco ao montar (garante persistência após F5 / outro dispositivo)
   useEffect(() => {
@@ -393,7 +405,8 @@ export function QuickSoundsPanel({
     (async () => {
       const remote = await loadCloudState<QuickSound[]>(cloudKey);
       if (cancelled) return;
-      const local = loadSounds(storageKey);
+      const local = loadQuickSounds(collection, sectionId);
+      const hasLocalValue = localStorage.getItem(storageKey) !== null;
       if (Array.isArray(remote)) {
         // Se o banco tem dados, ele é a fonte da verdade na entrada.
         if (remote.length > 0 || local.length === 0) {
@@ -405,20 +418,25 @@ export function QuickSoundsPanel({
           // Primeira migração: envia o que existe localmente para o banco.
           void saveCloudState(cloudKey, local);
         }
+      } else if (sectionId && !hasLocalValue) {
+        const legacy = loadQuickSounds(collection);
+        localStorage.setItem(storageKey, JSON.stringify(legacy));
+        setSounds(legacy);
+        if (legacy.length > 0) void saveCloudState(cloudKey, legacy);
       } else if (local.length > 0) {
         void saveCloudState(cloudKey, local);
       }
       hydratedRef.current = true;
     })();
     return () => { cancelled = true; };
-  }, [cloudKey, storageKey]);
+  }, [cloudKey, storageKey, collection, sectionId]);
 
   // Sincronizar quando a biblioteca de áudios carregar (correção para audios adicionados externamente)
   useEffect(() => {
     if (!isLoading) {
-      setSounds(loadSounds(storageKey));
+      setSounds(loadQuickSounds(collection, sectionId));
     }
-  }, [isLoading, audios, storageKey]);
+  }, [isLoading, audios, storageKey, collection, sectionId]);
 
   useEffect(() => {
     // Apenas persistir e notificar se o estado mudar via UI interna (como remoção ou renomeação)
@@ -763,6 +781,24 @@ export function QuickSoundsPanel({
     });
   };
 
+  const transferSound = async (sound: QuickSound, targetSectionId: string) => {
+    try {
+      const result = await copyQuickSoundToSection(sound, targetSectionId, collection);
+      if (result.ok) {
+        const targetName = sections.find((section) => section.id === targetSectionId)?.nome ?? 'outra seção';
+        toast.success(`"${sound.nome}" copiado para ${targetName}.`);
+      } else if (result.reason === 'duplicate') {
+        toast.info(`"${sound.nome}" já está nos sons rápidos dessa seção.`);
+      } else if (result.reason === 'limit') {
+        toast.error(`Limite de ${MAX_SLOTS} sons rápidos atingido nessa seção.`);
+      } else {
+        toast.error('Não foi possível enviar esse som para a seção.');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? `Erro ao enviar som: ${error.message}` : 'Erro ao enviar som para outra seção.');
+    }
+  };
+
   const renameSound = (id: string, nome: string) => {
     setSounds((prev) => prev.map((s) => (s.id === id ? { ...s, nome } : s)));
   };
@@ -975,6 +1011,9 @@ export function QuickSoundsPanel({
               setEditingName(sound.nome);
             }}
             onColorChange={setSoundColor}
+            onTransfer={(sound, targetSectionId) => void transferSound(sound, targetSectionId)}
+            sections={sections}
+            currentSectionId={sectionId}
             onRemove={removeSound}
           />,
           horizontalPortalTarget
@@ -1134,6 +1173,16 @@ export function QuickSoundsPanel({
                   <Volume2 size={8} />
                 </button>
                 <QuickSoundColorInput sound={s} onChange={setSoundColor} />
+                {sectionId && (
+                  <QuickSoundSectionMenu
+                    sections={sections}
+                    currentSectionId={sectionId}
+                    label={`Enviar ${s.nome} para outra seção`}
+                    icon={<Copy size={8} />}
+                    className="h-4 w-4 rounded-full text-muted-foreground hover:text-gold"
+                    onSelect={(targetId) => void transferSound(s, targetId)}
+                  />
+                )}
               </div>
               )}
             </div>
@@ -1339,6 +1388,16 @@ export function QuickSoundsPanel({
                     <Volume2 size={8} />
                   </button>
                   <QuickSoundColorInput sound={s} onChange={setSoundColor} />
+                  {sectionId && (
+                    <QuickSoundSectionMenu
+                      sections={sections}
+                      currentSectionId={sectionId}
+                      label={`Enviar ${s.nome} para outra seção`}
+                      icon={<Copy size={8} />}
+                      className="h-4 w-4 rounded-full text-muted-foreground hover:text-gold"
+                      onSelect={(targetId) => void transferSound(s, targetId)}
+                    />
+                  )}
                   <button
                     onClick={() => { setEditingId(s.id); setEditingName(s.nome); }}
                     className="h-4 w-4 rounded-full bg-gold text-background flex items-center justify-center"

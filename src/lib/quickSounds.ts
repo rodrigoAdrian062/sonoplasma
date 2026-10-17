@@ -3,7 +3,7 @@
 // sem depender do painel estar montado na tela.
 
 import { detectStream } from '@/lib/embedUrl';
-import { saveCloudState } from '@/lib/cloudState';
+import { loadCloudState, saveCloudState } from '@/lib/cloudState';
 
 export const QUICK_SOUNDS_STORAGE_KEY = 'sonoplastia:quickSounds';
 export const QUICK_SOUNDS_CLOUD_KEY = 'quickSounds';
@@ -44,9 +44,28 @@ export function quickSoundKind(url: string): QuickSoundKind {
   return stream === 'youtube' ? 'youtube' : stream === 'spotify' ? 'spotify' : 'file';
 }
 
-export function loadQuickSounds(collection: QuickSoundCollection = 'vertical'): QuickSoundData[] {
+export function getQuickSoundsStorageKey(
+  collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
+): string {
+  const baseKey = getStorageKey(collection);
+  return sectionId ? `${baseKey}:section:${sectionId}` : baseKey;
+}
+
+export function getQuickSoundsCloudKey(
+  collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
+): string {
+  const baseKey = getCloudKey(collection);
+  return sectionId ? `${baseKey}:section:${sectionId}` : baseKey;
+}
+
+export function loadQuickSounds(
+  collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
+): QuickSoundData[] {
   try {
-    const raw = localStorage.getItem(getStorageKey(collection));
+    const raw = localStorage.getItem(getQuickSoundsStorageKey(collection, sectionId));
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.slice(0, QUICK_SOUNDS_MAX) : [];
   } catch {
@@ -57,9 +76,10 @@ export function loadQuickSounds(collection: QuickSoundCollection = 'vertical'): 
 export function persistQuickSounds(
   sounds: QuickSoundData[],
   collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
 ) {
-  localStorage.setItem(getStorageKey(collection), JSON.stringify(sounds));
-  void saveCloudState(getCloudKey(collection), sounds);
+  localStorage.setItem(getQuickSoundsStorageKey(collection, sectionId), JSON.stringify(sounds));
+  void saveCloudState(getQuickSoundsCloudKey(collection, sectionId), sounds);
   window.dispatchEvent(new Event('sonoplastia:quickSoundsUpdated'));
 }
 
@@ -74,11 +94,12 @@ export function addQuickSound(
   nome: string,
   url: string,
   collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
 ): AddQuickSoundResult {
   const clean = (url || '').trim();
   if (!clean) return { ok: false, reason: 'invalid' };
 
-  const current = loadQuickSounds(collection);
+  const current = loadQuickSounds(collection, sectionId);
   if (current.length >= QUICK_SOUNDS_MAX) return { ok: false, reason: 'limit' };
   if (current.some((s) => s.url === clean)) return { ok: false, reason: 'duplicate' };
 
@@ -92,7 +113,34 @@ export function addQuickSound(
       kind: quickSoundKind(clean),
     },
   ];
-  persistQuickSounds(next, collection);
+  persistQuickSounds(next, collection, sectionId);
+  return { ok: true };
+}
+
+/** Copia um atalho para outra seção sem removê-lo da seção atual. */
+export async function copyQuickSoundToSection(
+  sound: QuickSoundData,
+  targetSectionId: string,
+  collection: QuickSoundCollection = 'vertical',
+): Promise<AddQuickSoundResult> {
+  if (!targetSectionId || !sound.url.trim()) return { ok: false, reason: 'invalid' };
+
+  const storageKey = getQuickSoundsStorageKey(collection, targetSectionId);
+  let current = loadQuickSounds(collection, targetSectionId);
+  if (localStorage.getItem(storageKey) === null) {
+    const remote = await loadCloudState<QuickSoundData[]>(getQuickSoundsCloudKey(collection, targetSectionId));
+    if (Array.isArray(remote)) current = remote.slice(0, QUICK_SOUNDS_MAX);
+    else current = loadQuickSounds(collection);
+  }
+
+  if (current.length >= QUICK_SOUNDS_MAX) return { ok: false, reason: 'limit' };
+  if (current.some((item) => item.url === sound.url)) return { ok: false, reason: 'duplicate' };
+
+  persistQuickSounds(
+    [...current, { ...sound, id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }],
+    collection,
+    targetSectionId,
+  );
   return { ok: true };
 }
 
@@ -103,11 +151,12 @@ export function saveQuickSoundTrim(
   trimStartSeconds?: number,
   trimEndSeconds?: number,
   collection: QuickSoundCollection = 'vertical',
+  sectionId?: string,
 ): AddQuickSoundResult {
   const clean = (url || '').trim();
   if (!clean) return { ok: false, reason: 'invalid' };
 
-  const current = loadQuickSounds(collection);
+  const current = loadQuickSounds(collection, sectionId);
   const existingIndex = current.findIndex((sound) => sound.url === clean);
   if (existingIndex < 0 && current.length >= QUICK_SOUNDS_MAX) {
     return { ok: false, reason: 'limit' };
@@ -132,6 +181,6 @@ export function saveQuickSoundTrim(
     });
   }
 
-  persistQuickSounds(next, collection);
+  persistQuickSounds(next, collection, sectionId);
   return { ok: true };
 }

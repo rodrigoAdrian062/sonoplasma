@@ -59,6 +59,7 @@ import { loadCloudState, saveCloudState } from '@/lib/cloudState';
 
 import presentationBanner from '@/assets/presentation-banner.png';
 import { QuickSoundsPanel } from './QuickSoundsPanel';
+import type { QuickSoundSectionOption } from './QuickSoundSectionMenu';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -107,6 +108,7 @@ interface PresentationModeProps {
   currentUrl?: string | null;
   secaoId?: string;
   secaoNome?: string;
+  sections: QuickSoundSectionOption[];
 
   status: 'idle' | 'playing' | 'paused';
   volume: number;
@@ -182,6 +184,7 @@ function PresentationContent({
   currentUrl,
   secaoId,
   secaoNome,
+  sections,
   status,
   volume,
   onVolumeChange,
@@ -1877,9 +1880,9 @@ function PresentationContent({
 
       {/* Painel de Sons Rápidos (coluna lateral esquerda em tela cheia) */}
       <div className="hidden lg:flex fixed left-0 top-[52px] bottom-0 w-[240px] z-30 animate-fade-in">
-        <QuickSoundsPanel fullHeight />
+        <QuickSoundsPanel fullHeight sectionId={secaoId} sections={sections} />
       </div>
-      <QuickSoundsPanel horizontal />
+      <QuickSoundsPanel horizontal sectionId={secaoId} sections={sections} />
 
 
 
@@ -2035,7 +2038,7 @@ function PresentationContent({
           panel.style.bottom = 'auto';
         }}
       >
-        <QuickSoundsPanel compact />
+        <QuickSoundsPanel compact sectionId={secaoId} sections={sections} />
       </div>
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>

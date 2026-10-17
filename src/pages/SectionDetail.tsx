@@ -547,6 +547,7 @@ const SectionDetail = () => {
           currentUrl={currentUrl}
           secaoId={section?.id}
           secaoNome={section?.nome}
+          sections={sections}
 
           status={status}
           volume={volume}

@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause, Search, ListMusic, ChevronDown, Zap } from 'lucide-react';
 import { addQuickSound } from '@/lib/quickSounds';
+import { QuickSoundSectionMenu } from '@/components/QuickSoundSectionMenu';
 
 import { formatDuration } from '@/types/audioLibrary';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
@@ -554,21 +555,19 @@ export default function YoutubeLibraryPage() {
                         onSendToStage={(sid) => handleAddToStage(audio.nome, audio.audio_url, sid)}
                         onMoveToFolder={(fid) => handleMoveToFolder(audio, fid)}
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const res = addQuickSound(audio.nome, audio.audio_url || '');
+                      <QuickSoundSectionMenu
+                        sections={sections}
+                        label={`Adicionar ${audio.nome} aos Sons Rápidos de uma seção`}
+                        icon={<Zap size={16} />}
+                        className="h-8 w-8 text-muted-foreground hover:text-gold"
+                        onSelect={(sectionId) => {
+                          const res = addQuickSound(audio.nome, audio.audio_url || '', 'vertical', sectionId);
                           if (res.ok) toast({ title: `"${audio.nome}" enviado para sons rápidos` });
                           else if (res.reason === 'duplicate') toast({ title: `"${audio.nome}" já está nos sons rápidos` });
                           else if (res.reason === 'limit') toast({ title: 'Limite de 20 sons rápidos atingido', variant: 'destructive' });
                           else toast({ title: 'Link inválido', variant: 'destructive' });
                         }}
-                        className="h-8 w-8 text-muted-foreground hover:text-gold"
-                        title="Adicionar aos Sons Rápidos"
-                      >
-                        <Zap size={16} />
-                      </Button>
+                      />
                       <Button
                         variant="ghost"
                         size="icon"

@@ -8,6 +8,7 @@ import {
   saveQuickSoundTrim,
   type QuickSoundData,
 } from '@/lib/quickSounds';
+import { QuickSoundSectionMenu } from '@/components/QuickSoundSectionMenu';
 
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
@@ -1198,6 +1199,7 @@ export default function AudioLibraryPage() {
               stopCurrentPlayback={stopCurrentPlayback}
               deleteAudio={deleteAudio}
               stages={stages}
+              sections={sections}
               folders={folders}
               currentFolderId={currentFolderId}
               moveAudioToFolder={moveAudioToFolder}
@@ -1232,6 +1234,7 @@ interface VirtualAudioListProps {
   stopCurrentPlayback: (destroy?: boolean) => void;
   deleteAudio: ReturnType<typeof useAudioLibrary>['deleteAudio'];
   stages: CeremonyStage[];
+  sections: CeremonySection[];
   folders: AudioFolder[];
   currentFolderId: string | null;
   moveAudioToFolder: ReturnType<typeof useAudioFolders>['moveAudioToFolder'];
@@ -1249,7 +1252,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
     audios, bulkDeleteMode, selectedIds, toggleSelectId,
     playingId, isPaused, audioCurrentTime, audioDuration,
     handlePauseResume, handleSeek, handleSeekTo, stopCurrentPlayback,
-    deleteAudio, stages, folders, currentFolderId, moveAudioToFolder,
+    deleteAudio, stages, sections, folders, currentFolderId, moveAudioToFolder,
     handleAddToStage, stagesBySection, unassignedStages,
     isYouTubeUrl, formatFileSize, audioUsageMap,
     showListView,
@@ -1261,14 +1264,16 @@ function VirtualAudioList(props: VirtualAudioListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
   const [trimSound, setTrimSound] = useState<QuickSoundData | null>(null);
+  const [trimSectionId, setTrimSectionId] = useState<string | undefined>();
 
-  const openTrimEditor = (audio: { id: string; nome: string; audio_url: string }) => {
+  const openTrimEditor = (audio: { id: string; nome: string; audio_url: string }, sectionId?: string) => {
     if (quickSoundKind(audio.audio_url) !== 'file') {
       sonnerToast.info('O corte está disponível apenas para arquivos de áudio.');
       return;
     }
 
-    const existing = loadQuickSounds().find((sound) => sound.url === audio.audio_url);
+    const existing = loadQuickSounds('vertical', sectionId).find((sound) => sound.url === audio.audio_url);
+    setTrimSectionId(sectionId);
     setTrimSound(existing ?? {
       id: audio.id,
       nome: audio.nome,
@@ -1278,8 +1283,8 @@ function VirtualAudioList(props: VirtualAudioListProps) {
 
   const saveTrim = (start: number | undefined, end: number | undefined) => {
     if (!trimSound) return;
-    const alreadyAdded = loadQuickSounds().some((sound) => sound.url === trimSound.url);
-    const result = saveQuickSoundTrim(trimSound.nome, trimSound.url, start, end);
+    const alreadyAdded = loadQuickSounds('vertical', trimSectionId).some((sound) => sound.url === trimSound.url);
+    const result = saveQuickSoundTrim(trimSound.nome, trimSound.url, start, end, 'vertical', trimSectionId);
     if (!result.ok) {
       if (result.reason === 'limit') sonnerToast.error('Limite de 20 sons rápidos atingido.');
       else sonnerToast.error('Áudio sem link válido.');
@@ -1481,36 +1486,27 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <QuickSoundSectionMenu
+                      sections={sections}
+                      label={`Escolher trecho de ${audio.nome} para Sons Rápidos`}
+                      icon={<Scissors size={16} />}
                       disabled={quickSoundKind(audio.audio_url || '') !== 'file'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openTrimEditor(audio);
-                      }}
                       className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
-                      title="Escolher trecho para Sons Rápidos"
-                      aria-label={`Cortar ${audio.nome} para Sons Rápidos`}
-                    >
-                      <Scissors size={16} />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        const res = addQuickSound(audio.nome, audio.audio_url || '');
+                      onSelect={(sectionId) => openTrimEditor(audio, sectionId)}
+                    />
+                    <QuickSoundSectionMenu
+                      sections={sections}
+                      label={`Adicionar ${audio.nome} aos Sons Rápidos de uma seção`}
+                      icon={<Zap size={16} />}
+                      className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
+                      onSelect={(sectionId) => {
+                        const res = addQuickSound(audio.nome, audio.audio_url || '', 'vertical', sectionId);
                         if (res.ok) sonnerToast.success(`"${audio.nome}" enviado para sons rápidos`);
                         else if (res.reason === 'duplicate') sonnerToast.info(`"${audio.nome}" já está nos sons rápidos.`);
                         else if (res.reason === 'limit') sonnerToast.error('Limite de 20 sons rápidos atingido.');
                         else sonnerToast.error('Áudio sem link válido.');
-                      }} 
-                      className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold"
-                      title="Adicionar aos Sons Rápidos"
-                    >
-                      <Zap size={16} />
-                    </Button>
+                      }}
+                    />
 
                     <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteAudio.mutate(audio.id); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
                       <Trash2 size={16} />

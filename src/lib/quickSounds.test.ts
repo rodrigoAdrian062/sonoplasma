@@ -2,9 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/cloudState', () => ({
   saveCloudState: vi.fn(),
+  loadCloudState: vi.fn().mockResolvedValue(null),
 }));
 
-import { addQuickSound, loadQuickSounds, persistQuickSounds, saveQuickSoundTrim } from './quickSounds';
+import {
+  addQuickSound,
+  copyQuickSoundToSection,
+  loadQuickSounds,
+  persistQuickSounds,
+  saveQuickSoundTrim,
+} from './quickSounds';
 
 describe('quick sound trim persistence', () => {
   beforeEach(() => {
@@ -61,6 +68,31 @@ describe('quick sound trim persistence', () => {
 
     expect(loadQuickSounds()).toMatchObject([{ nome: 'Vertical' }]);
     expect(loadQuickSounds('horizontal')).toMatchObject([{ nome: 'Horizontal' }]);
+  });
+
+  it('keeps each section quick-sound list independent', () => {
+    addQuickSound('Seção A', 'https://example.com/a.mp3', 'vertical', 'section-a');
+    addQuickSound('Seção B', 'https://example.com/b.mp3', 'vertical', 'section-b');
+
+    expect(loadQuickSounds('vertical', 'section-a')).toMatchObject([{ nome: 'Seção A' }]);
+    expect(loadQuickSounds('vertical', 'section-b')).toMatchObject([{ nome: 'Seção B' }]);
+    expect(loadQuickSounds()).toEqual([]);
+  });
+
+  it('copies a quick sound to another section with its settings intact', async () => {
+    addQuickSound('Sino', 'https://example.com/sino.mp3', 'vertical', 'section-a');
+    const [source] = loadQuickSounds('vertical', 'section-a');
+    persistQuickSounds([{ ...source, loop: true, color: '#D4AF37' }], 'vertical', 'section-a');
+    const [configuredSource] = loadQuickSounds('vertical', 'section-a');
+
+    const result = await copyQuickSoundToSection(configuredSource, 'section-b');
+
+    expect(result).toEqual({ ok: true });
+    expect(loadQuickSounds('vertical', 'section-b')).toMatchObject([
+      { nome: 'Sino', url: configuredSource.url, loop: true, color: '#D4AF37' },
+    ]);
+    expect(loadQuickSounds('vertical', 'section-b')[0].id).not.toBe(configuredSource.id);
+    expect(loadQuickSounds('vertical', 'section-a')).toHaveLength(1);
   });
 
   it('persists a custom color for a quick sound', () => {
