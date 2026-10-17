@@ -288,6 +288,7 @@ Deno.serve(async (req) => {
         {
           user_id: data.user.id,
           username: username,
+          password: password,
           plan: "free",
           permissions: defaultPermissions,
         },
