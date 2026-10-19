@@ -23,6 +23,16 @@ describe('stage timer preferences', () => {
     expect(readStageTimerPreferences('stage-b', 180)).toEqual({ seconds: 180, enabled: true });
   });
 
+  it('keeps a one-hour duration configured for a scheduled stage', () => {
+    saveStageTimerSeconds('one-hour', 60 * 60);
+    saveStageTimerEnabled('one-hour', true);
+
+    expect(readStageTimerPreferences('one-hour', 60 * 60)).toEqual({
+      seconds: 60 * 60,
+      enabled: true,
+    });
+  });
+
   it('keeps free stages timer-free unless the user explicitly enables the timer', () => {
     localStorage.setItem('stage:timerEnabled:free', '1');
     expect(readStageTimerPreferences('free', 0).enabled).toBe(false);

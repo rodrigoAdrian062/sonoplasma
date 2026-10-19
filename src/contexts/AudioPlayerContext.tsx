@@ -88,7 +88,7 @@ interface AudioPlayerContextValue {
   prefetchNextStages: (currentStageId: string, sectionStages: CeremonyStage[], audiosByStageId: Record<string, StageAudio[]>) => void;
   pause: () => void;
   resume: () => void;
-  stop: () => void;
+  stop: (options?: { immediate?: boolean }) => void;
   setVolume: (value: number) => void;
   startVolume: number;
   setStartVolume: (value: number) => void;
@@ -861,7 +861,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setStatus('playing');
   }, [clearFade, applyPlayerVolume, continueRamp]);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((options?: { immediate?: boolean }) => {
     clearRamp();
     const doStop = () => {
       stopCurrentPlayback();
@@ -876,7 +876,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       currentUrlRef.current = null;
       setCurrentUrl(null);
     };
-    if (fadeEnabledRef.current && !isSpotifyRef.current && status === 'playing') {
+    if (!options?.immediate && fadeEnabledRef.current && !isSpotifyRef.current && status === 'playing') {
       fadeOutThen(doStop);
     } else {
       doStop();

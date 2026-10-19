@@ -23,6 +23,26 @@ describe('useTimer', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps a one-hour countdown active until the selected hour elapses', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-14T12:00:00Z'));
+    const onComplete = vi.fn();
+    const { result } = renderHook(() => useTimer(onComplete));
+
+    act(() => result.current.start(60 * 60));
+    act(() => vi.advanceTimersByTime(59 * 60 * 1000));
+
+    expect(result.current.timeRemaining).toBe(60);
+    expect(result.current.isRunning).toBe(true);
+    expect(onComplete).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(60 * 1000));
+
+    expect(result.current.timeRemaining).toBe(0);
+    expect(result.current.isRunning).toBe(false);
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves the remaining time while paused and resumes the countdown', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-14T12:00:00Z'));

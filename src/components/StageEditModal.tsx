@@ -53,6 +53,7 @@ const TIME_PRESETS = [
   { label: '3 min', value: 180 },
   { label: '5 min', value: 300 },
   { label: '10 min', value: 600 },
+  { label: '1 hora', value: 3600 },
 ];
 
 export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, sections = [], defaultSectionId }: StageEditModalProps) {
@@ -148,6 +149,13 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     if (mins === 0 && secs === 0) return 'Sem limite';
+    if (mins >= 60) {
+      const hours = Math.floor(mins / 60);
+      const remainingMinutes = mins % 60;
+      return remainingMinutes === 0
+        ? `${hours} h`
+        : `${hours} h ${remainingMinutes} min`;
+    }
     if (secs === 0) return `${mins} min`;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
@@ -347,13 +355,13 @@ export function StageEditModal({ stage, isOpen, onClose, onSave, isNew = false, 
                 <Slider
                   value={[formData.tempo_padrao]}
                   onValueChange={([value]) => setFormData({ ...formData, tempo_padrao: value })}
-                  max={1800}
+                  max={10800}
                   step={30}
                   className="py-2"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0</span>
-                  <span>30 min</span>
+                  <span>3 h</span>
                 </div>
               </div>
             </div>

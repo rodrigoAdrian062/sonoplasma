@@ -45,7 +45,7 @@ interface StageCardProps {
   onPlay: (audioUrl: string, volumeSettings?: StagePlaybackVolume) => void;
   onPause: () => void;
   onResume: () => void;
-  onStop: () => void;
+  onStop: (options?: { immediate?: boolean }) => void;
   onEdit: () => void;
   onDelete: () => void;
   onSeekForward?: () => void;
@@ -286,8 +286,9 @@ export function StageCard({
   }, [stage.id]);
   
   const timer = useTimer(() => {
-    onStop();
+    onStop({ immediate: true });
   });
+  const { isRunning: timerIsRunning, reset: resetTimer } = timer;
   const getStagePlaybackVolume = (audioUrl: string): StagePlaybackVolume => ({
     masterVolume: audios.find((audio) => audio.audio_url === audioUrl)?.volume_config ?? stageVolume,
     ...stageVolumeSettings,
@@ -312,6 +313,10 @@ export function StageCard({
   const isActive = isPlaying || isPaused;
   const hasAudios = audios.length > 0;
   const currentAudio = audios[selectedAudioIndex];
+  const currentAudioRef = useRef(currentAudio);
+  const onPlayRef = useRef(onPlay);
+  useEffect(() => { currentAudioRef.current = currentAudio; }, [currentAudio]);
+  useEffect(() => { onPlayRef.current = onPlay; }, [onPlay]);
   const normalizedHarmonySearch = harmonySearch.trim().toLocaleLowerCase();
   const filteredLibraryAudios = libraryAudios.filter((audio) =>
     audio.nome.toLocaleLowerCase().includes(normalizedHarmonySearch)
@@ -449,10 +454,15 @@ export function StageCard({
 
   const handleStop = () => {
     timer.reset();
-    onStop();
+    onStop({ immediate: loopUntilTimer });
   };
 
   const handlePause = () => {
+    if (loopUntilTimer) {
+      timer.reset();
+      onStop({ immediate: true });
+      return;
+    }
     if (timer.isRunning) {
       timer.pause();
     }
@@ -469,17 +479,18 @@ export function StageCard({
   const prevActiveRef = useRef(false);
   useEffect(() => {
     // Only handle transitions from active to idle (not on initial mount)
-    if (prevActiveRef.current && !isPlaying && !isPaused && timer.isRunning) {
+    if (prevActiveRef.current && !isPlaying && !isPaused && timerIsRunning) {
       // Repetir a música até o tempo do cronômetro terminar
-      if (loopUntilTimerRef.current && currentAudio) {
-        onPlay(currentAudio.audio_url);
+      const audioToRepeat = currentAudioRef.current;
+      if (loopUntilTimerRef.current && audioToRepeat) {
+        onPlayRef.current(audioToRepeat.audio_url);
         prevActiveRef.current = true;
         return;
       }
-      timer.reset();
+      resetTimer();
     }
     prevActiveRef.current = isPlaying || isPaused;
-  }, [isPlaying, isPaused]);
+  }, [isPlaying, isPaused, timerIsRunning, resetTimer]);
 
   const savedToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleTimeChange = (minutes: number) => {
@@ -491,9 +502,6 @@ export function StageCard({
     setCustomTime(seconds);
     try { saveStageTimerSeconds(stage.id, seconds); } catch {
       // Timer behavior remains available in memory if preference storage fails.
-    }
-    try { saveStageTimerSeconds(stage.id, seconds); } catch {
-      // Preserve the existing best-effort preference persistence behavior.
     }
     // Permite alterar o tempo mesmo com a música tocando
     if (timer.isRunning || timer.isPaused) {
@@ -1113,6 +1121,8 @@ export function StageCard({
                       value={Math.floor(customTime / 60)}
                       onChange={(e) => handleTimeChange(parseInt(e.target.value) || 1)}
                       className="w-10 text-center font-mono text-xs bg-transparent border-none p-0 focus:ring-0 text-foreground"
+                      aria-label="Duração do cronômetro em minutos"
+                      title="Informe minutos (60 minutos = 1 hora)"
                     />
                     <span className="text-[10px] uppercase font-bold text-muted-foreground/50">min</span>
                   </div>
@@ -1135,11 +1145,11 @@ export function StageCard({
                       ? 'bg-gold text-background border-gold shadow-gold/20'
                       : 'bg-secondary/40 border-border/40 text-muted-foreground/70 hover:text-foreground hover:border-gold/30'
                   )}
-                  title="Repete a música em loop até o tempo do cronômetro acabar"
+                  title="Repete a música continuamente até o cronômetro terminar ou você parar"
                   aria-pressed={loopUntilTimer}
                 >
                   <Repeat size={14} className={cn("transition-transform duration-500", loopUntilTimer && "rotate-180")} aria-hidden="true" />
-                  <span>Repetir até o tempo</span>
+                  <span>Loop</span>
                 </button>
               </div>
             )}
