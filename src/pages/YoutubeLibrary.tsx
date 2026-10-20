@@ -9,7 +9,7 @@ import { useSections } from '@/hooks/useSections';
 import { useStageAudios, useAllStageAudios } from '@/hooks/useStageAudios';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause, Search, ListMusic, ChevronDown, Zap } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Loader2, X, Play, Pause, Search, ListMusic, ChevronDown, Zap, CheckSquare, Square } from 'lucide-react';
 import { addQuickSound } from '@/lib/quickSounds';
 import { QuickSoundSectionMenu } from '@/components/QuickSoundSectionMenu';
 
@@ -21,6 +21,11 @@ import {
 import { AudioDndZone, DraggableAudioRow, DragHandle } from '@/components/library/AudioDndZone';
 import { MoveTargetMenu } from '@/components/library/MoveTargetMenu';
 import { BulkAddLinksDialog } from '@/components/library/BulkAddLinksDialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 
 import { getYouTubeVideoId as getYTId } from '@/lib/embedUrl';
@@ -32,6 +37,18 @@ function getYouTubeVideoId(url: string): string | null {
 
 function isYouTubeUrl(url: string): boolean {
   return getYouTubeVideoId(url) !== null;
+}
+
+function getYouTubePlaylistId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (!['music.youtube.com', 'youtube.com', 'm.youtube.com', 'youtu.be'].includes(host)) return null;
+    const playlistId = parsed.searchParams.get('list');
+    return playlistId && /^[\w-]+$/.test(playlistId) ? playlistId : null;
+  } catch {
+    return null;
+  }
 }
 
 interface YouTubePlayer {
@@ -98,7 +115,7 @@ function loadYouTubeApi(): Promise<YouTubeApi> {
 
 export default function YoutubeLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, deleteAudios, addAudio } = useAudioLibrary();
   const { folders, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
@@ -135,6 +152,8 @@ export default function YoutubeLibraryPage() {
   });
   const [search, setSearch] = useState('');
   const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'used'>('all');
+  const [selectedAudioIds, setSelectedAudioIds] = useState<Set<string>>(() => new Set());
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const playerRef = useRef<YouTubePlayer | null>(null);
   const embedElRef = useRef<HTMLDivElement | null>(null);
@@ -160,8 +179,31 @@ export default function YoutubeLibraryPage() {
   }, [allYtAudios, search, usageFilter, usageMap]);
 
   const visibleAudios = useMemo(() => ytAudios.slice(0, visibleCount), [ytAudios, visibleCount]);
+  const selectedVisibleCount = ytAudios.filter((audio) => selectedAudioIds.has(audio.id)).length;
+  const allFilteredSelected = ytAudios.length > 0 && selectedVisibleCount === ytAudios.length;
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, usageFilter]);
+
+  const toggleAudioSelection = (id: string) => {
+    setSelectedAudioIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedAudioIds((previous) => {
+      const next = new Set(previous);
+      if (allFilteredSelected) {
+        ytAudios.forEach((audio) => next.delete(audio.id));
+      } else {
+        ytAudios.forEach((audio) => next.add(audio.id));
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!showList) return;
@@ -196,7 +238,8 @@ export default function YoutubeLibraryPage() {
     }
     const audio = ytAudios.find((a) => a.id === playingId);
     const videoId = audio ? getYouTubeVideoId(audio.audio_url) : null;
-    if (!videoId) return;
+    const playlistId = audio ? getYouTubePlaylistId(audio.audio_url) : null;
+    if (!videoId && !playlistId) return;
 
     let cancelled = false;
     loadYouTubeApi().then((YT) => {
@@ -208,8 +251,10 @@ export default function YoutubeLibraryPage() {
       playerRef.current = new YT.Player(el, {
         width: '100%',
         height: '220',
-        videoId,
-        playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+        videoId: videoId || '',
+        playerVars: playlistId
+          ? { autoplay: 1, listType: 'playlist', list: playlistId, rel: 0, modestbranding: 1 }
+          : { autoplay: 1, rel: 0, modestbranding: 1 },
         events: {
           onReady: (e: YouTubePlayerEvent) => { try { e.target.playVideo(); } catch { /* noop */ } },
           onStateChange: (e: YouTubePlayerEvent) => {
@@ -241,6 +286,19 @@ export default function YoutubeLibraryPage() {
     destroyPlayer();
     setPlayingId(null);
     setIsPaused(false);
+  };
+
+  const handleBulkDelete = async () => {
+    const idsToDelete = [...selectedAudioIds].filter((id) => allYtAudios.some((audio) => audio.id === id));
+    if (idsToDelete.length === 0) return;
+    if (playingId && idsToDelete.includes(playingId)) handleStop();
+    try {
+      await deleteAudios.mutateAsync(idsToDelete);
+      setSelectedAudioIds(new Set());
+      setConfirmBulkDelete(false);
+    } catch {
+      // The mutation reports the deletion error.
+    }
   };
 
   // Auto-sugere o título ao colar um link válido (se o usuário não digitou nome manual).
@@ -340,6 +398,16 @@ export default function YoutubeLibraryPage() {
           <h1 className="font-display text-lg sm:text-xl font-semibold text-foreground flex-1 truncate">
             YouTube
           </h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/youtube-music')}
+            className="shrink-0 gap-2 border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+            aria-label="Abrir YouTube Music"
+          >
+            <YoutubeIcon size={16} />
+            <span className="hidden sm:inline">YouTube Music</span>
+          </Button>
         </div>
       </header>
 
@@ -463,6 +531,35 @@ export default function YoutubeLibraryPage() {
               </div>
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAllFiltered}
+                  disabled={ytAudios.length === 0}
+                  className="border-red-500/40"
+                >
+                  {allFilteredSelected ? <CheckSquare size={14} className="mr-1" /> : <Square size={14} className="mr-1" />}
+                  {allFilteredSelected ? 'Desmarcar resultados' : `Selecionar todas (${ytAudios.length})`}
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {selectedAudioIds.size} selecionada(s)
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => setConfirmBulkDelete(true)}
+                disabled={selectedAudioIds.size === 0 || deleteAudios.isPending}
+              >
+                {deleteAudios.isPending ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Trash2 size={14} className="mr-1" />}
+                Excluir selecionadas
+              </Button>
+            </div>
+
             {/* List */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -505,6 +602,12 @@ export default function YoutubeLibraryPage() {
                   )}
                 >
                   <div className="flex items-center gap-3 px-2 py-1.5">
+                    <Checkbox
+                      checked={selectedAudioIds.has(audio.id)}
+                      onCheckedChange={() => toggleAudioSelection(audio.id)}
+                      aria-label={`Selecionar ${audio.nome}`}
+                      className="shrink-0 border-red-500 data-[state=checked]:bg-red-500"
+                    />
                     <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground group-hover:hidden max-md:hidden">
                       {isCurrent ? <span className="text-red-500">♪</span> : idx + 1}
                     </span>
@@ -619,6 +722,29 @@ export default function YoutubeLibraryPage() {
         existingUrls={audios.map((a) => a.audio_url)}
         addAudio={(input) => addAudio.mutateAsync(input)}
       />
+      <AlertDialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir músicas selecionadas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá permanentemente {selectedAudioIds.size} música(s) da biblioteca. Essa exclusão não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAudios.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleBulkDelete();
+              }}
+              disabled={deleteAudios.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteAudios.isPending ? 'Excluindo…' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

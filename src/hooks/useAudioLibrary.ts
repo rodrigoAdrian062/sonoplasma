@@ -10,6 +10,16 @@ import { getYouTubeVideoId } from '@/lib/embedUrl';
 
 function normalizeAudioUrl(url: string): string {
   const u = (url || '').trim().toLowerCase();
+  try {
+    const parsed = new URL(u.startsWith('http') ? u : `https://${u}`);
+    const host = parsed.hostname.replace(/^www\./, '');
+    if (host.endsWith('youtube.com') || host === 'youtu.be') {
+      const playlistId = parsed.searchParams.get('list');
+      if (playlistId) return `yt:playlist:${playlistId}`;
+    }
+  } catch {
+    // Fall back to the standard URL normalization for incomplete or non-URL values.
+  }
   const ytId = getYouTubeVideoId(u);
   if (ytId) return `yt:${ytId}`;
   return u.replace(/[?#].*$/, '').replace(/\/+$/, '');
@@ -60,6 +70,66 @@ export function useAudioLibrary() {
     },
     onError: (error) => {
       toast({ title: 'Não foi possível adicionar', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const addAudios = useMutation({
+    mutationFn: async (newAudios: AudioLibraryInsert[]) => {
+      if (newAudios.length === 0) return { added: 0, skipped: 0 };
+
+      const existing = (queryClient.getQueryData(['audioLibrary']) as AudioLibraryItem[] | undefined) || [];
+      const knownUrls = new Set(
+        existing
+          .filter((audio) => audio.audio_url)
+          .map((audio) => normalizeAudioUrl(audio.audio_url)),
+      );
+      const uniqueAudios = newAudios.filter((audio) => {
+        const normalizedUrl = normalizeAudioUrl(audio.audio_url);
+        if (knownUrls.has(normalizedUrl)) return false;
+        knownUrls.add(normalizedUrl);
+        return true;
+      });
+
+      if (uniqueAudios.length === 0) {
+        return { added: 0, skipped: newAudios.length };
+      }
+
+      const { data, error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .insert(uniqueAudios)
+        .select();
+      if (error) throw error;
+      return { added: data.length, skipped: newAudios.length - uniqueAudios.length };
+    },
+    onSuccess: ({ added, skipped }) => {
+      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      toast({
+        title: added > 0 ? `${added} música(s) adicionada(s) à biblioteca` : 'Todas as músicas já estavam na biblioteca',
+        description: skipped > 0 ? `${skipped} duplicata(s) ignorada(s).` : undefined,
+      });
+    },
+    onError: (error) => {
+      toast({ title: 'Não foi possível salvar as músicas', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteAudios = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return 0;
+      const { data, error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .delete()
+        .in('id', ids)
+        .select('id');
+      if (error) throw error;
+      return data.length;
+    },
+    onSuccess: (deletedCount) => {
+      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      toast({ title: `${deletedCount} música(s) removida(s) da biblioteca` });
+    },
+    onError: (error) => {
+      toast({ title: 'Não foi possível excluir as músicas', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -171,6 +241,8 @@ export function useAudioLibrary() {
     isLoading,
     error,
     addAudio,
+    addAudios,
+    deleteAudios,
     deleteAudio,
     uploadAndAddAudio,
     setDuration,

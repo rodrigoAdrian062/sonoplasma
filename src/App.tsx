@@ -23,6 +23,7 @@ const FloatingBackgroundMusic = lazy(() => import("@/components/FloatingBackgrou
 // Páginas pesadas/menos usadas — carregadas sob demanda para reduzir o bundle inicial
 const AudioLibrary = lazy(() => import("./pages/AudioLibrary"));
 const YoutubeLibrary = lazy(() => import("./pages/YoutubeLibrary"));
+const YoutubeMusic = lazy(() => import("./pages/YoutubeMusic"));
 const SpotifyLibrary = lazy(() => import("./pages/SpotifyLibrary"));
 const HarmonyEditor = lazy(() => import("./pages/HarmonyEditor"));
 
@@ -128,6 +129,14 @@ const App = () => {
                   <ErrorBoundary context="YoutubeLibrary"><YoutubeLibrary /></ErrorBoundary>
                 </ProtectedRoute>
               } 
+            />
+            <Route
+              path="/youtube-music"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary context="YoutubeMusic"><YoutubeMusic /></ErrorBoundary>
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/spotify" 

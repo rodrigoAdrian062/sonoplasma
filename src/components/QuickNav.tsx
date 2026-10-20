@@ -55,6 +55,12 @@ export function QuickNav() {
     >
       {links.map((link) => {
         const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to);
+        const buttonClassName = cn(
+          'flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-all',
+          active
+            ? link.activeClass
+            : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+        );
         return (
           <Tooltip key={link.to}>
             <TooltipTrigger asChild>
@@ -62,12 +68,7 @@ export function QuickNav() {
                 type="button"
                 onClick={() => navigate(link.to)}
                 aria-label={link.label}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-all',
-                  active
-                    ? link.activeClass
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                )}
+                className={buttonClassName}
               >
                 <link.icon size={18} />
               </button>
