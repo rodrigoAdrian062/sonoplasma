@@ -8,6 +8,14 @@ type SpotifyPlaybackData = {
   position?: number;
 };
 
+export function isSpotifyPlaybackEnded(data: SpotifyPlaybackData): boolean {
+  return data.isPaused === true &&
+    typeof data.duration === 'number' &&
+    data.duration > 0 &&
+    typeof data.position === 'number' &&
+    data.position >= data.duration - 1000;
+}
+
 type SpotifyEmbedController = {
   loadEntity?: (spotifyUriOrUrl: string, preferVideo?: boolean, startAt?: number) => void;
   loadUri?: (spotifyUri: string, preferVideo?: boolean, startAt?: number, theme?: string) => void;
@@ -77,6 +85,10 @@ function configureSpotifyIframe() {
 function commandPlay(activeController: SpotifyEmbedController, fromStart = false) {
   if (fromStart && activeController.playFromStart) {
     activeController.playFromStart();
+    return;
+  }
+  if (fromStart && activeController.restart) {
+    activeController.restart();
     return;
   }
   if (activeController.play) activeController.play();

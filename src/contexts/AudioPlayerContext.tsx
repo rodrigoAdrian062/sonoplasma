@@ -10,6 +10,7 @@ import { registerAudioElement } from '@/lib/audioOutput';
 import { isSpotifyUrl } from '@/lib/embedUrl';
 import {
   destroySpotifyPlayer,
+  isSpotifyPlaybackEnded,
   pauseSpotifyEntity,
   playSpotifyEntity,
   resumeSpotifyEntity,
@@ -194,6 +195,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const onTrackEndedRef = useRef<((stageId: string, url: string) => boolean) | null>(null);
   const loopEnabledRef = useRef(loopEnabled);
   const currentStageIdRef = useRef<string | null>(null);
+  const spotifyPauseRequestedRef = useRef(false);
+  const spotifyTrackEndedRef = useRef(false);
 
 
   useEffect(() => {
@@ -508,14 +511,59 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
   }, [isYouTube, status]);
 
+  const handleSpotifyTrackEnded = useCallback(() => {
+    if (spotifyTrackEndedRef.current) return;
+    spotifyTrackEndedRef.current = true;
+
+    const endedStage = currentStageIdRef.current;
+    const endedUrl = currentUrlRef.current;
+    if (!endedStage || !endedUrl) return;
+
+    if (loopEnabledRef.current) {
+      playSpotifyEntity(endedUrl).catch((error: unknown) => {
+        console.error('[Spotify] falha ao repetir a faixa:', error, { url: endedUrl });
+      });
+      return;
+    }
+
+    clearRamp();
+    if (onTrackEndedRef.current?.(endedStage, endedUrl)) return;
+
+    setStatus('idle');
+    setCurrentStageId(null);
+    setCurrentTime(0);
+    setIsSpotify(false);
+    isSpotifyRef.current = false;
+    currentUrlRef.current = null;
+    setCurrentUrl(null);
+  }, [clearRamp]);
+
   useEffect(() => {
     return subscribeSpotifyPlayback((data) => {
       if (!isSpotifyRef.current) return;
       if (typeof data.position === 'number') setCurrentTime(data.position / 1000);
       if (typeof data.duration === 'number' && data.duration > 0) setDuration(data.duration / 1000);
+
+      if (
+        data.isPaused === false &&
+        typeof data.position === 'number' &&
+        typeof data.duration === 'number' &&
+        data.position < data.duration - 1000
+      ) {
+        spotifyTrackEndedRef.current = false;
+      }
+
+      if (
+        !spotifyPauseRequestedRef.current &&
+        isSpotifyPlaybackEnded(data) &&
+        !spotifyTrackEndedRef.current
+      ) {
+        handleSpotifyTrackEnded();
+        return;
+      }
       if (typeof data.isPaused === 'boolean') setStatus(data.isPaused ? 'paused' : 'playing');
     });
-  }, []);
+  }, [handleSpotifyTrackEnded]);
 
   const stopCurrentPlayback = useCallback(() => {
     if (ytInitTimeoutRef.current !== null) {
@@ -672,6 +720,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const play = useCallback((stageId: string, url: string, stageVolume?: StagePlaybackVolume) => {
     clearFade();
     clearRamp();
+    spotifyPauseRequestedRef.current = false;
+    spotifyTrackEndedRef.current = false;
     stopCurrentPlayback();
 
     const levels = stageVolume ? getStagePlaybackLevels(stageVolume) : null;
@@ -827,6 +877,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const rampPaused = suspendRamp();
     const doPause = () => {
       if (isSpotifyRef.current) {
+        spotifyPauseRequestedRef.current = true;
         pauseSpotifyEntity().catch(() => { /* noop */ });
       } else if (isYouTubeRef.current && ytPlayerRef.current && ytPlayerReadyRef.current) {
         ytPlayerRef.current.pauseVideo();
@@ -847,6 +898,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const resume = useCallback(() => {
     clearFade();
+    spotifyPauseRequestedRef.current = false;
     applyPlayerVolume(volumeRef.current);
     if (isSpotifyRef.current) {
       resumeSpotifyEntity(currentUrlRef.current).catch(() => { /* noop */ });
