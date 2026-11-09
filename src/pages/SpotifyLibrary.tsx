@@ -32,7 +32,7 @@ const GREEN = '#1DB954';
 
 export default function SpotifyLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, addAudio, canAddAudio, canDeleteAudio } = useAudioLibrary();
   const { folders, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
@@ -228,7 +228,9 @@ export default function SpotifyLibraryPage() {
 
       <main className="container py-4 sm:py-6 space-y-4 max-w-7xl mx-auto">
         <div className="border border-border rounded-lg p-3">
-          {!showAddForm ? (
+          {!canAddAudio ? (
+            <p className="text-sm text-muted-foreground">Esta conta não tem permissão para adicionar músicas.</p>
+          ) : !showAddForm ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
@@ -433,7 +435,7 @@ export default function SpotifyLibraryPage() {
                                     else toast({ title: 'Link inválido', variant: 'destructive' });
                                   }}
                                 />
-                                <Button
+                                {canDeleteAudio && <Button
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => { if (isCurrent) handleStop(); deleteAudio.mutate(audio.id); }}
@@ -441,7 +443,7 @@ export default function SpotifyLibraryPage() {
                                   title="Remover"
                                 >
                                   <Trash2 size={16} />
-                                </Button>
+                                </Button>}
 
                               </div>
                             </div>

@@ -25,6 +25,26 @@ describe('access permissions', () => {
     expect(permissions.canUseAI).toBe(true);
     expect(permissions.canCreateUnlimitedSections).toBe(true);
     expect(permissions.canUploadAudio).toBe(true);
+    expect(permissions.canDeleteOwnLibraryAudio).toBe(true);
+    expect(permissions.canViewGlobalLibrary).toBe(true);
+  });
+
+  it('keeps new library capabilities private for free users', () => {
+    const permissions = buildPermissions('free');
+    expect(permissions.canUploadAudio).toBe(false);
+    expect(permissions.canDeleteOwnLibraryAudio).toBe(false);
+    expect(permissions.canViewGlobalLibrary).toBe(false);
+  });
+
+  it('fills missing permissions from the selected plan', () => {
+    const permissions = normalizePermissions(
+      { canUseAI: false },
+      buildPermissions('premium'),
+    );
+
+    expect(permissions.canUseAI).toBe(false);
+    expect(permissions.canDeleteOwnLibraryAudio).toBe(true);
+    expect(permissions.canViewGlobalLibrary).toBe(true);
   });
 
   it('allows admin overrides', () => {

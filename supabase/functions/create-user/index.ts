@@ -272,6 +272,8 @@ Deno.serve(async (req) => {
       canCreateUnlimitedStages: false,
       canUsePremiumLibrary: false,
       canUploadAudio: false,
+      canDeleteOwnLibraryAudio: false,
+      canViewGlobalLibrary: false,
       canUseBackup: false,
       canExportContent: false,
       canUseAI: false,

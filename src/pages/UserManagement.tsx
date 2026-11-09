@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ACCESS_PERMISSION_KEYS, buildPermissions, normalizePermissions, type AccessPlan, type AccessPermissionKey } from '@/lib/access';
+import { ACCESS_PERMISSION_KEYS, ACCESS_PERMISSION_LABELS, buildPermissions, normalizePermissions, type AccessPlan, type AccessPermissionKey } from '@/lib/access';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,7 +67,7 @@ function parseManagedUser(value: unknown): ManagedUser {
     password: typeof value.password === 'string' ? value.password : null,
     created_at: value.created_at,
     plan,
-    permissions: normalizePermissions(readPermissions(value.permissions) ?? buildPermissions(plan)),
+    permissions: normalizePermissions(readPermissions(value.permissions), buildPermissions(plan)),
   };
 }
 
@@ -80,6 +80,7 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
   const { isSuperAdmin, isLoading: roleLoading } = useUserRole();
+  const managedUsersQueryKey = ['managed-users', user?.id] as const;
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -100,7 +101,7 @@ export default function UserManagement() {
     error: usersError,
     refetch: refetchUsers,
   } = useQuery({
-    queryKey: ['managed-users'],
+    queryKey: managedUsersQueryKey,
     enabled: isSuperAdmin && !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('admin-users', {
@@ -117,10 +118,6 @@ export default function UserManagement() {
     },
   });
 
-  useEffect(() => {
-    if (!users.length) return;
-  }, [users]);
-
   const updateUserAccess = async (managedUser: ManagedUser) => {
     setSavingAccess((prev) => ({ ...prev, [managedUser.user_id]: true }));
     try {
@@ -134,7 +131,7 @@ export default function UserManagement() {
 
       if (error) throw error;
       toast.success(`Acesso de "${managedUser.username}" atualizado!`);
-      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+      queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
     } catch {
       toast.error('Erro ao atualizar permissão do usuário');
     } finally {
@@ -166,7 +163,7 @@ export default function UserManagement() {
       toast.success(`Acesso "${uname}" criado com sucesso!`);
       setUsername('');
       setPassword('');
-      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+      await queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
     } catch {
       toast.error('Erro ao criar acesso');
     } finally {
@@ -192,7 +189,7 @@ export default function UserManagement() {
       toast.success('Senha atualizada!');
       setEditingId(null);
       setEditPassword('');
-      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+      queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
     } catch {
       toast.error('Erro ao salvar');
     } finally {
@@ -214,7 +211,7 @@ export default function UserManagement() {
       }
       toast.success(`Acesso "${deleteTarget.username}" excluído`);
       setDeleteTarget(null);
-      queryClient.invalidateQueries({ queryKey: ['managed-users'] });
+      queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
     } catch {
       toast.error('Erro ao excluir');
     } finally {
@@ -423,7 +420,7 @@ export default function UserManagement() {
                                       await updateUserAccess({ ...u, permissions: nextPermissions });
                                     }}
                                   />
-                                  {permissionKey}
+                                  {ACCESS_PERMISSION_LABELS[permissionKey]}
                                 </label>
                               ))}
                             </div>

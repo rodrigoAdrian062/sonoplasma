@@ -4,6 +4,9 @@ import { AudioLibraryItem, AudioLibraryInsert } from '@/types/audioLibrary';
 import { probeAudioDuration } from '@/lib/audioDuration';
 import { toast } from '@/hooks/use-toast';
 import { mensagemUpload } from '@/lib/errorHandler';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 // Normaliza uma URL de áudio para comparação de duplicatas.
 // Reduz YouTube ao seu ID único; para o resto, compara a URL limpa.
 import { getYouTubeVideoId } from '@/lib/embedUrl';
@@ -27,9 +30,15 @@ function normalizeAudioUrl(url: string): string {
 
 export function useAudioLibrary() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { access } = useUserAccess();
+  const canAddAudio = hasPermission(access, 'canUploadAudio');
+  const canDeleteAudio = hasPermission(access, 'canDeleteOwnLibraryAudio');
+  const audioLibraryQueryKey = ['audioLibrary', user?.id] as const;
 
   const { data: audios = [], isLoading, error } = useQuery({
-    queryKey: ['audioLibrary'],
+    queryKey: audioLibraryQueryKey,
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_audios_biblioteca')
@@ -45,9 +54,10 @@ export function useAudioLibrary() {
 
   const addAudio = useMutation({
     mutationFn: async (audio: AudioLibraryInsert) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite adicionar músicas à biblioteca.');
       // Detecta duplicata pela URL (ignorando faixas já enviadas por arquivo).
       if (audio.audio_url) {
-        const existing = (queryClient.getQueryData(['audioLibrary']) as AudioLibraryItem[] | undefined) || [];
+        const existing = (queryClient.getQueryData(audioLibraryQueryKey) as AudioLibraryItem[] | undefined) || [];
         const target = normalizeAudioUrl(audio.audio_url);
         const dup = existing.find((a) => a.audio_url && normalizeAudioUrl(a.audio_url) === target);
         if (dup) {
@@ -65,7 +75,7 @@ export function useAudioLibrary() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
       toast({ title: 'Áudio adicionado à biblioteca' });
     },
     onError: (error) => {
@@ -75,9 +85,10 @@ export function useAudioLibrary() {
 
   const addAudios = useMutation({
     mutationFn: async (newAudios: AudioLibraryInsert[]) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite adicionar músicas à biblioteca.');
       if (newAudios.length === 0) return { added: 0, skipped: 0 };
 
-      const existing = (queryClient.getQueryData(['audioLibrary']) as AudioLibraryItem[] | undefined) || [];
+      const existing = (queryClient.getQueryData(audioLibraryQueryKey) as AudioLibraryItem[] | undefined) || [];
       const knownUrls = new Set(
         existing
           .filter((audio) => audio.audio_url)
@@ -102,7 +113,7 @@ export function useAudioLibrary() {
       return { added: data.length, skipped: newAudios.length - uniqueAudios.length };
     },
     onSuccess: ({ added, skipped }) => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
       toast({
         title: added > 0 ? `${added} música(s) adicionada(s) à biblioteca` : 'Todas as músicas já estavam na biblioteca',
         description: skipped > 0 ? `${skipped} duplicata(s) ignorada(s).` : undefined,
@@ -115,6 +126,7 @@ export function useAudioLibrary() {
 
   const deleteAudios = useMutation({
     mutationFn: async (ids: string[]) => {
+      if (!canDeleteAudio) throw new Error('Seu acesso não permite excluir músicas da biblioteca.');
       if (ids.length === 0) return 0;
       const { data, error } = await supabase
         .from('sonoplastia_audios_biblioteca')
@@ -125,7 +137,7 @@ export function useAudioLibrary() {
       return data.length;
     },
     onSuccess: (deletedCount) => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
       toast({ title: `${deletedCount} música(s) removida(s) da biblioteca` });
     },
     onError: (error) => {
@@ -135,6 +147,7 @@ export function useAudioLibrary() {
 
   const deleteAudio = useMutation({
     mutationFn: async (id: string) => {
+      if (!canDeleteAudio) throw new Error('Seu acesso não permite excluir músicas da biblioteca.');
       // Get the audio to delete the file from storage
       const { data: audioData } = await supabase
         .from('sonoplastia_audios_biblioteca')
@@ -159,7 +172,7 @@ export function useAudioLibrary() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
       toast({ title: 'Áudio removido da biblioteca' });
     },
     onError: (error) => {
@@ -169,6 +182,7 @@ export function useAudioLibrary() {
 
   const setDuration = useMutation({
     mutationFn: async ({ id, seconds }: { id: string; seconds: number }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite editar músicas da biblioteca.');
       const { error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .update({ duracao_segundos: Math.round(seconds) })
@@ -176,12 +190,13 @@ export function useAudioLibrary() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
     },
   });
 
   const setClima = useMutation({
     mutationFn: async ({ id, clima }: { id: string; clima: string | null }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite editar músicas da biblioteca.');
       const { error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .update({ clima })
@@ -189,7 +204,7 @@ export function useAudioLibrary() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+      queryClient.invalidateQueries({ queryKey: audioLibraryQueryKey });
     },
     onError: (error) => {
       toast({ title: 'Erro ao definir clima', description: error.message, variant: 'destructive' });
@@ -197,6 +212,12 @@ export function useAudioLibrary() {
   });
 
   const uploadAndAddAudio = async (file: File, name: string) => {
+    if (!canAddAudio) {
+      const error = new Error('Seu acesso não permite adicionar músicas à biblioteca.');
+      toast({ title: 'Não foi possível enviar', description: error.message, variant: 'destructive' });
+      throw error;
+    }
+
     const { data: { session }, error: authError } = await supabase.auth.getSession();
     if (authError) {
       toast({ title: 'Não foi possível enviar', description: mensagemUpload(authError), variant: 'destructive' });
@@ -240,6 +261,8 @@ export function useAudioLibrary() {
     audios,
     isLoading,
     error,
+    canAddAudio,
+    canDeleteAudio,
     addAudio,
     addAudios,
     deleteAudios,

@@ -41,7 +41,7 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
 
 
 export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPickerProps) {
-  const { audios: library, isLoading, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios: library, isLoading, uploadAndAddAudio, addAudio, canAddAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
 
   const [search, setSearch] = useState('');
@@ -291,7 +291,9 @@ export function AudioPicker({ audios, onChange, maxAudios = Infinity }: AudioPic
 
       {/* Add new */}
       <div className="rounded-xl border border-border bg-secondary/30 p-3">
-        {!showAdd ? (
+        {!canAddAudio ? (
+          <p className="text-sm text-muted-foreground">Esta conta não tem permissão para adicionar músicas.</p>
+        ) : !showAdd ? (
           <button
             type="button"
             onClick={() => setShowAdd(true)}

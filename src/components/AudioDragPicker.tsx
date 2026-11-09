@@ -122,7 +122,7 @@ function SourceIcon({ url, size = 14 }: { url: string; size?: number }) {
 
 
 export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios = Infinity, stageTitle, stageDescription }: AudioDragPickerProps) {
-  const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio } = useAudioLibrary();
+  const { audios: library, isLoading, uploadAndAddAudio, addAudio, deleteAudio, canAddAudio, canDeleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const { access } = useUserAccess();
   const canUseAI = hasPermission(access, 'canUseAI');
@@ -924,14 +924,14 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
                                 <Plus size={14} />
                               </button>
                             )}
-                            <button
+                            {canDeleteAudio && <button
                               type="button"
                               onClick={() => handleDeleteFromLibrary(item)}
                               className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               title="Excluir da biblioteca"
                             >
                               <Trash2 size={14} />
-                            </button>
+                            </button>}
                           </div>
                         </div>
 
@@ -972,7 +972,9 @@ export function AudioDragPicker({ isOpen, onClose, audios, onChange, maxAudios =
 
               {/* Add new */}
               <div className="mt-2">
-                {!showAdd ? (
+                {!canAddAudio ? (
+                  <p className="text-center text-xs text-muted-foreground">Esta conta não tem permissão para adicionar músicas.</p>
+                ) : !showAdd ? (
                   <button
                     type="button"
                     onClick={() => setShowAdd(true)}

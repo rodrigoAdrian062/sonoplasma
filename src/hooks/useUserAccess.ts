@@ -30,7 +30,10 @@ export function useUserAccess() {
       if (error) throw error;
 
       const plan = (profile?.plan as AccessPlan | undefined) ?? 'free';
-      const permissions = normalizePermissions((profile?.permissions as Record<string, boolean> | null) ?? buildPermissions(plan));
+      const permissions = normalizePermissions(
+        (profile?.permissions as Record<string, boolean> | null) ?? undefined,
+        buildPermissions(plan),
+      );
 
       return {
         plan,

@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PASTAS_PADRAO } from '@/lib/pastasPadrao';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserAccess } from '@/hooks/useUserAccess';
+import { hasPermission } from '@/lib/access';
 
 export interface AudioFolder {
   id: string;
@@ -17,9 +20,15 @@ export interface AudioFolder {
 
 export function useAudioFolders() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { access } = useUserAccess();
+  const canAddAudio = hasPermission(access, 'canUploadAudio');
+  const canDeleteAudio = hasPermission(access, 'canDeleteOwnLibraryAudio');
+  const audioFoldersQueryKey = ['audioFolders', user?.id] as const;
 
   const { data: folders = [], isLoading } = useQuery({
-    queryKey: ['audioFolders'],
+    queryKey: audioFoldersQueryKey,
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_audios_pastas')
@@ -32,6 +41,7 @@ export function useAudioFolders() {
 
   const addFolder = useMutation({
     mutationFn: async ({ nome, parentId }: { nome: string; parentId?: string | null }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite criar pastas.');
       const { data, error } = await supabase
         .from('sonoplastia_audios_pastas')
         .insert({ nome, parent_id: parentId ?? null, ordem: folders.length })
@@ -41,7 +51,7 @@ export function useAudioFolders() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      queryClient.invalidateQueries({ queryKey: audioFoldersQueryKey });
       toast({ title: 'Pasta criada com sucesso' });
     },
     onError: (error) => {
@@ -51,6 +61,7 @@ export function useAudioFolders() {
 
   const renameFolder = useMutation({
     mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite editar pastas.');
       const { error } = await supabase
         .from('sonoplastia_audios_pastas')
         .update({ nome })
@@ -58,7 +69,7 @@ export function useAudioFolders() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      queryClient.invalidateQueries({ queryKey: audioFoldersQueryKey });
       toast({ title: 'Pasta renomeada' });
     },
     onError: (error) => {
@@ -68,6 +79,7 @@ export function useAudioFolders() {
 
   const updateFolder = useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; nome?: string; cor?: string | null; icone?: string | null }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite editar pastas.');
       const { error } = await supabase
         .from('sonoplastia_audios_pastas')
         .update(updates)
@@ -75,7 +87,7 @@ export function useAudioFolders() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      queryClient.invalidateQueries({ queryKey: audioFoldersQueryKey });
     },
     onError: (error) => {
       toast({ title: 'Erro ao atualizar pasta', description: error.message, variant: 'destructive' });
@@ -85,6 +97,7 @@ export function useAudioFolders() {
 
   const deleteFolder = useMutation({
     mutationFn: async (id: string) => {
+      if (!canDeleteAudio) throw new Error('Seu acesso não permite excluir pastas.');
       const { error } = await supabase
         .from('sonoplastia_audios_pastas')
         .delete()
@@ -92,7 +105,7 @@ export function useAudioFolders() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      queryClient.invalidateQueries({ queryKey: audioFoldersQueryKey });
       queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
       toast({ title: 'Pasta excluída' });
     },
@@ -103,6 +116,7 @@ export function useAudioFolders() {
 
   const moveAudioToFolder = useMutation({
     mutationFn: async ({ audioId, folderId }: { audioId: string; folderId: string | null }) => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite editar a biblioteca.');
       const { error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .update({ pasta_id: folderId })
@@ -116,6 +130,7 @@ export function useAudioFolders() {
 
   const createDefaultFolders = useMutation({
     mutationFn: async () => {
+      if (!canAddAudio) throw new Error('Seu acesso não permite criar pastas.');
       const existentes = new Set(folders.map((f) => f.nome.trim().toLowerCase()));
       const novas = PASTAS_PADRAO.filter((p) => !existentes.has(p.nome.toLowerCase()));
       if (novas.length === 0) return 0;
@@ -132,7 +147,7 @@ export function useAudioFolders() {
       return novas.length;
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+      queryClient.invalidateQueries({ queryKey: audioFoldersQueryKey });
       toast({
         title: count ? `${count} pasta(s) padrão criada(s)` : 'Estrutura já está completa',
         description: count ? 'Estrutura ritual 01 Entrada → 09 Saída pronta.' : undefined,
@@ -143,6 +158,5 @@ export function useAudioFolders() {
     },
   });
 
-  return { folders, isLoading, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders };
+  return { folders, isLoading, canAddAudio, canDeleteAudio, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders };
 }
-

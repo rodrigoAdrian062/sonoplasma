@@ -5,6 +5,8 @@ export const ACCESS_PERMISSION_KEYS = [
   'canCreateUnlimitedStages',
   'canUsePremiumLibrary',
   'canUploadAudio',
+  'canDeleteOwnLibraryAudio',
+  'canViewGlobalLibrary',
   'canUseBackup',
   'canExportContent',
   'canUseAI',
@@ -28,6 +30,8 @@ export const DEFAULT_FREE_PERMISSIONS: Record<AccessPermissionKey, boolean> = {
   canCreateUnlimitedStages: false,
   canUsePremiumLibrary: false,
   canUploadAudio: false,
+  canDeleteOwnLibraryAudio: false,
+  canViewGlobalLibrary: false,
   canUseBackup: false,
   canExportContent: false,
   canUseAI: false,
@@ -44,6 +48,8 @@ export const DEFAULT_PREMIUM_PERMISSIONS: Record<AccessPermissionKey, boolean> =
   canCreateUnlimitedStages: true,
   canUsePremiumLibrary: true,
   canUploadAudio: true,
+  canDeleteOwnLibraryAudio: true,
+  canViewGlobalLibrary: true,
   canUseBackup: true,
   canExportContent: true,
   canUseAI: true,
@@ -60,13 +66,31 @@ export const DEFAULT_ADMIN_PERMISSIONS: Record<AccessPermissionKey, boolean> = {
 };
 
 export function normalizePermissions(
-  permissions: Partial<Record<AccessPermissionKey, boolean>> | undefined
+  permissions: Partial<Record<AccessPermissionKey, boolean>> | undefined,
+  defaults: Record<AccessPermissionKey, boolean> = DEFAULT_FREE_PERMISSIONS,
 ): Record<AccessPermissionKey, boolean> {
   return ACCESS_PERMISSION_KEYS.reduce((acc, key) => {
-    acc[key] = Boolean(permissions?.[key]);
+    acc[key] = typeof permissions?.[key] === 'boolean' ? permissions[key] : defaults[key];
     return acc;
   }, {} as Record<AccessPermissionKey, boolean>);
 }
+
+export const ACCESS_PERMISSION_LABELS: Record<AccessPermissionKey, string> = {
+  canCreateUnlimitedSections: 'Criar seções sem limite',
+  canCreateUnlimitedStages: 'Criar etapas sem limite',
+  canUsePremiumLibrary: 'Baixar a biblioteca de músicas',
+  canUploadAudio: 'Adicionar músicas à biblioteca',
+  canDeleteOwnLibraryAudio: 'Excluir músicas que adicionou',
+  canViewGlobalLibrary: 'Ver músicas da biblioteca global',
+  canUseBackup: 'Usar backup',
+  canExportContent: 'Exportar conteúdo',
+  canUseAI: 'Usar recursos de inteligência artificial',
+  canManageUsers: 'Gerenciar usuários',
+  canManagePermissions: 'Gerenciar permissões',
+  canUseAdvancedThemes: 'Usar temas avançados',
+  canUseAdvancedPresentation: 'Usar apresentação avançada',
+  canAccessEverything: 'Acesso total (ignora as opções individuais)',
+};
 
 export function buildPermissions(plan: AccessPlan): Record<AccessPermissionKey, boolean> {
   switch (plan) {

@@ -187,7 +187,7 @@ function TrackHzSelector({ url }: { url: string }) {
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { audios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration } = useAudioLibrary();
+  const { audios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration, canAddAudio, canDeleteAudio } = useAudioLibrary();
   const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
 
   const { stages } = useStages();
@@ -834,10 +834,12 @@ export default function AudioLibraryPage() {
                     <ListPlus size={14} className="mr-1" />
                     <span className="hidden sm:inline">{showListView ? 'Grade' : 'Lista'}</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setBulkDeleteMode(true)}>
-                    <CheckSquare size={14} className="mr-1" />
-                    <span className="hidden sm:inline">Selecionar</span>
-                  </Button>
+                  {canDeleteAudio && (
+                    <Button variant="outline" size="sm" onClick={() => setBulkDeleteMode(true)}>
+                      <CheckSquare size={14} className="mr-1" />
+                      <span className="hidden sm:inline">Selecionar</span>
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={handleDownloadAll} disabled={isDownloadingAll}>
                     {isDownloadingAll ? <Loader2 className="animate-spin mr-1" size={14} /> : <Download size={14} className="mr-1" />}
                     <span className="hidden sm:inline">{isDownloadingAll ? 'Baixando...' : 'Baixar'}</span>
@@ -1003,7 +1005,11 @@ export default function AudioLibraryPage() {
 
         {/* Add Audio Section */}
         <div className="border border-border rounded-lg p-3">
-          {!showAddForm ? (
+          {!canAddAudio ? (
+            <p className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
+              Esta conta não tem permissão para adicionar músicas. Peça ao administrador para habilitar o acesso.
+            </p>
+          ) : !showAddForm ? (
             <Button
               variant="outline"
               onClick={() => setShowAddForm(true)}
@@ -1187,6 +1193,7 @@ export default function AudioLibraryPage() {
             <VirtualAudioList
               audios={filteredAudios}
               bulkDeleteMode={bulkDeleteMode}
+              canDeleteAudio={canDeleteAudio}
               selectedIds={selectedIds}
               toggleSelectId={toggleSelectId}
               playingId={playingId}
@@ -1222,6 +1229,7 @@ export default function AudioLibraryPage() {
 interface VirtualAudioListProps {
   audios: AudioLibraryItem[];
   bulkDeleteMode: boolean;
+  canDeleteAudio: boolean;
   selectedIds: Set<string>;
   toggleSelectId: (id: string) => void;
   playingId: string | null;
@@ -1249,7 +1257,7 @@ interface VirtualAudioListProps {
 
 function VirtualAudioList(props: VirtualAudioListProps) {
   const {
-    audios, bulkDeleteMode, selectedIds, toggleSelectId,
+    audios, bulkDeleteMode, canDeleteAudio, selectedIds, toggleSelectId,
     playingId, isPaused, audioCurrentTime, audioDuration,
     handlePauseResume, handleSeek, handleSeekTo, stopCurrentPlayback,
     deleteAudio, stages, sections, folders, currentFolderId, moveAudioToFolder,
@@ -1508,9 +1516,11 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                       }}
                     />
 
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteAudio.mutate(audio.id); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
-                      <Trash2 size={16} />
-                    </Button>
+                    {canDeleteAudio && (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteAudio.mutate(audio.id); }} className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive">
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
                   </div>
                 )}
                 {playingId === audio.id && audioDuration > 0 && (

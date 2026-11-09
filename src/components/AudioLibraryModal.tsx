@@ -44,7 +44,7 @@ function getAudioSource(a: { audio_url: string; tipo?: string | null }): 'youtub
 
 
 export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMode = false, audioFilter, emptySelectionMessage }: AudioLibraryModalProps) {
-  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, uploadAndAddAudio, addAudio, canDeleteAudio } = useAudioLibrary();
   const { folders } = useAudioFolders();
   const { access } = useUserAccess();
   const canUploadAudio = hasPermission(access, 'canUploadAudio');
@@ -343,7 +343,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
           <DialogTitle className="flex items-center gap-2">
             <Library className="text-gold" size={20} />
             {selectionMode ? 'Selecionar da Biblioteca' : bulkDeleteMode ? `${selectedIds.size} selecionado(s)` : 'Biblioteca de Áudios'}
-            {!selectionMode && audios.length > 0 && (
+            {!selectionMode && canDeleteAudio && audios.length > 0 && (
               <div className="ml-auto flex items-center gap-1">
                 {bulkDeleteMode ? (
                   <>
@@ -397,7 +397,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
             <div className="border border-border rounded-lg p-3">
               {!canUploadAudio ? (
                 <div className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-                  Biblioteca premium: faça upgrade para adicionar ou importar áudios.
+                  Esta conta não tem permissão para adicionar músicas. Peça ao administrador para habilitar o acesso.
                 </div>
               ) : !showAddForm ? (
                 <Button
@@ -684,7 +684,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                           >
                             <Check size={18} strokeWidth={3} />
                           </Button>
-                        ) : (
+                        ) : canDeleteAudio ? (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -696,7 +696,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                           >
                             <Trash2 size={16} />
                           </Button>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </div>

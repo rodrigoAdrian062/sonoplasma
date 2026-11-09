@@ -115,7 +115,7 @@ function loadYouTubeApi(): Promise<YouTubeApi> {
 
 export default function YoutubeLibraryPage() {
   const navigate = useNavigate();
-  const { audios, isLoading, deleteAudio, deleteAudios, addAudio } = useAudioLibrary();
+  const { audios, isLoading, deleteAudio, deleteAudios, addAudio, canAddAudio, canDeleteAudio } = useAudioLibrary();
   const { folders, moveAudioToFolder } = useAudioFolders();
   const { stages } = useStages();
   const { sections } = useSections();
@@ -414,7 +414,9 @@ export default function YoutubeLibraryPage() {
       <main className="container py-4 sm:py-6 space-y-4 max-w-7xl mx-auto">
         {/* Add form */}
         <div className="border border-border rounded-lg p-3">
-          {!showAddForm ? (
+          {!canAddAudio ? (
+            <p className="text-sm text-muted-foreground">Esta conta não tem permissão para adicionar músicas.</p>
+          ) : !showAddForm ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
@@ -531,7 +533,7 @@ export default function YoutubeLibraryPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2">
+            {canDeleteAudio && <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
@@ -558,7 +560,7 @@ export default function YoutubeLibraryPage() {
                 {deleteAudios.isPending ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Trash2 size={14} className="mr-1" />}
                 Excluir selecionadas
               </Button>
-            </div>
+            </div>}
 
             {/* List */}
             {isLoading ? (
@@ -671,7 +673,7 @@ export default function YoutubeLibraryPage() {
                           else toast({ title: 'Link inválido', variant: 'destructive' });
                         }}
                       />
-                      <Button
+                      {canDeleteAudio && <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => { if (isCurrent) handleStop(); deleteAudio.mutate(audio.id); }}
@@ -679,7 +681,7 @@ export default function YoutubeLibraryPage() {
                         title="Remover"
                       >
                         <Trash2 size={16} />
-                      </Button>
+                      </Button>}
 
                     </div>
                   </div>
