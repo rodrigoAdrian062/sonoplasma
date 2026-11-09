@@ -31,4 +31,4 @@ jobs:
             echo "Configure SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_ID in GitHub Actions secrets."
             exit 1
           fi
-          supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID" --use-api
+          supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID" --use-api --yes
