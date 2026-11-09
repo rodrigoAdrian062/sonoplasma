@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StageAudio, StageAudioInsert, StageAudioUpdate } from '@/types/stageAudio';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useStageAudios(etapaId?: string) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: audios = [], isLoading, error } = useQuery({
-    queryKey: ['stage-audios', etapaId],
+    queryKey: ['stage-audios', etapaId, user?.id],
     queryFn: async () => {
       if (!etapaId) return [];
       
@@ -21,7 +23,7 @@ export function useStageAudios(etapaId?: string) {
       if (error) throw error;
       return data as StageAudio[];
     },
-    enabled: !!etapaId,
+    enabled: !!etapaId && !!user?.id,
     staleTime: 5 * 60_000,
     gcTime: 24 * 60 * 60_000,
   });
@@ -177,8 +179,10 @@ export function useStageAudios(etapaId?: string) {
 
 // Hook to fetch all audios for all stages
 export function useAllStageAudios() {
+  const { user } = useAuth();
+
   const { data: allAudios = [], isLoading, error } = useQuery({
-    queryKey: ['all-stage-audios'],
+    queryKey: ['all-stage-audios', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_etapa_audios')
@@ -188,6 +192,7 @@ export function useAllStageAudios() {
       if (error) throw error;
       return data as StageAudio[];
     },
+    enabled: !!user?.id,
     staleTime: 5 * 60_000,
     gcTime: 24 * 60 * 60_000,
   });
