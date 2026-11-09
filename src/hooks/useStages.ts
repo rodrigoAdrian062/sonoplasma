@@ -2,12 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CeremonyStage, CeremonyStageInsert, CeremonyStageUpdate } from '@/types/ceremony';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useStages() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: stages = [], isLoading, error } = useQuery({
-    queryKey: ['stages'],
+    queryKey: ['stages', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_etapas')
@@ -18,6 +20,7 @@ export function useStages() {
       if (error) throw error;
       return data as CeremonyStage[];
     },
+    enabled: !!user?.id,
     staleTime: 5 * 60_000,
     gcTime: 24 * 60 * 60_000,
   });

@@ -4,9 +4,11 @@ import { CeremonySection, CeremonySectionInsert, CeremonySectionUpdate } from '@
 import { toast } from '@/hooks/use-toast';
 import { useUserAccess } from '@/hooks/useUserAccess';
 import { hasPermission } from '@/lib/access';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useSections() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { access } = useUserAccess();
   const canCreateUnlimitedSections = hasPermission(access, 'canCreateUnlimitedSections');
 
@@ -17,7 +19,7 @@ export function useSections() {
   };
 
   const { data: sections = [], isLoading, error } = useQuery({
-    queryKey: ['sections'],
+    queryKey: ['sections', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_secoes')
@@ -28,6 +30,7 @@ export function useSections() {
       if (error) throw error;
       return data as CeremonySection[];
     },
+    enabled: !!user?.id,
     staleTime: 5 * 60_000,
     gcTime: 24 * 60 * 60_000,
   });
