@@ -19,7 +19,13 @@ Deno.serve(async (req) => {
       .eq('role', 'super_admin')
       .maybeSingle();
 
-    if (roleError) return json({ error: 'Não foi possível verificar o acesso administrativo.' }, 500);
+    if (roleError) {
+      console.error('Falha ao verificar acesso administrativo:', roleError);
+      return json({
+        error: 'Não foi possível verificar o acesso administrativo.',
+        details: roleError.message,
+      }, 500);
+    }
     if (!role) return json({ error: 'Apenas o Plenitude pode consultar os usuários.' }, 403);
 
     const body = await req.json().catch(() => ({}));
@@ -36,7 +42,10 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
       if (error) {
         console.error('Falha ao listar usuários do Auth:', error);
-        return json({ error: 'Não foi possível carregar os usuários cadastrados.' }, 500);
+        return json({
+          error: 'Não foi possível carregar os usuários cadastrados.',
+          details: error.message,
+        }, 500);
       }
       authUsers.push(...data.users);
       if (data.users.length < perPage) break;
@@ -52,7 +61,10 @@ Deno.serve(async (req) => {
 
     if (profilesError) {
       console.error('Falha ao carregar perfis de usuários:', profilesError);
-      return json({ error: 'Não foi possível carregar os perfis dos usuários.' }, 500);
+      return json({
+        error: 'Não foi possível carregar os perfis dos usuários.',
+        details: profilesError.message,
+      }, 500);
     }
 
     const profilesByUserId = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));

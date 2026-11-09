@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserAdminContext } from "../_shared/openai-connection.ts";
 
 // ============================================================
 // CORS
@@ -53,37 +53,35 @@ Deno.serve(async (req) => {
     // 3. VARIÁVEIS DO SUPABASE
     // --------------------------------------------------------
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const { user, admin: supabaseAdmin } = await getUserAdminContext(req);
+    const { data: adminRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "super_admin")
+      .maybeSingle();
 
-    const serviceRoleKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl) {
-      throw new Error(
-        "SUPABASE_URL não está configurada na Edge Function.",
+    if (roleError) {
+      console.error("Erro ao verificar administrador:", roleError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Não foi possível verificar o acesso administrativo.",
+          details: roleError.message,
+        }),
+        { status: 500, headers: corsHeaders },
       );
     }
 
-    if (!serviceRoleKey) {
-      throw new Error(
-        "SUPABASE_SERVICE_ROLE_KEY não está configurada na Edge Function.",
+    if (!adminRole) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Apenas o Plenitude pode criar usuários.",
+        }),
+        { status: 403, headers: corsHeaders },
       );
     }
-
-    // --------------------------------------------------------
-    // 4. CLIENTE ADMINISTRATIVO
-    // --------------------------------------------------------
-
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      serviceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
 
     // --------------------------------------------------------
     // 5. LER DADOS ENVIADOS PELO FRONTEND
@@ -299,11 +297,14 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error("Erro ao criar perfil do usuário:", profileError);
-      await supabaseAdmin.auth.admin.deleteUser(data.user.id);
+      const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(data.user.id);
       return new Response(
         JSON.stringify({
           success: false,
           error: "Não foi possível salvar o perfil do acesso criado.",
+          details: cleanupError
+            ? `${profileError.message}; falha ao remover usuário incompleto: ${cleanupError.message}`
+            : profileError.message,
         }),
         {
           status: 500,
@@ -347,7 +348,7 @@ Deno.serve(async (req) => {
             : "Erro interno do servidor.",
       }),
       {
-        status: 500,
+        status: error instanceof Error && error.message === "Não autenticado." ? 401 : 500,
         headers: corsHeaders,
       },
     );

@@ -72,7 +72,11 @@ function parseManagedUser(value: unknown): ManagedUser {
 }
 
 function getResponseError(value: unknown): string | undefined {
-  return isRecord(value) && value.error ? String(value.error) : undefined;
+  if (!isRecord(value) || !value.error) return undefined;
+  const message = String(value.error);
+  return typeof value.details === 'string' && value.details
+    ? `${message} (${value.details})`
+    : message;
 }
 
 async function getFunctionErrorMessage(error: unknown): Promise<string | undefined> {
@@ -125,7 +129,9 @@ export default function UserManagement() {
       const { data, error } = await supabase.functions.invoke('admin-users', {
         body: { action: 'list' },
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(await getFunctionErrorMessage(error) || error.message);
+      }
       const responseError = getResponseError(data);
       if (responseError) throw new Error(responseError);
       if (!isRecord(data) || !Array.isArray(data.users)) {
