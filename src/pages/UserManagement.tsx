@@ -75,6 +75,24 @@ function getResponseError(value: unknown): string | undefined {
   return isRecord(value) && value.error ? String(value.error) : undefined;
 }
 
+async function getFunctionErrorMessage(error: unknown): Promise<string | undefined> {
+  if (!isRecord(error)) return error instanceof Error ? error.message : undefined;
+
+  if (error.context instanceof Response) {
+    try {
+      const responseError = getResponseError(await error.context.clone().json());
+      if (responseError) return responseError;
+    } catch {
+      // The response may not contain JSON.
+    }
+  }
+
+  return typeof error.message === 'string'
+    && !error.message.includes('non-2xx')
+    ? error.message
+    : undefined;
+}
+
 export default function UserManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -156,16 +174,20 @@ export default function UserManagement() {
         body: { username: uname, password },
       });
       const responseError = getResponseError(data);
-      if (error || responseError) {
-        toast.error(responseError || 'Erro ao criar acesso');
+      if (error) {
+        toast.error(responseError || await getFunctionErrorMessage(error) || 'Erro ao criar acesso');
+        return;
+      }
+      if (responseError) {
+        toast.error(responseError);
         return;
       }
       toast.success(`Acesso "${uname}" criado com sucesso!`);
       setUsername('');
       setPassword('');
       await queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
-    } catch {
-      toast.error('Erro ao criar acesso');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar acesso');
     } finally {
       setIsSubmitting(false);
     }
