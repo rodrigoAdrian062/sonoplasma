@@ -13,9 +13,13 @@ import { QuickSoundSectionMenu } from '@/components/QuickSoundSectionMenu';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { formatDuration } from '@/types/audioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
@@ -234,12 +238,24 @@ export default function AudioLibraryPage() {
     queryKey: ['audioLibraryUsers', user?.id],
     enabled: isSuperAdmin && !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('user_id, username')
-        .order('username', { ascending: true });
+      const { data, error } = await supabase.functions.invoke('admin-users', {
+        body: { action: 'list' },
+      });
       if (error) throw error;
-      return data;
+      if (!data || typeof data !== 'object' || !('users' in data) || !Array.isArray(data.users)) {
+        throw new Error('A resposta do servidor não contém a lista de usuários.');
+      }
+      return data.users.flatMap((item: unknown) => {
+        if (
+          typeof item !== 'object'
+          || item === null
+          || !('user_id' in item)
+          || typeof item.user_id !== 'string'
+          || !('username' in item)
+          || typeof item.username !== 'string'
+        ) return [];
+        return [{ user_id: item.user_id, username: item.username }];
+      });
     },
   });
   const audios = isSuperAdmin ? adminAudios ?? ownAudios : ownAudios;
@@ -301,6 +317,7 @@ export default function AudioLibraryPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [showUserLibrariesFolder, setShowUserLibrariesFolder] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ user_id: string; username: string } | null>(null);
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
@@ -334,6 +351,31 @@ export default function AudioLibraryPage() {
   const visibleOtherLibraryUsers = visibleLibraryUsers.filter(
     (libraryUser) => libraryUser.isUnassigned || libraryUser.user_id !== user?.id,
   );
+  const deleteUserMutation = useMutation({
+    mutationFn: async (target: { user_id: string; username: string }) => {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: target.user_id },
+      });
+      if (error) throw error;
+      if (data && typeof data === 'object' && 'error' in data && data.error) {
+        throw new Error(String(data.error));
+      }
+      return target;
+    },
+    onSuccess: (target) => {
+      sonnerToast.success(`Usuário "${target.username}" e sua biblioteca foram excluídos.`);
+      setUserToDelete(null);
+      setSelectedOwnerId(null);
+      setShowUserLibrariesFolder(true);
+      void queryClient.invalidateQueries({ queryKey: ['audioLibraryUsers'] });
+      void queryClient.invalidateQueries({ queryKey: ['audioLibrary', user?.id, 'admin'] });
+      void queryClient.invalidateQueries({ queryKey: ['audioFolders', user?.id, 'admin'] });
+      void queryClient.invalidateQueries({ queryKey: ['managed-users', user?.id] });
+    },
+    onError: (error) => {
+      sonnerToast.error(error instanceof Error ? error.message : 'Não foi possível excluir o usuário.');
+    },
+  });
   const parentFolder = currentFolder?.parent_id
     ? folders.find(f => f.id === currentFolder.parent_id) || null
     : null;
@@ -1025,23 +1067,43 @@ export default function AudioLibraryPage() {
                     ? audios.filter((audio) => !audio.owner_id).length
                     : audios.filter((audio) => audio.owner_id === libraryUser.user_id).length;
                   return (
-                    <button
+                    <div
                       key={libraryUser.user_id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedOwnerId(libraryUser.user_id);
-                        setCurrentFolderId(null);
-                        setBulkDeleteMode(false);
-                        setSelectedIds(new Set());
-                      }}
-                      className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-3 text-left transition-colors hover:bg-gold/10"
+                      className="flex min-w-0 items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-2 transition-colors hover:bg-gold/10"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gold/15 text-gold">
-                        <FolderOpen size={18} />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{libraryUser.username}</span>
-                      <span className="text-xs text-muted-foreground">{count}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedOwnerId(libraryUser.user_id);
+                          setCurrentFolderId(null);
+                          setBulkDeleteMode(false);
+                          setSelectedIds(new Set());
+                        }}
+                        className="flex min-w-0 flex-1 items-center gap-2 p-1 text-left"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gold/15 text-gold">
+                          <FolderOpen size={18} />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{libraryUser.username}</span>
+                        <span className="text-xs text-muted-foreground">{count}</span>
+                      </button>
+                      {!libraryUser.isUnassigned && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          aria-label={`Excluir ${libraryUser.username} e sua biblioteca`}
+                          title="Excluir usuário e biblioteca"
+                          onClick={() => setUserToDelete({
+                            user_id: libraryUser.user_id,
+                            username: libraryUser.username,
+                          })}
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      )}
+                    </div>
                   );
                 })}
                 {visibleFolders.map((folder) => {
@@ -1418,6 +1480,34 @@ export default function AudioLibraryPage() {
         )}
       </main>
 
+      <AlertDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleteUserMutation.isPending) setUserToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário e biblioteca?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A conta de "{userToDelete?.username}" e todas as músicas, pastas e arquivos enviados por esse usuário serão excluídos permanentemente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUserMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteUserMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                if (userToDelete) deleteUserMutation.mutate(userToDelete);
+              }}
+            >
+              {deleteUserMutation.isPending ? 'Excluindo...' : 'Excluir definitivamente'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
