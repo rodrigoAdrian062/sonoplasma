@@ -306,7 +306,7 @@ export default function AudioLibraryPage() {
   const [editingFolderName, setEditingFolderName] = useState('');
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
-  const canManageCurrentLibrary = !isSuperAdmin || selectedOwnerId === user?.id;
+  const canManageCurrentLibrary = !isSuperAdmin || selectedOwnerId === null || selectedOwnerId === user?.id;
   const canDeleteCurrentLibrary = canDeleteAudio && canManageCurrentLibrary;
   const unassignedOwnerId = '__unassigned_audio_owner__';
   const libraryOwnerIds = new Set([
@@ -333,15 +333,21 @@ export default function AudioLibraryPage() {
         }]
       : []),
   ];
+  const visibleOtherLibraryUsers = visibleLibraryUsers.filter(
+    (libraryUser) => libraryUser.isUnassigned || libraryUser.user_id !== user?.id,
+  );
   const parentFolder = currentFolder?.parent_id
     ? folders.find(f => f.id === currentFolder.parent_id) || null
     : null;
-  const visibleFolders = isSuperAdmin && selectedOwnerId === null
-    ? []
-    : folders.filter((folder) =>
-        folder.parent_id === currentFolderId
-        && (!isSuperAdmin || (selectedOwnerId === unassignedOwnerId ? !folder.owner_id : folder.owner_id === selectedOwnerId))
-      );
+  const visibleFolders = folders.filter((folder) =>
+    folder.parent_id === currentFolderId
+    && (!isSuperAdmin
+      || (selectedOwnerId === null
+        ? folder.owner_id === user?.id
+        : selectedOwnerId === unassignedOwnerId
+          ? !folder.owner_id
+          : folder.owner_id === selectedOwnerId))
+  );
   const showAdminUserDirectories = isSuperAdmin && selectedOwnerId === null;
   const selectedOwnerLabel = selectedOwnerId === unassignedOwnerId
     ? 'Sem usuário identificado'
@@ -385,7 +391,7 @@ export default function AudioLibraryPage() {
   const scopedOwnerAudios = !isSuperAdmin
     ? audios
     : selectedOwnerId === null
-      ? []
+      ? audios.filter((audio) => audio.owner_id === user?.id)
       : audios.filter((audio) => selectedOwnerId === unassignedOwnerId
         ? !audio.owner_id
         : audio.owner_id === selectedOwnerId);
@@ -874,7 +880,7 @@ export default function AudioLibraryPage() {
                   ? () => { setSelectedOwnerId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
                   : undefined}
             >
-              {showAdminUserDirectories ? 'Biblioteca por usuário' : selectedOwnerLabel || 'Biblioteca'}
+              {showAdminUserDirectories ? 'Biblioteca' : selectedOwnerLabel || 'Biblioteca'}
             </h1>
             {currentFolder && (
               <>
@@ -884,7 +890,7 @@ export default function AudioLibraryPage() {
             )}
           </div>
 
-          {!currentFolderId && (!isSuperAdmin || selectedOwnerId === user?.id) && (
+          {!currentFolderId && (!isSuperAdmin || selectedOwnerId === null || selectedOwnerId === user?.id) && (
             <>
               <Button
                 variant="outline"
@@ -978,9 +984,14 @@ export default function AudioLibraryPage() {
         {(
           <div className="space-y-2">
             {/* Folder list */}
-            {(visibleFolders.length > 0 || (showAdminUserDirectories && visibleLibraryUsers.length > 0)) && (
+            {(visibleFolders.length > 0 || (showAdminUserDirectories && visibleOtherLibraryUsers.length > 0)) && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {showAdminUserDirectories && visibleLibraryUsers.map((libraryUser) => {
+                {showAdminUserDirectories && visibleOtherLibraryUsers.length > 0 && (
+                  <h2 className="col-span-full text-sm font-medium text-muted-foreground">
+                    Bibliotecas de outros usuários
+                  </h2>
+                )}
+                {showAdminUserDirectories && visibleOtherLibraryUsers.map((libraryUser) => {
                   const count = libraryUser.isUnassigned
                     ? audios.filter((audio) => !audio.owner_id).length
                     : audios.filter((audio) => audio.owner_id === libraryUser.user_id).length;
@@ -1225,7 +1236,7 @@ export default function AudioLibraryPage() {
         </div>}
 
         {/* Filtro por clima ritual */}
-        {!showAdminUserDirectories && <div className="space-y-2">
+        <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1288,10 +1299,10 @@ export default function AudioLibraryPage() {
               {getClima(climaFilter)?.momentos.join(' · ')}
             </p>
           )}
-        </div>}
+        </div>
 
         {/* Busca de músicas */}
-        {!showAdminUserDirectories && <div className="relative">
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -1301,7 +1312,7 @@ export default function AudioLibraryPage() {
             aria-label="Buscar músicas pelo nome"
             className="pl-9"
           />
-        </div>}
+        </div>
 
         {/* Audio List */}
         {libraryLoading ? (
@@ -1329,8 +1340,7 @@ export default function AudioLibraryPage() {
               </Button>
             }
           />
-        ) : showAdminUserDirectories && visibleLibraryUsers.length > 0 ? null
-        : filteredAudios.length === 0 ? (
+        ) : filteredAudios.length === 0 ? (
           <PageState
             variant="empty"
             title={currentFolder ? 'Nenhum áudio nesta pasta' : selectedOwnerLabel ? `Nenhum áudio para ${selectedOwnerLabel}` : 'Nenhum áudio na biblioteca'}
