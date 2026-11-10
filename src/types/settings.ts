@@ -1,5 +1,6 @@
 export interface AppSettings {
   id: string;
+  owner_id: string | null;
   nome_app: string;
   subtitulo_app: string | null;
   logo_url: string | null;
@@ -10,4 +11,3 @@ export interface AppSettings {
   created_at: string;
   updated_at: string;
 }
-

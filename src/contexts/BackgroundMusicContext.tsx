@@ -197,6 +197,8 @@ export function BackgroundMusicProvider({
   useEffect(() => { volumeRef.current = volume; }, [volume]);
   useEffect(() => { duckVolumeRef.current = duckVolume; }, [duckVolume]);
   const { status: mainStatus } = useUniversalAudioPlayer();
+  const mainStatusRef = useRef(mainStatus);
+  mainStatusRef.current = mainStatus;
 
   const cancelCrossfade = useCallback(() => {
     if (crossfadeRafRef.current) {
@@ -588,7 +590,7 @@ export function BackgroundMusicProvider({
     } else if (mainStatus === 'paused' || mainStatus === 'idle') {
       const delay = resumeDelayMs;
       const doResume = () => {
-        if (mainStatus === 'playing') return;
+        if (mainStatusRef.current === 'playing') return;
         if (autoMode === 'duck' && isDuckingRef.current) {
           isDuckingRef.current = false;
           setIsDucking(false);

@@ -11,6 +11,7 @@ import { Landmark, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { mensagemUpload } from '@/lib/errorHandler';
+import { useAuth } from '@/hooks/useAuth';
 
 // Import gallery images
 import galleryChalice from '@/assets/gallery/chalice.jpg';
@@ -50,6 +51,7 @@ export function IconPicker({
   onIconChange,
   onIconUrlChange,
 }: IconPickerProps) {
+  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
@@ -92,7 +94,8 @@ export function IconPicker({
     setIsUploading(true);
 
     try {
-      const fileName = `publico/icon-${Date.now()}.jpg`;
+      if (!user?.id) throw new Error('É necessário entrar na conta para enviar imagens.');
+      const fileName = `${user.id}/icon-${Date.now()}.jpg`;
       const file = new File([croppedBlob], `icon-${Date.now()}.jpg`, { type: 'image/jpeg' });
 
       const { error: uploadError } = await supabase.storage

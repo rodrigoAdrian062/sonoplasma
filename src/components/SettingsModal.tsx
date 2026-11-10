@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { ColorPicker } from '@/components/ColorPicker';
@@ -25,6 +26,7 @@ import { useHealingHz } from '@/hooks/useFrequency432';
 import { HEALING_FREQUENCIES } from '@/lib/pitch432';
 import { Download, Eye, Music2 } from 'lucide-react';
 import { mensagemUpload } from '@/lib/errorHandler';
+import { getOwnedStorageObjectPath } from '@/lib/storagePaths';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -33,6 +35,7 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings } = useSettings();
+  const { user } = useAuth();
   const { isSuperAdmin } = useUserRole();
   const navigate = useNavigate();
   const [prefetchOn, setPrefetchOn] = usePrefetchEnabled();
@@ -141,19 +144,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
-  const handleRemoveLogo = async () => {
-    // If there's an existing logo URL, try to delete it from storage
-    if (logoUrl && logoUrl.includes('logos/')) {
-      try {
-        const path = logoUrl.split('logos/')[1];
-        if (path) {
-          await supabase.storage.from('logos').remove([path]);
-        }
-      } catch (error) {
-        console.error('Error deleting old logo:', error);
-      }
-    }
-
+  const handleRemoveLogo = () => {
     setPreviewLogo(null);
     setLogoUrl('');
     setSelectedFile(null);
@@ -166,17 +157,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const uploadLogo = async (file: File): Promise<string | null> => {
     try {
-      // Generate unique filename inside the user's folder
+      if (!user?.id) throw new Error('É necessário entrar na conta para enviar imagens.');
       const fileExt = file.name.split('.').pop();
-      const fileName = `publico/logo-${Date.now()}.${fileExt}`;
-
-      // Delete old logo if exists
-      if (logoUrl && logoUrl.includes('logos/')) {
-        const oldPath = logoUrl.split('logos/')[1];
-        if (oldPath) {
-          await supabase.storage.from('logos').remove([oldPath]);
-        }
-      }
+      const fileName = `${user.id}/logo-${Date.now()}.${fileExt}`;
 
       // Upload new logo
       const { error: uploadError } = await supabase.storage
@@ -205,27 +188,33 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleSave = async () => {
     setIsUploading(true);
+    let uploadedLogoUrl: string | null = null;
 
     try {
       let finalLogoUrl = logoUrl;
 
       // Upload new logo if a file was selected
       if (selectedFile) {
-        const uploadedUrl = await uploadLogo(selectedFile);
-        if (uploadedUrl) {
-          finalLogoUrl = uploadedUrl;
+        uploadedLogoUrl = await uploadLogo(selectedFile);
+        if (uploadedLogoUrl) {
+          finalLogoUrl = uploadedLogoUrl;
         } else {
-          setIsUploading(false);
           return;
         }
       }
 
-      updateSettings.mutate({
+      await updateSettings.mutateAsync({
         nome_app: nomeApp.trim() || 'Sonoplastia Cerimonial',
         subtitulo_app: subtituloApp.trim() || null,
         logo_url: finalLogoUrl || null,
         cor_tema: corTema,
       });
+
+      const oldLogoPath = getOwnedStorageObjectPath(settings?.logo_url, 'logos', user?.id);
+      if (oldLogoPath && settings?.logo_url !== finalLogoUrl) {
+        const { error } = await supabase.storage.from('logos').remove([oldLogoPath]);
+        if (error) console.warn('Não foi possível remover a logo anterior:', error);
+      }
 
       setSelectedFile(null);
       setOriginalSize(null);
@@ -233,7 +222,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       onClose();
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('Erro ao salvar configurações');
+      const uploadedLogoPath = getOwnedStorageObjectPath(uploadedLogoUrl, 'logos', user?.id);
+      if (uploadedLogoPath) {
+        const { error: cleanupError } = await supabase.storage.from('logos').remove([uploadedLogoPath]);
+        if (cleanupError) console.warn('Não foi possível remover a logo não salva:', cleanupError);
+      }
     } finally {
       setIsUploading(false);
     }

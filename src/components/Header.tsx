@@ -1,27 +1,37 @@
-import { useState, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, Plus, Settings, Presentation, FolderPlus, Library, Users, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { InstallPWA } from '@/components/InstallPWA';
-import { HeaderAudioOutputButton } from '@/components/HeaderAudioOutputButton';
-import { Frequency432Indicator } from '@/components/Frequency432Indicator';
-import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { useState, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Sparkles,
+  Plus,
+  Settings,
+  Presentation,
+  FolderPlus,
+  Library,
+  Users,
+  LogOut,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { InstallPWA } from "@/components/InstallPWA";
+import { HeaderAudioOutputButton } from "@/components/HeaderAudioOutputButton";
+import { Frequency432Indicator } from "@/components/Frequency432Indicator";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 // Modal pesado — só carrega quando o usuário abre as configurações.
 const SettingsModal = lazy(() =>
-  import('@/components/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+  import("@/components/SettingsModal").then((m) => ({
+    default: m.SettingsModal,
+  })),
 );
 
-
-import { useSettings } from '@/hooks/useSettings';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
-import { useUiToggles } from '@/hooks/useUiToggles';
+import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUiToggles } from "@/hooks/useUiToggles";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 interface HeaderProps {
   onAddStage: () => void;
@@ -30,7 +40,12 @@ interface HeaderProps {
   hasStages?: boolean;
 }
 
-export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages }: HeaderProps) {
+export function Header({
+  onAddStage,
+  onAddSection,
+  onPresentationMode,
+  hasStages,
+}: HeaderProps) {
   const navigate = useNavigate();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { settings } = useSettings();
@@ -58,7 +73,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               )}
               <div className="text-center">
                 <h1 className="font-display text-lg font-semibold text-foreground tracking-wide flex items-center gap-2 justify-center">
-                  {settings?.nome_app || 'Sonoplastia Cerimonial'}
+                  {settings?.nome_app || "Sonoplastia Cerimonial"}
                 </h1>
                 {settings?.subtitulo_app && (
                   <p className="text-xs text-muted-foreground">
@@ -76,7 +91,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => navigate('/usuarios')}
+                      onClick={() => navigate("/usuarios")}
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-gold h-8 w-8"
@@ -90,7 +105,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => navigate('/biblioteca')}
+                    onClick={() => navigate("/biblioteca")}
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-gold h-8 w-8"
@@ -157,7 +172,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               )}
               <div>
                 <h1 className="font-display text-2xl font-semibold text-foreground tracking-wide flex items-center gap-2">
-                  {settings?.nome_app || 'Sonoplastia Cerimonial'}
+                  {settings?.nome_app || "Sonoplastia Cerimonial"}
                 </h1>
                 {settings?.subtitulo_app && (
                   <p className="text-sm text-muted-foreground">
@@ -166,7 +181,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 )}
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <OfflineIndicator />
               <Frequency432Indicator />
@@ -176,7 +191,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => navigate('/usuarios')}
+                      onClick={() => navigate("/usuarios")}
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-gold"
@@ -190,7 +205,7 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => navigate('/biblioteca')}
+                    onClick={() => navigate("/biblioteca")}
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-gold"
@@ -236,7 +251,9 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
                       <span className="hidden sm:inline">Apresentar</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Modo Apresentação (Tela Cheia)</TooltipContent>
+                  <TooltipContent>
+                    Modo Apresentação (Tela Cheia)
+                  </TooltipContent>
                 </Tooltip>
               )}
               {onAddSection && (
@@ -263,9 +280,6 @@ export function Header({ onAddStage, onAddSection, onPresentationMode, hasStages
           />
         </Suspense>
       )}
-
-
-
     </>
   );
 }

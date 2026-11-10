@@ -57,6 +57,7 @@ interface YouTubePreviewPlayer {
   getDuration(): number;
   pauseVideo(): void;
   playVideo(): void;
+  seekTo(seconds: number, allowSeekAhead?: boolean): void;
   setVolume(volume: number): void;
   stopVideo(): void;
 }

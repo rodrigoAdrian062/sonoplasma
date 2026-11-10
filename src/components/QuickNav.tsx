@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { ComponentType } from 'react';
+import type { ReactNode } from 'react';
 import { Home, Library, AudioLines } from 'lucide-react';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
@@ -13,12 +13,12 @@ import { useAllStageAudios } from '@/hooks/useStageAudios';
 import { useIsPresentationActive } from '@/lib/presentationState';
 import { useUiToggles, UiToggleKey } from '@/hooks/useUiToggles';
 
-const LINKS: Array<{ to: string; label: string; icon: ComponentType<{ size?: number; className?: string }>; activeClass: string; toggleKey?: UiToggleKey }> = [
-  { to: '/', label: 'Início', icon: Home, activeClass: 'bg-gold/20 text-gold border-gold/40' },
-  { to: '/biblioteca', label: 'Biblioteca', icon: Library, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_biblioteca' },
-  { to: '/youtube', label: 'YouTube', icon: YoutubeIcon, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40', toggleKey: 'nav_youtube' },
-  { to: '/spotify', label: 'Spotify', icon: SpotifyIcon, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40', toggleKey: 'nav_spotify' },
-  { to: '/harmonia', label: 'Montar Harmonia', icon: AudioLines, activeClass: 'bg-gold/20 text-gold border-gold/40' },
+const LINKS: Array<{ to: string; label: string; icon: ReactNode; activeClass: string; toggleKey?: UiToggleKey }> = [
+  { to: '/', label: 'Início', icon: <Home size={18} />, activeClass: 'bg-gold/20 text-gold border-gold/40' },
+  { to: '/biblioteca', label: 'Biblioteca', icon: <Library size={18} />, activeClass: 'bg-gold/20 text-gold border-gold/40', toggleKey: 'nav_biblioteca' },
+  { to: '/youtube', label: 'YouTube', icon: <YoutubeIcon size={18} />, activeClass: 'bg-red-500/20 text-red-500 border-red-500/40', toggleKey: 'nav_youtube' },
+  { to: '/spotify', label: 'Spotify', icon: <SpotifyIcon size={18} />, activeClass: 'bg-[#1DB954]/20 text-[#1DB954] border-[#1DB954]/40', toggleKey: 'nav_spotify' },
+  { to: '/harmonia', label: 'Montar Harmonia', icon: <AudioLines size={18} />, activeClass: 'bg-gold/20 text-gold border-gold/40' },
 ];
 
 
@@ -70,7 +70,7 @@ export function QuickNav() {
                 aria-label={link.label}
                 className={buttonClassName}
               >
-                <link.icon size={18} />
+                {link.icon}
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">{link.label}</TooltipContent>

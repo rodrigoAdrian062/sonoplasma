@@ -2,14 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppSettings } from '@/types/settings';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
 export function useSettings() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isSuperAdmin } = useUserRole();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings', user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sonoplastia_configuracoes')
@@ -18,16 +21,22 @@ export function useSettings() {
 
       if (error) throw error;
       const rows = data || [];
-      // Prefer the user's own settings; fall back to the shared model row.
+      // Prefer the user's settings; use the shared row as read-only defaults.
       const own = user?.id ? rows.find((r) => r.owner_id === user.id) : undefined;
-      return own ?? rows[0] ?? null;
+      const shared = rows.find((r) => r.owner_id === null);
+      return own ?? shared ?? rows[0] ?? null;
     },
   });
 
   const updateSettings = useMutation({
     mutationFn: async (updates: Partial<AppSettings>) => {
-      // Always update the row currently in use (avoids creating duplicates).
-      if (settings?.id) {
+      if (!user?.id) throw new Error('É necessário entrar na conta para salvar as configurações.');
+
+      const canUpdateCurrentRow = settings?.id && (
+        settings.owner_id === user.id
+        || (isSuperAdmin && settings.owner_id === null)
+      );
+      if (canUpdateCurrentRow) {
         const { data, error } = await supabase
           .from('sonoplastia_configuracoes')
           .update(updates)
@@ -38,10 +47,10 @@ export function useSettings() {
         return data;
       }
 
-      // No settings row yet -> create the first one.
+      // A regular user gets a private copy rather than editing shared defaults.
       const { data, error } = await supabase
         .from('sonoplastia_configuracoes')
-        .insert(updates)
+        .insert({ ...updates, owner_id: user.id })
         .select()
         .single();
       if (error) throw error;

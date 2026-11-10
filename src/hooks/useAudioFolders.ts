@@ -8,6 +8,7 @@ import { hasPermission } from '@/lib/access';
 
 export interface AudioFolder {
   id: string;
+  owner_id: string | null;
   nome: string;
   parent_id: string | null;
   icone: string | null;
@@ -33,6 +34,7 @@ export function useAudioFolders() {
       const { data, error } = await supabase
         .from('sonoplastia_audios_pastas')
         .select('*')
+        .eq('owner_id', user!.id)
         .order('ordem', { ascending: true });
       if (error) throw error;
       return data as AudioFolder[];

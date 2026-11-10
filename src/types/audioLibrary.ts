@@ -8,6 +8,7 @@ export interface AudioLibraryItem {
   duracao_segundos: number | null;
   created_at: string;
   updated_at: string;
+  owner_id?: string | null;
   clima?: string | null;
 }
 

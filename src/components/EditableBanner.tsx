@@ -1,14 +1,17 @@
 import { useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { resizeImage } from '@/lib/imageUtils';
 import { mensagemUpload } from '@/lib/errorHandler';
+import { getOwnedStorageObjectPath } from '@/lib/storagePaths';
 import { Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import masonicBanner from '@/assets/masonic-banner.png';
 
 export function EditableBanner() {
   const { settings, updateSettings } = useSettings();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -24,7 +27,10 @@ export function EditableBanner() {
     }
 
     setIsUploading(true);
+    let uploadedUrl: string | null = null;
+    let settingsSaveFailed = false;
     try {
+      if (!user?.id) throw new Error('É necessário entrar na conta para enviar imagens.');
       const resized = await resizeImage(file, 1600, 600);
 
       if (resized.size > 3 * 1024 * 1024) {
@@ -32,13 +38,7 @@ export function EditableBanner() {
         return;
       }
 
-      const fileName = `publico/banner-${Date.now()}.jpg`;
-
-      // Remove old banner if it was uploaded to storage
-      if (settings?.banner_url && settings.banner_url.includes('logos/')) {
-        const oldPath = settings.banner_url.split('logos/')[1];
-        if (oldPath) await supabase.storage.from('logos').remove([oldPath]);
-      }
+      const fileName = `${user.id}/banner-${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('logos')
@@ -50,10 +50,27 @@ export function EditableBanner() {
         .from('logos')
         .getPublicUrl(fileName);
 
-      updateSettings.mutate({ banner_url: publicUrl });
+      uploadedUrl = publicUrl;
+      try {
+        await updateSettings.mutateAsync({ banner_url: publicUrl });
+      } catch (error) {
+        settingsSaveFailed = true;
+        throw error;
+      }
+
+      const oldBannerPath = getOwnedStorageObjectPath(settings?.banner_url, 'logos', user.id);
+      if (oldBannerPath && settings?.banner_url !== publicUrl) {
+        const { error } = await supabase.storage.from('logos').remove([oldBannerPath]);
+        if (error) console.warn('Não foi possível remover o banner anterior:', error);
+      }
     } catch (error) {
       console.error('Banner upload error:', error);
-      toast.error(mensagemUpload(error));
+      const uploadedPath = getOwnedStorageObjectPath(uploadedUrl, 'logos', user?.id);
+      if (uploadedPath) {
+        const { error: cleanupError } = await supabase.storage.from('logos').remove([uploadedPath]);
+        if (cleanupError) console.warn('Não foi possível remover o banner não salvo:', cleanupError);
+      }
+      if (!settingsSaveFailed) toast.error(mensagemUpload(error));
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

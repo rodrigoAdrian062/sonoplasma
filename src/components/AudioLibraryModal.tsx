@@ -7,6 +7,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { useAudioFolders } from '@/hooks/useAudioFolders';
 import { Music, Trash2, Play, Pause, Upload, Plus, Library, ExternalLink, Youtube, Loader2, Download, CheckSquare, Square, X, Folder, ChevronLeft, FileAudio, Headphones, Check } from 'lucide-react';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
+import { LibraryPopupButton } from '@/components/LibraryPopupPlayer';
 import { toEmbedUrl, detectStream } from '@/lib/embedUrl';
 import {
   destroySpotifyPlayer,
@@ -652,6 +653,20 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
 
                     {!bulkDeleteMode && (
                       <div className="flex items-center gap-1 shrink-0 ml-auto">
+                        <LibraryPopupButton
+                          track={audio}
+                          className="h-9 w-9"
+                          onBeforeOpen={() => {
+                            audioElement?.pause();
+                            setAudioElement(null);
+                            const playingAudio = audios.find((item) => item.id === playingId);
+                            if (playingAudio && isSpotifyUrl(playingAudio.audio_url)) {
+                              destroySpotifyPlayer();
+                            }
+                            setPlayingId(null);
+                            setPreviewEmbedId(null);
+                          }}
+                        />
                         {/* Prévia — ícone dourado sempre visível */}
                         <Button
                           type="button"

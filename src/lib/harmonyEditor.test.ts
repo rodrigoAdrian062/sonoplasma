@@ -163,7 +163,7 @@ describe('harmony editor timeline', () => {
       sampleRate: 8000,
       length: 2,
       getChannelData: () => new Float32Array([0, 0.5]),
-    } as AudioBuffer;
+    };
 
     const wav = encodeWav(audioBuffer);
     const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {

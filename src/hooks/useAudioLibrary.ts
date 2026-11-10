@@ -43,6 +43,7 @@ export function useAudioLibrary() {
       const { data, error } = await supabase
         .from('sonoplastia_audios_biblioteca')
         .select('*')
+        .eq('owner_id', user!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

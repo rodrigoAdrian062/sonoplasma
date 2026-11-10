@@ -283,6 +283,10 @@ export type Database = {
           tempo_padrao: number | null
           updated_at: string
           volume_config: number | null
+          volume_start_percent: number
+          volume_ramp_enabled: boolean
+          volume_final_percent: number
+          volume_ramp_seconds: number
         }
         Insert: {
           ativo?: boolean
@@ -302,6 +306,10 @@ export type Database = {
           tempo_padrao?: number | null
           updated_at?: string
           volume_config?: number | null
+          volume_start_percent?: number
+          volume_ramp_enabled?: boolean
+          volume_final_percent?: number
+          volume_ramp_seconds?: number
         }
         Update: {
           ativo?: boolean
@@ -321,6 +329,10 @@ export type Database = {
           tempo_padrao?: number | null
           updated_at?: string
           volume_config?: number | null
+          volume_start_percent?: number
+          volume_ramp_enabled?: boolean
+          volume_final_percent?: number
+          volume_ramp_seconds?: number
         }
         Relationships: [
           {

@@ -13,7 +13,7 @@ import { QuickSoundSectionMenu } from '@/components/QuickSoundSectionMenu';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { HEALING_FREQUENCIES, getTrackHz, setTrackHz, subscribeTrackHz, getEffectiveHz, subscribeHealingHz } from '@/lib/pitch432';
 import { AudioSourceIcon, getAudioSource } from '@/components/AudioSourceIcon';
+import { LibraryPopupButton } from '@/components/LibraryPopupPlayer';
 import { YoutubeIcon } from '@/components/icons/YoutubeIcon';
 import { SpotifyIcon } from '@/components/icons/SpotifyIcon';
 import { normalizeMediaUrl } from '@/lib/linkNormalize';
@@ -65,6 +66,8 @@ import { QuickSoundTrimDialog } from '@/components/QuickSoundTrimDialog';
 import { CLIMAS, getClima } from '@/lib/climas';
 import { saveCloudState } from '@/lib/cloudState';
 import { PageState } from '@/components/PageState';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 
 
@@ -187,8 +190,64 @@ function TrackHzSelector({ url }: { url: string }) {
 export default function AudioLibraryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { audios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration, canAddAudio, canDeleteAudio } = useAudioLibrary();
-  const { folders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
+  const { user } = useAuth();
+  const { isSuperAdmin } = useUserRole();
+  const { audios: ownAudios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration, canAddAudio, canDeleteAudio } = useAudioLibrary();
+  const { folders: ownFolders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
+  const {
+    data: adminAudios,
+    isLoading: isLoadingAdminAudios,
+    error: adminAudiosError,
+  } = useQuery({
+    queryKey: ['audioLibrary', user?.id, 'admin'],
+    enabled: isSuperAdmin && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sonoplastia_audios_biblioteca')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as AudioLibraryItem[];
+    },
+  });
+  const {
+    data: adminFolders,
+    isLoading: isLoadingAdminFolders,
+    error: adminFoldersError,
+  } = useQuery({
+    queryKey: ['audioFolders', user?.id, 'admin'],
+    enabled: isSuperAdmin && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sonoplastia_audios_pastas')
+        .select('*')
+        .order('ordem', { ascending: true });
+      if (error) throw error;
+      return data as AudioFolder[];
+    },
+  });
+  const {
+    data: libraryUsers,
+    isLoading: isLoadingLibraryUsers,
+    error: libraryUsersError,
+  } = useQuery({
+    queryKey: ['audioLibraryUsers', user?.id],
+    enabled: isSuperAdmin && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, username')
+        .order('username', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const audios = isSuperAdmin ? adminAudios ?? ownAudios : ownAudios;
+  const folders = isSuperAdmin ? adminFolders ?? ownFolders : ownFolders;
+  const libraryLoading = isLoading || (isSuperAdmin && (
+    isLoadingAdminAudios || isLoadingAdminFolders || isLoadingLibraryUsers
+  ));
+  const libraryLoadError = libraryError || adminAudiosError || adminFoldersError || libraryUsersError;
 
   const { stages } = useStages();
   const { sections } = useSections();
@@ -240,16 +299,53 @@ export default function AudioLibraryPage() {
 
   // Folder state
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState('');
 
   const currentFolder = folders.find(f => f.id === currentFolderId) || null;
+  const canManageCurrentLibrary = !isSuperAdmin || selectedOwnerId === user?.id;
+  const canDeleteCurrentLibrary = canDeleteAudio && canManageCurrentLibrary;
+  const unassignedOwnerId = '__unassigned_audio_owner__';
+  const libraryOwnerIds = new Set([
+    ...audios.map((audio) => audio.owner_id),
+    ...folders.map((folder) => folder.owner_id),
+  ].filter((ownerId): ownerId is string => !!ownerId));
+  const hasUnassignedLibrary = audios.some((audio) => !audio.owner_id)
+    || folders.some((folder) => !folder.owner_id);
+  const usernameById = new Map((libraryUsers ?? []).map((libraryUser) => [
+    libraryUser.user_id,
+    libraryUser.username,
+  ]));
+  const visibleLibraryUsers = [
+    ...Array.from(libraryOwnerIds, (ownerId) => ({
+      user_id: ownerId,
+      username: usernameById.get(ownerId) || `Usuário ${ownerId.slice(0, 8)}`,
+      isUnassigned: false,
+    })),
+    ...(hasUnassignedLibrary
+      ? [{
+          user_id: unassignedOwnerId,
+          username: 'Sem usuário identificado',
+          isUnassigned: true,
+        }]
+      : []),
+  ];
   const parentFolder = currentFolder?.parent_id
     ? folders.find(f => f.id === currentFolder.parent_id) || null
     : null;
-  const visibleFolders = folders.filter((folder) => folder.parent_id === currentFolderId);
+  const visibleFolders = isSuperAdmin && selectedOwnerId === null
+    ? []
+    : folders.filter((folder) =>
+        folder.parent_id === currentFolderId
+        && (!isSuperAdmin || (selectedOwnerId === unassignedOwnerId ? !folder.owner_id : folder.owner_id === selectedOwnerId))
+      );
+  const showAdminUserDirectories = isSuperAdmin && selectedOwnerId === null;
+  const selectedOwnerLabel = selectedOwnerId === unassignedOwnerId
+    ? 'Sem usuário identificado'
+    : visibleLibraryUsers.find((libraryUser) => libraryUser.user_id === selectedOwnerId)?.username;
 
   const isYouTubeUrl = (url: string) =>
     url.includes('youtube.com') || url.includes('youtu.be');
@@ -260,7 +356,9 @@ export default function AudioLibraryPage() {
   // Descobre a duração de faixas que ainda não têm (apenas arquivos/URLs diretas).
   useEffect(() => {
     const pending = audios.filter(
-      (a) => a.duracao_segundos == null && !isYouTubeUrl(a.audio_url),
+      (a) => a.duracao_segundos == null
+        && !isYouTubeUrl(a.audio_url)
+        && (!isSuperAdmin || a.owner_id === user?.id),
     );
     if (pending.length === 0) return;
     let cancelled = false;
@@ -284,17 +382,26 @@ export default function AudioLibraryPage() {
 
 
   // Apply the same scope to the list and climate counts. YouTube/Spotify têm abas próprias.
-  const scopedAudios = audios.filter(a => {
+  const scopedOwnerAudios = !isSuperAdmin
+    ? audios
+    : selectedOwnerId === null
+      ? []
+      : audios.filter((audio) => selectedOwnerId === unassignedOwnerId
+        ? !audio.owner_id
+        : audio.owner_id === selectedOwnerId);
+  const scopedAudios = scopedOwnerAudios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
     const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
     const audioPastaId = a.pasta_id;
     // Na raiz, YouTube/Spotify são opcionais porque também têm abas próprias.
     if (!currentFolderId && !showAllSources && (isYt || isSp)) return false;
-    const folderMatch = !currentFolderId && showAllSources
-      ? true
-      : currentFolderId
-        ? audioPastaId === currentFolderId
-        : !audioPastaId;
+    const folderMatch = isSuperAdmin && selectedOwnerId !== null && !currentFolderId
+      ? !audioPastaId
+      : !currentFolderId && showAllSources
+        ? true
+        : currentFolderId
+          ? audioPastaId === currentFolderId
+          : !audioPastaId;
     // Ao buscar, pesquisa em toda a biblioteca e não apenas na pasta atual.
     if (!searchQuery.trim() && !folderMatch) return false;
     if (showUnusedOnly && audioUsageMap.has(a.audio_url)) return false;
@@ -719,6 +826,7 @@ export default function AudioLibraryPage() {
   };
 
   const handleMoveToFolderDnd = async (audio: { id: string; nome: string }, folderId: string | null) => {
+    if (!canManageCurrentLibrary) return;
     try {
       await moveAudioToFolder.mutateAsync({ audioId: audio.id, folderId });
       const folderName = folders.find((f) => f.id === folderId)?.nome;
@@ -742,18 +850,31 @@ export default function AudioLibraryPage() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => {
-            if (currentFolderId) { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
-            else navigate('/');
+            if (currentFolderId) {
+              setCurrentFolderId(parentFolder?.id ?? null);
+              setBulkDeleteMode(false);
+              setSelectedIds(new Set());
+            } else if (isSuperAdmin && selectedOwnerId !== null) {
+              setSelectedOwnerId(null);
+              setBulkDeleteMode(false);
+              setSelectedIds(new Set());
+            } else {
+              navigate('/');
+            }
           }}>
             <ArrowLeft size={20} />
           </Button>
           <Library className="text-gold" size={22} />
           <div className="flex items-center gap-1 flex-1 min-w-0">
             <h1
-              className={cn("page-title truncate", currentFolderId && "cursor-pointer hover:text-gold transition-colors")}
-              onClick={currentFolderId ? () => { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); } : undefined}
+              className={cn("page-title truncate", (currentFolderId || (isSuperAdmin && selectedOwnerId !== null)) && "cursor-pointer hover:text-gold transition-colors")}
+              onClick={currentFolderId
+                ? () => { setCurrentFolderId(parentFolder?.id ?? null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
+                : isSuperAdmin && selectedOwnerId !== null
+                  ? () => { setSelectedOwnerId(null); setBulkDeleteMode(false); setSelectedIds(new Set()); }
+                  : undefined}
             >
-              Biblioteca
+              {showAdminUserDirectories ? 'Biblioteca por usuário' : selectedOwnerLabel || 'Biblioteca'}
             </h1>
             {currentFolder && (
               <>
@@ -763,7 +884,7 @@ export default function AudioLibraryPage() {
             )}
           </div>
 
-          {!currentFolderId && (
+          {!currentFolderId && (!isSuperAdmin || selectedOwnerId === user?.id) && (
             <>
               <Button
                 variant="outline"
@@ -834,7 +955,7 @@ export default function AudioLibraryPage() {
                     <ListPlus size={14} className="mr-1" />
                     <span className="hidden sm:inline">{showListView ? 'Grade' : 'Lista'}</span>
                   </Button>
-                  {canDeleteAudio && (
+                  {canDeleteCurrentLibrary && (
                     <Button variant="outline" size="sm" onClick={() => setBulkDeleteMode(true)}>
                       <CheckSquare size={14} className="mr-1" />
                       <span className="hidden sm:inline">Selecionar</span>
@@ -857,8 +978,32 @@ export default function AudioLibraryPage() {
         {(
           <div className="space-y-2">
             {/* Folder list */}
-            {visibleFolders.length > 0 && (
+            {(visibleFolders.length > 0 || (showAdminUserDirectories && visibleLibraryUsers.length > 0)) && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {showAdminUserDirectories && visibleLibraryUsers.map((libraryUser) => {
+                  const count = libraryUser.isUnassigned
+                    ? audios.filter((audio) => !audio.owner_id).length
+                    : audios.filter((audio) => audio.owner_id === libraryUser.user_id).length;
+                  return (
+                    <button
+                      key={libraryUser.user_id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedOwnerId(libraryUser.user_id);
+                        setCurrentFolderId(null);
+                        setBulkDeleteMode(false);
+                        setSelectedIds(new Set());
+                      }}
+                      className="flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 p-3 text-left transition-colors hover:bg-gold/10"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gold/15 text-gold">
+                        <FolderOpen size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{libraryUser.username}</span>
+                      <span className="text-xs text-muted-foreground">{count}</span>
+                    </button>
+                  );
+                })}
                 {visibleFolders.map((folder) => {
                   const color = folder.cor || 'hsl(var(--gold))';
                   return (
@@ -899,6 +1044,7 @@ export default function AudioLibraryPage() {
                         <span className="text-xs text-muted-foreground">
                           {audios.filter(a => a.pasta_id === folder.id).length}
                         </span>
+                        {canManageCurrentLibrary && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -947,6 +1093,7 @@ export default function AudioLibraryPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        )}
                       </>
                     )}
                   </div>
@@ -957,7 +1104,7 @@ export default function AudioLibraryPage() {
             )}
 
             {/* New folder button/input */}
-            {showNewFolderInput ? (
+            {canManageCurrentLibrary && showNewFolderInput ? (
               <div className="flex gap-2">
                 <Input
                   placeholder={currentFolderId ? 'Nome da subpasta' : 'Nome da pasta principal'}
@@ -974,7 +1121,7 @@ export default function AudioLibraryPage() {
                   <X size={16} />
                 </Button>
               </div>
-            ) : (
+            ) : canManageCurrentLibrary && (
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
@@ -1004,7 +1151,7 @@ export default function AudioLibraryPage() {
         )}
 
         {/* Add Audio Section */}
-        <div className="border border-border rounded-lg p-3">
+        {canManageCurrentLibrary && <div className="border border-border rounded-lg p-3">
           {!canAddAudio ? (
             <p className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
               Esta conta não tem permissão para adicionar músicas. Peça ao administrador para habilitar o acesso.
@@ -1075,10 +1222,10 @@ export default function AudioLibraryPage() {
               </Button>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Filtro por clima ritual */}
-        <div className="space-y-2">
+        {!showAdminUserDirectories && <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1099,7 +1246,7 @@ export default function AudioLibraryPage() {
               )}
             </div>
             <span className="text-xs text-muted-foreground">
-              Total da biblioteca: <strong className="text-foreground">{audios.length}</strong>
+              Total da biblioteca: <strong className="text-foreground">{scopedOwnerAudios.length}</strong>
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1115,7 +1262,7 @@ export default function AudioLibraryPage() {
             </button>
             {CLIMAS.map((c) => {
               const CIcon = c.icone;
-              const count = audios.filter((a) => a.clima === c.id).length;
+              const count = scopedOwnerAudios.filter((a) => a.clima === c.id).length;
               const active = climaFilter === c.id;
               return (
                 <button
@@ -1141,10 +1288,10 @@ export default function AudioLibraryPage() {
               {getClima(climaFilter)?.momentos.join(' · ')}
             </p>
           )}
-        </div>
+        </div>}
 
         {/* Busca de músicas */}
-        <div className="relative">
+        {!showAdminUserDirectories && <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -1154,31 +1301,39 @@ export default function AudioLibraryPage() {
             aria-label="Buscar músicas pelo nome"
             className="pl-9"
           />
-        </div>
+        </div>}
 
         {/* Audio List */}
-        {isLoading ? (
+        {libraryLoading ? (
           <PageState
             variant="loading"
             title="Carregando a biblioteca"
-            description="Buscando seus áudios e pastas."
+            description={isSuperAdmin ? 'Buscando os áudios dos usuários.' : 'Buscando seus áudios e pastas.'}
           />
-        ) : libraryError ? (
+        ) : libraryLoadError ? (
           <PageState
             variant="error"
             title="Não foi possível carregar a biblioteca"
             description="Verifique sua conexão e tente novamente. Seus áudios permanecem salvos."
             icon={AlertTriangle}
             action={
-              <Button variant="outline" onClick={() => void queryClient.invalidateQueries({ queryKey: ['audioLibrary'] })}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void queryClient.invalidateQueries({ queryKey: ['audioLibrary'] });
+                  void queryClient.invalidateQueries({ queryKey: ['audioFolders'] });
+                  void queryClient.invalidateQueries({ queryKey: ['audioLibraryUsers'] });
+                }}
+              >
                 Tentar novamente
               </Button>
             }
           />
-        ) : filteredAudios.length === 0 ? (
+        ) : showAdminUserDirectories && visibleLibraryUsers.length > 0 ? null
+        : filteredAudios.length === 0 ? (
           <PageState
             variant="empty"
-            title={currentFolder ? 'Nenhum áudio nesta pasta' : 'Nenhum áudio na biblioteca'}
+            title={currentFolder ? 'Nenhum áudio nesta pasta' : selectedOwnerLabel ? `Nenhum áudio para ${selectedOwnerLabel}` : 'Nenhum áudio na biblioteca'}
             description={searchQuery
               ? 'Tente outro termo ou limpe a busca para ver mais resultados.'
               : 'Use “Adicionar áudio” acima para enviar arquivos ou cadastrar links.'}
@@ -1193,7 +1348,8 @@ export default function AudioLibraryPage() {
             <VirtualAudioList
               audios={filteredAudios}
               bulkDeleteMode={bulkDeleteMode}
-              canDeleteAudio={canDeleteAudio}
+              canDeleteAudio={canDeleteCurrentLibrary}
+              canManageCurrentLibrary={canManageCurrentLibrary}
               selectedIds={selectedIds}
               toggleSelectId={toggleSelectId}
               playingId={playingId}
@@ -1230,6 +1386,7 @@ interface VirtualAudioListProps {
   audios: AudioLibraryItem[];
   bulkDeleteMode: boolean;
   canDeleteAudio: boolean;
+  canManageCurrentLibrary: boolean;
   selectedIds: Set<string>;
   toggleSelectId: (id: string) => void;
   playingId: string | null;
@@ -1257,7 +1414,7 @@ interface VirtualAudioListProps {
 
 function VirtualAudioList(props: VirtualAudioListProps) {
   const {
-    audios, bulkDeleteMode, canDeleteAudio, selectedIds, toggleSelectId,
+    audios, bulkDeleteMode, canDeleteAudio, canManageCurrentLibrary, selectedIds, toggleSelectId,
     playingId, isPaused, audioCurrentTime, audioDuration,
     handlePauseResume, handleSeek, handleSeekTo, stopCurrentPlayback,
     deleteAudio, stages, sections, folders, currentFolderId, moveAudioToFolder,
@@ -1419,6 +1576,11 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                 </div>
                 {!bulkDeleteMode && (
                   <div className="flex items-center gap-1 shrink-0">
+                    <LibraryPopupButton
+                      track={audio}
+                      className={cn('h-8 w-8 sm:h-9 sm:w-9', showListView && 'h-7 w-7')}
+                      onBeforeOpen={stopCurrentPlayback}
+                    />
                     {playingId === audio.id && (
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleSeek(-10); }} className="h-8 w-8 text-muted-foreground hover:text-gold" title="Retroceder 10s">
                         <SkipBack size={14} />
@@ -1438,7 +1600,9 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                       </Button>
                     )}
                     <TrackHzSelector url={audio.audio_url} />
-                    <ClimaSelector audioId={audio.id} clima={audio.clima} compact={showListView} />
+                    {canManageCurrentLibrary && (
+                      <ClimaSelector audioId={audio.id} clima={audio.clima} compact={showListView} />
+                    )}
                     {stages.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -1473,7 +1637,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                    {folders.length > 0 && (
+                    {canManageCurrentLibrary && folders.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-gold">

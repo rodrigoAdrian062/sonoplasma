@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
+import { LibraryPopupPlayerProvider } from "@/components/LibraryPopupPlayer";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
@@ -87,6 +88,7 @@ const App = () => {
         <AuthProvider>
           <AudioPlayerProvider>
           <BackgroundMusicProvider>
+          <LibraryPopupPlayerProvider>
           
           
           <Suspense fallback={<RouteFallback />}>
@@ -170,6 +172,7 @@ const App = () => {
           <MiniPlayer />
           <QuickNav />
           <FloatingBackgroundMusic />
+          </LibraryPopupPlayerProvider>
           </BackgroundMusicProvider>
 
           </AudioPlayerProvider>
