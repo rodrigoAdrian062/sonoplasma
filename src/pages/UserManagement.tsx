@@ -241,8 +241,7 @@ export default function UserManagement() {
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
       void queryClient.invalidateQueries({ queryKey: ['audioLibraryUsers'] });
-      void queryClient.invalidateQueries({ queryKey: ['audioLibrary', user?.id, 'admin'] });
-      void queryClient.invalidateQueries({ queryKey: ['audioFolders', user?.id, 'admin'] });
+      void queryClient.invalidateQueries({ queryKey: ['adminAudioLibrary', user?.id] });
     } catch {
       toast.error('Erro ao excluir');
     } finally {

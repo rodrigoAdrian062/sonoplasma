@@ -199,37 +199,33 @@ export default function AudioLibraryPage() {
   const { audios: ownAudios, isLoading, error: libraryError, deleteAudio, uploadAndAddAudio, addAudio, setDuration, canAddAudio, canDeleteAudio } = useAudioLibrary();
   const { folders: ownFolders, addFolder, renameFolder, updateFolder, deleteFolder, moveAudioToFolder, createDefaultFolders } = useAudioFolders();
   const {
-    data: adminAudios,
-    isLoading: isLoadingAdminAudios,
-    error: adminAudiosError,
+    data: adminLibrary,
+    isLoading: isLoadingAdminLibrary,
+    error: adminLibraryError,
   } = useQuery({
-    queryKey: ['audioLibrary', user?.id, 'admin'],
+    queryKey: ['adminAudioLibrary', user?.id],
     enabled: isSuperAdmin && !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sonoplastia_audios_biblioteca')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('admin-audio-library', {
+        body: {},
+      });
       if (error) throw error;
-      return data as AudioLibraryItem[];
+      if (data?.error) throw new Error(String(data.error));
+      if (!data || !Array.isArray(data.audios) || !Array.isArray(data.folders)) {
+        throw new Error('A resposta do servidor não contém as músicas e pastas da biblioteca.');
+      }
+      return {
+        audios: data.audios as AudioLibraryItem[],
+        folders: data.folders as AudioFolder[],
+      };
     },
   });
-  const {
-    data: adminFolders,
-    isLoading: isLoadingAdminFolders,
-    error: adminFoldersError,
-  } = useQuery({
-    queryKey: ['audioFolders', user?.id, 'admin'],
-    enabled: isSuperAdmin && !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sonoplastia_audios_pastas')
-        .select('*')
-        .order('ordem', { ascending: true });
-      if (error) throw error;
-      return data as AudioFolder[];
-    },
-  });
+  const adminAudios = adminLibrary?.audios;
+  const adminFolders = adminLibrary?.folders;
+  const isLoadingAdminAudios = isLoadingAdminLibrary;
+  const isLoadingAdminFolders = isLoadingAdminLibrary;
+  const adminAudiosError = adminLibraryError;
+  const adminFoldersError = adminLibraryError;
   const {
     data: libraryUsers,
     isLoading: isLoadingLibraryUsers,
@@ -368,8 +364,7 @@ export default function AudioLibraryPage() {
       setSelectedOwnerId(null);
       setShowUserLibrariesFolder(true);
       void queryClient.invalidateQueries({ queryKey: ['audioLibraryUsers'] });
-      void queryClient.invalidateQueries({ queryKey: ['audioLibrary', user?.id, 'admin'] });
-      void queryClient.invalidateQueries({ queryKey: ['audioFolders', user?.id, 'admin'] });
+      void queryClient.invalidateQueries({ queryKey: ['adminAudioLibrary', user?.id] });
       void queryClient.invalidateQueries({ queryKey: ['managed-users', user?.id] });
     },
     onError: (error) => {
