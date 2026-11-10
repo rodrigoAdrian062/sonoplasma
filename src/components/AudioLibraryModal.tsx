@@ -655,6 +655,7 @@ export function AudioLibraryModal({ isOpen, onClose, onSelectAudio, selectionMod
                       <div className="flex items-center gap-1 shrink-0 ml-auto">
                         <LibraryPopupButton
                           track={audio}
+                          queue={filteredAudios}
                           className="h-9 w-9"
                           onBeforeOpen={() => {
                             audioElement?.pause();

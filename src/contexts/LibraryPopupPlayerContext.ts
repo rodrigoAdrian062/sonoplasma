@@ -6,7 +6,7 @@ export interface LibraryPopupTrack {
 }
 
 interface LibraryPopupPlayerContextValue {
-  openPopup: (track: LibraryPopupTrack) => void;
+  openPopup: (track: LibraryPopupTrack, queue?: LibraryPopupTrack[]) => void;
 }
 
 export const LibraryPopupPlayerContext = createContext<LibraryPopupPlayerContextValue | null>(null);
