@@ -240,6 +240,7 @@ export default function UserManagement() {
       toast.success(`Acesso "${deleteTarget.username}" excluído`);
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: managedUsersQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ['audioLibraryUsers'] });
     } catch {
       toast.error('Erro ao excluir');
     } finally {

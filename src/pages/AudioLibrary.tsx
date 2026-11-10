@@ -312,16 +312,8 @@ export default function AudioLibraryPage() {
     || selectedOwnerId === user?.id;
   const canDeleteCurrentLibrary = canDeleteAudio && canManageCurrentLibrary;
   const unassignedOwnerId = '__unassigned_audio_owner__';
-  const libraryOwnerIds = new Set([
-    ...audios.map((audio) => audio.owner_id),
-    ...folders.map((folder) => folder.owner_id),
-  ].filter((ownerId): ownerId is string => !!ownerId));
   const hasUnassignedLibrary = audios.some((audio) => !audio.owner_id)
     || folders.some((folder) => !folder.owner_id);
-  const usernameById = new Map((libraryUsers ?? []).map((libraryUser) => [
-    libraryUser.user_id,
-    libraryUser.username,
-  ]));
   const profileUserIds = new Set((libraryUsers ?? []).map((libraryUser) => libraryUser.user_id));
   const visibleLibraryUsers = [
     ...(libraryUsers ?? [])
@@ -330,13 +322,6 @@ export default function AudioLibraryPage() {
         user_id: libraryUser.user_id,
         username: libraryUser.username,
         isUnassigned: false,
-      })),
-    ...Array.from(libraryOwnerIds)
-      .filter((ownerId) => ownerId !== user?.id && !profileUserIds.has(ownerId))
-      .map((ownerId) => ({
-      user_id: ownerId,
-      username: usernameById.get(ownerId) || `Usuário ${ownerId.slice(0, 8)}`,
-      isUnassigned: false,
       })),
     ...(hasUnassignedLibrary
       ? [{
@@ -405,9 +390,11 @@ export default function AudioLibraryPage() {
     ? audios
     : selectedOwnerId === null
       ? showAdminUserDirectories ? [] : audios.filter((audio) => audio.owner_id === user?.id)
-      : audios.filter((audio) => selectedOwnerId === unassignedOwnerId
-        ? !audio.owner_id
-        : audio.owner_id === selectedOwnerId);
+      : selectedOwnerId === unassignedOwnerId
+        ? audios.filter((audio) => !audio.owner_id)
+        : profileUserIds.has(selectedOwnerId)
+          ? audios.filter((audio) => audio.owner_id === selectedOwnerId)
+          : [];
   const scopedAudios = scopedOwnerAudios.filter(a => {
     const isYt = a.tipo === 'youtube' || isYouTubeUrl(a.audio_url);
     const isSp = a.tipo === 'spotify' || isSpotifyUrl(a.audio_url);
