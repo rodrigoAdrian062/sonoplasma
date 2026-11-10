@@ -1631,7 +1631,7 @@ function VirtualAudioList(props: VirtualAudioListProps) {
                   <div className="flex items-center gap-1 shrink-0">
                     <LibraryPopupButton
                       track={audio}
-                      queue={filteredAudios}
+                      queue={audios}
                       className={cn('h-8 w-8 sm:h-9 sm:w-9', showListView && 'h-7 w-7')}
                       onBeforeOpen={stopCurrentPlayback}
                     />
