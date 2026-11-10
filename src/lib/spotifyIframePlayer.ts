@@ -1,6 +1,6 @@
 import { getSpotifyUri } from '@/lib/embedUrl';
 
-type SpotifyPlaybackData = {
+export type SpotifyPlaybackData = {
   playingURI?: string;
   isPaused?: boolean;
   isBuffering?: boolean;
@@ -36,6 +36,55 @@ type SpotifyIframeApi = {
     callback: (controller: SpotifyEmbedController) => void,
   ) => void;
 };
+
+export async function mountSpotifyEmbed(
+  element: HTMLElement,
+  url: string,
+  onPlaybackUpdate: (data: SpotifyPlaybackData) => void,
+): Promise<() => void> {
+  const uri = getSpotifyUri(url);
+  if (!uri) throw new Error('Link do Spotify inválido');
+
+  const api = await warmUpSpotifyIframeApi();
+  let activeController: SpotifyEmbedController | null = null;
+  let disposed = false;
+  const playTimers: number[] = [];
+
+  await new Promise<void>((resolve) => {
+    api.createController(
+      element,
+      { uri, width: element.clientWidth || 384, height: 180 },
+      (createdController) => {
+        activeController = createdController;
+        createdController.addListener?.('playback_update', (event) => {
+          onPlaybackUpdate(event.data);
+        });
+        createdController.addListener?.('playback_started', (event) => {
+          onPlaybackUpdate({ ...event.data, isPaused: false });
+        });
+        if (!disposed) {
+          commandPlay(createdController, true);
+          playTimers.push(
+            window.setTimeout(() => { if (!disposed) commandPlay(createdController); }, 200),
+            window.setTimeout(() => { if (!disposed) commandPlay(createdController); }, 900),
+          );
+        }
+        resolve();
+      },
+    );
+  });
+
+  return () => {
+    disposed = true;
+    playTimers.forEach((timer) => window.clearTimeout(timer));
+    try {
+      activeController?.pause?.();
+      activeController?.destroy?.();
+    } catch {
+      // The embed may already have been removed by Spotify.
+    }
+  };
+}
 
 type SpotifyIframeConfig = {
   host?: string;

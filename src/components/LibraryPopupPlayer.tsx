@@ -1,4 +1,4 @@
-import { useState, useRef, type PointerEvent, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, type PointerEvent, type ReactNode } from 'react';
 import { PictureInPicture2, X, SkipBack, SkipForward, Repeat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +8,76 @@ import {
 } from '@/contexts/LibraryPopupPlayerContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { detectStream, toEmbedUrl } from '@/lib/embedUrl';
+import { detectStream, getYouTubeVideoId, toEmbedUrl } from '@/lib/embedUrl';
+import { isSpotifyPlaybackEnded, mountSpotifyEmbed } from '@/lib/spotifyIframePlayer';
+
+interface YouTubePlayer {
+  destroy(): void;
+  playVideo(): void;
+  seekTo(seconds: number, allowSeekAhead: boolean): void;
+}
+
+interface YouTubePlayerEvent {
+  data: number;
+  target: YouTubePlayer;
+}
+
+interface YouTubeApi {
+  PlayerState: { ENDED: number };
+  Player: new (
+    element: HTMLElement,
+    options: {
+      videoId: string;
+      host: string;
+      playerVars: Record<string, string | number>;
+      events: {
+        onStateChange: (event: YouTubePlayerEvent) => void;
+        onError: () => void;
+      };
+    },
+  ) => YouTubePlayer;
+}
+
+function getYouTubeApi(): YouTubeApi | undefined {
+  return (window as Window & { YT?: YouTubeApi }).YT;
+}
+
+let youtubeApiPromise: Promise<YouTubeApi> | null = null;
+
+function loadYouTubeApi(): Promise<YouTubeApi> {
+  if (getYouTubeApi()?.Player) return Promise.resolve(getYouTubeApi()!);
+  if (youtubeApiPromise) return youtubeApiPromise;
+
+  youtubeApiPromise = new Promise((resolve, reject) => {
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      const api = getYouTubeApi();
+      if (api?.Player) {
+        window.clearInterval(timer);
+        resolve(api);
+      } else if (++attempts >= 120) {
+        window.clearInterval(timer);
+        youtubeApiPromise = null;
+        reject(new Error('Não foi possível carregar o player do YouTube.'));
+      }
+    }, 100);
+
+    if (!document.getElementById('youtube-iframe-api')) {
+      const script = document.createElement('script');
+      script.id = 'youtube-iframe-api';
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.onerror = () => {
+        window.clearInterval(timer);
+        youtubeApiPromise = null;
+        reject(new Error('Falha ao carregar o player do YouTube.'));
+      };
+      document.body.appendChild(script);
+    }
+  });
+
+  return youtubeApiPromise;
+}
 
 export function LibraryPopupPlayerProvider({ children }: { children: ReactNode }) {
   const [track, setTrack] = useState<LibraryPopupTrack | null>(null);
@@ -81,21 +150,97 @@ function LibraryPopup({
   const [repeat, setRepeat] = useState(false);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const dragStart = useRef<{ pointerX: number; pointerY: number; left: number; top: number } | null>(null);
+  const youtubeContainerRef = useRef<HTMLDivElement>(null);
+  const spotifyContainerRef = useRef<HTMLDivElement>(null);
+  const repeatRef = useRef(repeat);
+  const endedTrackRef = useRef<string | null>(null);
+  repeatRef.current = repeat;
   const currentIndex = queue.findIndex((item) => item.audio_url === track.audio_url);
   const canRepeat = stream !== 'spotify';
   const embedUrl = stream ? toEmbedUrl(track.audio_url, { autoplay: true }) : null;
-  const playerUrl = embedUrl && repeat && stream === 'youtube'
-    ? `${embedUrl}&loop=1&playlist=${new URL(embedUrl).pathname.split('/').pop()}`
-    : embedUrl;
   const invalidStream = stream !== null && embedUrl === null;
 
-  const moveTrack = (offset: number) => {
+  const moveTrack = useCallback((offset: number) => {
     const next = queue[currentIndex + offset];
     if (next) {
       setRepeat(false);
       onTrackChange(next);
     }
-  };
+  }, [currentIndex, onTrackChange, queue]);
+
+  useEffect(() => {
+    if (stream !== 'youtube') return;
+    const videoId = getYouTubeVideoId(track.audio_url);
+    const container = youtubeContainerRef.current;
+    if (!videoId || !container) return;
+
+    let disposed = false;
+    let player: YouTubePlayer | null = null;
+    void loadYouTubeApi().then((api) => {
+      if (disposed) return;
+      player = new api.Player(container, {
+        videoId,
+        host: 'https://www.youtube.com',
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          enablejsapi: 1,
+          origin: window.location.origin,
+          playsinline: 1,
+          rel: 0,
+        },
+        events: {
+          onStateChange: (event) => {
+            if (event.data === api.PlayerState.ENDED) {
+              if (repeatRef.current) {
+                event.target.seekTo(0, true);
+                event.target.playVideo();
+              } else if (endedTrackRef.current !== track.audio_url) {
+                endedTrackRef.current = track.audio_url;
+                moveTrack(1);
+              }
+            }
+          },
+          onError: () => toast({ title: 'Não foi possível reproduzir este vídeo', variant: 'destructive' }),
+        },
+      });
+    }).catch((error: unknown) => {
+      if (!disposed) {
+        console.error('YouTube mini-player error:', error);
+        toast({ title: 'Não foi possível carregar o player do YouTube', variant: 'destructive' });
+      }
+    });
+
+    return () => {
+      disposed = true;
+      player?.destroy();
+    };
+  }, [moveTrack, stream, track.audio_url]);
+
+  useEffect(() => {
+    if (stream !== 'spotify' || !spotifyContainerRef.current) return;
+    let disposed = false;
+    let destroy: (() => void) | undefined;
+    void mountSpotifyEmbed(spotifyContainerRef.current, track.audio_url, (data) => {
+      if (!disposed && isSpotifyPlaybackEnded(data) && endedTrackRef.current !== track.audio_url) {
+        endedTrackRef.current = track.audio_url;
+        moveTrack(1);
+      }
+    }).then((cleanup) => {
+      if (disposed) cleanup();
+      else destroy = cleanup;
+    }).catch((error: unknown) => {
+      if (!disposed) {
+        console.error('Spotify mini-player error:', error);
+        toast({ title: 'Não foi possível carregar o player do Spotify', variant: 'destructive' });
+      }
+    });
+
+    return () => {
+      disposed = true;
+      destroy?.();
+    };
+  }, [moveTrack, stream, track.audio_url]);
 
   const handleDragStart = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('button')) return;
@@ -154,15 +299,19 @@ function LibraryPopup({
           Não foi possível abrir o player para este link.
         </p>
       ) : embedUrl ? (
-        <iframe
-          key={track.audio_url}
-          src={playerUrl ?? embedUrl}
-          title={`Player — ${track.nome}`}
-          className="block h-[180px] w-full border-0 bg-black"
-          allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allowFullScreen
-        />
+        stream === 'youtube' ? (
+          <div
+            ref={youtubeContainerRef}
+            className="block h-[180px] w-full bg-black"
+            aria-label={`Player — ${track.nome}`}
+          />
+        ) : (
+          <div
+            ref={spotifyContainerRef}
+            className="block h-[180px] w-full bg-black"
+            aria-label={`Player — ${track.nome}`}
+          />
+        )
       ) : (
         <audio
           key={track.audio_url}
