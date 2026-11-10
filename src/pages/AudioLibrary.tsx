@@ -415,7 +415,7 @@ export default function AudioLibraryPage() {
     // Na raiz, YouTube/Spotify são opcionais porque também têm abas próprias.
     if (!currentFolderId && !showAllSources && (isYt || isSp)) return false;
     const folderMatch = isSuperAdmin && selectedOwnerId !== null && !currentFolderId
-      ? !audioPastaId
+      ? true
       : !currentFolderId && showAllSources
         ? true
         : currentFolderId
